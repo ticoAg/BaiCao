@@ -1,0 +1,36 @@
+{
+  "task_id": "IMPL-004",
+  "session_id": "WFS-bai-cao-shi-tan",
+  "subject": "知识图谱核心模块",
+  "description": "设计知识图谱数据模型，创建图数据库初始化脚本，实现图谱查询服务和溯源机制",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": ["IMPL-002"],
+  "sub_tasks": [
+    {
+      "id": "IMPL-004-1",
+      "subject": "图谱数据模型设计",
+      "description": "设计节点类型(Herb, Efficacy, Flavor, Meridian等)和关系类型",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-004-2",
+      "subject": "Neo4j初始化脚本",
+      "description": "创建Cypher脚本初始化图数据库索引和约束",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-004-3",
+      "subject": "图谱查询服务",
+      "description": "实现图遍历、路径查询、子图查询等图谱操作服务",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-004-4",
+      "subject": "溯源机制实现",
+      "description": "实现ProvenanceRecord模型和溯源查询API",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-03-19T12:00:00Z"
+}

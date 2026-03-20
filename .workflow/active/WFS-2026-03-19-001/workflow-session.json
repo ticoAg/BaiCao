@@ -1,0 +1,40 @@
+{
+  "session_id": "WFS-2026-03-19-001",
+  "created_at": "2026-03-19T00:00:00Z",
+  "topic": "图谱数据驱动的中药材知识问答产品 - 核心价值、功能与前端视图",
+  "status": "completed",
+  "roles_completed": ["product-owner", "system-architect"],
+  "brainstorming_dir": ".workflow/active/WFS-2026-03-19-001/.brainstorming/",
+  "沉淀位置": "docs/_dev/brainstorm/",
+  "outputs": {
+    "product_owner": {
+      "status": "completed",
+      "output_location": "docs/_dev/brainstorm/product-owner/",
+      "files": [
+        "analysis.md",
+        "analysis-value-assessment.md",
+        "analysis-user-stories.md",
+        "analysis-feature-prioritization.md",
+        "analysis-stakeholder-requirements.md",
+        "analysis-recommendations.md",
+        "guidance-specification.md"
+      ]
+    },
+    "system_architect": {
+      "status": "completed",
+      "output_location": "docs/_dev/brainstorm/system-architect/",
+      "files": [
+        "analysis.md",
+        "architecture-design.md",
+        "integration-plan.md",
+        "system-architect-context.md"
+      ],
+      "key_decisions": [
+        "Modular Monolith 架构模式",
+        "Event-Driven 通信模式 (Redis Pub/Sub)",
+        "Neo4j + PostgreSQL + Redis 三层数据架构",
+        "最终一致性 + 补偿事务"
+      ]
+    }
+  }
+}

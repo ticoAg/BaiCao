@@ -1,0 +1,159 @@
+{
+  "id": "IMPL-002",
+  "title": "ChatService TDD - QA Service with Knowledge Graph Integration",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-tdd-knowledge-graph-qa-system/.process/context-package.json",
+  "cli_execution_id": "WFS-tdd-knowledge-graph-qa-system-IMPL-002",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": "backend",
+    "tdd_workflow": true,
+    "max_iterations": 3,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "pytest",
+    "coverage_target": "80%"
+  },
+  "context": {
+    "requirements": [
+      "Write 8 test cases in test_chat_service.py: [test_answer_question_basic, test_answer_question_with_entities, test_extract_entities_finds_herbs, test_extract_entities_no_match, test_build_reasoning_chain, test_generate_answer, test_collect_sources, test_session_id_generation]",
+      "Implement ChatService methods: [answer_question() lines 21-71, _extract_entities() lines 73-90, _build_reasoning_chain() lines 92-120, _generate_answer() lines 122-150, _collect_sources() lines 152-175]",
+      "Mock graph_service.get_herb_graph() to return predefined test data",
+      "Mock LLM responses in _generate_answer for unit testing",
+      "Apply 3 refactorings: [extract herb keyword list to constant, extract entity extraction to reusable pattern, add response structure validation]"
+    ],
+    "focus_paths": [
+      "packages/api/app/services/chat_service.py",
+      "packages/api/tests/services/test_chat_service.py",
+      "packages/api/tests/conftest.py"
+    ],
+    "acceptance": [
+      "8 tests pass: verify by cd packages/api && pytest tests/services/test_chat_service.py -v --tb=short",
+      "Coverage >=80%: verify by cd packages/api && pytest tests/services/test_chat_service.py --cov=app.services.chat_service --cov-report=term-missing",
+      "Mock fixtures properly isolate LLM calls: verify by no actual OpenAI API calls during tests"
+    ],
+    "depends_on": ["IMPL-001"],
+    "artifacts": [
+      {
+        "type": "source_code",
+        "source": "context-package",
+        "path": "packages/api/app/services/chat_service.py",
+        "priority": "highest",
+        "usage": "Implementation target - ChatService with QA logic",
+        "contains": "answer_question, _extract_entities, _build_reasoning_chain, _generate_answer methods"
+      },
+      {
+        "type": "source_code",
+        "source": "context-package",
+        "path": "packages/api/app/kg/graph_service.py",
+        "priority": "high",
+        "usage": "Dependency - graph_service singleton for knowledge graph queries",
+        "contains": "GraphService.get_herb_graph method"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "load_context_package",
+        "action": "Load context package for ChatService implementation details",
+        "commands": ["Read(.workflow/active/WFS-tdd-knowledge-graph-qa-system/.process/context-package.json)"],
+        "output_to": "context_package"
+      },
+      {
+        "step": "load_chat_service_source",
+        "action": "Load ChatService source to understand answer pipeline",
+        "commands": ["Read(packages/api/app/services/chat_service.py)"],
+        "output_to": "chat_service_source"
+      },
+      {
+        "step": "load_graph_service_for_mock",
+        "action": "Load GraphService to understand get_herb_graph return structure",
+        "commands": ["Read(packages/api/app/kg/graph_service.py)"],
+        "output_to": "graph_service_source"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Red Phase - Write Failing Tests",
+        "description": "Write 8 test cases defining expected ChatService behavior",
+        "tdd_phase": "red",
+        "modification_points": [
+          "Create tests/services/ directory structure",
+          "Write 8 test cases covering answer_question pipeline and internal methods",
+          "Mock graph_service.get_herb_graph to return test graph data",
+          "Mock LLM responses to isolate business logic testing"
+        ],
+        "logic_flow": [
+          "Create mock_graph_service fixture returning predefined herb graph data",
+          "Write test_answer_question_basic verifying full pipeline with mock data",
+          "Write test_answer_question_with_entities verifying entity extraction integration",
+          "Write test_extract_entities_finds_herbs verifying herb keyword detection",
+          "Write test_extract_entities_no_match verifying empty list for unknown entities",
+          "Write test_build_reasoning_chain verifying reasoning chain structure",
+          "Write test_generate_answer verifying answer format (currently simplified)",
+          "Write test_collect_sources verifying source aggregation",
+          "Write test_session_id_generation verifying UUID generation for new sessions"
+        ],
+        "depends_on": [],
+        "output": "failing_tests"
+      },
+      {
+        "step": 2,
+        "title": "Green Phase - Implement to Pass Tests",
+        "description": "Implement/verify ChatService methods to pass all tests",
+        "tdd_phase": "green",
+        "modification_points": [
+          "Verify ChatService.answer_question implements full pipeline",
+          "Verify _extract_entities uses herb keywords to find entities in question",
+          "Verify _build_reasoning_chain creates step-by-step reasoning structure",
+          "Verify _generate_answer returns formatted answer (simplified version OK for now)",
+          "Verify _collect_sources aggregates sources from graph_data"
+        ],
+        "logic_flow": [
+          "Check that answer_question follows: extract -> query -> build_chain -> generate -> collect_sources",
+          "Verify _extract_entities checks question against herb_keywords list",
+          "Verify _build_reasoning_chain returns list of reasoning steps with entities/relations",
+          "Verify _generate_answer combines question, entities, and reasoning into answer string",
+          "Verify _collect_sources extracts unique sources from graph_data",
+          "Run tests - if failures, investigate and fix business logic"
+        ],
+        "depends_on": [1],
+        "output": "passing_tests"
+      },
+      {
+        "step": 3,
+        "title": "Refactor Phase - Improve Code Quality",
+        "description": "Apply refactorings to improve ChatService code quality",
+        "tdd_phase": "refactor",
+        "modification_points": [
+          "Apply 3 refactorings: extract herb_keywords to constant, extract entity pattern, add response validation",
+          "Ensure coverage remains >=80%"
+        ],
+        "logic_flow": [
+          "Extract herb_keywords list to module-level HERB_KEYWORDS constant",
+          "Refactor _extract_entities to use more maintainable pattern matching",
+          "Add response structure validation in answer_question to ensure all fields present",
+          "Run full test suite to verify refactoring didn't break anything",
+          "Run coverage report to confirm >=80%"
+        ],
+        "depends_on": [2],
+        "output": "refactored_implementation"
+      }
+    ],
+    "target_files": [
+      "packages/api/app/services/chat_service.py",
+      "packages/api/tests/services/test_chat_service.py",
+      "packages/api/tests/conftest.py"
+    ]
+  }
+}

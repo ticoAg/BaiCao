@@ -1,0 +1,36 @@
+{
+  "task_id": "IMPL-006",
+  "session_id": "WFS-bai-cao-shi-tan",
+  "subject": "Docker基础设施配置",
+  "description": "配置docker-compose.yml，PostgreSQL、Neo4j、Nginx等服务的配置和初始化脚本",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": ["IMPL-001"],
+  "sub_tasks": [
+    {
+      "id": "IMPL-006-1",
+      "subject": "docker-compose配置",
+      "description": "创建infra/docker-compose.yml，定义所有服务",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-006-2",
+      "subject": "PostgreSQL配置",
+      "description": "创建数据库初始化SQL脚本，配置数据卷",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-006-3",
+      "subject": "Neo4j配置",
+      "description": "配置Neo4j容器，启用APOC插件，配置数据卷",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-006-4",
+      "subject": "Nginx反向代理配置",
+      "description": "配置nginx，实现API和前端服务的反向代理",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-03-19T12:00:00Z"
+}

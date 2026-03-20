@@ -1,0 +1,80 @@
+# 架构文档
+
+这里是白草药坛的长期维护架构入口，目标不是重复实现细节，而是统一回答 3 个问题：
+
+1. 系统为什么这样分层
+2. 当前已经落地到什么程度
+3. 后续扩展应该沿着什么边界继续演进
+
+## 当前统一口径
+
+- 产品定位：可溯源、可解释、可验证的中药材知识图谱智能问答系统
+- 当前阶段：MVP 早期实现中
+- 架构模式：Modular Monolith
+- 核心能力闭环：问答 -> 图谱 -> 溯源 -> 审查 -> 状态回流
+- 存储分工：Neo4j 负责知识图谱，PostgreSQL 负责结构化事务数据，Redis 负责缓存与后续异步演进预留
+
+## 推荐阅读顺序
+
+| 顺序 | 文档 | 适合场景 | 说明 |
+|------|------|----------|------|
+| 1 | [system-overview.md](system-overview.md) | 新人建立全局视图 | 先看系统角色、模块边界、数据流和当前实现状态 |
+| 2 | [data-model.md](data-model.md) | 深入数据设计 | 看 Neo4j 节点/关系模型与 PostgreSQL 侧职责 |
+
+## 文档索引
+
+| 文档 | 状态 | 摘要 |
+|------|------|------|
+| [system-overview.md](system-overview.md) | stable | 系统整体架构、模块边界、当前实现与目标形态 |
+| [data-model.md](data-model.md) | stable | 数据模型设计，覆盖关系模型、图模型和验证状态 |
+
+## 架构主线
+
+```mermaid
+flowchart LR
+    User[用户 / 研究者 / 专家] --> Web[React Web]
+    Web --> API[FastAPI API]
+
+    subgraph Modules[Application Modules]
+        KG[kg 图谱查询]
+        QA[qa 智能问答]
+        RV[review 专家审查]
+        PV[provenance 溯源]
+    end
+
+    API --> KG
+    API --> QA
+    API --> RV
+    API --> PV
+
+    KG <--> Neo4j[(Neo4j)]
+    QA <--> PG[(PostgreSQL)]
+    RV <--> PG
+    PV <--> PG
+    API <--> Redis[(Redis)]
+```
+
+## 如何理解“现状”和“目标”
+
+阅读本目录文档时，统一按下面的区分理解：
+
+- 当前现状：以仓库代码、配置、脚本和现有接口为准
+- 目标形态：以 `../../IMPL_PLAN.md` 和 `../_dev/brainstorm/` 中已确认方向为准
+- 若两者不一致，README 与架构文档必须显式说明“已实现 / 规划中”，避免把目标写成事实
+
+## 单一事实来源
+
+- 长期架构口径：`docs/architecture/*.md`
+- 项目规划与阶段任务：`../../IMPL_PLAN.md`、`../../.task/`
+- 共享类型真源：`../../packages/shared/types/`
+- 运行与编排事实：`../../infra/docker-compose.yml`
+- 后端入口事实：`../../packages/api/app/main.py`
+
+## 主题标签
+
+- `knowledge-graph` - Neo4j 知识图谱相关
+- `api` - FastAPI 后端相关
+- `frontend` - React 前端相关
+- `database` - 数据库设计相关
+- `provenance` - 数据溯源相关
+- `review` - 专家审查与验证流程相关

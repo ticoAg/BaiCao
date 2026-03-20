@@ -1,0 +1,159 @@
+{
+  "id": "IMPL-001",
+  "title": "GraphService TDD - Neo4j Knowledge Graph Core Operations",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-tdd-knowledge-graph-qa-system/.process/context-package.json",
+  "cli_execution_id": "WFS-tdd-knowledge-graph-qa-system-IMPL-001",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": "backend",
+    "tdd_workflow": true,
+    "max_iterations": 3,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "pytest",
+    "coverage_target": "80%"
+  },
+  "context": {
+    "requirements": [
+      "Write 10 test cases in test_graph_service.py: [test_create_node, test_get_node, test_get_node_not_found, test_create_herb, test_link_herb_parent, test_link_herb_child, test_link_herb_source, test_get_herb_graph, test_verify_node, test_verify_relationship]",
+      "Implement GraphService methods: [create_node() lines 48-73, get_node() lines 75-90, create_herb() lines 125-175, link_herb_parent() lines 177-195, link_herb_child() lines 197-215, link_herb_source() lines 217-235, get_herb_graph() lines 237-290, verify_node() lines 350-380, verify_relationship() lines 382-420]",
+      "Create mock Neo4j driver fixture in conftest.py with predefined query responses",
+      "Apply 3 refactorings: [extract Cypher query strings to constants, add type hints to all methods, create helper method for node mapping]"
+    ],
+    "focus_paths": [
+      "packages/api/app/kg/graph_service.py",
+      "packages/api/tests/kg/test_graph_service.py",
+      "packages/api/tests/conftest.py"
+    ],
+    "acceptance": [
+      "10 tests pass: verify by cd packages/api && pytest tests/kg/test_graph_service.py -v --tb=short",
+      "Coverage >=80%: verify by cd packages/api && pytest tests/kg/test_graph_service.py --cov=app.kg.graph_service --cov-report=term-missing",
+      "All methods have type hints: verify by rg 'def async def' packages/api/app/kg/graph_service.py | wc -l = 9"
+    ],
+    "depends_on": [],
+    "artifacts": [
+      {
+        "type": "source_code",
+        "source": "context-package",
+        "path": "packages/api/app/kg/graph_service.py",
+        "priority": "highest",
+        "usage": "Implementation target - GraphService singleton with Neo4j operations",
+        "contains": "create_node, get_node, create_herb, link_herb_*, get_herb_graph, verify_node, verify_relationship methods"
+      },
+      {
+        "type": "test_pattern",
+        "source": "context-package",
+        "path": "packages/api/tests/conftest.py",
+        "priority": "high",
+        "usage": "Test fixture patterns - test_db, client fixtures for async testing",
+        "contains": "SQLite in-memory via StaticPool, httpx.AsyncClient with ASGITransport"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      {
+        "step": "load_context_package",
+        "action": "Load context package for Neo4j driver patterns and GraphService implementation",
+        "commands": ["Read(.workflow/active/WFS-tdd-knowledge-graph-qa-system/.process/context-package.json)"],
+        "output_to": "context_package"
+      },
+      {
+        "step": "load_graph_service_source",
+        "action": "Load GraphService source to understand all methods requiring tests",
+        "commands": ["Read(packages/api/app/kg/graph_service.py)"],
+        "output_to": "graph_service_source"
+      },
+      {
+        "step": "load_test_patterns",
+        "action": "Load conftest.py to understand existing test infrastructure",
+        "commands": ["Read(packages/api/tests/conftest.py)"],
+        "output_to": "test_patterns"
+      }
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "Red Phase - Write Failing Tests",
+        "description": "Write 10 test cases that define expected GraphService behavior",
+        "tdd_phase": "red",
+        "modification_points": [
+          "Create tests/kg/ directory structure",
+          "Write 10 test cases: test_create_node, test_get_node, test_get_node_not_found, test_create_herb, test_link_herb_parent, test_link_herb_child, test_link_herb_source, test_get_herb_graph, test_verify_node, test_verify_relationship",
+          "Each test uses mocked Neo4j driver with predefined responses"
+        ],
+        "logic_flow": [
+          "Create mock_async_driver fixture returning predefined Cypher query results",
+          "Write test_create_node verifying node creation with correct label and properties",
+          "Write test_get_node verifying node retrieval by ID",
+          "Write test_get_node_not_found verifying None return for missing nodes",
+          "Write test_create_herb verifying Herb node creation with all properties",
+          "Write test_link_herb_parent verifying PARENT_OF relationship creation",
+          "Write test_link_herb_child verifying CHILD_OF relationship creation",
+          "Write test_link_herb_source verifying ORIGINATED_FROM relationship creation",
+          "Write test_get_herb_graph verifying full subgraph retrieval",
+          "Write test_verify_node verifying NodeStatus update to VERIFIED",
+          "Write test_verify_relationship verifying relationship verification"
+        ],
+        "depends_on": [],
+        "output": "failing_tests"
+      },
+      {
+        "step": 2,
+        "title": "Green Phase - Implement to Pass Tests",
+        "description": "Implement GraphService methods following the existing implementation pattern",
+        "tdd_phase": "green",
+        "modification_points": [
+          "Create mock Neo4j driver fixture in conftest.py if not exists",
+          "Implement all GraphService methods following existing pattern (singleton, async/await)",
+          "Ensure all methods return expected dict structures matching test expectations"
+        ],
+        "logic_flow": [
+          "If mock fixture missing, add mock_async_driver to conftest.py",
+          "Verify GraphService already implements: create_node (lines 48-73), get_node (lines 75-90)",
+          "Verify/ensure create_herb exists with proper herb node creation",
+          "Verify/ensure link_herb_parent, link_herb_child, link_herb_source exist",
+          "Verify/ensure get_herb_graph returns nodes and edges structure",
+          "Verify/ensure verify_node updates NodeStatus",
+          "Verify/ensure verify_relationship updates relationship properties",
+          "Run tests - if failures, fix implementation not tests"
+        ],
+        "depends_on": [1],
+        "output": "passing_tests"
+      },
+      {
+        "step": 3,
+        "title": "Refactor Phase - Improve Code Quality",
+        "description": "Apply refactorings to improve code quality without breaking tests",
+        "tdd_phase": "refactor",
+        "modification_points": [
+          "Apply 3 refactorings: extract Cypher query strings to constants, add type hints, create node mapping helper",
+          "Ensure coverage remains >=80% after refactoring"
+        ],
+        "logic_flow": [
+          "Extract all Cypher query strings to module-level constants (e.g., CREATE_NODE_CYPHER)",
+          "Add explicit return type hints to all public methods",
+          "Create _map_node_to_dict helper method to reduce duplication in get_node, get_herb_graph",
+          "Run full test suite to verify refactoring didn't break anything",
+          "Run coverage report to confirm >=80%"
+        ],
+        "depends_on": [2],
+        "output": "refactored_implementation"
+      }
+    ],
+    "target_files": [
+      "packages/api/app/kg/graph_service.py",
+      "packages/api/tests/kg/test_graph_service.py",
+      "packages/api/tests/conftest.py"
+    ]
+  }
+}

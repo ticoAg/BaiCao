@@ -1,0 +1,110 @@
+{
+  "project_structure": "Monorepo with packages: api (FastAPI + SQLAlchemy + Neo4j), web (React), shared (TypeScript types), db (migrations/seed). API uses async/await with pytest-asyncio for testing. Test infrastructure is minimal - only 2 test files exist (test_health.py, conftest.py). The API has 4 main route modules: herb.py, graph.py (Neo4j kg queries), verification.py (review module), chat.py (qa module).",
+  "relevant_files": [
+    {
+      "path": "packages/api/tests/conftest.py",
+      "relevance": 0.95,
+      "rationale": "Defines test_db and client fixtures using aiosqlite in-memory DB. All new tests should follow this fixture pattern."
+    },
+    {
+      "path": "packages/api/tests/test_health.py",
+      "relevance": 0.9,
+      "rationale": "Example async test with pytest-asyncio @pytest.mark.asyncio. Pattern to replicate for other API tests."
+    },
+    {
+      "path": "packages/api/pyproject.toml",
+      "relevance": 0.9,
+      "rationale": "Contains pytest config: asyncio_mode='auto', testpaths=['tests']. Also defines dev dependencies: pytest>=8.3.0, pytest-asyncio>=0.25.0, httpx>=0.28.0"
+    },
+    {
+      "path": "packages/api/app/kg/graph_service.py",
+      "relevance": 0.85,
+      "rationale": "Neo4j graph service - core of kg module. All graph operations use async Neo4j driver. Tests need to mock or use test Neo4j instance."
+    },
+    {
+      "path": "packages/api/app/services/chat_service.py",
+      "relevance": 0.85,
+      "rationale": "QA module - answer_question() method with reasoning chain generation. Returns structured response with answer, sources, graph_data."
+    },
+    {
+      "path": "packages/api/app/api/verification.py",
+      "relevance": 0.8,
+      "rationale": "Review module - create_verification, get_verification, list_verifications, verify_verification endpoints."
+    },
+    {
+      "path": "packages/api/app/api/graph.py",
+      "relevance": 0.8,
+      "rationale": "Graph API routes: get_herb_graph, search_nodes, get_node, get_pending, find_path. Tests should cover these endpoints."
+    },
+    {
+      "path": "packages/api/app/api/chat.py",
+      "relevance": 0.8,
+      "rationale": "QA API routes: ask_question (POST /chat/question), get_session, create_session."
+    },
+    {
+      "path": "packages/api/app/models/herb.py",
+      "relevance": 0.7,
+      "rationale": "HerbModel SQLAlchemy model. Used in test_db fixture Base.metadata.create_all."
+    },
+    {
+      "path": "packages/api/app/schemas/herb.py",
+      "relevance": 0.65,
+      "rationale": "HerbCreate, HerbRead, HerbUpdate Pydantic schemas with strict mode."
+    },
+    {
+      "path": "packages/api/app/schemas/graph.py",
+      "relevance": 0.65,
+      "rationale": "Graph Pydantic schemas - Node types (HerbNode, ComponentNode, etc.) and Edge types."
+    },
+    {
+      "path": "packages/api/app/core/database.py",
+      "relevance": 0.6,
+      "rationale": "Database connection setup. Tests override with in-memory SQLite via conftest fixture."
+    }
+  ],
+  "patterns": "Testing framework: pytest + pytest-asyncio with auto asyncio mode. Test database: SQLite in-memory with aiosqlite driver via StaticPool. Test client: httpx.AsyncClient with ASGITransport. Test pattern: @pytest.mark.asyncio async def test_NAME(client, test_db): pattern. The conftest.py test_db fixture creates a fresh in-memory DB for each test using Base.metadata.create_all/drop_all. All services depend on AsyncSession from SQLAlchemy. Neo4j operations require mocking or a test Neo4j instance since the driver connects to real Neo4j.",
+  "dependencies": "pytest>=8.3.0, pytest-asyncio>=0.25.0, httpx>=0.28.0 (for AsyncClient test client). aiosqlite for in-memory SQLite test DB. neo4j>=5.28.0 (async driver) - but tests need mocking. langchain>=0.3.0 (for chat service LLM integration).",
+  "integration_points": "API routes depend on services: graph_service (Neo4j), chat_service (uses graph_service), verification routes (use both db and graph_service). Tests must mock graph_service for unit tests or use test Neo4j. Chat service answer_question() is the main entry point for QA testing. Graph API routes are /graph/herb/{name}, /graph/search, /graph/node/{node_id}, /graph/pending. Verification API routes are /verifications/ (POST/GET), /verifications/{id}, /verifications/{id}/verify. Chat API routes are /chat/question (POST), /chat/session/{id} (GET), /chat/session (POST).",
+  "constraints": "1) Neo4j driver connects to real Neo4j instance - tests need neo4j fixture or mocking. 2) Chat service uses langchain - LLM calls need mocking for unit tests. 3) All db operations must use AsyncSession with async/await. 4) In-memory SQLite test DB requires aiosqlite and StaticPool. 5) Tests should not share state between async functions - each test gets fresh DB via fixture. 6) The kg module (graph_service) uses singleton pattern with global graph_service instance.",
+  "clarification_needs": [
+    {
+      "question": "Should Neo4j tests use a test Neo4j instance (via docker) or mock the Neo4j driver?",
+      "context": "The graph_service connects to real Neo4j. Current test infrastructure has no Neo4j test setup.",
+      "options": [
+        "Mock Neo4j driver for unit tests (faster, no external dependency)",
+        "Use test Neo4j container via docker compose (more realistic but slower)",
+        "Hybrid: mock for unit tests, integration tests use real Neo4j"
+      ],
+      "recommended": 0
+    },
+    {
+      "question": "Should LLM calls in chat_service be mocked or use a test API key?",
+      "context": "ChatService.answer_question() eventually will call LLM. Current implementation is simplified without real LLM.",
+      "options": [
+        "Mock LLM responses for unit tests",
+        "Use OpenAI test/sandbox environment",
+        "Only test the non-LLM parts (entity extraction, graph queries, reasoning chain)"
+      ],
+      "recommended": 0
+    },
+    {
+      "question": "What is the testing scope for review/verification module?",
+      "context": "The verification endpoints write to both PostgreSQL and Neo4j. Need to decide testing depth.",
+      "options": [
+        "Full integration tests with real PostgreSQL and Neo4j",
+        "Unit tests with mocked database and Neo4j",
+        "API contract tests only (mock both DBs)"
+      ],
+      "recommended": 1
+    }
+  ],
+  "_metadata": {
+    "timestamp": "2026-03-19T00:00:00Z",
+    "task_description": "TDD: 中药材知识图谱智能问答系统 - kg图谱模块、qa问答模块、review审查模块、provenance溯源模块",
+    "source": "cli-explore-agent",
+    "exploration_angle": "testing",
+    "exploration_index": 3,
+    "total_explorations": 4,
+    "duration_seconds": 30
+  }
+}

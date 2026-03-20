@@ -1,0 +1,19 @@
+{
+  "name": "baicao-workspace",
+  "private": true,
+  "packageManager": "pnpm@10.28.1",
+  "scripts": {
+    "demo": "./scripts/start_demo_tmux.sh baicao-demo",
+    "test:api": "./scripts/test_api.sh",
+    "test:integration": "./scripts/test_integration.sh",
+    "test:web": "pnpm --dir packages/web test --run",
+    "test:web:watch": "pnpm --dir packages/web test",
+    "test:e2e": "./scripts/test_e2e.sh",
+    "verify": "pnpm run test:api && pnpm run test:web",
+    "verify:full": "pnpm run test:api && pnpm run test:web && pnpm run test:integration && CI=true pnpm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "vite-plus": "catalog:"
+  }
+}

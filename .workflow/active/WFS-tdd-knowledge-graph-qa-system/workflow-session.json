@@ -1,0 +1,82 @@
+{
+  "session_id": "WFS-tdd-knowledge-graph-qa-system",
+  "project": "TDD: 中药材知识图谱智能问答系统",
+  "status": "active",
+  "type": "tdd",
+  "task_count": 5,
+  "workflow_type": "tdd",
+  "created_at": "2026-03-20T00:15:00Z",
+  "execution_started_at": "2026-03-20T00:37:29+08:00",
+  "description": {
+    "GOAL": "为知识图谱核心功能模块生成TDD实现计划",
+    "SCOPE": "kg图谱模块、qa问答模块、review审查模块、provenance溯源模块",
+    "CONTEXT": "Product Owner和System Architect分析已完成",
+    "TEST_FOCUS": "知识图谱查询、问答生成、专家审查流程、溯源链路展示"
+  },
+  "tasks": [
+    {
+      "id": "IMPL-001",
+      "title": "GraphService TDD - Neo4j Knowledge Graph Core Operations",
+      "test_cases": 10,
+      "target_file": "packages/api/app/kg/graph_service.py",
+      "test_file": "packages/api/tests/kg/test_graph_service.py",
+      "status": "pending",
+      "tdd_phases": ["red", "green", "refactor"],
+      "max_iterations": 3
+    },
+    {
+      "id": "IMPL-002",
+      "title": "ChatService TDD - QA Service with Knowledge Graph Integration",
+      "test_cases": 8,
+      "target_file": "packages/api/app/services/chat_service.py",
+      "test_file": "packages/api/tests/services/test_chat_service.py",
+      "status": "pending",
+      "tdd_phases": ["red", "green", "refactor"],
+      "depends_on": ["IMPL-001"],
+      "max_iterations": 3
+    },
+    {
+      "id": "IMPL-003",
+      "title": "Verification API TDD - Review Module End-to-End Testing",
+      "test_cases": 8,
+      "target_file": "packages/api/app/api/verification.py",
+      "test_file": "packages/api/tests/api/test_verification.py",
+      "status": "pending",
+      "tdd_phases": ["red", "green", "refactor"],
+      "max_iterations": 3
+    },
+    {
+      "id": "IMPL-004",
+      "title": "Provenance Module TDD - New Implementation with Evidence-Source Lineage",
+      "test_cases": 7,
+      "target_file": "packages/api/app/溯源/__init__.py",
+      "test_file": "packages/api/tests/溯源/test_provenance.py",
+      "status": "pending",
+      "tdd_phases": ["red", "green", "refactor"],
+      "max_iterations": 3
+    },
+    {
+      "id": "IMPL-005",
+      "title": "API Routes TDD - Integration Tests for Chat, Graph, and Herb Endpoints",
+      "test_cases": 10,
+      "target_file": "packages/api/app/api/",
+      "test_file": "packages/api/tests/api/test_routes.py",
+      "status": "pending",
+      "tdd_phases": ["red", "green", "refactor"],
+      "depends_on": ["IMPL-001", "IMPL-002"],
+      "max_iterations": 3
+    }
+  ],
+  "summary": {
+    "total_test_cases": 43,
+    "coverage_target": "80%",
+    "execution_model": "sequential_with_parallel_opportunities",
+    "task_dependency_graph": {
+      "IMPL-001": [],
+      "IMPL-002": ["IMPL-001"],
+      "IMPL-003": [],
+      "IMPL-004": [],
+      "IMPL-005": ["IMPL-001", "IMPL-002"]
+    }
+  }
+}

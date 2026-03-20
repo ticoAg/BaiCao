@@ -1,0 +1,36 @@
+{
+  "task_id": "IMPL-003",
+  "session_id": "WFS-bai-cao-shi-tan",
+  "subject": "前端核心功能开发",
+  "description": "初始化React + Vite项目，配置Ant Design，实现基础页面布局和API服务封装",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": ["IMPL-001"],
+  "sub_tasks": [
+    {
+      "id": "IMPL-003-1",
+      "subject": "React项目初始化",
+      "description": "创建packages/web，使用Vite初始化React + TypeScript项目",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-003-2",
+      "subject": "UI组件库配置",
+      "description": "安装配置Ant Design 5，配置主题和全局样式",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-003-3",
+      "subject": "基础页面布局",
+      "description": "实现Header, Sidebar, MainContent基础布局组件",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-003-4",
+      "subject": "API服务封装",
+      "description": "封装API调用服务，配置React Query",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-03-19T12:00:00Z"
+}

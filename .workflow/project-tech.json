@@ -1,0 +1,114 @@
+{
+  "project_metadata": {
+    "name": "BaiCao",
+    "root_path": "/Users/ticoag/Documents/myws/BaiCao",
+    "initialized_at": "2026-03-19T00:00:00Z",
+    "updated_at": "2026-03-20T00:08:00Z"
+  },
+  "technology_analysis": {
+    "description": "BaiCao ShiTan - 可溯源的中药材知识图谱智能问答系统. A modular monolith with event-driven communication using Neo4j graph database for herb knowledge, PostgreSQL for relational data, FastAPI backend, and React frontend.",
+    "languages": {
+      "python": {"file_count": 40, "primary": true, "role": "Backend API, services, data processing"},
+      "typescript": {"file_count": 9, "primary": false, "role": "Frontend web application"}
+    },
+    "frameworks": {
+      "backend": ["FastAPI>=0.115.0", "Uvicorn>=0.34.0", "SQLAlchemy>=2.0.36", "LangChain>=0.3.0", "Pydantic>=2.10.0"],
+      "frontend": ["React>=18.3.1", "React Router>=6.28.0", "Ant Design>=5.22.0", "Zustand>=5.0.0", "@tanstack/react-query>=5.62.0", "Vite>=6.0.0"]
+    },
+    "build_tools": {
+      "python": ["uv (via pyproject.toml/hatchling)"],
+      "web": ["npm/pnpm", "Vite", "TypeScript compiler"]
+    },
+    "test_frameworks": {
+      "python": ["pytest>=8.3.0", "pytest-asyncio>=0.25.0", "httpx>=0.28.0"],
+      "web": ["ESLint>=9.0.0"]
+    },
+    "architecture": {
+      "style": "Modular Monolith with Event-Driven communication",
+      "layers": ["API Layer (FastAPI routes)", "Application Layer (kg/qa/services modules)", "Data Layer (Neo4j/PostgreSQL/Redis)"],
+      "pattern": "Layered architecture with service-based business logic"
+    },
+    "key_components": {
+      "api": {
+        "path": "packages/api/",
+        "modules": ["api (routes)", "core (config)", "models (SQLAlchemy)", "services (business logic)", "kg (knowledge graph)", "exporters", "importers", "schemas"],
+        "entry_point": "app/main.py",
+        "routes": ["chat.py", "graph.py", "herb.py", "verification.py"]
+      },
+      "web": {
+        "path": "packages/web/src/",
+        "modules": ["components", "pages (ChatPage, GraphPage, HomePage, SearchPage, VerificationPage)", "services"],
+        "entry_point": "main.tsx",
+        "pages": ["ChatPage.tsx", "GraphPage.tsx", "HomePage.tsx", "SearchPage.tsx", "VerificationPage.tsx"]
+      },
+      "shared": {
+        "path": "packages/shared/",
+        "types": "TypeScript types for cross-package consistency"
+      },
+      "db": {
+        "path": "packages/db/",
+        "modules": ["import", "neo4j (Cypher scripts)"]
+      },
+      "infra": {
+        "path": "infra/",
+        "services": ["postgres:15-alpine", "neo4j:5-community", "redis:7-alpine", "nginx:alpine"],
+        "compose_file": "infra/docker-compose.yml"
+      }
+    },
+    "dependencies": {
+      "backend": {
+        "core": ["fastapi", "uvicorn", "sqlalchemy", "pydantic", "pydantic-settings"],
+        "database": ["asyncpg", "psycopg2-binary", "neo4j", "alembic"],
+        "ai": ["langchain", "langchain-openai"],
+        "utilities": ["python-dotenv", "datasets", "email-validator"]
+      },
+      "frontend": {
+        "core": ["react", "react-dom", "react-router-dom"],
+        "ui": ["antd", "@ant-design/icons", "@ant-design/charts"],
+        "state": ["zustand", "@tanstack/react-query"],
+        "http": ["axios"],
+        "build": ["typescript", "vite", "@vitejs/plugin-react", "eslint"]
+      }
+    }
+  },
+  "development_status": {
+    "completed_features": [
+      "Project skeleton with monorepo structure",
+      "FastAPI backend with core configuration",
+      "SQLAlchemy models (Herb, Source, User, Verification)",
+      "API routes (chat, graph, herb, verification)",
+      "Knowledge graph service with Neo4j integration",
+      "Chat service with LangChain integration",
+      "CSV/JSONL exporter and importer modules",
+      "React frontend with Ant Design",
+      "Page components (Chat, Graph, Home, Search, Verification)",
+      "Docker Compose infrastructure (PostgreSQL, Neo4j, Redis, Nginx)",
+      "Shared TypeScript types"
+    ],
+    "development_index": {
+      "feature": [
+        "IMPL-001: Project skeleton initialization",
+        "IMPL-002: Backend core (FastAPI + SQLAlchemy)",
+        "IMPL-003: Frontend core (React + Vite + Ant Design)",
+        "IMPL-004: Knowledge graph core (Neo4j + graph service)",
+        "IMPL-005: Chat and visualization (ChatPage, GraphPage)",
+        "IMPL-006: Infrastructure (Docker Compose, PostgreSQL, Neo4j)"
+      ],
+      "enhancement": [],
+      "bugfix": [],
+      "refactor": [],
+      "docs": []
+    },
+    "statistics": {
+      "total_features": 6,
+      "total_sessions": 1,
+      "last_updated": "2026-03-20T00:08:00Z"
+    }
+  },
+  "_metadata": {
+    "initialized_by": "cli-explore-agent",
+    "analysis_timestamp": "2026-03-20T00:08:00Z",
+    "analysis_mode": "quick-scan",
+    "schema_source": "Not found in ~/.claude/workflows/cli-templates/schemas/project-tech-schema.json; generated from project analysis"
+  }
+}

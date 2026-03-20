@@ -1,0 +1,16 @@
+node_type,node_name,source,herb_type,category,description,edge_type,target,edge_properties
+Herb,陈皮,本草纲目,base,理气药,芸香科柑橘属植物的干燥成熟果皮,,,
+Component,挥发油,本草纲目,,,,CONTAINS,陈皮,"{""quantity"": ""2-3%""}"
+Component,陈皮素,本草纲目,,,,CONTAINS,陈皮,
+Component,橙皮苷,本草纲目,,,,CONTAINS,陈皮,
+Variant,大红皮,陈皮品种志,,,,HAS_VARIANT,陈皮,
+Variant,二红皮,陈皮品种志,,,,HAS_VARIANT,陈皮,
+Efficacy,理气,本草纲目,,,,HAS_EFFICACY,陈皮,
+Efficacy,健脾,本草纲目,,,,HAS_EFFICACY,陈皮,
+Efficacy,燥湿化痰,本草纲目,,,,HAS_EFFICACY,陈皮,
+Flavor,辛,本草纲目,,,,HAS_FLAVOR,陈皮,
+Flavor,苦,本草纲目,,,,HAS_FLAVOR,陈皮,
+Meridian,肺经,本草纲目,,,,ENTERS_MERIDIAN,陈皮,
+Meridian,脾经,本草纲目,,,,ENTERS_MERIDIAN,陈皮,
+Trait,外皮,陈皮鉴别学,,,,HAS_TRAIT,陈皮,"{""trait_category"": ""external""}"
+Trait,内囊,陈皮鉴别学,,,,HAS_TRAIT,陈皮,"{""trait_category"": ""internal""}"

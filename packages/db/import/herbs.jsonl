@@ -1,0 +1,18 @@
+{"node_type": "Herb", "node_name": "陈皮", "source": "本草纲目", "herb_type": "base", "category": "理气药", "description": "芸香科柑橘属植物的干燥成熟果皮", "edges": [{"type": "CONTAINS", "target": "挥发油", "properties": {"quantity": "2-3%"}}, {"type": "HAS_EFFICACY", "target": "理气", "properties": {}}, {"type": "HAS_FLAVOR", "target": "辛", "properties": {}}, {"type": "ENTERS_MERIDIAN", "target": "肺经", "properties": {}}, {"type": "ENTERS_MERIDIAN", "target": "脾经", "properties": {}}, {"type": "STORED_FOR", "target": "3年", "properties": {"years": 3}}]}
+{"node_type": "Component", "node_name": "挥发油", "source": "本草纲目", "properties": {"description": "陈皮中含有的挥发性油脂成分"}, "edges": []}
+{"node_type": "Component", "node_name": "陈皮素", "source": "本草纲目", "properties": {"chemical_formula": "C20H20O5"}, "edges": []}
+{"node_type": "Component", "node_name": "橙皮苷", "source": "本草纲目", "properties": {"chemical_formula": "C28H34O15"}, "edges": []}
+{"node_type": "Variant", "node_name": "大红皮", "source": "陈皮品种志", "parent_herb": "陈皮", "description": "成熟度最高的陈皮品种", "edges": []}
+{"node_type": "Variant", "node_name": "二红皮", "source": "陈皮品种志", "parent_herb": "陈皮", "description": "成熟度中等的陈皮品种", "edges": []}
+{"node_type": "Efficacy", "node_name": "理气", "source": "本草纲目", "edges": []}
+{"node_type": "Efficacy", "node_name": "健脾", "source": "本草纲目", "edges": []}
+{"node_type": "Efficacy", "node_name": "燥湿化痰", "source": "本草纲目", "edges": []}
+{"node_type": "Flavor", "node_name": "辛", "source": "本草纲目", "nature": "温", "edges": []}
+{"node_type": "Flavor", "node_name": "苦", "source": "本草纲目", "nature": "温", "edges": []}
+{"node_type": "Meridian", "node_name": "肺经", "source": "本草纲目", "edges": []}
+{"node_type": "Meridian", "node_name": "脾经", "source": "本草纲目", "edges": []}
+{"node_type": "TimePoint", "node_name": "1年", "source": "陈皮储藏研究", "properties": {"years": 1, "description": "一年陈皮"}, "edges": []}
+{"node_type": "TimePoint", "node_name": "3年", "source": "陈皮储藏研究", "properties": {"years": 3, "description": "三年陈化后香气形成"}, "edges": []}
+{"node_type": "TimePoint", "node_name": "5年", "source": "陈皮储藏研究", "properties": {"years": 5, "description": "五年陈皮品质稳定"}, "edges": []}
+{"node_type": "Trait", "node_name": "外皮", "source": "陈皮鉴别学", "properties": {"trait_category": "external", "description": "外表面颜色"}, "edges": []}
+{"node_type": "Trait", "node_name": "内囊", "source": "陈皮鉴别学", "properties": {"trait_category": "internal", "description": "内囊纹理特征"}, "edges": []}

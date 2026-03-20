@@ -1,0 +1,36 @@
+{
+  "task_id": "IMPL-005",
+  "session_id": "WFS-bai-cao-shi-tan",
+  "subject": "对话界面与可视化",
+  "description": "开发Chat UI组件，知识图谱可视化组件，推理链展示组件，实现SSE流式响应",
+  "status": "pending",
+  "priority": "high",
+  "dependencies": ["IMPL-003", "IMPL-004"],
+  "sub_tasks": [
+    {
+      "id": "IMPL-005-1",
+      "subject": "Chat UI组件开发",
+      "description": "基于Ant Design开发对话界面组件，支持多轮对话和流式输出",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-005-2",
+      "subject": "知识图谱可视化",
+      "description": "使用G6/ReactFlow实现图谱可视化，支持节点交互和布局切换",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-005-3",
+      "subject": "推理链展示组件",
+      "description": "开发推理链展示组件，分步骤显示推理过程",
+      "status": "pending"
+    },
+    {
+      "id": "IMPL-005-4",
+      "subject": "SSE流式响应",
+      "description": "后端实现SSE流式输出，前端实现流式渲染",
+      "status": "pending"
+    }
+  ],
+  "created_at": "2026-03-19T12:00:00Z"
+}

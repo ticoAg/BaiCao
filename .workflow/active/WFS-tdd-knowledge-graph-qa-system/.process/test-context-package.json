@@ -1,0 +1,184 @@
+{
+  "metadata": {
+    "test_session_id": "WFS-tdd-knowledge-graph-qa-system",
+    "source_session_id": "WFS-tdd-knowledge-graph-qa-system",
+    "timestamp": "2026-03-20T00:15:00Z",
+    "task_type": "tdd",
+    "complexity": "medium",
+    "description": "TDD: 中药材知识图谱智能问答系统",
+    "scope": "kg图谱模块、qa问答模块、review审查模块、provenance溯源模块"
+  },
+  "source_context": {
+    "implementation_summaries": [
+      {
+        "task_id": "IMPL-TDD-KG",
+        "summary_path": null,
+        "changed_files": [
+          "packages/api/app/kg/graph_service.py",
+          "packages/api/app/services/chat_service.py",
+          "packages/api/app/api/verification.py",
+          "packages/api/app/api/chat.py",
+          "packages/api/app/api/graph.py",
+          "packages/api/app/api/herb.py",
+          "packages/api/app/溯源/__init__.py"
+        ],
+        "implementation_type": "feature",
+        "notes": "All modules are new implementations without existing test coverage"
+      }
+    ],
+    "tech_stack": [
+      "python",
+      "fastapi",
+      "sqlalchemy",
+      "pytest",
+      "pytest-asyncio",
+      "neo4j",
+      "langchain",
+      "asyncpg"
+    ],
+    "project_patterns": {
+      "architecture": "layered",
+      "error_handling": "try-catch with async",
+      "async_pattern": "async/await throughout",
+      "db_pattern": "async SQLAlchemy with sessionmaker",
+      "neo4j_pattern": "AsyncGraphDatabase driver with session()"
+    }
+  },
+  "test_coverage": {
+    "existing_tests": [
+      "packages/api/tests/test_health.py",
+      "packages/api/tests/conftest.py"
+    ],
+    "missing_tests": [
+      {
+        "implementation_file": "packages/api/app/kg/graph_service.py",
+        "suggested_test_file": "packages/api/tests/kg/test_graph_service.py",
+        "priority": "high",
+        "reason": "Core Neo4j service with 20+ async methods - critical path for knowledge graph"
+      },
+      {
+        "implementation_file": "packages/api/app/services/chat_service.py",
+        "suggested_test_file": "packages/api/tests/services/test_chat_service.py",
+        "priority": "high",
+        "reason": "QA module with entity extraction, graph querying, reasoning chain building"
+      },
+      {
+        "implementation_file": "packages/api/app/api/verification.py",
+        "suggested_test_file": "packages/api/tests/api/test_verification.py",
+        "priority": "high",
+        "reason": "Review module API routes for verification workflow"
+      },
+      {
+        "implementation_file": "packages/api/app/api/chat.py",
+        "suggested_test_file": "packages/api/tests/api/test_chat.py",
+        "priority": "medium",
+        "reason": "Chat API endpoints"
+      },
+      {
+        "implementation_file": "packages/api/app/api/graph.py",
+        "suggested_test_file": "packages/api/tests/api/test_graph.py",
+        "priority": "medium",
+        "reason": "Graph query API endpoints"
+      },
+      {
+        "implementation_file": "packages/api/app/api/herb.py",
+        "suggested_test_file": "packages/api/tests/api/test_herb.py",
+        "priority": "medium",
+        "reason": "Herb CRUD API endpoints"
+      },
+      {
+        "implementation_file": "packages/api/app/溯源/__init__.py",
+        "suggested_test_file": "packages/api/tests/溯源/__init__.py",
+        "priority": "high",
+        "reason": "Empty module requiring TDD implementation - provenance tracing"
+      }
+    ],
+    "coverage_stats": {
+      "total_implementation_files": 7,
+      "files_with_tests": 0,
+      "files_without_tests": 7,
+      "coverage_percentage": 0.0
+    }
+  },
+  "test_framework": {
+    "framework": "pytest",
+    "version": ">=8.3.0",
+    "test_pattern": "@pytest.mark.asyncio",
+    "test_directory": "packages/api/tests/",
+    "assertion_library": "pytest assertions",
+    "mocking_framework": "pytest-mock or unittest.mock",
+    "async_mode": "auto",
+    "conventions": {
+      "file_naming": "test_*.py",
+      "test_structure": "async def test_* with @pytest.mark.asyncio",
+      "setup_teardown": "pytest fixtures with async",
+      "fixtures": [
+        "test_db (async SQLAlchemy in-memory SQLite)",
+        "client (httpx AsyncClient with ASGITransport)"
+      ]
+    }
+  },
+  "assets": [
+    {
+      "type": "existing_test",
+      "path": "packages/api/tests/test_health.py",
+      "relevance": "Reference for test structure and async patterns",
+      "priority": "high"
+    },
+    {
+      "type": "existing_test",
+      "path": "packages/api/tests/conftest.py",
+      "relevance": "Reference for async fixtures setup",
+      "priority": "high"
+    },
+    {
+      "type": "source_code",
+      "path": "packages/api/app/kg/graph_service.py",
+      "relevance": "Core Neo4j service - primary TDD target",
+      "priority": "highest"
+    },
+    {
+      "type": "source_code",
+      "path": "packages/api/app/services/chat_service.py",
+      "relevance": "QA module - primary TDD target",
+      "priority": "highest"
+    },
+    {
+      "type": "source_code",
+      "path": "packages/api/app/api/verification.py",
+      "relevance": "Review module - primary TDD target",
+      "priority": "highest"
+    },
+    {
+      "type": "source_code",
+      "path": "packages/api/app/models/enums.py",
+      "relevance": "Enum definitions for NodeType, NodeStatus, EdgeType etc.",
+      "priority": "high"
+    },
+    {
+      "type": "config",
+      "path": "packages/api/pyproject.toml",
+      "relevance": "pytest configuration - asyncio_mode, testpaths",
+      "priority": "high"
+    }
+  ],
+  "focus_areas": [
+    "Generate TDD tests for GraphService (Neo4j operations): create_node, get_node, create_herb, link_herb_*, get_herb_graph",
+    "Generate TDD tests for ChatService: answer_question, _extract_entities, _build_reasoning_chain, _generate_answer",
+    "Generate TDD tests for verification API: create_verification, get_verification, list_verifications, verify_verification",
+    "Implement provenance module (溯源) with TDD: evidence tracking, source attribution, lineage chains",
+    "Follow existing async pytest patterns from conftest.py and test_health.py",
+    "Cover happy path, error cases, and edge cases for each public method"
+  ],
+  "tdd_workflow": {
+    "step_1_red": "Write failing test for new functionality",
+    "step_2_green": "Implement minimal code to pass test",
+    "step_3_refactor": "Refactor code while maintaining test pass",
+    "priority_order": [
+      "1. GraphService core methods (kg module)",
+      "2. ChatService business logic (qa module)",
+      "3. Verification API routes (review module)",
+      "4. Provenance module (溯源 module - new)"
+    ]
+  }
+}
