@@ -23,7 +23,7 @@
 - 系统总览：`docs/architecture/system-overview.md`
 - 数据模型：`docs/architecture/data-model.md`
 - brainstorm：`docs/_dev/brainstorm/README.md`
-- 任务清单：`.task/`
+- 实施计划入口：`docs/superpowers/README.md`
 
 ## 项目定位
 
@@ -68,7 +68,7 @@
 
 | 模块 | 当前状态 | 说明 |
 | --- | --- | --- |
-| Monorepo 骨架 | 已有 | `packages/`、`infra/`、`docs/`、`.task/` 已建立 |
+| Monorepo 骨架 | 已有 | `packages/`、`infra/`、`docs/` 与 `docs/superpowers/` 已建立 |
 | 基础设施编排 | 已有 | Docker Compose 编排 PostgreSQL、Neo4j、Redis、API、Web、Nginx |
 | 后端 API | 初步可用 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat` 路由骨架 |
 | 前端页面 | 原型可用 | 已有首页、搜索、图谱、验证、问答等页面原型 |
@@ -156,9 +156,12 @@ BaiCao/
 │   ├── shared/       # 共享类型与工具
 │   └── db/           # 数据脚本、Cypher、导入数据
 ├── infra/            # Docker Compose 与基础设施配置
-├── docs/             # 架构、验收、研发草案文档
-├── .task/            # 实现任务清单
-├── IMPL_PLAN.md      # 项目初始化与实现规划
+├── docs/             # 架构、验收、研发草案与 superpowers 文档
+│   ├── architecture/ # 稳定架构文档
+│   ├── acceptance/   # 验收文档
+│   ├── _dev/         # 草案与 brainstorm
+│   └── superpowers/  # spec / plan 与仓库级实施任务系统
+├── IMPL_PLAN.md      # 项目初始化与高层规划
 └── AGENTS.md         # 仓库级 AI Agent 研发规范
 ```
 
@@ -340,7 +343,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 ## 近期路线图
 
-结合 `IMPL_PLAN.md`、`.task/` 任务文件和 `docs/_dev/brainstorm`，当前比较清晰的研发路线是：
+结合 `IMPL_PLAN.md`、`docs/superpowers/plans/` 实施计划和 `docs/_dev/brainstorm`，当前比较清晰的研发路线是：
 
 ### Phase 1：基础骨架
 
@@ -407,4 +410,4 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 2. `IMPL_PLAN.md`
 3. `docs/_dev/brainstorm/README.md`
 4. `docs/architecture/system-overview.md`
-5. `.task/` 下的实现任务文件
+5. `docs/superpowers/plans/` 下的实施计划文件
