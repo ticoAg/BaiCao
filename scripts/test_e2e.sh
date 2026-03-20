@@ -105,5 +105,6 @@ wait_for_url "${API_BASE_URL}/health" 120
 wait_for_url "${WEB_BASE_URL}" 120
 
 cd "$ROOT"
+unset NO_COLOR
 pnpm exec playwright install chromium >/dev/null
 pnpm exec playwright test
