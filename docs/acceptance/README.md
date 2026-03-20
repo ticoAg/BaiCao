@@ -33,7 +33,7 @@
 1. [../../README.md](../../README.md)
 2. [../README.md](../README.md)
 3. [../architecture/README.md](../architecture/README.md)
-4. 对应功能的实现任务文件（`../../.task/`）
+4. 对应功能的实施计划文件（`../superpowers/plans/`）或高层规划 `../../IMPL_PLAN.md`
 5. 当前目录下对应功能的验收文档
 
 ## 验收的最小闭环
@@ -161,7 +161,7 @@ flowchart LR
 - 当前实现事实：仓库代码、脚本、配置
 - 长期系统解释：`../architecture/`
 - 方案讨论来源：`../_dev/`
-- 任务状态来源：`../../.task/`
+- 任务状态来源：`../superpowers/plans/`
 
 ## 验收写作原则
 

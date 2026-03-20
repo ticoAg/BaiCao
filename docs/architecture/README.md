@@ -65,7 +65,7 @@ flowchart LR
 ## 单一事实来源
 
 - 长期架构口径：`docs/architecture/*.md`
-- 项目规划与阶段任务：`../../IMPL_PLAN.md`、`../../.task/`
+- 项目规划与阶段任务：`../../IMPL_PLAN.md`、`../superpowers/plans/`
 - 共享类型真源：`../../packages/shared/types/`
 - 运行与编排事实：`../../infra/docker-compose.yml`
 - 后端入口事实：`../../packages/api/app/main.py`

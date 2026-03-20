@@ -321,37 +321,40 @@ services:
       - web
 ```
 
-## 8. 初始化任务清单
+## 8. 初始化阶段目标（高层规划）
+
+> 本文档保留项目阶段目标与高层路线，不再承担仓库级任务系统职责。
+> 可执行任务拆解、勾选进度与验证步骤，统一写入 `docs/superpowers/plans/*.md`，由 `writing-plans` 生成。
 
 ### Phase 1: 项目骨架 (Day 1)
-- [ ] 创建monorepo目录结构
-- [ ] 初始化pnpm workspace
-- [ ] 配置Git
+- monorepo 目录结构
+- pnpm workspace
+- Git 基础配置
 
 ### Phase 2: 后端基础 (Day 1-2)
-- [ ] FastAPI项目初始化
-- [ ] SQLAlchemy模型定义
-- [ ] PostgreSQL连接配置
-- [ ] Neo4j连接配置
-- [ ] 基础CRUD API
+- FastAPI 项目初始化
+- SQLAlchemy 模型定义
+- PostgreSQL 连接配置
+- Neo4j 连接配置
+- 基础 CRUD API
 
 ### Phase 3: 前端基础 (Day 2-3)
-- [ ] React + Vite项目初始化
-- [ ] Ant Design配置
-- [ ] 基础页面布局
-- [ ] API服务封装
+- React + Vite 项目初始化
+- Ant Design 配置
+- 基础页面布局
+- API 服务封装
 
 ### Phase 4: 知识图谱核心 (Day 3-5)
-- [ ] 知识图谱数据模型
-- [ ] 图数据库初始化脚本
-- [ ] 图谱查询服务
-- [ ] 溯源机制实现
+- 知识图谱数据模型
+- 图数据库初始化脚本
+- 图谱查询服务
+- 溯源机制实现
 
 ### Phase 5: 对话与可视化 (Day 5-7)
-- [ ] Chat UI组件
-- [ ] 知识图谱可视化
-- [ ] 推理链展示组件
-- [ ] SSE流式响应
+- Chat UI 组件
+- 知识图谱可视化
+- 推理链展示组件
+- SSE 流式响应
 
 ## 9. 后续规划建议
 

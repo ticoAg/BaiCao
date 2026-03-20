@@ -1,16 +1,19 @@
 # 文档系统
 
-这里是 BaiCao ShiTan 的总文档门户，用来统一回答三个问题：
+这里是 BaiCao ShiTan 的总文档门户，用来统一回答四个问题：
 
 1. 先看哪份文档才能最快建立全局认知
 2. 哪些文档代表当前稳定口径，哪些只是研发草案
-3. 新增或修改文档时，应该把信息放到哪里
+3. agent / 开发者开始实现前，应该走哪条工作流
+4. 新增或修改文档时，应该把信息放到哪里
 
 ## 一页看懂
 
 - `architecture/`：长期维护文档，描述系统边界、架构和数据模型
 - `acceptance/`：验收标准与验证方式，回答“如何证明它真的完成了”
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
+- `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
+- 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
 ## 推荐阅读路径
 
@@ -24,41 +27,60 @@
 
 ### 路径 B：要开始实现功能
 
-1. [../IMPL_PLAN.md](../IMPL_PLAN.md)
-2. [architecture/system-overview.md](architecture/system-overview.md)
-3. [architecture/data-model.md](architecture/data-model.md)
-4. [acceptance/README.md](acceptance/README.md)
-5. 对应 `.task/` 任务文件
+1. [../AGENTS.md](../AGENTS.md)
+2. [../workflow.md](../workflow.md)
+3. [agent-skill-routing.md](agent-skill-routing.md)
+4. [../IMPL_PLAN.md](../IMPL_PLAN.md)
+5. [architecture/system-overview.md](architecture/system-overview.md)
+6. [acceptance/README.md](acceptance/README.md)
+7. 对应 `superpowers/plans/` 计划文件
 
 ### 路径 C：要判断“当前代码”与“目标方案”的差异
 
 1. [../README.md](../README.md)
-2. [architecture/README.md](architecture/README.md)
-3. [_dev/README.md](_dev/README.md)
-4. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
+2. [../IMPL_PLAN.md](../IMPL_PLAN.md)
+3. [architecture/README.md](architecture/README.md)
+4. [_dev/README.md](_dev/README.md)
+5. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
+
+### 路径 D：要维护 agent / 研发规范
+
+1. [../AGENTS.md](../AGENTS.md)
+2. [../workflow.md](../workflow.md)
+3. [agent-skill-routing.md](agent-skill-routing.md)
+4. [verification-matrix.md](verification-matrix.md)
+5. [superpowers/](superpowers/)
 
 ## 文档分层
 
 ```mermaid
 flowchart TB
-    Root[README / IMPL_PLAN / .task]
-
+    Root[README / IMPL_PLAN / docs/superpowers/plans]
+    Root --> Guide[AGENTS / workflow / routing / verification]
     Root --> Arch[docs/architecture]
     Root --> Acc[docs/acceptance]
     Root --> Dev[docs/_dev]
+    Root --> Sup[docs/superpowers]
 
+    Guide --> Ops[协作与执行规则]
     Arch --> Stable[稳定口径<br/>架构 / 数据模型]
     Acc --> Verify[验收标准<br/>验证步骤 / 证据]
     Dev --> Draft[草案与脑暴<br/>分析 / 方案收敛]
+    Sup --> Process[spec / plan 等过程产物]
 ```
 
 ## 文档目录
 
-| 目录 | 定位 | 内容特点 | 何时阅读 |
+| 目录 / 文档 | 定位 | 内容特点 | 何时阅读 |
 |------|------|----------|----------|
+| [../AGENTS.md](../AGENTS.md) | 仓库级 agent 入口 | 高层规则、导航、交付口径 | 进入仓库、准备开始任务时 |
+| [../workflow.md](../workflow.md) | 任务分流与 contract-first 工作流 | 作用域判断、跨模块顺序、交付约定 | 非 trivial 任务开始前 |
+| [agent-skill-routing.md](agent-skill-routing.md) | skill 选择入口 | 流程 skill、领域 skill、协作 skill 路由 | 需要判断先用哪类 skill 时 |
+| [verification-matrix.md](verification-matrix.md) | 验证标准入口 | 各类改动的最低验证要求 | 准备宣称完成、补验收证据时 |
 | [architecture/](architecture/README.md) | 长期维护 | 稳定、可引用、面向长期演进 | 建立全局视图、统一术语、核对边界 |
 | [acceptance/](acceptance/README.md) | 验收与完成定义 | 可执行、可复现、可对照实现 | 验证功能是否完成、补齐验收脚本 |
 | [_dev/](_dev/README.md) | 草案与中间产物 | WIP、探索性、可能过期 | 回看分析过程、理解方案来源 |
+| [superpowers/README.md](superpowers/README.md) | agent 过程产物与任务系统 | spec / plan / 执行中间文档 | 追溯某轮实现的设计与拆解，并查看仓库级任务系统 |
 
 ## 当前文档现状
 
@@ -66,14 +88,22 @@ flowchart TB
 
 | 区域 | 当前状态 | 说明 |
 |------|------|------|
+| 根级协作文档 | 已补齐入口 | 现在由 `AGENTS.md`、`workflow.md`、`agent-skill-routing.md`、`verification-matrix.md` 共同承担 agent 入口、工作流、skill 路由与验证口径 |
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
 | `docs/acceptance/` | 已形成首批实例 | 已有模板和 3 条主链路验收文档，可直接执行 |
 | `docs/_dev/brainstorm/` | 内容最完整 | 已沉淀产品和架构 brainstorm 结果，适合回溯思路 |
-| `docs/_dev/` 其他区域 | 较轻 | 当前主要承担草案说明和毕业规则 |
+| `docs/superpowers/` | 已开始使用 | 已有 spec / plan，可作为后续 agent 协作沉淀路径 |
 
 ## 如何放置信息
 
 为了避免文档漂移，信息放置遵循下面的规则：
+
+### 放进根级协作文档
+
+- 仓库级 agent 行为规范与交付格式
+- 任务分流规则、contract-first 顺序、多模块执行约束
+- skill 选择、协作路由、验证矩阵
+- 会影响默认研发动作的规则
 
 ### 放进 `architecture/`
 
@@ -96,6 +126,12 @@ flowchart TB
 - 分析过程、权衡记录、brainstorm 产物
 - 尚未确认是否毕业到稳定文档的内容
 
+### 放进 `superpowers/`
+
+- agent 编写的设计 spec
+- agent 编写的实现计划、拆解和执行中间产物
+- 仅服务于某轮任务，但对回溯实现过程有价值的文档
+
 ## 现状与目标的区分规则
 
 本项目文档统一使用以下口径：
@@ -108,10 +144,14 @@ flowchart TB
 
 ## 文档索引
 
-### 稳定文档
+### 稳定文档与协作文档
 
 | 文档 | 摘要 |
 |------|------|
+| [../AGENTS.md](../AGENTS.md) | 仓库级 agent 入口、导航、交付口径 |
+| [../workflow.md](../workflow.md) | 仓库级任务分流、contract-first 顺序、跨模块工作流 |
+| [agent-skill-routing.md](agent-skill-routing.md) | skill 选择顺序、多代理协作路由 |
+| [verification-matrix.md](verification-matrix.md) | 各类改动的最低验证标准 |
 | [architecture/README.md](architecture/README.md) | 架构入口页，统一架构口径与阅读顺序 |
 | [architecture/system-overview.md](architecture/system-overview.md) | 系统整体架构、模块边界、关键数据流 |
 | [architecture/data-model.md](architecture/data-model.md) | 图模型与关系模型设计 |
@@ -126,14 +166,16 @@ flowchart TB
 |------|------|
 | [_dev/README.md](_dev/README.md) | 草案文档规则与毕业路径 |
 | [_dev/brainstorm/README.md](_dev/brainstorm/README.md) | brainstorm 总索引，连接产品与架构分析产物 |
+| [superpowers/README.md](superpowers/README.md) | spec / plan 等 agent 过程产物与任务系统入口 |
 
 ## 文档维护规则
 
 ### 必须遵守
 
 - 新增或移动任何 `docs/**.md` 时，同步更新对应目录的 `README.md`
-- 文档解释优先，协议和字段真源优先回到代码或规划文档
-- 需要长期维护的内容，不要只留在 `_dev/`
+- 新增或修改根级协作文档时，同步检查 `docs/README.md` 中的入口是否仍然正确
+- 文档解释优先，协议和字段真源优先回到代码、规划文档或共享类型
+- 需要长期维护的内容，不要只留在 `_dev/` 或 `superpowers/`
 - 验收相关内容不要混进架构说明，保持“说明”和“验证”分层
 
 ### 引用建议
@@ -160,7 +202,7 @@ audience: developer
 
 推荐字段：
 
-- `doc_kind`: `architecture` | `acceptance` | `dev` | `notes`
+- `doc_kind`: `architecture` | `acceptance` | `dev` | `notes` | `workflow`
 - `status`: `stable` | `wip` | `draft` | `deprecated`
 - `tags`: 字符串数组
 - `summary`: 一句话摘要
@@ -171,12 +213,13 @@ audience: developer
 ```bash
 rg -l "TODO|FIXME" docs/
 rg "\.\./" docs/ --type md
+rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 ```
 
 ## 与仓库其他真源的关系
 
 - 项目总入口：[../README.md](../README.md)
 - 项目规划真源：[../IMPL_PLAN.md](../IMPL_PLAN.md)
-- 任务真源：`../.task/`
+- 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
 - 运行编排事实：`../infra/docker-compose.yml`
