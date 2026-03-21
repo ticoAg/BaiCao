@@ -1,5 +1,5 @@
 # Chat Service - 智能问答服务
-# 使用 LangChain + OpenAI 实现基于知识图谱的智能问答
+# 支持 LLM 流式（OpenAI/Anthropic via LangChain）和规则引擎 fallback
 
 import json
 import re
@@ -12,21 +12,20 @@ from sqlalchemy import select
 
 from ..models import HerbModel, SourceModel
 from ..kg.graph_service import graph_service
+from .llm_client import stream_llm, is_llm_available
 
 
-# ========== Refactor 1: Extract herb keywords as constant ==========
+# ========== Constants ==========
 HERB_KEYWORDS: List[str] = [
     "人参", "黄芪", "当归", "陈皮", "甘草", "枸杞", "红枣", "川芎", "白术", "茯苓",
     "三七", "丹参", "党参", "黄连", "金银花", "连翘", "板蓝根", "大青叶", "薄荷", "荆芥"
 ]
 
-# Default herb when no herb keyword is found in question
 DEFAULT_HERB: str = "陈皮"
 
 
-# ========== Refactor 3: Response structure validation schemas ==========
+# ========== Response Schemas ==========
 class ReasoningChainStep(TypedDict):
-    """Schema for reasoning chain step"""
     step: int
     description: str
     entities: List[str]
@@ -35,21 +34,18 @@ class ReasoningChainStep(TypedDict):
 
 
 class Source(TypedDict):
-    """Schema for source reference"""
     id: str
     name: str
     citation: str
 
 
 class GraphData(TypedDict):
-    """Schema for graph data"""
     center: Optional[dict]
     nodes: List[dict]
     edges: List[dict]
 
 
 class QuestionAnswerResponse(TypedDict):
-    """Schema for question answer response"""
     answer: str
     reasoning_chain: List[ReasoningChainStep]
     sources: List[Source]
@@ -59,7 +55,6 @@ class QuestionAnswerResponse(TypedDict):
 
 @dataclass
 class EntityPattern:
-    """Reusable entity extraction pattern"""
     keywords: List[str]
     pattern: Optional[re.Pattern] = None
 
@@ -69,58 +64,33 @@ class EntityPattern:
             self.pattern = re.compile(keyword_regex)
 
 
-# Entity pattern instance for herb extraction
 herb_entity_pattern = EntityPattern(keywords=HERB_KEYWORDS)
 
 
 class ChatService:
-    """智能问答服务"""
+    """智能问答服务 - 支持 LLM 流式和规则引擎双模式"""
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    # ============ 同步问答（原有接口，保留兼容） ============
+
     async def answer_question(self, question: str, session_id: Optional[str] = None) -> dict:
-        """
-        回答用户问题
-
-        返回格式:
-        {
-            "answer": str,                    # 回答内容
-            "reasoning_chain": [              # 推理链
-                {
-                    "step": int,
-                    "description": str,
-                    "entities": [str],
-                    "relations": [str],
-                    "confidence": float
-                }
-            ],
-            "sources": [                      # 引用的来源
-                {
-                    "id": str,
-                    "name": str,
-                    "citation": str
-                }
-            ],
-            "graph_data": {                  # 相关图谱数据
-                "nodes": [...],
-                "edges": [...]
-            }
-        }
-        """
-        # 1. 解析问题，提取关键实体
+        """同步问答 - LLM 可用时调用 LLM，否则使用规则引擎"""
         entities = await self._extract_entities(question)
-
-        # 2. 查询知识图谱获取相关信息
         graph_data = await self._query_knowledge_graph(entities)
-
-        # 3. 构建推理链
         reasoning_chain = await self._build_reasoning_chain(question, entities, graph_data)
 
-        # 4. 生成回答（简化版本，实际应调用 LLM）
-        answer = await self._generate_answer(question, entities, graph_data, reasoning_chain)
+        # LLM 可用时使用 LLM 生成答案
+        if is_llm_available():
+            graph_context = self._format_graph_context(graph_data)
+            answer_parts = []
+            async for token in stream_llm(question, graph_context):
+                answer_parts.append(token)
+            answer = "".join(answer_parts)
+        else:
+            answer = await self._generate_answer(question, entities, graph_data, reasoning_chain)
 
-        # 5. 收集来源
         sources = await self._collect_sources(graph_data)
 
         response = {
@@ -131,16 +101,103 @@ class ChatService:
             "session_id": session_id or str(uuid4())
         }
 
-        # Refactor 3: Validate response structure before returning
         self._validate_response(response)
-
         return response
 
-    def _validate_response(self, response: dict) -> None:
-        """Validate response structure matches expected schema.
+    # ============ SSE 流式问答 ============
 
-        Raises ValueError if response structure is invalid.
+    async def answer_question_stream(
+        self, question: str, session_id: Optional[str] = None
+    ) -> AsyncIterator[dict]:
+        """SSE 流式问答 - 逐步返回推理链、tokens、来源
+
+        Yields SSE 事件:
+            {type: "session", data: {session_id}}
+            {type: "reasoning", data: {reasoning_chain}}
+            {type: "sources", data: {sources}}
+            {type: "token", data: {token}}
+            {type: "done", data: {}}
+            {type: "error", data: {message}}
         """
+        sid = session_id or str(uuid4())
+
+        # 1. 发送 session_id
+        yield {"type": "session", "data": {"session_id": sid}}
+
+        # 2. 提取实体 + 查询图谱
+        entities = await self._extract_entities(question)
+        graph_data = await self._query_knowledge_graph(entities)
+
+        # 3. 发送推理链
+        reasoning_chain = await self._build_reasoning_chain(question, entities, graph_data)
+        yield {"type": "reasoning", "data": {"reasoning_chain": reasoning_chain}}
+
+        # 4. 发送来源
+        sources = await self._collect_sources(graph_data)
+        yield {"type": "sources", "data": {"sources": sources}}
+
+        # 5. 流式回答
+        if is_llm_available():
+            graph_context = self._format_graph_context(graph_data)
+            try:
+                async for token in stream_llm(question, graph_context):
+                    yield {"type": "token", "data": {"token": token}}
+            except Exception as e:
+                yield {"type": "error", "data": {"message": str(e)}}
+                # Fallback to rule engine
+                answer = await self._generate_answer(
+                    question, entities, graph_data, reasoning_chain
+                )
+                yield {"type": "token", "data": {"token": answer}}
+        else:
+            # 规则引擎 fallback（一次性发送）
+            answer = await self._generate_answer(
+                question, entities, graph_data, reasoning_chain
+            )
+            yield {"type": "token", "data": {"token": answer}}
+
+        # 6. 完成
+        yield {"type": "done", "data": {}}
+
+    # ============ 图谱上下文格式化 ============
+
+    def _format_graph_context(self, graph_data: dict) -> str:
+        """将图谱数据格式化为 LLM 可读的文本上下文"""
+        parts = []
+        center = graph_data.get("center")
+        if center:
+            parts.append(f"核心实体: {center.get('name', '未知')} (类型: {', '.join(center.get('labels', []))})")
+            if center.get("category"):
+                parts.append(f"  分类: {center['category']}")
+            if center.get("source"):
+                parts.append(f"  数据来源: {center['source']}")
+            if center.get("status"):
+                parts.append(f"  验证状态: {center['status']}")
+
+        edges = graph_data.get("edges", [])
+        if edges:
+            parts.append("\n关系:")
+            for edge in edges[:20]:  # 限制上下文长度
+                rel_type = edge.get("type") or edge.get("rel_type", "")
+                target = edge.get("target", {})
+                target_name = target.get("name", "") if isinstance(target, dict) else str(target)
+                if rel_type and target_name:
+                    parts.append(f"  - {rel_type} -> {target_name}")
+
+        nodes = graph_data.get("nodes", [])
+        if nodes:
+            parts.append(f"\n相关节点 ({len(nodes)} 个):")
+            for node in nodes[:15]:
+                node_name = node.get("name", "")
+                node_labels = ", ".join(node.get("labels", []))
+                if node_name:
+                    parts.append(f"  - {node_name} ({node_labels})")
+
+        return "\n".join(parts) if parts else "未找到相关知识图谱信息"
+
+    # ============ 内部方法（保持不变） ============
+
+    def _validate_response(self, response: dict) -> None:
         required_keys = {"answer", "reasoning_chain", "sources", "graph_data", "session_id"}
         missing_keys = required_keys - set(response.keys())
         if missing_keys:
@@ -168,26 +225,16 @@ class ChatService:
             raise ValueError("Response 'session_id' must be a string")
 
     async def _extract_entities(self, question: str) -> list[str]:
-        """从问题中提取关键实体（简化版）
-
-        Uses herb_entity_pattern for efficient entity extraction.
-        Falls back to DEFAULT_HERB when no herb keywords are found.
-        """
-        # Refactor 2: Use entity pattern for reusable extraction
         matches = herb_entity_pattern.pattern.findall(question)
-        entities = list(dict.fromkeys(matches))  # Remove duplicates while preserving order
-
+        entities = list(dict.fromkeys(matches))
         return entities if entities else [DEFAULT_HERB]
 
     async def _query_knowledge_graph(self, entities: list[str]) -> dict:
-        """查询知识图谱获取相关信息"""
         if not entities:
             return {"center": None, "nodes": [], "edges": []}
 
-        # 获取第一个实体的图谱
         graph = await graph_service.get_herb_graph(entities[0], depth=2)
 
-        # 收集相关节点
         all_nodes = []
         all_edges = []
 
@@ -208,15 +255,10 @@ class ChatService:
         }
 
     async def _build_reasoning_chain(
-        self,
-        question: str,
-        entities: list[str],
-        graph_data: dict
+        self, question: str, entities: list[str], graph_data: dict
     ) -> list[dict]:
-        """构建推理链"""
         chain = []
 
-        # 步骤 1: 识别问题类型
         question_type = self._classify_question(question)
         chain.append({
             "step": 1,
@@ -225,16 +267,14 @@ class ChatService:
             "confidence": 0.95
         })
 
-        # 步骤 2: 查找相关实体
         if graph_data.get("center"):
             chain.append({
                 "step": 2,
-                "description": f"在知识图谱中查找相关实体",
+                "description": "在知识图谱中查找相关实体",
                 "entities": [graph_data["center"].get("name", "")] if graph_data.get("center") else [],
                 "confidence": 0.90
             })
 
-        # 步骤 3: 分析关系
         edges = graph_data.get("edges", [])
         if edges:
             rel_types = list(set([e.get("type", e.get("rel_type", "")) for e in edges if e]))
@@ -245,10 +285,9 @@ class ChatService:
                 "confidence": 0.85
             })
 
-        # 步骤 4: 综合结论
         chain.append({
             "step": 4,
-            "description": "综合图谱信息生成回答",
+            "description": "综合图谱信息生成回答" + (" (LLM)" if is_llm_available() else " (规则引擎)"),
             "entities": [],
             "confidence": 0.80
         })
@@ -256,7 +295,6 @@ class ChatService:
         return chain
 
     def _classify_question(self, question: str) -> str:
-        """分类问题类型"""
         if any(k in question for k in ["功效", "作用", "能做什么", "有什么效果"]):
             return "功效查询"
         elif any(k in question for k in ["主治", "治疗", "用于", "治疗什么"]):
@@ -275,13 +313,9 @@ class ChatService:
             return "综合查询"
 
     async def _generate_answer(
-        self,
-        question: str,
-        entities: list[str],
-        graph_data: dict,
-        reasoning_chain: list[dict]
+        self, question: str, entities: list[str], graph_data: dict, reasoning_chain: list[dict]
     ) -> str:
-        """生成回答（简化版）"""
+        """规则引擎生成回答（fallback）"""
         if not entities:
             return "抱歉，我无法理解您的问题。请尝试询问关于特定药材的信息。"
 
@@ -291,20 +325,13 @@ class ChatService:
         if not center:
             return f"抱歉，我在知识图谱中未找到关于「{herb_name}」的信息。"
 
-        # 根据问题类型生成不同回答
-        question_type = self._classify_question(question)
-
         parts = [f"关于「{herb_name}」的信息："]
 
-        # 基本信息
         if center.get("category"):
             parts.append(f"- 分类：{center.get('category')}")
 
-        # 节点和关系信息
-        nodes = graph_data.get("nodes", [])
         edges = graph_data.get("edges", [])
 
-        # 收集功效
         efficacies = []
         for edge in edges:
             rel_type = edge.get("type") or edge.get("rel_type", "")
@@ -316,7 +343,6 @@ class ChatService:
         if efficacies:
             parts.append(f"- 主要功效：{', '.join(set(efficacies[:5]))}")
 
-        # 收集性味归经
         flavors = []
         meridians = []
         for edge in edges:
@@ -331,11 +357,9 @@ class ChatService:
         if meridians:
             parts.append(f"- 归经：{', '.join(set(meridians))}")
 
-        # 来源
         if center.get("source"):
             parts.append(f"- 数据来源：{center.get('source')}")
 
-        # 验证状态
         status = center.get("status", "pending")
         status_text = {"pending": "待验证", "verified": "已验证", "rejected": "已拒绝"}.get(status, status)
         parts.append(f"- 信息状态：{status_text}")
@@ -343,7 +367,6 @@ class ChatService:
         return "\n".join(parts)
 
     async def _collect_sources(self, graph_data: dict) -> list[dict]:
-        """收集回答中引用的来源"""
         sources = []
         seen_ids = set()
 
@@ -361,7 +384,6 @@ class ChatService:
         return sources
 
     async def create_session(self, user_id: Optional[str] = None) -> dict:
-        """创建新的聊天会话"""
         return {
             "id": str(uuid4()),
             "user_id": user_id,
@@ -370,10 +392,7 @@ class ChatService:
         }
 
     async def get_session(self, session_id: str) -> Optional[dict]:
-        """获取聊天会话"""
-        # TODO: 从数据库或缓存获取会话
         return None
 
 
-# 全局单例
 chat_service = ChatService

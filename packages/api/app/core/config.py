@@ -21,8 +21,12 @@ class Settings(BaseSettings):
     neo4j_password: str = "password"
 
     # LLM
+    llm_provider: str = "openai"  # "openai" | "anthropic" | "none"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
+    openai_base_url: str = ""  # 兼容 API（如 DeepSeek、零一万物等）
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-20250514"
     llm_temperature: float = 0.7
 
     # Redis (optional)

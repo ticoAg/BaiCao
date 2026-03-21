@@ -30,7 +30,6 @@ audience: developer
 
 ### 不包含
 
-- 外部 LLM 真实调用质量
 - 多轮会话持久化
 
 ## 3. 前置条件
@@ -39,7 +38,8 @@ audience: developer
 
 - 运行方式：本地 tmux demo
 - 依赖服务：FastAPI、Neo4j、PostgreSQL、Vite
-- 样例数据：demo 用户、来源和“人参”图谱
+- 样例数据：demo 用户、来源和”人参”图谱
+- LLM 配置（可选）：.env 中设置 `LLM_PROVIDER` + API key 启用 LLM；未配置时自动降级为规则引擎
 
 ### 启动命令
 
@@ -75,26 +75,44 @@ curl -sS -X POST http://localhost:8000/api/v1/chat/question \
 
 ### Step 1 预期
 
-- 页面显示“智能问答”
+- 页面显示”智能问答”
 
 ### Step 2 预期
 
-- 页面出现关于“人参”的回答
-- 页面能看到“推理链”和来源标签
+- 页面出现关于”人参”的回答
+- 页面能看到”推理链”和来源标签
 
 ### Step 3 预期
 
 - 响应内有 `answer`、`reasoning_chain`、`sources`、`graph_data`、`session_id`
-- `answer` 提到“补气药”或“主要功效”
+- `answer` 提到”补气药”或”主要功效”
+
+### Step 4: SSE 流式验收
+
+- 操作：验证 SSE 流式端点
+
+```bash
+curl -N -X POST http://localhost:8000/api/v1/chat/stream \
+  -H 'Content-Type: application/json' \
+  -d '{“question”:”陈皮有什么功效？”}'
+```
+
+- 预期：
+  - 返回 `text/event-stream` MIME 类型
+  - 依次收到 `event: session`、`event: reasoning`、`event: sources`、`event: token`（多次）、`event: done`
+  - 每个 event 的 data 为合法 JSON
+  - 当配置了 LLM API key 时，token 事件逐字流出；未配置时一次性返回规则引擎结果
 
 ## 6. 证据记录
 
 ### 实现证据
 
-- `packages/api/app/api/chat.py:18`
-- `packages/api/app/services/chat_service.py:66`
-- `packages/web/src/pages/ChatPage.tsx:64`
-- `packages/web/src/services/api.ts:204`
+- `packages/api/app/api/chat.py` — 同步 + SSE 流式端点
+- `packages/api/app/services/chat_service.py` — answer_question + answer_question_stream
+- `packages/api/app/services/llm_client.py` — LangChain 双后端 LLM 抽象
+- `packages/web/src/pages/ChatPage.tsx` — useChat hook 消费
+- `packages/web/src/hooks/useChat.ts` — SSE 流式调用逻辑
+- `packages/web/src/services/api.ts` — chatApi.stream() SSE 客户端
 
 ### 运行证据
 
@@ -116,4 +134,4 @@ curl -sS -X POST http://localhost:8000/api/v1/chat/question -H 'Content-Type: ap
 
 - 结果：`pass`
 - 结论一句话：智能问答主链路在当前 demo 形态下已具备可执行验收能力
-- 后续动作：补 SSE、多轮会话和更强来源选择策略
+- 后续动作：多轮会话持久化和更强来源选择策略

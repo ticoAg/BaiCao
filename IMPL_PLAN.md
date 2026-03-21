@@ -326,35 +326,38 @@ services:
 > 本文档保留项目阶段目标与高层路线，不再承担仓库级任务系统职责。
 > 可执行任务拆解、勾选进度与验证步骤，统一写入 `docs/superpowers/plans/*.md`，由 `writing-plans` 生成。
 
-### Phase 1: 项目骨架 (Day 1)
+### Phase 1: 项目骨架 (Day 1) — ✅ 已完成
 - monorepo 目录结构
 - pnpm workspace
 - Git 基础配置
 
-### Phase 2: 后端基础 (Day 1-2)
+### Phase 2: 后端基础 (Day 1-2) — ✅ 已完成
 - FastAPI 项目初始化
-- SQLAlchemy 模型定义
+- SQLAlchemy 模型定义（含 HerbModel 完整字段、EvidenceModel）
 - PostgreSQL 连接配置
 - Neo4j 连接配置
 - 基础 CRUD API
+- Alembic 迁移框架（已配置异步引擎）
 
-### Phase 3: 前端基础 (Day 2-3)
+### Phase 3: 前端基础 (Day 2-3) — ✅ 已完成
 - React + Vite 项目初始化
 - Ant Design 配置
 - 基础页面布局
 - API 服务封装
+- 前端工程化（types/hooks/stores/components 分层、TanStack Query + Zustand）
 
-### Phase 4: 知识图谱核心 (Day 3-5)
-- 知识图谱数据模型
+### Phase 4: 知识图谱核心 (Day 3-5) — ✅ 已完成
+- 知识图谱数据模型（含 Disease、TREATS、SIMILAR_TO）
 - 图数据库初始化脚本
-- 图谱查询服务
-- 溯源机制实现
+- 图谱查询服务（GraphService 完整 CRUD + 搜索 + 路径查找）
+- 溯源机制实现（ProvenanceService + REST API 端点暴露）
 
-### Phase 5: 对话与可视化 (Day 5-7)
-- Chat UI 组件
-- 知识图谱可视化
+### Phase 5: 对话与可视化 (Day 5-7) — ✅ 已完成
+- Chat UI 组件（MessageList、MessageInput、ReasoningChain）
+- 知识图谱可视化（G6 NetworkGraph + 详情面板）
 - 推理链展示组件
-- SSE 流式响应
+- SSE 流式响应（POST /chat/stream + fetch ReadableStream 前端消费）
+- LLM 双后端集成（OpenAI + Anthropic via LangChain，规则引擎 fallback）
 
 ## 9. 后续规划建议
 

@@ -591,6 +591,58 @@ class GraphService:
             record = await result.single()
             return dict(record["r"])
 
+    async def create_disease(
+        self, name: str, source: str, tcm_type: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """创建疾病节点"""
+        return await self.create_node(
+            label=NodeType.DISEASE.value,
+            name=name,
+            source=source,
+            extra_props={"tcm_type": tcm_type} if tcm_type else {},
+        )
+
+    async def link_herb_treats(self, herb_name: str, disease_name: str) -> Dict[str, Any]:
+        """创建药材-主治关系 (Herb)-[:TREATS]->(Disease)"""
+        await self.ensure_connected()
+        props = {"status": NodeStatus.PENDING.value}
+        query = """
+        MATCH (h:Herb {name: $herb_name})
+        MATCH (d:Disease {name: $disease_name})
+        CREATE (h)-[r:TREATS]->(d)
+        SET r = $props
+        RETURN r
+        """
+        async with self.driver.session() as session:
+            result = await session.run(
+                query, herb_name=herb_name, disease_name=disease_name, props=props
+            )
+            record = await result.single()
+            return dict(record["r"])
+
+    async def link_herb_similar(
+        self, herb_name_1: str, herb_name_2: str, similarity_score: float = 0.0
+    ) -> Dict[str, Any]:
+        """创建药材相似关系 (Herb)-[:SIMILAR_TO]->(Herb)"""
+        await self.ensure_connected()
+        props = {"status": NodeStatus.PENDING.value, "similarity_score": similarity_score}
+        query = """
+        MATCH (h1:Herb {name: $herb_name_1})
+        MATCH (h2:Herb {name: $herb_name_2})
+        CREATE (h1)-[r:SIMILAR_TO]->(h2)
+        SET r = $props
+        RETURN r
+        """
+        async with self.driver.session() as session:
+            result = await session.run(
+                query,
+                herb_name_1=herb_name_1,
+                herb_name_2=herb_name_2,
+                props=props,
+            )
+            record = await result.single()
+            return dict(record["r"])
+
     # ============ 图谱查询 ============
 
     async def get_herb_graph(self, herb_name: str, depth: int = 1) -> Dict[str, Any]:

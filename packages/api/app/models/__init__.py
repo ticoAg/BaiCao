@@ -2,6 +2,7 @@ from .herb import Base, HerbModel
 from .source import SourceModel
 from .user import UserModel
 from .verification import VerificationModel, VerificationEvidenceModel
+from .evidence import EvidenceModel
 from .enums import (
     UserRole,
     SourceType,
@@ -22,6 +23,7 @@ __all__ = [
     "UserModel",
     "VerificationModel",
     "VerificationEvidenceModel",
+    "EvidenceModel",
     # Enums
     "UserRole",
     "SourceType",

@@ -295,6 +295,14 @@ export interface ChatSession {
   updatedAt: string
 }
 
+// SSE 流式事件
+export type SSEEventType = 'session' | 'reasoning' | 'sources' | 'token' | 'done' | 'error'
+
+export interface SSEEvent {
+  type: SSEEventType
+  data: Record<string, unknown>
+}
+
 // ============ Verification Request Types ============
 
 export interface VerificationRequest {
@@ -323,8 +331,31 @@ export interface Herb {
   id: string
   name: string
   latinName?: string
+  englishName?: string
   category: string
   description?: string
+  alias?: string[]
+  efficacy?: string[]
+  flavor?: string[]
+  meridian?: string[]
+  dosage?: string
+  contraindications?: string
   createdAt: string
   updatedAt: string
+}
+
+// ============ Evidence (溯源证据) ============
+
+export interface Evidence {
+  id: string
+  herbId: string
+  sourceId: string
+  content: string
+  quote?: string
+  chapter?: string
+  pageNumber?: string
+  verificationStatus: 'pending' | 'verified' | 'rejected'
+  confidenceScore: number
+  extractionMethod: string
+  createdAt: string
 }

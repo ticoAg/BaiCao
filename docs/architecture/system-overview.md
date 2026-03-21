@@ -88,7 +88,7 @@ flowchart TB
 | `app/kg/` | 图谱查询服务 |
 | `app/importers/` | CSV / JSONL 导入器 |
 | `app/exporters/` | 导出器骨架 |
-| `app/溯源/` | 预留的溯源模块目录 |
+| `app/provenance/` | 溯源模块（ProvenanceService - Evidence/Source 链路管理） |
 
 ### 5.2 `packages/web` - React 前端
 

@@ -1,6 +1,8 @@
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,11 +24,7 @@ async def ask_question(
     session_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    提问接口
-
-    基于知识图谱的智能问答，返回回答、推理链和引用来源。
-    """
+    """同步问答接口 - 返回完整响应"""
     resolved_question = payload.question if payload else question
     resolved_session_id = payload.session_id if payload else session_id
 
@@ -36,6 +34,42 @@ async def ask_question(
     chat_service = ChatService(db)
     result = await chat_service.answer_question(resolved_question, resolved_session_id)
     return result
+
+
+@router.post("/stream")
+async def stream_answer(
+    payload: AskQuestionRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """SSE 流式问答接口
+
+    返回 Server-Sent Events 流，事件类型:
+    - session: {session_id}
+    - reasoning: {reasoning_chain}
+    - sources: {sources}
+    - token: {token}  (逐 token 流式)
+    - done: {}
+    - error: {message}
+    """
+    chat_service = ChatService(db)
+
+    async def event_generator():
+        async for event in chat_service.answer_question_stream(
+            payload.question, payload.session_id
+        ):
+            event_type = event["type"]
+            event_data = json.dumps(event["data"], ensure_ascii=False)
+            yield f"event: {event_type}\ndata: {event_data}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/session/{session_id}")

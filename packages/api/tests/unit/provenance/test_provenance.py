@@ -13,7 +13,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from app.溯源 import ProvenanceService
+from app.provenance import ProvenanceService
 
 pytestmark = pytest.mark.unit
 

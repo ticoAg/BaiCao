@@ -224,6 +224,7 @@ audience: developer
   (Component)-[:TREATS]->(Disease)
 
 交叉关系：
+  (Herb)-[:SIMILAR_TO {similarity_score}]->(Herb)
   (Component)-[:INTERACTS_WITH]->(Component)
   (Efficacy)-[:SIMILAR_TO]->(Efficacy)
 ```
@@ -399,7 +400,9 @@ RETURN c.name, collect(DISTINCT h.name) as source_herbs, collect(DISTINCT e.name
 | 表 | 职责 |
 |----|------|
 | `users` | 用户账户、角色、专家领域 |
+| `herbs` | 药材基础信息（名称、别名、功效、性味、归经、用法、禁忌） |
 | `sources` | 文献来源（书名、ISBN、页码） |
+| `evidences` | 溯源证据（药材-来源关联、引用内容、置信度） |
 | `verifications` | 验证申请记录 |
 | `verification_evidences` | 验证证据 |
 

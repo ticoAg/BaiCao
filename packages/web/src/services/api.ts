@@ -1,5 +1,12 @@
 // API Service - 与后端通信
 import axios from "axios";
+import type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
+import type { GraphData, GraphNode, GraphEdge, SearchResult } from "../types/graph";
+
+// 从 types/ 重新导出，保持向后兼容
+export type { GraphNode, GraphEdge, GraphData, SearchResult } from "../types/graph";
+export type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
+export type { VerificationStatus } from "../types/index";
 
 const API_BASE = "/api/v1";
 
@@ -11,42 +18,6 @@ const api = axios.create({
 });
 
 // ============ Graph API ============
-
-export interface GraphNode {
-  id: string;
-  name: string;
-  source?: string;
-  status: "pending" | "verified" | "rejected";
-  verification_id?: string;
-  verified_by?: string;
-  verified_at?: string;
-  labels?: string[];
-  category?: string;
-  description?: string;
-  latin_name?: string;
-}
-
-export interface GraphEdge {
-  id?: string;
-  status: "pending" | "verified" | "rejected";
-  verification_id?: string;
-  verified_by?: string;
-  verified_at?: string;
-  rel_type?: string;
-  source?: { id: string; name: string; labels?: string[]; status?: string };
-  target?: { id: string; name: string; labels?: string[]; status?: string };
-}
-
-export interface GraphData {
-  center: GraphNode;
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-export interface SearchResult {
-  node: GraphNode;
-  labels: string[];
-}
 
 export const graphApi = {
   // 获取药材图谱
@@ -183,36 +154,92 @@ export const herbApi = {
 
 // ============ Chat API ============
 
-export interface ReasoningStep {
-  step: number;
-  description: string;
-  entities?: string[];
-  relations?: string[];
-  confidence?: number;
-}
-
-export interface Source {
-  id: string;
-  name: string;
-  citation: string;
-}
-
-export interface ChatResponse {
-  answer: string;
-  reasoning_chain: ReasoningStep[];
-  sources: Source[];
-  graph_data: GraphData;
-  session_id: string;
-}
-
 export const chatApi = {
-  // 提问
+  // 同步提问
   ask: async (question: string, sessionId?: string): Promise<ChatResponse> => {
     const { data } = await api.post("/chat/question", {
       question,
       session_id: sessionId,
     });
     return data;
+  },
+
+  // SSE 流式提问 - 返回 ReadableStream
+  stream: (
+    question: string,
+    sessionId?: string,
+    callbacks?: SSECallbacks,
+  ): AbortController => {
+    const controller = new AbortController();
+
+    fetch(`${API_BASE}/chat/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, session_id: sessionId }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok || !response.body) {
+          callbacks?.onError?.(`HTTP ${response.status}`);
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          let currentEvent = "";
+          for (const line of lines) {
+            if (line.startsWith("event: ")) {
+              currentEvent = line.slice(7);
+            } else if (line.startsWith("data: ") && currentEvent) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                switch (currentEvent) {
+                  case "session":
+                    callbacks?.onSession?.(data.session_id);
+                    break;
+                  case "reasoning":
+                    callbacks?.onReasoning?.(data.reasoning_chain);
+                    break;
+                  case "sources":
+                    callbacks?.onSources?.(data.sources);
+                    break;
+                  case "token":
+                    callbacks?.onToken?.(data.token);
+                    break;
+                  case "done":
+                    callbacks?.onDone?.();
+                    break;
+                  case "error":
+                    callbacks?.onError?.(data.message);
+                    break;
+                }
+              } catch {
+                // skip malformed JSON
+              }
+              currentEvent = "";
+            }
+          }
+        }
+
+        callbacks?.onDone?.();
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          callbacks?.onError?.(err.message);
+        }
+      });
+
+    return controller;
   },
 
   // 创建会话
@@ -226,6 +253,86 @@ export const chatApi = {
   // 获取会话
   getSession: async (sessionId: string): Promise<any> => {
     const { data } = await api.get(`/chat/session/${sessionId}`);
+    return data;
+  },
+};
+
+// ============ Provenance API ============
+
+export interface ProvenanceEvidence {
+  id: string;
+  content: string;
+  source_name: string;
+  page_reference?: string;
+  status: string;
+}
+
+export interface LineageChain {
+  entity: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  source: Record<string, unknown>;
+}
+
+export const provenanceApi = {
+  createEvidence: async (params: {
+    content: string;
+    source_name: string;
+    page_reference?: string;
+  }): Promise<ProvenanceEvidence> => {
+    const { data } = await api.post("/provenance/evidence", params);
+    return data;
+  },
+
+  getEvidence: async (id: string): Promise<ProvenanceEvidence> => {
+    const { data } = await api.get(`/provenance/evidence/${id}`);
+    return data;
+  },
+
+  linkSource: async (
+    evidenceId: string,
+    sourceId: string,
+  ): Promise<{ relationship: Record<string, unknown>; message: string }> => {
+    const { data } = await api.post(
+      `/provenance/evidence/${evidenceId}/link-source`,
+      { source_id: sourceId },
+    );
+    return data;
+  },
+
+  getEntityLineage: async (entityId: string): Promise<LineageChain> => {
+    const { data } = await api.get(`/provenance/entity/${entityId}/lineage`);
+    return data;
+  },
+
+  getSourceDerivations: async (
+    sourceId: string,
+  ): Promise<{ derivations: LineageChain[]; count: number }> => {
+    const { data } = await api.get(
+      `/provenance/source/${sourceId}/derivations`,
+    );
+    return data;
+  },
+
+  getEntityEvidence: async (
+    entityId: string,
+  ): Promise<{ evidence: Record<string, unknown>[]; count: number }> => {
+    const { data } = await api.get(
+      `/provenance/entity/${entityId}/evidence`,
+    );
+    return data;
+  },
+
+  checkCompleteness: async (
+    entityId: string,
+  ): Promise<{
+    entity: Record<string, unknown>;
+    has_evidence: boolean;
+    has_source: boolean;
+    chain_complete: boolean;
+  }> => {
+    const { data } = await api.get(
+      `/provenance/entity/${entityId}/completeness`,
+    );
     return data;
   },
 };

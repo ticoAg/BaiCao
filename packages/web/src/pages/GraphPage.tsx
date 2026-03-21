@@ -1,100 +1,31 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Typography, Spin, message, Descriptions, Tag, Space, Button, Card, Divider } from "antd";
+import { useCallback, useMemo } from "react";
+import { Typography, Spin, Space, Button, Card, Tag, Divider } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import { useParams } from "react-router-dom";
 import { NetworkGraph } from "@ant-design/graphs";
-import { graphApi, GraphData, GraphNode, GraphEdge } from "../services/api";
+import { useGraph } from "../hooks/useGraph";
+import {
+  labelColorMap,
+  labelTagColors,
+  defaultNodeColor,
+  relTypeLabels,
+} from "../types/graph";
+import NodeDetail from "../components/graph/NodeDetail";
+import EdgeDetail from "../components/graph/EdgeDetail";
 
 const { Title, Text } = Typography;
 
-// 状态颜色映射
-const statusColors: Record<string, string> = {
-  pending: "gold",
-  verified: "green",
-  rejected: "red",
-};
-
-const statusLabels: Record<string, string> = {
-  pending: "待验证",
-  verified: "已验证",
-  rejected: "已拒绝",
-};
-
-// 节点类型颜色（G6 需要 hex/rgb 值）
-const labelColorMap: Record<string, string> = {
-  Herb: "#1677ff",
-  Efficacy: "#52c41a",
-  Flavor: "#fa8c16",
-  Meridian: "#722ed1",
-  Disease: "#f5222d",
-  Component: "#13c2c2",
-  Variant: "#2f54eb",
-  Process: "#a0d911",
-  Trait: "#fa541c",
-  TimePoint: "#eb2f96",
-};
-
-// 节点类型 Ant Tag 颜色
-const labelTagColors: Record<string, string> = {
-  Herb: "blue",
-  Efficacy: "green",
-  Flavor: "orange",
-  Meridian: "purple",
-  Disease: "red",
-  Component: "cyan",
-  Variant: "geekblue",
-  Process: "lime",
-  Trait: "volcano",
-  TimePoint: "magenta",
-};
-
-const defaultNodeColor = "#8c8c8c";
-
-// 关系类型中文映射
-const relTypeLabels: Record<string, string> = {
-  CONTAINS: "含有",
-  TREATS: "主治",
-  HAS_FLAVOR: "味",
-  ENTERS_MERIDIAN: "归经",
-  HAS_EFFICACY: "功效",
-  HAS_COMPONENT: "成分",
-  BELONGS_TO: "属于",
-  VARIANT_OF: "变种",
-  PROCESSED_BY: "炮制",
-  HAS_TRAIT: "特征",
-  HARVESTED_AT: "采收",
-};
-
-type SelectedItem =
-  | { type: "node"; data: GraphNode }
-  | { type: "edge"; data: GraphEdge & { sourceName?: string; targetName?: string } };
-
 const GraphPage = () => {
   const { name } = useParams<{ name: string }>();
-  const [loading, setLoading] = useState(false);
-  const [graphData, setGraphData] = useState<GraphData | null>(null);
-  const [selected, setSelected] = useState<SelectedItem | null>(null);
-  const [depth, setDepth] = useState(1);
-
-  const loadGraph = useCallback(async () => {
-    if (!name) return;
-    setLoading(true);
-    try {
-      const data = await graphApi.getHerbGraph(name, depth);
-      setGraphData(data);
-      if (data.center) {
-        setSelected({ type: "node", data: data.center });
-      }
-    } catch (err: any) {
-      message.error(err.response?.data?.detail || "加载图谱失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [name, depth]);
-
-  useEffect(() => {
-    void loadGraph();
-  }, [loadGraph]);
+  const {
+    graphData,
+    loading,
+    selected,
+    setSelected,
+    depth,
+    setDepth,
+    refetch,
+  } = useGraph(name);
 
   // 将后端数据转为 G6 格式
   const g6Data = useMemo(() => {
@@ -167,7 +98,7 @@ const GraphPage = () => {
     [g6Data],
   );
 
-  // 处理节点点击
+  // 处理节点/边点击
   const handleReady = useCallback(
     (graph: any) => {
       if (!graphData) return;
@@ -190,14 +121,16 @@ const GraphPage = () => {
             type: "edge",
             data: {
               ...edgeModel.data,
-              sourceName: edgeModel.data.sourceName || edgeModel.data.source?.name,
-              targetName: edgeModel.data.targetName || edgeModel.data.target?.name,
+              sourceName:
+                edgeModel.data.sourceName || edgeModel.data.source?.name,
+              targetName:
+                edgeModel.data.targetName || edgeModel.data.target?.name,
             },
           });
         }
       });
     },
-    [graphData],
+    [graphData, setSelected],
   );
 
   if (loading) {
@@ -244,13 +177,17 @@ const GraphPage = () => {
           <select
             value={depth}
             onChange={(e) => setDepth(Number(e.target.value))}
-            style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #d9d9d9" }}
+            style={{
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px solid #d9d9d9",
+            }}
           >
             <option value={1}>1</option>
             <option value={2}>2</option>
             <option value={3}>3</option>
           </select>
-          <Button icon={<ReloadOutlined />} size="small" onClick={() => void loadGraph()}>
+          <Button icon={<ReloadOutlined />} size="small" onClick={refetch}>
             刷新
           </Button>
         </Space>
@@ -273,17 +210,25 @@ const GraphPage = () => {
             background: "#fafafa",
           }}
         >
-          {/* 详情区 */}
           {selected?.type === "node" && <NodeDetail node={selected.data} />}
           {selected?.type === "edge" && <EdgeDetail edge={selected.data} />}
-          {!selected && <Text type="secondary">点击节点或关系查看详情</Text>}
+          {!selected && (
+            <Text type="secondary">点击节点或关系查看详情</Text>
+          )}
 
           <Divider />
 
           {/* 图例 */}
           <div>
             <Text strong>图例</Text>
-            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+            <div
+              style={{
+                marginTop: 8,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 4,
+              }}
+            >
               {Object.entries(labelColorMap).map(([label, color]) => (
                 <Tag key={label} color={labelTagColors[label] || "default"}>
                   <span
@@ -306,79 +251,5 @@ const GraphPage = () => {
     </div>
   );
 };
-
-/** 节点详情面板 */
-const NodeDetail = ({ node }: { node: GraphNode }) => {
-  const primaryLabel = node.labels?.[0] || "Unknown";
-  return (
-    <div>
-      <Text strong style={{ fontSize: 16 }}>
-        节点详情
-      </Text>
-      <Descriptions column={1} size="small" bordered style={{ marginTop: 12 }}>
-        <Descriptions.Item label="名称">
-          <Text strong>{node.name}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item label="类型">
-          <Tag color={labelTagColors[primaryLabel] || "default"}>{primaryLabel}</Tag>
-        </Descriptions.Item>
-        <Descriptions.Item label="状态">
-          <Tag color={statusColors[node.status]}>{statusLabels[node.status]}</Tag>
-        </Descriptions.Item>
-        {node.source && <Descriptions.Item label="来源">{node.source}</Descriptions.Item>}
-        {node.category && <Descriptions.Item label="分类">{node.category}</Descriptions.Item>}
-        {node.description && <Descriptions.Item label="描述">{node.description}</Descriptions.Item>}
-        {node.latin_name && <Descriptions.Item label="拉丁名">{node.latin_name}</Descriptions.Item>}
-        {node.verification_id && (
-          <Descriptions.Item label="验证ID">{node.verification_id}</Descriptions.Item>
-        )}
-        {node.verified_by && (
-          <Descriptions.Item label="验证人">{node.verified_by}</Descriptions.Item>
-        )}
-        {node.verified_at && (
-          <Descriptions.Item label="验证时间">
-            {new Date(node.verified_at).toLocaleString("zh-CN")}
-          </Descriptions.Item>
-        )}
-      </Descriptions>
-      {node.status === "pending" && (
-        <div style={{ marginTop: 12 }}>
-          <a onClick={() => message.info("跳转到验证申请页面")}>申请验证</a>
-        </div>
-      )}
-    </div>
-  );
-};
-
-/** 关系详情面板 */
-const EdgeDetail = ({
-  edge,
-}: {
-  edge: GraphEdge & { sourceName?: string; targetName?: string };
-}) => (
-  <div>
-    <Text strong style={{ fontSize: 16 }}>
-      关系详情
-    </Text>
-    <Descriptions column={1} size="small" bordered style={{ marginTop: 12 }}>
-      <Descriptions.Item label="关系类型">
-        {relTypeLabels[edge.rel_type || ""] || edge.rel_type || "—"}
-      </Descriptions.Item>
-      <Descriptions.Item label="起始节点">{edge.sourceName || "—"}</Descriptions.Item>
-      <Descriptions.Item label="目标节点">{edge.targetName || "—"}</Descriptions.Item>
-      <Descriptions.Item label="状态">
-        <Tag color={statusColors[edge.status]}>{statusLabels[edge.status]}</Tag>
-      </Descriptions.Item>
-      {edge.verification_id && (
-        <Descriptions.Item label="验证ID">{edge.verification_id}</Descriptions.Item>
-      )}
-      {edge.verified_at && (
-        <Descriptions.Item label="验证时间">
-          {new Date(edge.verified_at).toLocaleString("zh-CN")}
-        </Descriptions.Item>
-      )}
-    </Descriptions>
-  </div>
-);
 
 export default GraphPage;
