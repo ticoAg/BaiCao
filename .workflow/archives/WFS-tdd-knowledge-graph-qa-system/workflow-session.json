@@ -21,7 +21,11 @@
       "target_file": "packages/api/app/kg/graph_service.py",
       "test_file": "packages/api/tests/kg/test_graph_service.py",
       "status": "pending",
-      "tdd_phases": ["red", "green", "refactor"],
+      "tdd_phases": [
+        "red",
+        "green",
+        "refactor"
+      ],
       "max_iterations": 3
     },
     {
@@ -31,8 +35,14 @@
       "target_file": "packages/api/app/services/chat_service.py",
       "test_file": "packages/api/tests/services/test_chat_service.py",
       "status": "pending",
-      "tdd_phases": ["red", "green", "refactor"],
-      "depends_on": ["IMPL-001"],
+      "tdd_phases": [
+        "red",
+        "green",
+        "refactor"
+      ],
+      "depends_on": [
+        "IMPL-001"
+      ],
       "max_iterations": 3
     },
     {
@@ -42,7 +52,11 @@
       "target_file": "packages/api/app/api/verification.py",
       "test_file": "packages/api/tests/api/test_verification.py",
       "status": "pending",
-      "tdd_phases": ["red", "green", "refactor"],
+      "tdd_phases": [
+        "red",
+        "green",
+        "refactor"
+      ],
       "max_iterations": 3
     },
     {
@@ -52,7 +66,11 @@
       "target_file": "packages/api/app/溯源/__init__.py",
       "test_file": "packages/api/tests/溯源/test_provenance.py",
       "status": "pending",
-      "tdd_phases": ["red", "green", "refactor"],
+      "tdd_phases": [
+        "red",
+        "green",
+        "refactor"
+      ],
       "max_iterations": 3
     },
     {
@@ -62,8 +80,15 @@
       "target_file": "packages/api/app/api/",
       "test_file": "packages/api/tests/api/test_routes.py",
       "status": "pending",
-      "tdd_phases": ["red", "green", "refactor"],
-      "depends_on": ["IMPL-001", "IMPL-002"],
+      "tdd_phases": [
+        "red",
+        "green",
+        "refactor"
+      ],
+      "depends_on": [
+        "IMPL-001",
+        "IMPL-002"
+      ],
       "max_iterations": 3
     }
   ],
@@ -73,10 +98,15 @@
     "execution_model": "sequential_with_parallel_opportunities",
     "task_dependency_graph": {
       "IMPL-001": [],
-      "IMPL-002": ["IMPL-001"],
+      "IMPL-002": [
+        "IMPL-001"
+      ],
       "IMPL-003": [],
       "IMPL-004": [],
-      "IMPL-005": ["IMPL-001", "IMPL-002"]
+      "IMPL-005": [
+        "IMPL-001",
+        "IMPL-002"
+      ]
     }
   }
 }

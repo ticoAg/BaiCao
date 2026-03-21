@@ -1,7 +1,7 @@
 {
   "id": "IMPL-005",
   "title": "API Routes TDD - Integration Tests for Chat, Graph, and Herb Endpoints",
-  "status": "pending",
+  "status": "completed",
   "context_package_path": ".workflow/active/WFS-tdd-knowledge-graph-qa-system/.process/context-package.json",
   "cli_execution_id": "WFS-tdd-knowledge-graph-qa-system-IMPL-005",
   "cli_execution": {

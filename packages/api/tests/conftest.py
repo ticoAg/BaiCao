@@ -76,6 +76,25 @@ async def client(mock_db):
 
 
 @pytest.fixture
+def mock_neo4j_driver():
+    """Create a mock Neo4j async driver with session context manager.
+
+    Usage in tests:
+        svc.driver = mock_neo4j_driver
+        # Then configure mock_neo4j_driver.session().__aenter__().run.return_value
+    """
+    session = AsyncMock()
+    session.run = AsyncMock()
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    driver.close = AsyncMock()
+    return driver
+
+
+@pytest.fixture
 def mock_verification_model():
     """Create a mock VerificationModel instance"""
     return MockVerification()

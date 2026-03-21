@@ -21,6 +21,9 @@ export interface GraphNode {
   verified_by?: string;
   verified_at?: string;
   labels?: string[];
+  category?: string;
+  description?: string;
+  latin_name?: string;
 }
 
 export interface GraphEdge {
@@ -30,7 +33,8 @@ export interface GraphEdge {
   verified_by?: string;
   verified_at?: string;
   rel_type?: string;
-  target?: GraphNode;
+  source?: { id: string; name: string; labels?: string[]; status?: string };
+  target?: { id: string; name: string; labels?: string[]; status?: string };
 }
 
 export interface GraphData {

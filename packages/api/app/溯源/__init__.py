@@ -12,6 +12,13 @@ from ..models.enums import NodeStatus
 settings = get_settings()
 
 
+# ============ Lineage Query Patterns (Extracted) ============
+# Common Cypher path pattern: Entity -> Evidence -> Source
+_LINEAGE_PATH = (
+    "(entity)-[:has_evidence]->(evidence:Evidence)"
+    "-[:derived_from]->(source:Source)"
+)
+
 # ============ Cypher Query Constants ============
 
 QUERY_CREATE_EVIDENCE = """
@@ -33,15 +40,15 @@ SET r = $props
 RETURN r
 """
 
-QUERY_ENTITY_LINEAGE = """
-MATCH (entity)-[:has_evidence]->(evidence:Evidence)-[:derived_from]->(source:Source)
+QUERY_ENTITY_LINEAGE = f"""
+MATCH {_LINEAGE_PATH}
 WHERE entity.id = $entity_id
 RETURN entity, evidence, source
 LIMIT 1
 """
 
-QUERY_SOURCE_DERIVATIONS = """
-MATCH (entity)-[:has_evidence]->(evidence:Evidence)-[:derived_from]->(source:Source)
+QUERY_SOURCE_DERIVATIONS = f"""
+MATCH {_LINEAGE_PATH}
 WHERE source.id = $source_id
 RETURN entity, evidence, source
 """
@@ -66,8 +73,21 @@ RETURN entity,
 """
 
 
+# ============ Type Aliases ============
+NodeDict = Dict[str, Any]
+LineageChain = Dict[str, Any]
+EvidenceRecord = Dict[str, Any]
+
+
 class ProvenanceService:
-    """溯源服务 - 管理 Evidence -> Source 链路"""
+    """溯源服务 - 管理 Evidence -> Source 链路
+
+    提供以下核心能力:
+    - 证据节点 CRUD (create_evidence, get_evidence)
+    - 证据-来源关联 (link_evidence_to_source)
+    - 溯源链查询 (query_entity_lineage, query_source_derivations)
+    - 证据收集与链路完整性校验 (collect_evidence_for_entity, lineage_chain_completeness)
+    """
 
     def __init__(self) -> None:
         self.driver: Optional[Any] = None
@@ -93,13 +113,13 @@ class ProvenanceService:
 
     # ============ Helper Methods ============
 
-    def _map_node_to_dict(self, node: Any) -> Dict[str, Any]:
+    def _map_node_to_dict(self, node: Any) -> NodeDict:
         """Map Neo4j node to dictionary"""
         if node is None:
             return {}
         return dict(node)
 
-    def _map_relationship_to_dict(self, rel: Any) -> Dict[str, Any]:
+    def _map_relationship_to_dict(self, rel: Any) -> NodeDict:
         """Map Neo4j relationship to dictionary"""
         if rel is None:
             return {}
@@ -107,10 +127,10 @@ class ProvenanceService:
 
     def _build_lineage_chain(
         self,
-        entity: Dict[str, Any],
-        evidence: Dict[str, Any],
-        source: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        entity: NodeDict,
+        evidence: NodeDict,
+        source: NodeDict
+    ) -> LineageChain:
         """构建溯源链字典 - 辅助方法"""
         return {
             "entity": entity,
@@ -126,12 +146,22 @@ class ProvenanceService:
         source_name: str,
         page_reference: Optional[str] = None,
         status: str = NodeStatus.PENDING.value
-    ) -> Dict[str, Any]:
-        """创建证据节点"""
+    ) -> NodeDict:
+        """创建证据节点
+
+        Args:
+            content: 证据文本内容
+            source_name: 来源名称
+            page_reference: 页码/章节引用(可选)
+            status: 初始状态, 默认 pending
+
+        Returns:
+            新建的证据节点字典
+        """
         await self.ensure_connected()
 
         evidence_id = str(uuid4())
-        props: Dict[str, Any] = {
+        props: NodeDict = {
             "id": evidence_id,
             "content": content,
             "source_name": source_name,
@@ -144,8 +174,15 @@ class ProvenanceService:
             record = await result.single()
             return self._map_node_to_dict(record["e"])
 
-    async def get_evidence(self, evidence_id: str) -> Optional[Dict[str, Any]]:
-        """根据 ID 获取证据"""
+    async def get_evidence(self, evidence_id: str) -> Optional[NodeDict]:
+        """根据 ID 获取证据
+
+        Args:
+            evidence_id: 证据节点 ID
+
+        Returns:
+            证据节点字典, 不存在时返回 None
+        """
         await self.ensure_connected()
 
         async with self.driver.session() as session:
@@ -160,11 +197,20 @@ class ProvenanceService:
         evidence_id: str,
         source_id: str,
         status: str = NodeStatus.PENDING.value
-    ) -> Dict[str, Any]:
-        """创建证据-来源关系 (Evidence)-[:DERIVED_FROM]->(Source)"""
+    ) -> NodeDict:
+        """创建证据-来源关系 (Evidence)-[:DERIVED_FROM]->(Source)
+
+        Args:
+            evidence_id: 证据节点 ID
+            source_id: 来源节点 ID
+            status: 关系初始状态, 默认 pending
+
+        Returns:
+            新建的关系字典
+        """
         await self.ensure_connected()
 
-        props: Dict[str, Any] = {
+        props: NodeDict = {
             "status": status,
             "source_id": source_id,
             "evidence_id": evidence_id
@@ -182,8 +228,15 @@ class ProvenanceService:
 
     # ============ Lineage Query Operations ============
 
-    async def query_entity_lineage(self, entity_id: str) -> Optional[Dict[str, Any]]:
-        """查询实体的完整溯源链: Entity -> Evidence -> Source"""
+    async def query_entity_lineage(self, entity_id: str) -> Optional[LineageChain]:
+        """查询实体的完整溯源链: Entity -> Evidence -> Source
+
+        Args:
+            entity_id: 实体节点 ID
+
+        Returns:
+            溯源链字典 {entity, evidence, source}, 无链路时返回 None
+        """
         await self.ensure_connected()
 
         async with self.driver.session() as session:
@@ -197,8 +250,15 @@ class ProvenanceService:
                 )
             return None
 
-    async def query_source_derivations(self, source_id: str) -> List[Dict[str, Any]]:
-        """查找来源的所有派生实体"""
+    async def query_source_derivations(self, source_id: str) -> List[LineageChain]:
+        """查找来源的所有派生实体
+
+        Args:
+            source_id: 来源节点 ID
+
+        Returns:
+            溯源链列表, 每项为 {entity, evidence, source}
+        """
         await self.ensure_connected()
 
         async with self.driver.session() as session:
@@ -213,8 +273,15 @@ class ProvenanceService:
                 for r in records
             ]
 
-    async def collect_evidence_for_entity(self, entity_id: str) -> List[Dict[str, Any]]:
-        """收集实体的所有证据"""
+    async def collect_evidence_for_entity(self, entity_id: str) -> List[EvidenceRecord]:
+        """收集实体的所有证据
+
+        Args:
+            entity_id: 实体节点 ID
+
+        Returns:
+            证据记录列表, 每项为 {evidence, source}
+        """
         await self.ensure_connected()
 
         async with self.driver.session() as session:
@@ -228,8 +295,16 @@ class ProvenanceService:
                 for r in records
             ]
 
-    async def lineage_chain_completeness(self, entity_id: str) -> Optional[Dict[str, Any]]:
-        """验证溯源链完整性"""
+    async def lineage_chain_completeness(self, entity_id: str) -> Optional[LineageChain]:
+        """验证溯源链完整性
+
+        Args:
+            entity_id: 实体节点 ID
+
+        Returns:
+            包含完整性标记的溯源链字典:
+            {entity, evidence, source, has_evidence, has_source, chain_complete}
+        """
         await self.ensure_connected()
 
         async with self.driver.session() as session:

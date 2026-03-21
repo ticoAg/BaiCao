@@ -191,14 +191,14 @@ class GraphService:
         source: str,
         herb_type: HerbType = HerbType.BASE,
         category: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建药材节点"""
         return await self.create_node("Herb", name, source, {
             "type": herb_type.value,
             "category": category
         })
 
-    async def get_herb(self, name: str) -> Optional[dict]:
+    async def get_herb(self, name: str) -> Optional[Dict[str, Any]]:
         """获取药材"""
         return await self.get_node_by_name(name, "Herb")
 
@@ -209,7 +209,7 @@ class GraphService:
         name: str,
         source: str,
         chemical_formula: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建成分节点"""
         return await self.create_node("Component", name, source, {
             "chemical_formula": chemical_formula
@@ -342,7 +342,7 @@ class GraphService:
         parent_herb: str,
         source: str,
         description: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建品种变种节点"""
         node = await self.create_node("Variant", name, source, {
             "parent_herb": parent_herb,
@@ -354,7 +354,7 @@ class GraphService:
 
         return node
 
-    async def link_variant_of(self, variant_name: str, herb_name: str) -> dict:
+    async def link_variant_of(self, variant_name: str, herb_name: str) -> Dict[str, Any]:
         """创建品种-药材关系 (Variant)-[:VARIANT_OF]->(Herb)"""
         await self.ensure_connected()
 
@@ -372,7 +372,7 @@ class GraphService:
             record = await result.single()
             return dict(record["r"])
 
-    async def link_herb_has_variant(self, herb_name: str, variant_name: str) -> dict:
+    async def link_herb_has_variant(self, herb_name: str, variant_name: str) -> Dict[str, Any]:
         """创建药材-品种关系 (Herb)-[:HAS_VARIANT]->(Variant)"""
         await self.ensure_connected()
 
@@ -399,7 +399,7 @@ class GraphService:
         description: Optional[str] = None,
         min_duration: Optional[str] = None,
         conditions: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建加工工艺节点"""
         return await self.create_node("Process", name, source, {
             "description": description,
@@ -413,7 +413,7 @@ class GraphService:
         process_name: str,
         duration: Optional[str] = None,
         conditions: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建药材-工艺关系 (Herb)-[:PROCESSED_BY]->(Process)"""
         await self.ensure_connected()
 
@@ -445,7 +445,7 @@ class GraphService:
         source: str,
         trait_category: TraitCategory = TraitCategory.EXTERNAL,
         description: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建性状特征节点"""
         return await self.create_node("Trait", name, source, {
             "category": trait_category.value,
@@ -459,7 +459,7 @@ class GraphService:
         value: str,
         observation: Optional[str] = None,
         year_range: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建药材-性状关系 (Herb)-[:HAS_TRAIT]->(Trait)"""
         await self.ensure_connected()
 
@@ -490,7 +490,7 @@ class GraphService:
         source: str,
         description: Optional[str] = None,
         quality_indicator: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建时间点节点"""
         return await self.create_node("TimePoint", f"{years}年", source, {
             "years": years,
@@ -503,7 +503,7 @@ class GraphService:
         herb_name: str,
         years: int,
         start_date: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """创建药材-储存时间关系 (Herb)-[:STORED_FOR]->(TimePoint)"""
         await self.ensure_connected()
 
@@ -531,19 +531,19 @@ class GraphService:
 
     # ============ 功效/性味/归经操作 ============
 
-    async def create_efficacy(self, name: str, source: str, category: Optional[str] = None) -> dict:
+    async def create_efficacy(self, name: str, source: str, category: Optional[str] = None) -> Dict[str, Any]:
         """创建功效节点"""
         return await self.create_node("Efficacy", name, source, {"category": category})
 
-    async def create_flavor(self, name: str, source: str, nature: Optional[str] = None) -> dict:
+    async def create_flavor(self, name: str, source: str, nature: Optional[str] = None) -> Dict[str, Any]:
         """创建性味节点"""
         return await self.create_node("Flavor", name, source, {"nature": nature})
 
-    async def create_meridian(self, name: str, source: str) -> dict:
+    async def create_meridian(self, name: str, source: str) -> Dict[str, Any]:
         """创建归经节点"""
         return await self.create_node("Meridian", name, source)
 
-    async def link_herb_has_efficacy(self, herb_name: str, efficacy_name: str) -> dict:
+    async def link_herb_has_efficacy(self, herb_name: str, efficacy_name: str) -> Dict[str, Any]:
         """创建药材-功效关系"""
         await self.ensure_connected()
         props = {"status": NodeStatus.PENDING.value}
@@ -559,7 +559,7 @@ class GraphService:
             record = await result.single()
             return dict(record["r"])
 
-    async def link_herb_has_flavor(self, herb_name: str, flavor_name: str) -> dict:
+    async def link_herb_has_flavor(self, herb_name: str, flavor_name: str) -> Dict[str, Any]:
         """创建药材-性味关系"""
         await self.ensure_connected()
         props = {"status": NodeStatus.PENDING.value}
@@ -575,7 +575,7 @@ class GraphService:
             record = await result.single()
             return dict(record["r"])
 
-    async def link_herb_enters_meridian(self, herb_name: str, meridian_name: str) -> dict:
+    async def link_herb_enters_meridian(self, herb_name: str, meridian_name: str) -> Dict[str, Any]:
         """创建药材-归经关系"""
         await self.ensure_connected()
         props = {"status": NodeStatus.PENDING.value}
@@ -656,7 +656,7 @@ class GraphService:
                 }
             return {"center": None, "nodes": [], "edges": []}
 
-    async def get_herb_components(self, herb_name: str) -> list[dict]:
+    async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有成分"""
         await self.ensure_connected()
 
@@ -669,7 +669,7 @@ class GraphService:
             records = await result.data()
             return [{"component": dict(r["c"]), "quantity": r["quantity"], "status": r["status"]} for r in records]
 
-    async def get_herb_variants(self, herb_name: str) -> list[dict]:
+    async def get_herb_variants(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有品种"""
         await self.ensure_connected()
 
@@ -682,7 +682,7 @@ class GraphService:
             records = await result.data()
             return [{"variant": dict(r["v"]), "status": r["status"]} for r in records]
 
-    async def get_herb_traits(self, herb_name: str, year_range: Optional[str] = None) -> list[dict]:
+    async def get_herb_traits(self, herb_name: str, year_range: Optional[str] = None) -> List[Dict[str, Any]]:
         """获取药材的性状特征"""
         await self.ensure_connected()
 
@@ -705,7 +705,7 @@ class GraphService:
             records = await result.data()
             return [{"trait": dict(r["t"]), "value": r["value"], "observation": r["observation"], "year_range": r["year_range"], "status": r["status"]} for r in records]
 
-    async def get_variant_details(self, variant_name: str) -> dict:
+    async def get_variant_details(self, variant_name: str) -> Dict[str, Any]:
         """获取品种详细信息"""
         await self.ensure_connected()
 
@@ -729,7 +729,7 @@ class GraphService:
 
     # ============ 搜索 ============
 
-    async def search_nodes(self, query_text: str, label: Optional[str] = None, limit: int = 20) -> list[dict]:
+    async def search_nodes(self, query_text: str, label: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
         """搜索节点"""
         await self.ensure_connected()
 
@@ -753,7 +753,7 @@ class GraphService:
             records = await result.data()
             return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
 
-    async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> list[dict]:
+    async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> List[Dict[str, Any]]:
         """查找两个节点之间的路径"""
         await self.ensure_connected()
 
@@ -769,7 +769,7 @@ class GraphService:
 
     # ============ 验证状态 ============
 
-    async def get_pending_nodes(self, label: Optional[str] = None, limit: int = 50) -> list[dict]:
+    async def get_pending_nodes(self, label: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证节点"""
         await self.ensure_connected()
 
@@ -793,7 +793,7 @@ class GraphService:
             records = await result.data()
             return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
 
-    async def get_pending_relationships(self, limit: int = 50) -> list[dict]:
+    async def get_pending_relationships(self, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证关系"""
         await self.ensure_connected()
 

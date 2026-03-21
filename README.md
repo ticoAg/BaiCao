@@ -263,6 +263,8 @@ pnpm install
 pnpm dev
 ```
 
+> **工具链说明**：前端使用 **vite-plus (`vp`)**。`pnpm-workspace.yaml` 的 catalog 将 `vite` 映射到 `@voidzero-dev/vite-plus-core`、`vitest` 映射到 `@voidzero-dev/vite-plus-test`。所有脚本（`dev` / `build` / `test` / `preview`）均通过 `vp` 命令执行。
+
 本地开发时：
 
 - Web 默认运行在 `http://localhost:3000`

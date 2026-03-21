@@ -1,0 +1,36 @@
+[
+  {
+    "session_id": "WFS-tdd-knowledge-graph-qa-system",
+    "description": "TDD: 中药材知识图谱智能问答系统 - 为 kg 图谱、qa 问答、review 审查、provenance 溯源模块建立完整 TDD 测试体系",
+    "archived_at": "2026-03-21T00:00:00Z",
+    "archive_path": ".workflow/archives/WFS-tdd-knowledge-graph-qa-system",
+    "metrics": {
+      "duration_hours": 24,
+      "tasks_completed": 5,
+      "summaries_generated": 5,
+      "total_tests": 146,
+      "review_metrics": {
+        "dimensions_analyzed": 0,
+        "total_findings": 0
+      }
+    },
+    "tags": ["tdd", "knowledge-graph", "neo4j", "testing", "qa-system"],
+    "lessons": {
+      "successes": [
+        "146 个测试全部通过，覆盖 5 个核心模块",
+        "Neo4j mock 基础设施在 conftest.py 中可复用",
+        "Provenance 新模块通过 TDD 从零建立，89% 覆盖率",
+        "所有模块覆盖率均超过 80% 目标（最高 99%）"
+      ],
+      "challenges": [
+        "Neo4j async driver 的 mock 复杂度较高，需要自定义 MockNeo4jRecord/Node/Relationship",
+        "溯源模块目录使用中文路径，需要注意编码兼容性"
+      ],
+      "watch_patterns": [
+        "GraphService singleton 在测试中需要重置状态",
+        "LangChain mock 需要匹配 ainvoke 异步接口",
+        "conftest.py 的 mock_neo4j_driver fixture 是跨模块测试的关键共享组件"
+      ]
+    }
+  }
+]

@@ -1,0 +1,1017 @@
+"""GraphService TDD - Neo4j Knowledge Graph Core Operations
+
+RED phase: 10 test cases defining expected behavior for GraphService methods.
+Each test uses a mocked Neo4j async driver to avoid external dependencies.
+"""
+
+import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any, Dict, List, Optional
+
+from app.models.enums import NodeStatus, HerbType
+
+
+# ---------------------------------------------------------------------------
+# Mock Neo4j helpers
+# ---------------------------------------------------------------------------
+
+class MockNeo4jRecord:
+    """Simulates a neo4j.Record object with dict-like access."""
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self._data = data
+
+    def __getitem__(self, key: str) -> Any:
+        return self._data[key]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._data.get(key, default)
+
+    def data(self) -> Dict[str, Any]:
+        return dict(self._data)
+
+
+class MockNeo4jNode:
+    """Simulates a neo4j.graph.Node with dict() conversion."""
+
+    def __init__(self, props: Dict[str, Any]) -> None:
+        self._props = dict(props)
+
+    def __iter__(self):
+        return iter(self._props)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._props[key]
+
+    def keys(self):
+        return self._props.keys()
+
+    def values(self):
+        return self._props.values()
+
+    def items(self):
+        return self._props.items()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._props.get(key, default)
+
+
+class MockNeo4jRelationship:
+    """Simulates a neo4j.graph.Relationship with dict() conversion."""
+
+    def __init__(self, props: Dict[str, Any]) -> None:
+        self._props = dict(props)
+
+    def __iter__(self):
+        return iter(self._props)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._props[key]
+
+    def keys(self):
+        return self._props.keys()
+
+    def values(self):
+        return self._props.values()
+
+    def items(self):
+        return self._props.items()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._props.get(key, default)
+
+
+def _make_result(record: Optional[MockNeo4jRecord] = None) -> AsyncMock:
+    """Build an AsyncMock that behaves like a neo4j.Result."""
+    result = AsyncMock()
+    result.single = AsyncMock(return_value=record)
+    result.data = AsyncMock(return_value=[record.data()] if record else [])
+    return result
+
+
+def _make_session(result: AsyncMock) -> AsyncMock:
+    """Build an AsyncMock neo4j session that returns *result* on .run()."""
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    return session
+
+
+def _make_driver(session: AsyncMock) -> MagicMock:
+    """Build a MagicMock neo4j driver whose .session() yields *session*."""
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    return driver
+
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def graph_service():
+    """Return a fresh GraphService instance with a mocked driver."""
+    from app.kg.graph_service import GraphService
+    svc = GraphService()
+    return svc
+
+
+def _inject_driver(svc: Any, record: Optional[MockNeo4jRecord]) -> MagicMock:
+    """Wire a mock driver -> session -> result -> record into *svc*."""
+    result = _make_result(record)
+    session = _make_session(result)
+    driver = _make_driver(session)
+    svc.driver = driver
+    return driver
+
+
+# ---------------------------------------------------------------------------
+# Test 1: test_create_node
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_create_node(graph_service):
+    """create_node should return a dict with id, name, source, status=pending."""
+    node_props = {
+        "id": "test-id-123",
+        "name": "TestHerb",
+        "source": "test",
+        "status": NodeStatus.PENDING.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.create_node("Herb", "TestHerb", "test")
+
+    assert result["name"] == "TestHerb"
+    assert result["source"] == "test"
+    assert result["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Test 2: test_get_node
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_get_node(graph_service):
+    """get_node should return node dict with labels when found."""
+    node_props = {
+        "id": "node-456",
+        "name": "SomeNode",
+        "source": "import",
+        "status": "pending",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node, "labels": ["Herb"]})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.get_node("node-456")
+
+    assert result is not None
+    assert result["id"] == "node-456"
+    assert result["name"] == "SomeNode"
+    assert result["labels"] == ["Herb"]
+
+
+# ---------------------------------------------------------------------------
+# Test 3: test_get_node_not_found
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_get_node_not_found(graph_service):
+    """get_node should return None when node does not exist."""
+    _inject_driver(graph_service, None)
+
+    result = await graph_service.get_node("nonexistent-id")
+
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Test 4: test_create_herb
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_create_herb(graph_service):
+    """create_herb should delegate to create_node with label 'Herb'."""
+    herb_props = {
+        "id": "herb-001",
+        "name": "DangGui",
+        "source": "ancient-text",
+        "type": HerbType.BASE.value,
+        "category": "BuXue",
+        "status": NodeStatus.PENDING.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(herb_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.create_herb(
+        name="DangGui",
+        source="ancient-text",
+        herb_type=HerbType.BASE,
+        category="BuXue",
+    )
+
+    assert result["name"] == "DangGui"
+    assert result["type"] == "base"
+    assert result["category"] == "BuXue"
+    assert result["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Test 5: test_link_herb_parent
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_link_herb_parent(graph_service):
+    """link_herb_parent should create PARENT_OF relationship."""
+    rel_props = {
+        "status": NodeStatus.PENDING.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+    }
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.link_herb_parent(
+        child_name="ShengDangGui",
+        parent_name="DangGui",
+    )
+
+    assert result["status"] == "pending"
+    # Verify the session.run was called (query should contain PARENT_OF)
+    driver = graph_service.driver
+    session = driver.session.return_value.__aenter__.return_value
+    call_args = session.run.call_args
+    assert "PARENT_OF" in call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# Test 6: test_link_herb_child
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_link_herb_child(graph_service):
+    """link_herb_child should create CHILD_OF relationship."""
+    rel_props = {
+        "status": NodeStatus.PENDING.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+    }
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.link_herb_child(
+        parent_name="DangGui",
+        child_name="ShengDangGui",
+    )
+
+    assert result["status"] == "pending"
+    session = graph_service.driver.session.return_value.__aenter__.return_value
+    call_args = session.run.call_args
+    assert "CHILD_OF" in call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# Test 7: test_link_herb_source
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_link_herb_source(graph_service):
+    """link_herb_source should create ORIGINATED_FROM relationship."""
+    rel_props = {
+        "status": NodeStatus.PENDING.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+    }
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.link_herb_source(
+        herb_name="DangGui",
+        source_name="GanSu",
+    )
+
+    assert result["status"] == "pending"
+    session = graph_service.driver.session.return_value.__aenter__.return_value
+    call_args = session.run.call_args
+    assert "ORIGINATED_FROM" in call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# Test 8: test_get_herb_graph
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_get_herb_graph(graph_service):
+    """get_herb_graph should return center, nodes, edges structure."""
+    center_dict = {
+        "id": "herb-001",
+        "name": "DangGui",
+        "source": "ancient-text",
+        "status": "pending",
+        "labels": ["Herb"],
+    }
+    connected_node = {
+        "id": "comp-001",
+        "name": "LiGusTiLiDe",
+        "source": "research",
+        "status": "pending",
+        "labels": ["Component"],
+    }
+    edge_dict = {
+        "id": "rel-001",
+        "rel_type": "CONTAINS",
+        "status": "pending",
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {
+            "id": "herb-001",
+            "name": "DangGui",
+            "source": "ancient-text",
+            "status": "pending",
+            "labels": ["Herb"],
+        },
+        "target": {
+            "id": "comp-001",
+            "name": "LiGusTiLiDe",
+            "source": "research",
+            "status": "pending",
+            "labels": ["Component"],
+        },
+    }
+
+    record = MockNeo4jRecord({
+        "center": center_dict,
+        "nodes": [connected_node],
+        "edges": [edge_dict],
+    })
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.get_herb_graph("DangGui")
+
+    assert result["center"]["name"] == "DangGui"
+    assert len(result["nodes"]) >= 1
+    assert len(result["edges"]) == 1
+    assert result["edges"][0]["rel_type"] == "CONTAINS"
+
+
+# ---------------------------------------------------------------------------
+# Test 9: test_verify_node
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_verify_node(graph_service):
+    """verify_node should update node status to verified."""
+    verified_props = {
+        "id": "node-789",
+        "name": "DangGui",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": "ver-001",
+        "verified_by": "expert-001",
+        "verified_at": "2026-03-21T00:00:00Z",
+    }
+    returned_node = MockNeo4jNode(verified_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.verify_node(
+        node_id="node-789",
+        verification_id="ver-001",
+        verifier_id="expert-001",
+    )
+
+    assert result is not None
+    assert result["status"] == "verified"
+    assert result["verification_id"] == "ver-001"
+    assert result["verified_by"] == "expert-001"
+
+
+# ---------------------------------------------------------------------------
+# Test 10: test_verify_relationship
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+async def test_verify_relationship(graph_service):
+    """verify_relationship should update relationship status to verified."""
+    verified_rel = {
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": "ver-002",
+        "verified_by": "expert-001",
+        "verified_at": "2026-03-21T00:00:00Z",
+    }
+    returned_rel = MockNeo4jRelationship(verified_rel)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+
+    result = await graph_service.verify_relationship(
+        from_name="DangGui",
+        rel_type="CONTAINS",
+        to_name="LiGusTiLiDe",
+        verification_id="ver-002",
+        verifier_id="expert-001",
+    )
+
+    assert result is not None
+    assert result["status"] == "verified"
+    assert result["verification_id"] == "ver-002"
+
+
+# ===========================================================================
+# Supplementary tests for coverage (utility methods, edge cases, other ops)
+# ===========================================================================
+
+@pytest.mark.unit
+async def test_connect_creates_driver(graph_service):
+    """connect should create a driver when none exists."""
+    assert graph_service.driver is None
+    with patch("app.kg.graph_service.AsyncGraphDatabase") as mock_agd:
+        mock_agd.driver = MagicMock(return_value=MagicMock())
+        await graph_service.connect()
+        mock_agd.driver.assert_called_once()
+        assert graph_service.driver is not None
+
+
+@pytest.mark.unit
+async def test_close_clears_driver(graph_service):
+    """close should set driver to None."""
+    mock_driver = AsyncMock()
+    graph_service.driver = mock_driver
+    await graph_service.close()
+    mock_driver.close.assert_awaited_once()
+    assert graph_service.driver is None
+
+
+@pytest.mark.unit
+async def test_ensure_connected_calls_connect_when_no_driver(graph_service):
+    """ensure_connected should call connect when driver is None."""
+    with patch("app.kg.graph_service.AsyncGraphDatabase") as mock_agd:
+        mock_agd.driver = MagicMock(return_value=MagicMock())
+        await graph_service.ensure_connected()
+        mock_agd.driver.assert_called_once()
+
+
+@pytest.mark.unit
+def test_record_value_key_error(graph_service):
+    """_record_value should return None on KeyError."""
+    assert graph_service._record_value({}, "missing") is None
+
+
+@pytest.mark.unit
+def test_record_value_type_error(graph_service):
+    """_record_value should return None on TypeError."""
+    assert graph_service._record_value(None, "any") is None
+
+
+@pytest.mark.unit
+def test_dedupe_nodes_skips_none(graph_service):
+    """_dedupe_nodes should skip None entries."""
+    nodes = [None, {"id": "1", "name": "A"}, None, {"id": "1", "name": "A"}]
+    result = graph_service._dedupe_nodes(nodes)
+    assert len(result) == 1
+
+
+@pytest.mark.unit
+def test_dedupe_edges_skips_none(graph_service):
+    """_dedupe_edges should skip None entries."""
+    edges = [
+        None,
+        {"source": {"id": "1"}, "target": {"id": "2"}, "rel_type": "X"},
+        {"source": {"id": "1"}, "target": {"id": "2"}, "rel_type": "X"},
+    ]
+    result = graph_service._dedupe_edges(edges)
+    assert len(result) == 1
+
+
+@pytest.mark.unit
+def test_map_relationship_to_dict(graph_service):
+    """_map_relationship_to_dict should return dict from relationship."""
+    rel = MockNeo4jRelationship({"status": "pending", "extra": "val"})
+    result = graph_service._map_relationship_to_dict(rel)
+    assert result["status"] == "pending"
+    assert result["extra"] == "val"
+
+
+@pytest.mark.unit
+async def test_get_node_by_name(graph_service):
+    """get_node_by_name should find a node by label and name."""
+    node_props = {"id": "n-1", "name": "DangGui", "status": "pending"}
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node, "labels": ["Herb"]})
+    _inject_driver(graph_service, record)
+    result = await graph_service.get_node_by_name("DangGui", "Herb")
+    assert result is not None
+    assert result["name"] == "DangGui"
+    assert result["labels"] == ["Herb"]
+
+
+@pytest.mark.unit
+async def test_get_herb(graph_service):
+    """get_herb should delegate to get_node_by_name with Herb label."""
+    node_props = {"id": "n-2", "name": "RenShen", "status": "pending"}
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node, "labels": ["Herb"]})
+    _inject_driver(graph_service, record)
+    result = await graph_service.get_herb("RenShen")
+    assert result is not None
+    assert result["name"] == "RenShen"
+
+
+@pytest.mark.unit
+async def test_create_component(graph_service):
+    """create_component should create a Component node."""
+    node_props = {
+        "id": "comp-001", "name": "Berberine", "source": "research",
+        "chemical_formula": "C20H18NO4", "status": "pending",
+        "verification_id": None, "verified_by": None, "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_component("Berberine", "research", "C20H18NO4")
+    assert result["name"] == "Berberine"
+    assert result["chemical_formula"] == "C20H18NO4"
+
+
+@pytest.mark.unit
+async def test_link_herb_contains_component(graph_service):
+    """link_herb_contains_component should create CONTAINS relationship."""
+    rel_props = {"status": "pending", "verification_id": None, "verified_by": None, "verified_at": None, "quantity": "5%"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_contains_component("HuangLian", "Berberine", "5%")
+    assert result["status"] == "pending"
+    assert result["quantity"] == "5%"
+
+
+@pytest.mark.unit
+async def test_create_variant(graph_service):
+    """create_variant should create Variant node and link to parent herb."""
+    node_props = {
+        "id": "var-001", "name": "ChuanDangGui", "source": "import",
+        "parent_herb": "DangGui", "description": "Sichuan variant",
+        "status": "pending", "verification_id": None, "verified_by": None,
+        "verified_at": None, "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    # For create_variant: first call -> create_node, second call -> link_variant_of
+    result_create = _make_result(record)
+    rel_props = {"status": "pending"}
+    rel_record = MockNeo4jRecord({"r": MockNeo4jRelationship(rel_props)})
+    result_link = _make_result(rel_record)
+
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[result_create, result_link])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.create_variant("ChuanDangGui", "DangGui", "import", "Sichuan variant")
+    assert result["name"] == "ChuanDangGui"
+    assert result["parent_herb"] == "DangGui"
+
+
+@pytest.mark.unit
+async def test_create_process(graph_service):
+    """create_process should create a Process node."""
+    node_props = {
+        "id": "proc-001", "name": "PaoZhi", "source": "traditional",
+        "description": "Traditional processing", "min_duration": "2h", "conditions": "low heat",
+        "status": "pending", "verification_id": None, "verified_by": None,
+        "verified_at": None, "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_process("PaoZhi", "traditional", "Traditional processing", "2h", "low heat")
+    assert result["name"] == "PaoZhi"
+
+
+@pytest.mark.unit
+async def test_link_herb_processed_by(graph_service):
+    """link_herb_processed_by should create PROCESSED_BY relationship."""
+    rel_props = {"status": "pending", "duration": "3h", "conditions": "medium heat", "start_date": None, "end_date": None}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_processed_by("DangGui", "PaoZhi", "3h", "medium heat")
+    assert result["status"] == "pending"
+    assert result["duration"] == "3h"
+
+
+@pytest.mark.unit
+async def test_create_trait(graph_service):
+    """create_trait should create a Trait node."""
+    node_props = {
+        "id": "trait-001", "name": "Color", "source": "observation",
+        "category": "external", "description": "Visual color",
+        "status": "pending", "verification_id": None, "verified_by": None,
+        "verified_at": None, "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_trait("Color", "observation", description="Visual color")
+    assert result["name"] == "Color"
+    assert result["category"] == "external"
+
+
+@pytest.mark.unit
+async def test_link_herb_has_trait(graph_service):
+    """link_herb_has_trait should create HAS_TRAIT relationship."""
+    rel_props = {"status": "pending", "value": "dark-brown", "observation": "visual", "year_range": "2020-2025"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_has_trait("DangGui", "Color", "dark-brown", "visual", "2020-2025")
+    assert result["value"] == "dark-brown"
+
+
+@pytest.mark.unit
+async def test_create_efficacy(graph_service):
+    """create_efficacy should create Efficacy node."""
+    node_props = {
+        "id": "eff-001", "name": "BuXue", "source": "classic",
+        "category": "blood", "status": "pending",
+        "verification_id": None, "verified_by": None, "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_efficacy("BuXue", "classic", "blood")
+    assert result["name"] == "BuXue"
+
+
+@pytest.mark.unit
+async def test_create_flavor(graph_service):
+    """create_flavor should create Flavor node."""
+    node_props = {
+        "id": "flv-001", "name": "Gan", "source": "classic",
+        "nature": "warm", "status": "pending",
+        "verification_id": None, "verified_by": None, "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_flavor("Gan", "classic", "warm")
+    assert result["name"] == "Gan"
+
+
+@pytest.mark.unit
+async def test_create_meridian(graph_service):
+    """create_meridian should create Meridian node."""
+    node_props = {
+        "id": "mer-001", "name": "Liver", "source": "classic",
+        "status": "pending", "verification_id": None, "verified_by": None,
+        "verified_at": None, "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_meridian("Liver", "classic")
+    assert result["name"] == "Liver"
+
+
+@pytest.mark.unit
+async def test_link_herb_has_efficacy(graph_service):
+    """link_herb_has_efficacy should create HAS_EFFICACY relationship."""
+    rel_props = {"status": "pending"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_has_efficacy("DangGui", "BuXue")
+    assert result["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_link_herb_has_flavor(graph_service):
+    """link_herb_has_flavor should create HAS_FLAVOR relationship."""
+    rel_props = {"status": "pending"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_has_flavor("DangGui", "Gan")
+    assert result["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_link_herb_enters_meridian(graph_service):
+    """link_herb_enters_meridian should create ENTERS_MERIDIAN relationship."""
+    rel_props = {"status": "pending"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_enters_meridian("DangGui", "Liver")
+    assert result["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_search_nodes_with_label(graph_service):
+    """search_nodes should filter by label when provided."""
+    data_record = MockNeo4jRecord({"n": MockNeo4jNode({"id": "n1", "name": "DangGui"}), "labels": ["Herb"]})
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"n": {"id": "n1", "name": "DangGui"}, "labels": ["Herb"]}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.search_nodes("Dang", label="Herb", limit=10)
+    assert len(result) == 1
+    assert result[0]["node"]["name"] == "DangGui"
+
+
+@pytest.mark.unit
+async def test_search_nodes_without_label(graph_service):
+    """search_nodes should search all nodes when no label provided."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"n": {"id": "n1", "name": "DangGui"}, "labels": ["Herb"]}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.search_nodes("Dang")
+    assert len(result) == 1
+
+
+@pytest.mark.unit
+async def test_get_herb_graph_not_found(graph_service):
+    """get_herb_graph should return empty when herb not found."""
+    record = MockNeo4jRecord({"center": None, "nodes": [], "edges": []})
+    _inject_driver(graph_service, record)
+    result = await graph_service.get_herb_graph("NonExistent")
+    assert result["center"] is None
+    assert result["nodes"] == []
+    assert result["edges"] == []
+
+
+@pytest.mark.unit
+async def test_get_herb_graph_no_record(graph_service):
+    """get_herb_graph should return empty when no record returned."""
+    _inject_driver(graph_service, None)
+    result = await graph_service.get_herb_graph("NonExistent")
+    assert result["center"] is None
+    assert result["nodes"] == []
+
+
+@pytest.mark.unit
+async def test_verify_node_not_found(graph_service):
+    """verify_node should return None when node not found."""
+    _inject_driver(graph_service, None)
+    result = await graph_service.verify_node("bad-id", "ver-x", "usr-x")
+    assert result is None
+
+
+@pytest.mark.unit
+async def test_verify_relationship_not_found(graph_service):
+    """verify_relationship should return None when relationship not found."""
+    _inject_driver(graph_service, None)
+    result = await graph_service.verify_relationship("A", "REL", "B", "ver-x", "usr-x")
+    assert result is None
+
+
+@pytest.mark.unit
+async def test_get_pending_nodes_with_label(graph_service):
+    """get_pending_nodes should filter by label."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"n": {"id": "n1", "name": "H1", "status": "pending"}, "labels": ["Herb"]}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_pending_nodes(label="Herb")
+    assert len(result) == 1
+    assert result[0]["node"]["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_get_pending_nodes_without_label(graph_service):
+    """get_pending_nodes without label should return all pending."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_pending_nodes()
+    assert result == []
+
+
+@pytest.mark.unit
+async def test_get_pending_relationships(graph_service):
+    """get_pending_relationships should return pending relationships."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"r": {"status": "pending"}}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_pending_relationships()
+    assert len(result) == 1
+    assert result[0]["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_find_path(graph_service):
+    """find_path should return paths between two nodes."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"path": [{"id": "1", "name": "A"}, {"id": "2", "name": "B"}]}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.find_path("A", "B")
+    assert len(result) == 1
+
+
+@pytest.mark.unit
+async def test_get_herb_components(graph_service):
+    """get_herb_components should return list of components."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"c": {"name": "Berberine"}, "quantity": "5%", "status": "pending"}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_herb_components("HuangLian")
+    assert len(result) == 1
+    assert result[0]["component"]["name"] == "Berberine"
+
+
+@pytest.mark.unit
+async def test_get_herb_variants(graph_service):
+    """get_herb_variants should return list of variants."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[{"v": {"name": "ChuanDangGui"}, "status": "pending"}])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_herb_variants("DangGui")
+    assert len(result) == 1
+    assert result[0]["variant"]["name"] == "ChuanDangGui"
+
+
+@pytest.mark.unit
+async def test_get_herb_traits_with_year_range(graph_service):
+    """get_herb_traits should filter by year_range when provided."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[
+        {"t": {"name": "Color"}, "value": "brown", "observation": "visual", "year_range": "2020-2025", "status": "pending"}
+    ])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_herb_traits("DangGui", year_range="2020")
+    assert len(result) == 1
+    assert result[0]["value"] == "brown"
+
+
+@pytest.mark.unit
+async def test_get_herb_traits_without_year_range(graph_service):
+    """get_herb_traits should return all traits when no year_range."""
+    result_mock = AsyncMock()
+    result_mock.data = AsyncMock(return_value=[])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=result_mock)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+    result = await graph_service.get_herb_traits("DangGui")
+    assert result == []
+
+
+@pytest.mark.unit
+async def test_get_variant_details(graph_service):
+    """get_variant_details should return variant with base_herb and traits."""
+    record = MockNeo4jRecord({
+        "v": MockNeo4jNode({"name": "ChuanDangGui"}),
+        "base_herb": "DangGui",
+        "traits": [],
+        "efficacies": ["BuXue"],
+    })
+    _inject_driver(graph_service, record)
+    result = await graph_service.get_variant_details("ChuanDangGui")
+    assert result["base_herb"] == "DangGui"
+    assert result["efficacies"] == ["BuXue"]
+
+
+@pytest.mark.unit
+async def test_get_variant_details_not_found(graph_service):
+    """get_variant_details should return empty dict when not found."""
+    _inject_driver(graph_service, None)
+    result = await graph_service.get_variant_details("NonExistent")
+    assert result == {}
+
+
+@pytest.mark.unit
+async def test_link_herb_has_variant(graph_service):
+    """link_herb_has_variant should create HAS_VARIANT relationship."""
+    rel_props = {"status": "pending"}
+    returned_rel = MockNeo4jRelationship(rel_props)
+    record = MockNeo4jRecord({"r": returned_rel})
+    _inject_driver(graph_service, record)
+    result = await graph_service.link_herb_has_variant("DangGui", "ChuanDangGui")
+    assert result["status"] == "pending"
+
+
+@pytest.mark.unit
+async def test_create_timepoint(graph_service):
+    """create_timepoint should create a TimePoint node."""
+    node_props = {
+        "id": "tp-001", "name": "5nian", "source": "system",
+        "years": 5, "description": None, "quality_indicator": None,
+        "status": "pending", "verification_id": None, "verified_by": None,
+        "verified_at": None, "imported_at": "datetime()",
+    }
+    returned_node = MockNeo4jNode(node_props)
+    record = MockNeo4jRecord({"n": returned_node})
+    _inject_driver(graph_service, record)
+    result = await graph_service.create_timepoint(5, "system")
+    assert result["years"] == 5
+
+
+@pytest.mark.unit
+async def test_link_herb_stored_for(graph_service):
+    """link_herb_stored_for should create STORED_FOR relationship."""
+    # First call: create_timepoint -> create_node, second call: the link query
+    node_props = {
+        "id": "tp-001", "name": "3nian", "source": "system",
+        "years": 3, "status": "pending",
+        "verification_id": None, "verified_by": None, "verified_at": None,
+        "imported_at": "datetime()",
+    }
+    node_record = MockNeo4jRecord({"n": MockNeo4jNode(node_props)})
+    rel_props = {"status": "pending", "years": 3, "start_date": None, "end_date": None}
+    rel_record = MockNeo4jRecord({"r": MockNeo4jRelationship(rel_props)})
+
+    result_node = _make_result(node_record)
+    result_rel = _make_result(rel_record)
+
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[result_node, result_rel])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.link_herb_stored_for("DangGui", 3)
+    assert result["status"] == "pending"
+    assert result["years"] == 3
