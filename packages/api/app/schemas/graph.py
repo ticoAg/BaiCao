@@ -191,6 +191,10 @@ class GraphQueryNodeFilters(BaseModel):
     """图谱高级查询的节点过滤条件"""
     name_contains: str | None = None
     label: str | None = None
+    status: str | None = None
+    source_contains: str | None = None
+    property_key: str | None = None
+    property_value_contains: str | None = None
 
     model_config = ConfigDict(strict=True)
 
@@ -198,6 +202,8 @@ class GraphQueryNodeFilters(BaseModel):
 class GraphQueryEdgeFilters(BaseModel):
     """图谱高级查询的边过滤条件"""
     rel_type: str | None = None
+    status: str | None = None
+    connected_name_contains: str | None = None
 
     model_config = ConfigDict(strict=True)
 

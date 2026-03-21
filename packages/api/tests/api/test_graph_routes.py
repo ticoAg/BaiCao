@@ -115,8 +115,19 @@ class TestGraphQuery:
     async def test_query_graph_returns_summary_and_graph(self, client):
         """Advanced graph query returns summary and graph payload."""
         payload = {
-            "node": {"name_contains": "人参", "label": "Herb"},
-            "edge": {"rel_type": "HAS_EFFICACY"},
+            "node": {
+                "name_contains": "人参",
+                "label": "Herb",
+                "status": "verified",
+                "source_contains": "本草纲目",
+                "property_key": "latin_name",
+                "property_value_contains": "ginseng",
+            },
+            "edge": {
+                "rel_type": "HAS_EFFICACY",
+                "status": "verified",
+                "connected_name_contains": "补气",
+            },
             "depth": 2,
             "limit": 20,
         }
@@ -139,3 +150,10 @@ class TestGraphQuery:
         assert_status(resp, 200)
         data = resp.json()
         assert_json_keys(data, {"summary", "graph"})
+        forwarded_payload = mock_svc.query_graph.await_args.args[0]
+        assert forwarded_payload.node.status == "verified"
+        assert forwarded_payload.node.source_contains == "本草纲目"
+        assert forwarded_payload.node.property_key == "latin_name"
+        assert forwarded_payload.node.property_value_contains == "ginseng"
+        assert forwarded_payload.edge.status == "verified"
+        assert forwarded_payload.edge.connected_name_contains == "补气"
