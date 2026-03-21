@@ -178,14 +178,29 @@ class HasTraitEdge(BaseEdge):
     year_range: str | None = None
 
 
+class GraphEdgeNodeRef(BaseModel):
+    """图谱边上的节点引用"""
+    id: str
+    name: str
+    source: str | None = None
+    status: NodeStatus = NodeStatus.PENDING
+    labels: list[str]
+
+    model_config = ConfigDict(strict=False)
+
+
 class GraphEdge(BaseModel):
     """图谱边"""
-    type: EdgeType
-    source: str
-    target: str
-    properties: dict
+    id: str | None = None
+    rel_type: EdgeType
+    status: NodeStatus = NodeStatus.PENDING
+    verification_id: str | None = None
+    verified_by: str | None = None
+    verified_at: str | None = None
+    source: GraphEdgeNodeRef
+    target: GraphEdgeNodeRef
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
 
 # ============ 图谱响应 ============
@@ -194,7 +209,7 @@ class GraphData(BaseModel):
     """图谱数据响应"""
     center: dict | None = None
     nodes: list[dict]
-    edges: list[dict]
+    edges: list[GraphEdge]
 
     model_config = ConfigDict(strict=True)
 

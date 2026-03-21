@@ -141,7 +141,34 @@ class TestGraphQuery:
                 "truncated": False,
                 "active_filters": ["名称包含: 人参", "关系类型: HAS_EFFICACY"],
             },
-            "graph": {"center": None, "nodes": [], "edges": []},
+            "graph": {
+                "center": None,
+                "nodes": [],
+                "edges": [
+                    {
+                        "id": "rel-1",
+                        "rel_type": "HAS_EFFICACY",
+                        "status": "verified",
+                        "verification_id": None,
+                        "verified_by": None,
+                        "verified_at": None,
+                        "source": {
+                            "id": "herb-1",
+                            "name": "人参",
+                            "source": "本草纲目",
+                            "status": "verified",
+                            "labels": ["Herb"],
+                        },
+                        "target": {
+                            "id": "eff-1",
+                            "name": "补气",
+                            "source": "本草纲目",
+                            "status": "verified",
+                            "labels": ["Efficacy"],
+                        },
+                    }
+                ],
+            },
         }
 
         with patch("app.api.graph.graph_service") as mock_svc:
@@ -152,6 +179,8 @@ class TestGraphQuery:
         assert_status(resp, 200)
         data = resp.json()
         assert_json_keys(data, {"summary", "graph"})
+        assert data["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+        assert data["graph"]["edges"][0]["source"]["name"] == "人参"
         forwarded_payload = mock_svc.query_graph.await_args.args[0]
         assert forwarded_payload.node.label == NodeType.HERB
         assert forwarded_payload.node.status == NodeStatus.VERIFIED

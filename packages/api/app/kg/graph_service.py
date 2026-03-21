@@ -119,6 +119,35 @@ SET r.status = $status,
 RETURN r
 """
 
+QUERY_EXPAND_QUERY_FRONTIER = """
+MATCH (current)-[r]-(connected)
+WHERE current.id IN $frontier_ids
+RETURN
+    connected {.*, labels: labels(connected)} AS connected_node,
+    {
+        id: coalesce(r.id, elementId(r)),
+        rel_type: type(r),
+        status: coalesce(r.status, 'pending'),
+        verification_id: r.verification_id,
+        verified_by: r.verified_by,
+        verified_at: toString(r.verified_at),
+        source: {
+            id: startNode(r).id,
+            name: startNode(r).name,
+            source: startNode(r).source,
+            status: startNode(r).status,
+            labels: labels(startNode(r))
+        },
+        target: {
+            id: endNode(r).id,
+            name: endNode(r).name,
+            source: endNode(r).source,
+            status: endNode(r).status,
+            labels: labels(endNode(r))
+        }
+    } AS edge
+"""
+
 class GraphService:
     """Neo4j 图谱服务 - 支持多维度数据模型"""
 
@@ -325,47 +354,47 @@ class GraphService:
         """
         return query, params
 
-    def _build_expand_query(self, depth: int) -> str:
-        """Build the bounded second-stage subgraph expansion query."""
-        return f"""
-        MATCH (seed)
-        WHERE seed.id IN $node_ids
-        WITH collect(DISTINCT seed) AS seeds
-        UNWIND seeds AS seed
-        OPTIONAL MATCH path = (seed)-[*1..{depth}]-(connected)
-        WITH seeds, [p IN collect(DISTINCT path) WHERE p IS NOT NULL] AS paths
-        RETURN
-            [seed IN seeds | seed {{.*, labels: labels(seed)}}] AS matched_nodes,
-            reduce(node_maps = [], p IN paths |
-                node_maps + [n IN nodes(p) | n {{.*, labels: labels(n)}}]
-            ) AS nodes,
-            reduce(edge_maps = [], p IN paths |
-                edge_maps + [r IN relationships(p) |
-                    {{
-                        id: coalesce(r.id, elementId(r)),
-                        rel_type: type(r),
-                        status: coalesce(r.status, 'pending'),
-                        verification_id: r.verification_id,
-                        verified_by: r.verified_by,
-                        verified_at: toString(r.verified_at),
-                        source: {{
-                            id: startNode(r).id,
-                            name: startNode(r).name,
-                            source: startNode(r).source,
-                            status: startNode(r).status,
-                            labels: labels(startNode(r))
-                        }},
-                        target: {{
-                            id: endNode(r).id,
-                            name: endNode(r).name,
-                            source: endNode(r).source,
-                            status: endNode(r).status,
-                            labels: labels(endNode(r))
-                        }}
-                    }}
-                ]
-            ) AS edges
-        """
+    async def _expand_query_subgraph(
+        self,
+        session: Any,
+        seed_node_ids: List[str],
+        depth: int,
+    ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Expand from seed nodes one hop at a time, avoiding dynamic Cypher ranges."""
+        frontier_ids = list(seed_node_ids)
+        visited_node_ids = set(seed_node_ids)
+        collected_nodes: List[Dict[str, Any]] = []
+        collected_edges: List[Dict[str, Any]] = []
+
+        for _ in range(depth):
+            if not frontier_ids:
+                break
+
+            result = await session.run(QUERY_EXPAND_QUERY_FRONTIER, frontier_ids=frontier_ids)
+            rows = await result.data()
+            next_frontier: List[str] = []
+
+            for row in rows:
+                edge = row.get("edge")
+                connected_node = row.get("connected_node")
+
+                if edge:
+                    source = edge.get("source")
+                    target = edge.get("target")
+                    if source:
+                        collected_nodes.append(source)
+                    if target:
+                        collected_nodes.append(target)
+                    collected_edges.append(edge)
+
+                if connected_node and connected_node.get("id") not in visited_node_ids:
+                    connected_id = connected_node["id"]
+                    visited_node_ids.add(connected_id)
+                    next_frontier.append(connected_id)
+
+            frontier_ids = next_frontier
+
+        return self._dedupe_nodes(collected_nodes), self._dedupe_edges(collected_edges)
 
     # ============ 基础节点操作 ============
 
@@ -992,15 +1021,9 @@ class GraphService:
                     },
                 }
 
-            expand_query = self._build_expand_query(depth)
-            expand_result = await session.run(expand_query, node_ids=node_ids, depth=depth)
-            record = await expand_result.single()
+            expanded_nodes, edges = await self._expand_query_subgraph(session, node_ids, depth)
 
-        expanded_seed_nodes = self._record_value(record, "matched_nodes") if record else None
-        all_nodes = self._dedupe_nodes(
-            [*(expanded_seed_nodes or matched_seed_nodes), *(self._record_value(record, "nodes") or [])]
-        )
-        edges = self._dedupe_edges(self._record_value(record, "edges") or [])
+        all_nodes = self._dedupe_nodes([*matched_seed_nodes, *expanded_nodes])
         return {
             "summary": {
                 "mode": "advanced-query",

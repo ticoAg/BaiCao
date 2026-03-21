@@ -484,17 +484,12 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     }
 
     seed_result = _make_data_result([{"node": matched_node}])
-    graph_result = _make_result(
-        MockNeo4jRecord(
-            {
-                "matched_nodes": [matched_node],
-                "nodes": [matched_node, connected_node],
-                "edges": [edge_dict],
-            }
-        )
+    expand_level_one = _make_data_result(
+        [{"connected_node": connected_node, "edge": edge_dict}]
     )
+    expand_level_two = _make_data_result([])
     session = AsyncMock()
-    session.run = AsyncMock(side_effect=[seed_result, graph_result])
+    session.run = AsyncMock(side_effect=[seed_result, expand_level_one, expand_level_two])
     session.__aenter__ = AsyncMock(return_value=session)
     session.__aexit__ = AsyncMock(return_value=None)
     driver = MagicMock()
@@ -520,13 +515,18 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
 
     first_query = session.run.await_args_list[0].args[0]
     first_params = session.run.await_args_list[0].kwargs
+    second_query = session.run.await_args_list[1].args[0]
     second_params = session.run.await_args_list[1].kwargs
+    third_params = session.run.await_args_list[2].kwargs
     assert "MATCH (n:Herb)" in first_query
     assert "HAS_EFFICACY" in first_query
     assert "n.name CONTAINS $name_contains" in first_query
     assert first_params["name_contains"] == "人参"
-    assert second_params["node_ids"] == ["herb-001"]
-    assert second_params["depth"] == 2
+    assert "[*1.." not in first_query
+    assert "[*1.." not in second_query
+    assert second_params["frontier_ids"] == ["herb-001"]
+    assert third_params["frontier_ids"] == ["eff-001"]
+    assert session.run.await_count == 3
 
 
 @pytest.mark.unit
