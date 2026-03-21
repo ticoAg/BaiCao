@@ -89,6 +89,14 @@ def _make_result(record: Optional[MockNeo4jRecord] = None) -> AsyncMock:
     return result
 
 
+def _make_data_result(rows: List[Dict[str, Any]]) -> AsyncMock:
+    """Build an AsyncMock neo4j.Result whose .data() returns *rows*."""
+    result = AsyncMock()
+    result.single = AsyncMock(return_value=None)
+    result.data = AsyncMock(return_value=rows)
+    return result
+
+
 def _make_session(result: AsyncMock) -> AsyncMock:
     """Build an AsyncMock neo4j session that returns *result* on .run()."""
     session = AsyncMock()
@@ -435,6 +443,118 @@ async def test_verify_relationship(graph_service):
     assert result["verification_id"] == "ver-002"
 
 
+@pytest.mark.unit
+async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
+    """query_graph should build a bounded label/type-filtered query and return graph data."""
+    matched_node = {
+        "id": "herb-001",
+        "name": "人参",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Herb"],
+    }
+    connected_node = {
+        "id": "eff-001",
+        "name": "补气",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Efficacy"],
+    }
+    edge_dict = {
+        "id": "rel-001",
+        "rel_type": "HAS_EFFICACY",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {
+            "id": "herb-001",
+            "name": "人参",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Herb"],
+        },
+        "target": {
+            "id": "eff-001",
+            "name": "补气",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Efficacy"],
+        },
+    }
+
+    seed_result = _make_data_result([{"node": matched_node}])
+    graph_result = _make_result(
+        MockNeo4jRecord(
+            {
+                "matched_nodes": [matched_node],
+                "nodes": [matched_node, connected_node],
+                "edges": [edge_dict],
+            }
+        )
+    )
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[seed_result, graph_result])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {
+            "node": {"name_contains": "人参", "label": "Herb"},
+            "edge": {"rel_type": "HAS_EFFICACY"},
+            "depth": 2,
+            "limit": 20,
+        }
+    )
+
+    assert result["summary"]["mode"] == "advanced-query"
+    assert result["summary"]["matched_nodes"] == 1
+    assert result["summary"]["matched_edges"] == 1
+    assert result["summary"]["active_filters"] == ["名称包含: 人参", "节点类型: 药材", "关系类型: 功效"]
+    assert result["graph"]["center"] is None
+    assert result["graph"]["nodes"][0]["name"] == "人参"
+    assert result["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+
+    first_query = session.run.await_args_list[0].args[0]
+    first_params = session.run.await_args_list[0].kwargs
+    second_params = session.run.await_args_list[1].kwargs
+    assert "MATCH (n:Herb)" in first_query
+    assert "HAS_EFFICACY" in first_query
+    assert "n.name CONTAINS $name_contains" in first_query
+    assert first_params["name_contains"] == "人参"
+    assert second_params["node_ids"] == ["herb-001"]
+    assert second_params["depth"] == 2
+
+
+@pytest.mark.unit
+async def test_query_graph_returns_empty_graph_when_no_match(graph_service):
+    """query_graph should return an empty graph instead of raising when nothing matches."""
+    seed_result = _make_data_result([])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=seed_result)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {"node": {"name_contains": "不存在"}, "edge": {}, "depth": 1, "limit": 10}
+    )
+
+    assert result["summary"]["mode"] == "advanced-query"
+    assert result["summary"]["matched_nodes"] == 0
+    assert result["summary"]["matched_edges"] == 0
+    assert result["summary"]["active_filters"] == ["名称包含: 不存在"]
+    assert result["graph"]["center"] is None
+    assert result["graph"]["nodes"] == []
+    assert result["graph"]["edges"] == []
+    assert session.run.await_count == 1
+
+
 # ===========================================================================
 # Supplementary tests for coverage (utility methods, edge cases, other ops)
 # ===========================================================================
@@ -733,7 +853,6 @@ async def test_link_herb_enters_meridian(graph_service):
 @pytest.mark.unit
 async def test_search_nodes_with_label(graph_service):
     """search_nodes should filter by label when provided."""
-    data_record = MockNeo4jRecord({"n": MockNeo4jNode({"id": "n1", "name": "DangGui"}), "labels": ["Herb"]})
     result_mock = AsyncMock()
     result_mock.data = AsyncMock(return_value=[{"n": {"id": "n1", "name": "DangGui"}, "labels": ["Herb"]}])
     session = AsyncMock()

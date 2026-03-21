@@ -1,11 +1,43 @@
 """Graph Pydantic 模型（Neo4j 图谱）"""
 
 from datetime import datetime
-from uuid import UUID
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.enums import EdgeType, NodeStatus, NodeType
+
+
+GRAPH_QUERY_PROPERTY_KEYS = (
+    "latin_name",
+    "category",
+    "description",
+    "chemical_formula",
+    "parent_herb",
+    "min_duration",
+    "conditions",
+    "trait_category",
+    "years",
+    "quality_indicator",
+    "nature",
+    "tcm_type",
+    "type",
+)
+GraphQueryPropertyKey = Literal[
+    "latin_name",
+    "category",
+    "description",
+    "chemical_formula",
+    "parent_herb",
+    "min_duration",
+    "conditions",
+    "trait_category",
+    "years",
+    "quality_indicator",
+    "nature",
+    "tcm_type",
+    "type",
+]
 
 
 # ============ 节点 ============
@@ -162,7 +194,7 @@ class GraphData(BaseModel):
     """图谱数据响应"""
     center: dict | None = None
     nodes: list[dict]
-    edges: list[GraphEdge]
+    edges: list[dict]
 
     model_config = ConfigDict(strict=True)
 
@@ -190,22 +222,22 @@ class GraphRecord(BaseModel):
 class GraphQueryNodeFilters(BaseModel):
     """图谱高级查询的节点过滤条件"""
     name_contains: str | None = None
-    label: str | None = None
-    status: str | None = None
+    label: NodeType | None = None
+    status: NodeStatus | None = None
     source_contains: str | None = None
-    property_key: str | None = None
+    property_key: GraphQueryPropertyKey | None = None
     property_value_contains: str | None = None
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
 
 class GraphQueryEdgeFilters(BaseModel):
     """图谱高级查询的边过滤条件"""
-    rel_type: str | None = None
-    status: str | None = None
+    rel_type: EdgeType | None = None
+    status: NodeStatus | None = None
     connected_name_contains: str | None = None
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
 
 class GraphQueryRequest(BaseModel):

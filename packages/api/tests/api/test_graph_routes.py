@@ -6,6 +6,8 @@ Tests mock the graph_service singleton to isolate route-level behavior.
 import pytest
 from unittest.mock import AsyncMock, patch
 
+from app.models.enums import EdgeType, NodeStatus, NodeType
+
 from .helpers import (
     assert_status,
     assert_json_keys,
@@ -151,9 +153,11 @@ class TestGraphQuery:
         data = resp.json()
         assert_json_keys(data, {"summary", "graph"})
         forwarded_payload = mock_svc.query_graph.await_args.args[0]
-        assert forwarded_payload.node.status == "verified"
+        assert forwarded_payload.node.label == NodeType.HERB
+        assert forwarded_payload.node.status == NodeStatus.VERIFIED
         assert forwarded_payload.node.source_contains == "本草纲目"
         assert forwarded_payload.node.property_key == "latin_name"
         assert forwarded_payload.node.property_value_contains == "ginseng"
-        assert forwarded_payload.edge.status == "verified"
+        assert forwarded_payload.edge.rel_type == EdgeType.HAS_EFFICACY
+        assert forwarded_payload.edge.status == NodeStatus.VERIFIED
         assert forwarded_payload.edge.connected_name_contains == "补气"

@@ -2,7 +2,7 @@
 # 完整数据模型支持：药材-成分-品种-工艺-性状
 
 from typing import Optional, Any, Dict, List
-from uuid import UUID, uuid4 as uuid_module_uuid4
+from uuid import uuid4 as uuid_module_uuid4
 
 from neo4j import AsyncGraphDatabase
 
@@ -14,8 +14,65 @@ from ..models.enums import (
     HerbType,
     TraitCategory,
 )
+from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
 
 settings = get_settings()
+
+QUERY_LABEL_DISPLAY = {
+    NodeType.HERB.value: "药材",
+    NodeType.COMPONENT.value: "成分",
+    NodeType.VARIANT.value: "品种",
+    NodeType.PROCESS.value: "工艺",
+    NodeType.TRAIT.value: "性状",
+    NodeType.EFFICACY.value: "功效",
+    NodeType.FLAVOR.value: "性味",
+    NodeType.MERIDIAN.value: "归经",
+    NodeType.DISEASE.value: "疾病",
+    NodeType.TIMEPOINT.value: "时间点",
+}
+QUERY_REL_TYPE_DISPLAY = {
+    EdgeType.CONTAINS.value: "成分",
+    EdgeType.EXTRACTED_FROM.value: "提取自",
+    EdgeType.HAS_VARIANT.value: "品种",
+    EdgeType.VARIANT_OF.value: "隶属于品种",
+    EdgeType.PROCESSED_BY.value: "炮制",
+    EdgeType.APPLIES_TO.value: "适用于",
+    EdgeType.STORED_FOR.value: "储存时间",
+    EdgeType.HAS_TRAIT.value: "性状",
+    EdgeType.OBSERVED_IN.value: "观察于",
+    EdgeType.HAS_EFFICACY.value: "功效",
+    EdgeType.HAS_FLAVOR.value: "性味",
+    EdgeType.ENTERS_MERIDIAN.value: "归经",
+    EdgeType.TREATS.value: "主治",
+    EdgeType.INTERACTS_WITH.value: "相互作用",
+    EdgeType.SIMILAR_TO.value: "相似",
+    EdgeType.PARENT_OF.value: "父类",
+    EdgeType.CHILD_OF.value: "子类",
+    EdgeType.ORIGINATED_FROM.value: "产地",
+}
+QUERY_STATUS_DISPLAY = {
+    NodeStatus.PENDING.value: "待验证",
+    NodeStatus.VERIFIED.value: "已验证",
+    NodeStatus.REJECTED.value: "已拒绝",
+}
+QUERY_PROPERTY_DISPLAY = {
+    "latin_name": "拉丁名",
+    "category": "分类",
+    "description": "描述",
+    "chemical_formula": "化学式",
+    "parent_herb": "母本药材",
+    "min_duration": "最短时长",
+    "conditions": "条件",
+    "trait_category": "性状分类",
+    "years": "年份",
+    "quality_indicator": "质量指标",
+    "nature": "药性",
+    "tcm_type": "中医类型",
+    "type": "类型",
+}
+ALLOWED_QUERY_LABELS = {node_type.value for node_type in NodeType}
+ALLOWED_QUERY_REL_TYPES = {edge_type.value for edge_type in EdgeType}
+ALLOWED_QUERY_PROPERTY_KEYS = set(GRAPH_QUERY_PROPERTY_KEYS)
 
 
 # ============ Cypher Query Constants ============
@@ -130,6 +187,185 @@ class GraphService:
             )
             deduped[edge_key] = edge
         return list(deduped.values())
+
+    def _query_value(self, value: Any) -> Any:
+        """Normalize enum-like filter values to plain strings."""
+        return getattr(value, "value", value)
+
+    def _normalize_query_payload(self, payload: Any) -> Dict[str, Any]:
+        """Accept dict or Pydantic payload and normalize for query building."""
+        if hasattr(payload, "model_dump"):
+            raw_payload = payload.model_dump(mode="python")
+        else:
+            raw_payload = dict(payload or {})
+
+        depth = int(raw_payload.get("depth", 1))
+        limit = int(raw_payload.get("limit", 20))
+        return {
+            "node": dict(raw_payload.get("node") or {}),
+            "edge": dict(raw_payload.get("edge") or {}),
+            "depth": max(1, min(depth, 6)),
+            "limit": max(1, min(limit, 100)),
+        }
+
+    def _build_active_filters(
+        self,
+        node_filters: Dict[str, Any],
+        edge_filters: Dict[str, Any],
+    ) -> List[str]:
+        """Build Chinese summary strings for currently active filters."""
+        active_filters: List[str] = []
+        name_contains = node_filters.get("name_contains")
+        if name_contains:
+            active_filters.append(f"名称包含: {name_contains}")
+
+        label = self._query_value(node_filters.get("label"))
+        if label in ALLOWED_QUERY_LABELS:
+            active_filters.append(f"节点类型: {QUERY_LABEL_DISPLAY.get(label, label)}")
+
+        node_status = self._query_value(node_filters.get("status"))
+        if node_status in QUERY_STATUS_DISPLAY:
+            active_filters.append(f"节点状态: {QUERY_STATUS_DISPLAY[node_status]}")
+
+        source_contains = node_filters.get("source_contains")
+        if source_contains:
+            active_filters.append(f"来源包含: {source_contains}")
+
+        property_key = self._query_value(node_filters.get("property_key"))
+        property_value = node_filters.get("property_value_contains")
+        if property_key in ALLOWED_QUERY_PROPERTY_KEYS:
+            property_label = QUERY_PROPERTY_DISPLAY.get(property_key, property_key)
+            if property_value:
+                active_filters.append(f"{property_label}包含: {property_value}")
+            else:
+                active_filters.append(f"存在属性: {property_label}")
+
+        rel_type = self._query_value(edge_filters.get("rel_type"))
+        if rel_type in ALLOWED_QUERY_REL_TYPES:
+            active_filters.append(f"关系类型: {QUERY_REL_TYPE_DISPLAY.get(rel_type, rel_type)}")
+
+        edge_status = self._query_value(edge_filters.get("status"))
+        if edge_status in QUERY_STATUS_DISPLAY:
+            active_filters.append(f"关系状态: {QUERY_STATUS_DISPLAY[edge_status]}")
+
+        connected_name = edge_filters.get("connected_name_contains")
+        if connected_name:
+            active_filters.append(f"关联节点名称包含: {connected_name}")
+
+        return active_filters
+
+    def _build_seed_query(
+        self,
+        node_filters: Dict[str, Any],
+        edge_filters: Dict[str, Any],
+        limit: int,
+    ) -> tuple[str, Dict[str, Any]]:
+        """Build the bounded first-stage seed-node query."""
+        label = self._query_value(node_filters.get("label"))
+        label_clause = f":{label}" if label in ALLOWED_QUERY_LABELS else ""
+        params: Dict[str, Any] = {"seed_limit": limit + 1}
+        where_clauses: List[str] = []
+
+        name_contains = node_filters.get("name_contains")
+        if name_contains:
+            where_clauses.append("n.name CONTAINS $name_contains")
+            params["name_contains"] = name_contains
+
+        node_status = self._query_value(node_filters.get("status"))
+        if node_status in QUERY_STATUS_DISPLAY:
+            where_clauses.append("n.status = $node_status")
+            params["node_status"] = node_status
+
+        source_contains = node_filters.get("source_contains")
+        if source_contains:
+            where_clauses.append("coalesce(n.source, '') CONTAINS $node_source_contains")
+            params["node_source_contains"] = source_contains
+
+        property_key = self._query_value(node_filters.get("property_key"))
+        property_value = node_filters.get("property_value_contains")
+        if property_key in ALLOWED_QUERY_PROPERTY_KEYS:
+            where_clauses.append(f"n.{property_key} IS NOT NULL")
+            if property_value:
+                where_clauses.append(f"toString(n.{property_key}) CONTAINS $property_value_contains")
+                params["property_value_contains"] = property_value
+
+        rel_type = self._query_value(edge_filters.get("rel_type"))
+        rel_clause = f":{rel_type}" if rel_type in ALLOWED_QUERY_REL_TYPES else ""
+        edge_where_clauses: List[str] = []
+
+        edge_status = self._query_value(edge_filters.get("status"))
+        if edge_status in QUERY_STATUS_DISPLAY:
+            edge_where_clauses.append("r.status = $edge_status")
+            params["edge_status"] = edge_status
+
+        connected_name = edge_filters.get("connected_name_contains")
+        if connected_name:
+            edge_where_clauses.append("connected.name CONTAINS $connected_name_contains")
+            params["connected_name_contains"] = connected_name
+
+        if rel_clause or edge_where_clauses:
+            edge_where_sql = ""
+            if edge_where_clauses:
+                edge_where_sql = f"\n              WHERE {' AND '.join(edge_where_clauses)}"
+            where_clauses.append(
+                f"""EXISTS {{
+              MATCH (n)-[r{rel_clause}]-(connected){edge_where_sql}
+            }}"""
+            )
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = f"\n        WHERE {' AND '.join(where_clauses)}"
+
+        query = f"""
+        MATCH (n{label_clause}){where_sql}
+        RETURN n {{.*, labels: labels(n)}} AS node
+        ORDER BY n.name
+        LIMIT $seed_limit
+        """
+        return query, params
+
+    def _build_expand_query(self, depth: int) -> str:
+        """Build the bounded second-stage subgraph expansion query."""
+        return f"""
+        MATCH (seed)
+        WHERE seed.id IN $node_ids
+        WITH collect(DISTINCT seed) AS seeds
+        UNWIND seeds AS seed
+        OPTIONAL MATCH path = (seed)-[*1..{depth}]-(connected)
+        WITH seeds, [p IN collect(DISTINCT path) WHERE p IS NOT NULL] AS paths
+        RETURN
+            [seed IN seeds | seed {{.*, labels: labels(seed)}}] AS matched_nodes,
+            reduce(node_maps = [], p IN paths |
+                node_maps + [n IN nodes(p) | n {{.*, labels: labels(n)}}]
+            ) AS nodes,
+            reduce(edge_maps = [], p IN paths |
+                edge_maps + [r IN relationships(p) |
+                    {{
+                        id: coalesce(r.id, elementId(r)),
+                        rel_type: type(r),
+                        status: coalesce(r.status, 'pending'),
+                        verification_id: r.verification_id,
+                        verified_by: r.verified_by,
+                        verified_at: toString(r.verified_at),
+                        source: {{
+                            id: startNode(r).id,
+                            name: startNode(r).name,
+                            source: startNode(r).source,
+                            status: startNode(r).status,
+                            labels: labels(startNode(r))
+                        }},
+                        target: {{
+                            id: endNode(r).id,
+                            name: endNode(r).name,
+                            source: endNode(r).source,
+                            status: endNode(r).status,
+                            labels: labels(endNode(r))
+                        }}
+                    }}
+                ]
+            ) AS edges
+        """
 
     # ============ 基础节点操作 ============
 
@@ -707,6 +943,74 @@ class GraphService:
                     "edges": [self._map_relationship_to_dict(r) for r in self._record_value(record, "edges") or []]
                 }
             return {"center": None, "nodes": [], "edges": []}
+
+    async def query_graph(self, payload: Any) -> Dict[str, Any]:
+        """按过滤条件查询 seed nodes，并在指定深度内扩展为子图。"""
+        await self.ensure_connected()
+
+        normalized_payload = self._normalize_query_payload(payload)
+        node_filters = normalized_payload["node"]
+        edge_filters = normalized_payload["edge"]
+        depth = normalized_payload["depth"]
+        limit = normalized_payload["limit"]
+        active_filters = self._build_active_filters(node_filters, edge_filters)
+        seed_query, seed_params = self._build_seed_query(node_filters, edge_filters, limit)
+
+        async with self.driver.session() as session:
+            seed_result = await session.run(seed_query, **seed_params)
+            seed_rows = await seed_result.data()
+            matched_seed_nodes = [row.get("node") for row in seed_rows if row.get("node")]
+
+            truncated = len(matched_seed_nodes) > limit
+            matched_seed_nodes = matched_seed_nodes[:limit]
+            if not matched_seed_nodes:
+                return {
+                    "summary": {
+                        "mode": "advanced-query",
+                        "matched_nodes": 0,
+                        "matched_edges": 0,
+                        "truncated": False,
+                        "active_filters": active_filters,
+                    },
+                    "graph": {"center": None, "nodes": [], "edges": []},
+                }
+
+            node_ids = [node["id"] for node in matched_seed_nodes if node.get("id")]
+            if not node_ids:
+                return {
+                    "summary": {
+                        "mode": "advanced-query",
+                        "matched_nodes": len(matched_seed_nodes),
+                        "matched_edges": 0,
+                        "truncated": truncated,
+                        "active_filters": active_filters,
+                    },
+                    "graph": {
+                        "center": None,
+                        "nodes": self._dedupe_nodes(matched_seed_nodes),
+                        "edges": [],
+                    },
+                }
+
+            expand_query = self._build_expand_query(depth)
+            expand_result = await session.run(expand_query, node_ids=node_ids, depth=depth)
+            record = await expand_result.single()
+
+        expanded_seed_nodes = self._record_value(record, "matched_nodes") if record else None
+        all_nodes = self._dedupe_nodes(
+            [*(expanded_seed_nodes or matched_seed_nodes), *(self._record_value(record, "nodes") or [])]
+        )
+        edges = self._dedupe_edges(self._record_value(record, "edges") or [])
+        return {
+            "summary": {
+                "mode": "advanced-query",
+                "matched_nodes": len(matched_seed_nodes),
+                "matched_edges": len(edges),
+                "truncated": truncated,
+                "active_filters": active_filters,
+            },
+            "graph": {"center": None, "nodes": all_nodes, "edges": edges},
+        }
 
     async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有成分"""
