@@ -28,9 +28,91 @@ export interface GraphEdge {
 }
 
 export interface GraphData {
-  center: GraphNode;
+  center: GraphNode | null;
   nodes: GraphNode[];
   edges: GraphEdge[];
+}
+
+export type GraphQueryPropertyKey =
+  | "latin_name"
+  | "category"
+  | "description"
+  | "chemical_formula"
+  | "parent_herb"
+  | "min_duration"
+  | "conditions"
+  | "trait_category"
+  | "years"
+  | "quality_indicator"
+  | "nature"
+  | "tcm_type"
+  | "type";
+
+export type GraphNodeLabel =
+  | "Herb"
+  | "Component"
+  | "Variant"
+  | "Process"
+  | "Trait"
+  | "Efficacy"
+  | "Flavor"
+  | "Meridian"
+  | "Disease"
+  | "TimePoint";
+
+export type GraphEdgeRelType =
+  | "CONTAINS"
+  | "EXTRACTED_FROM"
+  | "HAS_VARIANT"
+  | "VARIANT_OF"
+  | "PROCESSED_BY"
+  | "APPLIES_TO"
+  | "STORED_FOR"
+  | "HAS_TRAIT"
+  | "OBSERVED_IN"
+  | "HAS_EFFICACY"
+  | "HAS_FLAVOR"
+  | "ENTERS_MERIDIAN"
+  | "TREATS"
+  | "INTERACTS_WITH"
+  | "SIMILAR_TO"
+  | "PARENT_OF"
+  | "CHILD_OF"
+  | "ORIGINATED_FROM";
+
+export interface GraphQueryNodeFilters {
+  name_contains?: string;
+  label?: GraphNodeLabel;
+  status?: VerificationStatus;
+  source_contains?: string;
+  property_key?: GraphQueryPropertyKey;
+  property_value_contains?: string;
+}
+
+export interface GraphQueryEdgeFilters {
+  rel_type?: GraphEdgeRelType;
+  status?: VerificationStatus;
+  connected_name_contains?: string;
+}
+
+export interface GraphQueryRequest {
+  node?: GraphQueryNodeFilters;
+  edge?: GraphQueryEdgeFilters;
+  depth?: number;
+  limit?: number;
+}
+
+export interface GraphQuerySummary {
+  mode: string;
+  matched_nodes: number;
+  matched_edges: number;
+  truncated: boolean;
+  active_filters: string[];
+}
+
+export interface GraphQueryResponse {
+  summary: GraphQuerySummary;
+  graph: GraphData;
 }
 
 export interface SearchResult {
@@ -71,6 +153,29 @@ export const labelTagColors: Record<string, string> = {
 };
 
 export const defaultNodeColor = "#8c8c8c";
+
+// Neo4j 风格三元色组：填充色 + 加深边框色 + 智能文字色
+export const nodeStyleMap: Record<
+  string,
+  { fill: string; stroke: string; textColor: string }
+> = {
+  Herb: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
+  Efficacy: { fill: "#8DCC93", stroke: "#5db665", textColor: "#2A2C34" },
+  Flavor: { fill: "#F79767", stroke: "#f36924", textColor: "#FFFFFF" },
+  Meridian: { fill: "#C990C0", stroke: "#b261a5", textColor: "#FFFFFF" },
+  Disease: { fill: "#F16667", stroke: "#eb2728", textColor: "#FFFFFF" },
+  Component: { fill: "#57C7E3", stroke: "#23b3d7", textColor: "#2A2C34" },
+  Variant: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
+  Process: { fill: "#D9C8AE", stroke: "#c0a378", textColor: "#2A2C34" },
+  Trait: { fill: "#DA7194", stroke: "#cc3c6c", textColor: "#FFFFFF" },
+  TimePoint: { fill: "#FFC454", stroke: "#d7a013", textColor: "#2A2C34" },
+};
+
+export const defaultNodeStyle = {
+  fill: "#A5ABB6",
+  stroke: "#9AA1AC",
+  textColor: "#FFFFFF",
+};
 
 // 关系类型中文映射
 export const relTypeLabels: Record<string, string> = {

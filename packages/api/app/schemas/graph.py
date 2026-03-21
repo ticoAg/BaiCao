@@ -1,11 +1,43 @@
 """Graph Pydantic 模型（Neo4j 图谱）"""
 
 from datetime import datetime
-from uuid import UUID
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.enums import EdgeType, NodeStatus, NodeType
+
+
+GRAPH_QUERY_PROPERTY_KEYS = (
+    "latin_name",
+    "category",
+    "description",
+    "chemical_formula",
+    "parent_herb",
+    "min_duration",
+    "conditions",
+    "trait_category",
+    "years",
+    "quality_indicator",
+    "nature",
+    "tcm_type",
+    "type",
+)
+GraphQueryPropertyKey = Literal[
+    "latin_name",
+    "category",
+    "description",
+    "chemical_formula",
+    "parent_herb",
+    "min_duration",
+    "conditions",
+    "trait_category",
+    "years",
+    "quality_indicator",
+    "nature",
+    "tcm_type",
+    "type",
+]
 
 
 # ============ 节点 ============
@@ -146,14 +178,29 @@ class HasTraitEdge(BaseEdge):
     year_range: str | None = None
 
 
+class GraphEdgeNodeRef(BaseModel):
+    """图谱边上的节点引用"""
+    id: str
+    name: str
+    source: str | None = None
+    status: NodeStatus = NodeStatus.PENDING
+    labels: list[str]
+
+    model_config = ConfigDict(strict=False)
+
+
 class GraphEdge(BaseModel):
     """图谱边"""
-    type: EdgeType
-    source: str
-    target: str
-    properties: dict
+    id: str | None = None
+    rel_type: EdgeType
+    status: NodeStatus = NodeStatus.PENDING
+    verification_id: str | None = None
+    verified_by: str | None = None
+    verified_at: str | None = None
+    source: GraphEdgeNodeRef
+    target: GraphEdgeNodeRef
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=False)
 
 
 # ============ 图谱响应 ============
@@ -183,5 +230,55 @@ class GraphRecord(BaseModel):
     edges: list[dict] | None = None
     source: str
     status: NodeStatus = NodeStatus.PENDING
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryNodeFilters(BaseModel):
+    """图谱高级查询的节点过滤条件"""
+    name_contains: str | None = None
+    label: NodeType | None = None
+    status: NodeStatus | None = None
+    source_contains: str | None = None
+    property_key: GraphQueryPropertyKey | None = None
+    property_value_contains: str | None = None
+
+    model_config = ConfigDict(strict=False)
+
+
+class GraphQueryEdgeFilters(BaseModel):
+    """图谱高级查询的边过滤条件"""
+    rel_type: EdgeType | None = None
+    status: NodeStatus | None = None
+    connected_name_contains: str | None = None
+
+    model_config = ConfigDict(strict=False)
+
+
+class GraphQueryRequest(BaseModel):
+    """图谱高级查询请求"""
+    node: GraphQueryNodeFilters | None = None
+    edge: GraphQueryEdgeFilters | None = None
+    depth: int = Field(1, ge=1, le=6)
+    limit: int = Field(20, ge=1, le=100)
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQuerySummary(BaseModel):
+    """图谱高级查询摘要"""
+    mode: str
+    matched_nodes: int
+    matched_edges: int
+    truncated: bool
+    active_filters: list[str]
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryResponse(BaseModel):
+    """图谱高级查询响应"""
+    summary: GraphQuerySummary
+    graph: GraphData
 
     model_config = ConfigDict(strict=True)

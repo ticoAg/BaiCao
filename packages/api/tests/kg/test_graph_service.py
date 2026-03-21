@@ -89,6 +89,14 @@ def _make_result(record: Optional[MockNeo4jRecord] = None) -> AsyncMock:
     return result
 
 
+def _make_data_result(rows: List[Dict[str, Any]]) -> AsyncMock:
+    """Build an AsyncMock neo4j.Result whose .data() returns *rows*."""
+    result = AsyncMock()
+    result.single = AsyncMock(return_value=None)
+    result.data = AsyncMock(return_value=rows)
+    return result
+
+
 def _make_session(result: AsyncMock) -> AsyncMock:
     """Build an AsyncMock neo4j session that returns *result* on .run()."""
     session = AsyncMock()
@@ -435,6 +443,312 @@ async def test_verify_relationship(graph_service):
     assert result["verification_id"] == "ver-002"
 
 
+@pytest.mark.unit
+async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
+    """query_graph should build a bounded label/type-filtered query and return graph data."""
+    matched_node = {
+        "id": "herb-001",
+        "name": "人参",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Herb"],
+    }
+    connected_node = {
+        "id": "eff-001",
+        "name": "补气",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Efficacy"],
+    }
+    edge_dict = {
+        "id": "rel-001",
+        "rel_type": "HAS_EFFICACY",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {
+            "id": "herb-001",
+            "name": "人参",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Herb"],
+        },
+        "target": {
+            "id": "eff-001",
+            "name": "补气",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Efficacy"],
+        },
+    }
+
+    seed_result = _make_data_result([{"node": matched_node}])
+    expand_level_one = _make_data_result(
+        [{"connected_node": connected_node, "edge": edge_dict}]
+    )
+    expand_level_two = _make_data_result([])
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[seed_result, expand_level_one, expand_level_two])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {
+            "node": {"name_contains": "人参", "label": "Herb"},
+            "edge": {"rel_type": "HAS_EFFICACY"},
+            "depth": 2,
+            "limit": 20,
+        }
+    )
+
+    assert result["summary"]["mode"] == "advanced-query"
+    assert result["summary"]["matched_nodes"] == 1
+    assert result["summary"]["matched_edges"] == 1
+    assert result["summary"]["active_filters"] == ["名称包含: 人参", "节点类型: 药材", "关系类型: 功效"]
+    assert result["graph"]["center"] is None
+    assert result["graph"]["nodes"][0]["name"] == "人参"
+    assert result["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+
+    first_query = session.run.await_args_list[0].args[0]
+    first_params = session.run.await_args_list[0].kwargs
+    second_query = session.run.await_args_list[1].args[0]
+    second_params = session.run.await_args_list[1].kwargs
+    third_params = session.run.await_args_list[2].kwargs
+    assert "MATCH (n:Herb)" in first_query
+    assert "HAS_EFFICACY" in first_query
+    assert "n.name CONTAINS $name_contains" in first_query
+    assert first_params["name_contains"] == "人参"
+    assert "[*1.." not in first_query
+    assert "[*1.." not in second_query
+    assert second_params["frontier_ids"] == ["herb-001"]
+    assert third_params["frontier_ids"] == ["eff-001"]
+    assert session.run.await_count == 3
+
+
+@pytest.mark.unit
+async def test_query_graph_returns_empty_graph_when_no_match(graph_service):
+    """query_graph should return an empty graph instead of raising when nothing matches."""
+    seed_result = _make_data_result([])
+    session = AsyncMock()
+    session.run = AsyncMock(return_value=seed_result)
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {"node": {"name_contains": "不存在"}, "edge": {}, "depth": 1, "limit": 10}
+    )
+
+    assert result["summary"]["mode"] == "advanced-query"
+    assert result["summary"]["matched_nodes"] == 0
+    assert result["summary"]["matched_edges"] == 0
+    assert result["summary"]["active_filters"] == ["名称包含: 不存在"]
+    assert result["graph"]["center"] is None
+    assert result["graph"]["nodes"] == []
+    assert result["graph"]["edges"] == []
+    assert session.run.await_count == 1
+
+
+@pytest.mark.unit
+async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph_service):
+    """query_graph should not mix non-matching relationships into the returned graph."""
+    matched_node = {
+        "id": "herb-001",
+        "name": "人参",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Herb"],
+    }
+    efficacy_node = {
+        "id": "eff-001",
+        "name": "补气",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Efficacy"],
+    }
+    flavor_node = {
+        "id": "flv-001",
+        "name": "甘",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Flavor"],
+    }
+    efficacy_edge = {
+        "id": "rel-001",
+        "rel_type": "HAS_EFFICACY",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {
+            "id": "herb-001",
+            "name": "人参",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Herb"],
+        },
+        "target": {
+            "id": "eff-001",
+            "name": "补气",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Efficacy"],
+        },
+    }
+    flavor_edge = {
+        "id": "rel-002",
+        "rel_type": "HAS_FLAVOR",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {
+            "id": "herb-001",
+            "name": "人参",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Herb"],
+        },
+        "target": {
+            "id": "flv-001",
+            "name": "甘",
+            "source": "本草纲目",
+            "status": NodeStatus.VERIFIED.value,
+            "labels": ["Flavor"],
+        },
+    }
+
+    seed_result = _make_data_result([{"node": matched_node}])
+    expand_result = _make_data_result(
+        [
+            {"connected_node": efficacy_node, "edge": efficacy_edge},
+            {"connected_node": flavor_node, "edge": flavor_edge},
+        ]
+    )
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[seed_result, expand_result])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {
+            "node": {"name_contains": "人参", "label": "Herb"},
+            "edge": {"rel_type": "HAS_EFFICACY"},
+            "depth": 1,
+            "limit": 20,
+        }
+    )
+
+    assert [edge["rel_type"] for edge in result["graph"]["edges"]] == ["HAS_EFFICACY"]
+    assert [node["name"] for node in result["graph"]["nodes"]] == ["人参", "补气"]
+    assert result["summary"]["matched_edges"] == 1
+
+
+@pytest.mark.unit
+async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
+    """query_graph should tighten per-hop expansion budget as graph budget is consumed."""
+    matched_node = {
+        "id": "herb-001",
+        "name": "人参",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Herb"],
+    }
+    efficacy_node = {
+        "id": "eff-001",
+        "name": "补气",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Efficacy"],
+    }
+    flavor_node = {
+        "id": "flv-001",
+        "name": "甘",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Flavor"],
+    }
+    disease_node = {
+        "id": "dis-001",
+        "name": "虚证",
+        "source": "本草纲目",
+        "status": NodeStatus.VERIFIED.value,
+        "labels": ["Disease"],
+    }
+    efficacy_edge = {
+        "id": "rel-001",
+        "rel_type": "HAS_EFFICACY",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {"id": "herb-001", "name": "人参", "source": "本草纲目", "status": "verified", "labels": ["Herb"]},
+        "target": {"id": "eff-001", "name": "补气", "source": "本草纲目", "status": "verified", "labels": ["Efficacy"]},
+    }
+    flavor_edge = {
+        "id": "rel-002",
+        "rel_type": "HAS_FLAVOR",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {"id": "herb-001", "name": "人参", "source": "本草纲目", "status": "verified", "labels": ["Herb"]},
+        "target": {"id": "flv-001", "name": "甘", "source": "本草纲目", "status": "verified", "labels": ["Flavor"]},
+    }
+    treats_edge = {
+        "id": "rel-003",
+        "rel_type": "TREATS",
+        "status": NodeStatus.VERIFIED.value,
+        "verification_id": None,
+        "verified_by": None,
+        "verified_at": None,
+        "source": {"id": "eff-001", "name": "补气", "source": "本草纲目", "status": "verified", "labels": ["Efficacy"]},
+        "target": {"id": "dis-001", "name": "虚证", "source": "本草纲目", "status": "verified", "labels": ["Disease"]},
+    }
+
+    seed_result = _make_data_result([{"node": matched_node}])
+    expand_level_one = _make_data_result(
+        [
+            {"connected_node": efficacy_node, "edge": efficacy_edge},
+            {"connected_node": flavor_node, "edge": flavor_edge},
+        ]
+    )
+    expand_level_two = _make_data_result(
+        [{"connected_node": disease_node, "edge": treats_edge}]
+    )
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[seed_result, expand_level_one, expand_level_two])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    driver = MagicMock()
+    driver.session = MagicMock(return_value=session)
+    graph_service.driver = driver
+
+    result = await graph_service.query_graph(
+        {
+            "node": {"name_contains": "人参", "label": "Herb"},
+            "edge": {},
+            "depth": 2,
+            "limit": 1,
+        }
+    )
+
+    second_params = session.run.await_args_list[1].kwargs
+    assert second_params["hop_limit"] == 1
+    assert result["summary"]["matched_edges"] == 1
+    assert len(result["graph"]["nodes"]) == 2
+    assert len(result["graph"]["edges"]) == 1
+
+
 # ===========================================================================
 # Supplementary tests for coverage (utility methods, edge cases, other ops)
 # ===========================================================================
@@ -733,7 +1047,6 @@ async def test_link_herb_enters_meridian(graph_service):
 @pytest.mark.unit
 async def test_search_nodes_with_label(graph_service):
     """search_nodes should filter by label when provided."""
-    data_record = MockNeo4jRecord({"n": MockNeo4jNode({"id": "n1", "name": "DangGui"}), "labels": ["Herb"]})
     result_mock = AsyncMock()
     result_mock.data = AsyncMock(return_value=[{"n": {"id": "n1", "name": "DangGui"}, "labels": ["Herb"]}])
     session = AsyncMock()

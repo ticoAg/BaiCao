@@ -6,6 +6,8 @@ Tests mock the graph_service singleton to isolate route-level behavior.
 import pytest
 from unittest.mock import AsyncMock, patch
 
+from app.models.enums import EdgeType, NodeStatus, NodeType
+
 from .helpers import (
     assert_status,
     assert_json_keys,
@@ -106,3 +108,104 @@ class TestGetPending:
         assert_json_keys(data, {"items", "type"})
         assert data["type"] == "nodes"
         assert len(data["items"]) == 1
+
+
+class TestGraphQuery:
+    """POST /api/v1/graph/query"""
+
+    @pytest.mark.asyncio
+    async def test_query_graph_returns_summary_and_graph(self, client):
+        """Advanced graph query returns summary and graph payload."""
+        payload = {
+            "node": {
+                "name_contains": "人参",
+                "label": "Herb",
+                "status": "verified",
+                "source_contains": "本草纲目",
+                "property_key": "latin_name",
+                "property_value_contains": "ginseng",
+            },
+            "edge": {
+                "rel_type": "HAS_EFFICACY",
+                "status": "verified",
+                "connected_name_contains": "补气",
+            },
+            "depth": 2,
+            "limit": 20,
+        }
+        service_response = {
+            "summary": {
+                "mode": "advanced-query",
+                "matched_nodes": 3,
+                "matched_edges": 2,
+                "truncated": False,
+                "active_filters": ["名称包含: 人参", "关系类型: HAS_EFFICACY"],
+            },
+            "graph": {
+                "center": None,
+                "nodes": [],
+                "edges": [
+                    {
+                        "id": "rel-1",
+                        "rel_type": "HAS_EFFICACY",
+                        "status": "verified",
+                        "verification_id": None,
+                        "verified_by": None,
+                        "verified_at": None,
+                        "source": {
+                            "id": "herb-1",
+                            "name": "人参",
+                            "source": "本草纲目",
+                            "status": "verified",
+                            "labels": ["Herb"],
+                        },
+                        "target": {
+                            "id": "eff-1",
+                            "name": "补气",
+                            "source": "本草纲目",
+                            "status": "verified",
+                            "labels": ["Efficacy"],
+                        },
+                    }
+                ],
+            },
+        }
+
+        with patch("app.api.graph.graph_service") as mock_svc:
+            mock_svc.query_graph = AsyncMock(return_value=service_response)
+
+            resp = await client.post("/api/v1/graph/query", json=payload)
+
+        assert_status(resp, 200)
+        data = resp.json()
+        assert_json_keys(data, {"summary", "graph"})
+        assert data["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+        assert data["graph"]["edges"][0]["source"]["name"] == "人参"
+        forwarded_payload = mock_svc.query_graph.await_args.args[0]
+        assert forwarded_payload.node.label == NodeType.HERB
+        assert forwarded_payload.node.status == NodeStatus.VERIFIED
+        assert forwarded_payload.node.source_contains == "本草纲目"
+        assert forwarded_payload.node.property_key == "latin_name"
+        assert forwarded_payload.node.property_value_contains == "ginseng"
+        assert forwarded_payload.edge.rel_type == EdgeType.HAS_EFFICACY
+        assert forwarded_payload.edge.status == NodeStatus.VERIFIED
+        assert forwarded_payload.edge.connected_name_contains == "补气"
+
+    @pytest.mark.asyncio
+    async def test_query_graph_rejects_invalid_filter_enum(self, client):
+        """Invalid enum or property_key values should be rejected by request schema."""
+        payload = {
+            "node": {
+                "label": "NotALabel",
+                "property_key": "drop_table",
+            },
+            "edge": {
+                "rel_type": "NOT_A_REL",
+            },
+            "depth": 1,
+            "limit": 10,
+        }
+
+        resp = await client.post("/api/v1/graph/query", json=payload)
+
+        assert_status(resp, 422)

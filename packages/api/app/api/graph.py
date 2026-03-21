@@ -3,8 +3,15 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from ..kg.graph_service import graph_service
+from ..schemas.graph import GraphQueryRequest, GraphQueryResponse
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+@router.post("/query", response_model=GraphQueryResponse)
+async def query_graph(payload: GraphQueryRequest):
+    """按过滤条件执行图谱高级查询。"""
+    return await graph_service.query_graph(payload)
 
 
 @router.get("/herb/{name}")
