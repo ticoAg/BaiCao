@@ -190,3 +190,22 @@ class TestGraphQuery:
         assert forwarded_payload.edge.rel_type == EdgeType.HAS_EFFICACY
         assert forwarded_payload.edge.status == NodeStatus.VERIFIED
         assert forwarded_payload.edge.connected_name_contains == "补气"
+
+    @pytest.mark.asyncio
+    async def test_query_graph_rejects_invalid_filter_enum(self, client):
+        """Invalid enum or property_key values should be rejected by request schema."""
+        payload = {
+            "node": {
+                "label": "NotALabel",
+                "property_key": "drop_table",
+            },
+            "edge": {
+                "rel_type": "NOT_A_REL",
+            },
+            "depth": 1,
+            "limit": 10,
+        }
+
+        resp = await client.post("/api/v1/graph/query", json=payload)
+
+        assert_status(resp, 422)

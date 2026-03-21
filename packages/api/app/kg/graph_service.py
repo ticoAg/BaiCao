@@ -146,6 +146,7 @@ RETURN
             labels: labels(endNode(r))
         }
     } AS edge
+LIMIT $hop_limit
 """
 
 class GraphService:
@@ -220,6 +221,16 @@ class GraphService:
     def _query_value(self, value: Any) -> Any:
         """Normalize enum-like filter values to plain strings."""
         return getattr(value, "value", value)
+
+    def _edge_key(self, edge: Dict[str, Any]) -> tuple[str, str, str]:
+        """Build a stable dedupe key for an edge payload."""
+        source = edge.get("source") or {}
+        target = edge.get("target") or {}
+        return (
+            str(source.get("id") or source.get("name")),
+            str(edge.get("rel_type") or edge.get("type") or ""),
+            str(target.get("id") or target.get("name")),
+        )
 
     def _normalize_query_payload(self, payload: Any) -> Dict[str, Any]:
         """Accept dict or Pydantic payload and normalize for query building."""
@@ -354,43 +365,109 @@ class GraphService:
         """
         return query, params
 
+    def _build_expand_query(self, edge_filters: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+        """Build the one-hop expansion query plus bound parameters."""
+        rel_type = self._query_value(edge_filters.get("rel_type"))
+        rel_clause = f":{rel_type}" if rel_type in ALLOWED_QUERY_REL_TYPES else ""
+        where_clauses = ["current.id IN $frontier_ids"]
+        params: Dict[str, Any] = {}
+
+        edge_status = self._query_value(edge_filters.get("status"))
+        if edge_status in QUERY_STATUS_DISPLAY:
+            where_clauses.append("r.status = $edge_status")
+            params["edge_status"] = edge_status
+
+        connected_name = edge_filters.get("connected_name_contains")
+        if connected_name:
+            where_clauses.append("connected.name CONTAINS $connected_name_contains")
+            params["connected_name_contains"] = connected_name
+
+        query = QUERY_EXPAND_QUERY_FRONTIER.replace(
+            "MATCH (current)-[r]-(connected)\nWHERE current.id IN $frontier_ids",
+            f"MATCH (current)-[r{rel_clause}]-(connected)\nWHERE {' AND '.join(where_clauses)}",
+        )
+        return query, params
+
+    def _edge_matches_filters(
+        self,
+        edge: Dict[str, Any],
+        connected_node: Optional[Dict[str, Any]],
+        edge_filters: Dict[str, Any],
+    ) -> bool:
+        """Apply edge filters defensively to expansion results."""
+        rel_type = self._query_value(edge_filters.get("rel_type"))
+        if rel_type in ALLOWED_QUERY_REL_TYPES and edge.get("rel_type") != rel_type:
+            return False
+
+        edge_status = self._query_value(edge_filters.get("status"))
+        if edge_status in QUERY_STATUS_DISPLAY and edge.get("status") != edge_status:
+            return False
+
+        connected_name = edge_filters.get("connected_name_contains")
+        if connected_name and not connected_node:
+            return False
+        if connected_name and connected_node:
+            connected_name_value = connected_node.get("name") or ""
+            if connected_name not in connected_name_value:
+                return False
+
+        return True
+
     async def _expand_query_subgraph(
         self,
         session: Any,
         seed_node_ids: List[str],
         depth: int,
+        limit: int,
+        edge_filters: Dict[str, Any],
     ) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Expand from seed nodes one hop at a time, avoiding dynamic Cypher ranges."""
         frontier_ids = list(seed_node_ids)
-        visited_node_ids = set(seed_node_ids)
+        seen_node_ids = set(seed_node_ids)
+        seen_edge_keys = set()
         collected_nodes: List[Dict[str, Any]] = []
         collected_edges: List[Dict[str, Any]] = []
+        max_graph_nodes = max(limit * max(depth, 1), len(seed_node_ids))
+        max_graph_edges = limit * max(depth, 1)
+        remaining_node_budget = max(max_graph_nodes - len(seed_node_ids), 0)
+        remaining_edge_budget = max_graph_edges
+        expand_query, expand_params = self._build_expand_query(edge_filters)
 
         for _ in range(depth):
-            if not frontier_ids:
+            if not frontier_ids or remaining_node_budget <= 0 or remaining_edge_budget <= 0:
                 break
 
-            result = await session.run(QUERY_EXPAND_QUERY_FRONTIER, frontier_ids=frontier_ids)
-            rows = await result.data()
+            hop_limit = min(remaining_node_budget, remaining_edge_budget)
+            if hop_limit <= 0:
+                break
+
+            result = await session.run(
+                expand_query,
+                frontier_ids=frontier_ids,
+                hop_limit=hop_limit,
+                **expand_params,
+            )
+            rows = (await result.data())[:hop_limit]
             next_frontier: List[str] = []
 
             for row in rows:
                 edge = row.get("edge")
                 connected_node = row.get("connected_node")
+                if not edge or not self._edge_matches_filters(edge, connected_node, edge_filters):
+                    continue
 
-                if edge:
-                    source = edge.get("source")
-                    target = edge.get("target")
-                    if source:
-                        collected_nodes.append(source)
-                    if target:
-                        collected_nodes.append(target)
+                edge_key = self._edge_key(edge)
+                if edge_key not in seen_edge_keys and remaining_edge_budget > 0:
                     collected_edges.append(edge)
+                    seen_edge_keys.add(edge_key)
+                    remaining_edge_budget -= 1
 
-                if connected_node and connected_node.get("id") not in visited_node_ids:
+                if connected_node and connected_node.get("id") not in seen_node_ids and remaining_node_budget > 0:
                     connected_id = connected_node["id"]
-                    visited_node_ids.add(connected_id)
+                    seen_node_ids.add(connected_id)
+                    collected_nodes.append(connected_node)
                     next_frontier.append(connected_id)
+                    remaining_node_budget -= 1
 
             frontier_ids = next_frontier
 
@@ -1021,7 +1098,13 @@ class GraphService:
                     },
                 }
 
-            expanded_nodes, edges = await self._expand_query_subgraph(session, node_ids, depth)
+            expanded_nodes, edges = await self._expand_query_subgraph(
+                session,
+                node_ids,
+                depth,
+                limit,
+                edge_filters,
+            )
 
         all_nodes = self._dedupe_nodes([*matched_seed_nodes, *expanded_nodes])
         return {
