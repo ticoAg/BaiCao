@@ -52,7 +52,6 @@ pnpm --dir packages/web dev
 补充说明：
 
 - 本轮 Task 5 仅执行 API + Web 自动化最小验证，不包含浏览器人工操作
-- 浏览器最终验收将由 controller 在后续统一执行
 
 ## 4. 验收步骤
 
@@ -190,7 +189,7 @@ pnpm --dir packages/web typecheck
 - 属性 spot-check 查询同样返回 `matched_nodes = 1`、`matched_edges = 4`，且 `active_filters` 包含“分类包含: 补气”
 - `pnpm --dir packages/web test --run ...` 结果为 `3 passed` / `9 passed`
 - `pnpm --dir packages/web typecheck` 退出码为 `0`
-- 本轮未执行浏览器人工验收；`/graph` 与 `/graph/人参` 的最终浏览器闭环由 controller 后续统一复核
+- 本轮未执行浏览器人工验收，因此本次证据仅覆盖 API 返回与 Web 自动化最小验证
 
 ## 7. 风险与未覆盖项
 
@@ -202,4 +201,4 @@ pnpm --dir packages/web typecheck
 
 - 结果：`risk`
 - 结论一句话：API 与 Web 自动化最小验证已证明图谱工作区主链路接通，但浏览器人工验收尚未在本轮执行
-- 后续动作：由 controller 按 `/graph` 与 `/graph/人参` 两条入口完成最终浏览器验收
+- 当前结论边界：本结论覆盖 `/api/v1/graph/herb/{name}`、`/api/v1/graph/query` 与指定 Web tests / typecheck，不覆盖浏览器人工操作结果
