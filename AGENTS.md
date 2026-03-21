@@ -1,7 +1,7 @@
 ---
 language: zh
-type: AI Coder Guide Doc
-note: Agent-facing repo entry guide. English or mixed wording is allowed when it improves precision.
+type: agent guide doc
+note: agent-facing repo entry guide. English or mixed wording is allowed when it improves precision.
 ---
 
 # BaiCao Agent Entry (Monorepo)
@@ -10,19 +10,19 @@ This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packag
 
 ## Navigation
 
-| Need to know... | Read... |
-|---|---|
-| 项目定位与现状 | `README.md` |
-| 需求与阶段目标 | `IMPL_PLAN.md` |
-| 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md` |
-| Skill 选择与多代理路由 | `docs/agent-skill-routing.md` |
-| 各类改动的最低验证标准 | `docs/verification-matrix.md` |
-| 文档系统入口与放置规则 | `docs/README.md` |
-| 稳定架构口径 | `docs/architecture/README.md` |
-| 验收入口与证据格式 | `docs/acceptance/README.md` |
-| 草案规则与毕业路径 | `docs/_dev/README.md` |
-| Agent 产出的 spec / plan | `docs/superpowers/` |
-| 仓库级任务系统与实施计划 | `docs/superpowers/plans/` |
+| Need to know...                             | Read...                       |
+| ------------------------------------------- | ----------------------------- |
+| 项目定位与现状                              | `README.md`                   |
+| 需求与阶段目标                              | `IMPL_PLAN.md`                |
+| 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md`                 |
+| Skill 选择与多代理路由                      | `docs/agent-skill-routing.md` |
+| 各类改动的最低验证标准                      | `docs/verification-matrix.md` |
+| 文档系统入口与放置规则                      | `docs/README.md`              |
+| 稳定架构口径                                | `docs/architecture/README.md` |
+| 验收入口与证据格式                          | `docs/acceptance/README.md`   |
+| 草案规则与毕业路径                          | `docs/_dev/README.md`         |
+| Agent 产出的 spec / plan                    | `docs/superpowers/`           |
+| 仓库级任务系统与实施计划                    | `docs/superpowers/plans/`     |
 
 ## Core Principles
 
