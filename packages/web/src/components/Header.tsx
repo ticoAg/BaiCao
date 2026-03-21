@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Layout, Menu } from "antd";
 import {
   HomeOutlined,
@@ -10,7 +10,24 @@ import {
 
 const { Header: AntHeader } = Layout;
 
+const menuKeyMap: Record<string, string> = {
+  "/": "home",
+  "/search": "search",
+  "/verification": "verification",
+  "/chat": "chat",
+};
+
 const HeaderComponent = () => {
+  const location = useLocation();
+
+  // 根据路径匹配当前菜单项
+  let selectedKey = "home";
+  if (location.pathname.startsWith("/graph")) {
+    selectedKey = "graph";
+  } else {
+    selectedKey = menuKeyMap[location.pathname] || "home";
+  }
+
   const menuItems = [
     {
       key: "home",
@@ -44,21 +61,39 @@ const HeaderComponent = () => {
       style={{
         position: "fixed",
         top: 0,
-        zIndex: 1,
+        zIndex: 100,
         width: "100%",
         display: "flex",
         alignItems: "center",
+        background: "linear-gradient(135deg, #1a3a2a 0%, #2e5a3e 100%)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        padding: "0 24px",
       }}
     >
-      <div style={{ color: "white", fontSize: 20, fontWeight: "bold", marginRight: 48 }}>
-        🌿 白草药坛
-      </div>
+      <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none", marginRight: 40 }}>
+        <span style={{ fontSize: 24, marginRight: 8 }}>🌿</span>
+        <span
+          style={{
+            color: "#fff",
+            fontSize: 18,
+            fontWeight: 600,
+            letterSpacing: 1,
+          }}
+        >
+          白草药坛
+        </span>
+      </Link>
       <Menu
         theme="dark"
         mode="horizontal"
-        defaultSelectedKeys={["home"]}
+        selectedKeys={[selectedKey]}
         items={menuItems}
-        style={{ flex: 1 }}
+        style={{
+          flex: 1,
+          background: "transparent",
+          borderBottom: "none",
+          fontSize: 14,
+        }}
       />
     </AntHeader>
   );

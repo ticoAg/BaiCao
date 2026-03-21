@@ -1,16 +1,23 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Inter, system-ui, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --color-primary: #2e7d32;
+  --color-primary-light: #4caf50;
+  --color-primary-bg: #e8f5e9;
+  --color-bg: #f5f7f5;
+  --color-card: #ffffff;
 }
 
 body {
   margin: 0;
   padding: 0;
+  background: var(--color-bg);
 }
 
 #root {
@@ -19,6 +26,21 @@ body {
 }
 
 .site-layout-content {
-  background: #fff;
-  border-radius: 8px;
+  min-height: calc(100vh - 56px - 69px);
+}
+
+/* 页面进入动画 */
+.page-fade-in {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

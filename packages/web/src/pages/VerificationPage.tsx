@@ -11,11 +11,20 @@ import {
   Input,
   Select,
   message,
+  Row,
+  Col,
+  Statistic,
 } from "antd";
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseCircleOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import { verificationApi, Verification } from "../services/api";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const statusColors: Record<string, string> = {
   pending: "gold",
@@ -45,7 +54,6 @@ const VerificationPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // 预填参数
   const prefilledEntityType = searchParams.get("entity_type");
   const prefilledEntityId = searchParams.get("entity_id");
   const prefilledValue = searchParams.get("value");
@@ -66,7 +74,6 @@ const VerificationPage = () => {
     void loadVerifications();
   }, []);
 
-  // 如果有预填参数，自动打开申请模态框
   useEffect(() => {
     if (prefilledEntityType && prefilledEntityId && prefilledValue) {
       setModalVisible(true);
@@ -95,12 +102,17 @@ const VerificationPage = () => {
     }
   };
 
+  const pendingCount = verifications.filter((v) => v.status === "pending").length;
+
   const columns = [
     {
       title: "实体类型",
       dataIndex: "entity_type",
       key: "entity_type",
-      render: (type: string) => <Tag>{entityTypeLabels[type] || type}</Tag>,
+      width: 120,
+      render: (type: string) => (
+        <Tag style={{ borderRadius: 6 }}>{entityTypeLabels[type] || type}</Tag>
+      ),
     },
     {
       title: "声明内容",
@@ -112,33 +124,45 @@ const VerificationPage = () => {
       title: "状态",
       dataIndex: "status",
       key: "status",
+      width: 100,
       render: (status: string) => (
-        <Tag color={statusColors[status]}>{statusLabels[status] || status}</Tag>
+        <Tag color={statusColors[status]} style={{ borderRadius: 6 }}>
+          {statusLabels[status] || status}
+        </Tag>
       ),
     },
     {
       title: "申请时间",
       dataIndex: "created_at",
       key: "created_at",
-      render: (date: string) => new Date(date).toLocaleString("zh-CN"),
+      width: 180,
+      render: (date: string) => (
+        <Text type="secondary" style={{ fontSize: 13 }}>
+          {new Date(date).toLocaleString("zh-CN")}
+        </Text>
+      ),
     },
     {
       title: "操作",
       key: "action",
+      width: 140,
       render: (_: any, record: Verification) =>
         record.status === "pending" && (
-          <Space>
+          <Space size={4}>
             <Button
-              type="link"
+              type="primary"
               size="small"
+              style={{ borderRadius: 6 }}
+              icon={<CheckCircleOutlined />}
               onClick={() => handleVerify(record.id, "verified", "验证通过")}
             >
               通过
             </Button>
             <Button
-              type="link"
               size="small"
               danger
+              style={{ borderRadius: 6 }}
+              icon={<CloseCircleOutlined />}
               onClick={() => handleVerify(record.id, "rejected", "证据不足")}
             >
               拒绝
@@ -149,14 +173,95 @@ const VerificationPage = () => {
   ];
 
   return (
-    <div>
+    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {/* 统计卡片 */}
+      <Row gutter={16} style={{ marginBottom: 20 }}>
+        <Col xs={24} sm={8}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "none",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}
+          >
+            <Statistic
+              title="待验证"
+              value={pendingCount}
+              prefix={<ClockCircleOutlined style={{ color: "#faad14" }} />}
+              valueStyle={{ color: "#faad14" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "none",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}
+          >
+            <Statistic
+              title="总条目"
+              value={verifications.length}
+              prefix={<CheckCircleOutlined style={{ color: "#2e7d32" }} />}
+              valueStyle={{ color: "#2e7d32" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={8}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: "none",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+            onClick={() => setModalVisible(true)}
+          >
+            <div style={{ textAlign: "center" }}>
+              <PlusOutlined
+                style={{ fontSize: 28, color: "#2e7d32", marginBottom: 8, display: "block" }}
+              />
+              <Text strong style={{ color: "#2e7d32" }}>
+                申请验证
+              </Text>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* 验证列表 */}
       <Card
-        title={<Title level={3}>验证管理</Title>}
+        title={
+          <Space>
+            <Title level={4} style={{ margin: 0 }}>
+              验证管理
+            </Title>
+            {pendingCount > 0 && (
+              <Tag color="gold" style={{ borderRadius: 10 }}>
+                {pendingCount} 条待处理
+              </Tag>
+            )}
+          </Space>
+        }
         extra={
-          <Button type="primary" onClick={() => setModalVisible(true)}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setModalVisible(true)}
+            style={{ borderRadius: 8 }}
+          >
             申请验证
           </Button>
         }
+        style={{
+          borderRadius: 12,
+          border: "none",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        }}
       >
         <Table
           columns={columns}
@@ -164,6 +269,7 @@ const VerificationPage = () => {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          style={{ marginTop: -8 }}
         />
       </Card>
 
@@ -175,6 +281,7 @@ const VerificationPage = () => {
           form.resetFields();
         }}
         footer={null}
+        styles={{ body: { paddingTop: 16 } }}
       >
         <Form form={form} layout="vertical" onFinish={handleApply}>
           <Form.Item
@@ -221,10 +328,12 @@ const VerificationPage = () => {
 
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" style={{ borderRadius: 8 }}>
                 提交申请
               </Button>
-              <Button onClick={() => setModalVisible(false)}>取消</Button>
+              <Button onClick={() => setModalVisible(false)} style={{ borderRadius: 8 }}>
+                取消
+              </Button>
             </Space>
           </Form.Item>
         </Form>

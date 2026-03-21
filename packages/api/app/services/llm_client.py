@@ -57,13 +57,16 @@ def get_chat_model() -> BaseChatModel | None:
     if provider == "anthropic" and settings.anthropic_api_key:
         from langchain_anthropic import ChatAnthropic
 
-        return ChatAnthropic(
-            api_key=settings.anthropic_api_key,
-            model=settings.anthropic_model,
-            temperature=settings.llm_temperature,
-            streaming=True,
-            max_tokens=2048,
-        )
+        kwargs = {
+            "api_key": settings.anthropic_api_key,
+            "model": settings.anthropic_model,
+            "temperature": settings.llm_temperature,
+            "streaming": True,
+            "max_tokens": 2048,
+        }
+        if settings.anthropic_base_url:
+            kwargs["base_url"] = settings.anthropic_base_url
+        return ChatAnthropic(**kwargs)
 
     logger.warning("No LLM provider configured (provider=%s)", provider)
     return None

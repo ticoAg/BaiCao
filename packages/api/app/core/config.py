@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     openai_base_url: str = ""  # 兼容 API（如 DeepSeek、零一万物等）
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
+    anthropic_base_url: str = ""  # 兼容 API（如代理中转等）
     llm_temperature: float = 0.7
 
     # Redis (optional)
