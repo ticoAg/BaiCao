@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Layout } from "antd";
 import Header from "./components/Header";
 import HomePage from "./pages/HomePage";
@@ -10,10 +10,19 @@ import ChatPage from "./pages/ChatPage";
 const { Content, Footer } = Layout;
 
 function App() {
+  const location = useLocation();
+  const isGraphRoute =
+    location.pathname === "/graph" || location.pathname.startsWith("/graph/");
+
   return (
     <Layout style={{ minHeight: "100vh", background: "#f5f7f5" }}>
       <Header />
-      <Content style={{ padding: "24px 48px", marginTop: 56 }}>
+      <Content
+        style={{
+          padding: isGraphRoute ? "16px 20px 20px" : "24px 48px",
+          marginTop: 56,
+        }}
+      >
         <div className="site-layout-content page-fade-in">
           <Routes>
             <Route path="/" element={<HomePage />} />

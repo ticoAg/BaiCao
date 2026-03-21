@@ -1,4 +1,6 @@
 import { Route, Routes } from "react-router-dom";
+import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import GraphPage from "./GraphPage";
 import { renderWithProviders } from "../test/render-with-providers";
 import { nodeStyleMap } from "../types/graph";
@@ -120,5 +122,82 @@ describe("GraphPage", () => {
 
     expect(mockUseGraphWorkspace).toHaveBeenCalledWith(undefined);
     expect(mockUseGraph).not.toHaveBeenCalled();
+  });
+
+  it("renders the graph workspace and query panel on /graph without a name param", () => {
+    mockUseGraphWorkspace.mockReturnValue(
+      createWorkspaceResult({
+        graphData: null,
+        selected: null,
+      }),
+    );
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/graph/:name?" element={<GraphPage />} />
+      </Routes>,
+      "/graph",
+    );
+
+    expect(screen.getByText("图谱条件查询")).toBeInTheDocument();
+    expect(screen.getByTestId("graph-workspace").getAttribute("style")).toContain(
+      "min-height: calc(100vh - 160px)",
+    );
+  });
+
+  it("shows advanced query summary details in advanced-query mode", () => {
+    mockUseGraphWorkspace.mockReturnValue(
+      createWorkspaceResult({
+        mode: "advanced-query",
+        querySummary: {
+          mode: "advanced-query",
+          matched_nodes: 8,
+          matched_edges: 12,
+          truncated: true,
+          active_filters: ["节点名称包含: 补气", "关系类型: HAS_EFFICACY"],
+        },
+      }),
+    );
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/graph/:name?" element={<GraphPage />} />
+      </Routes>,
+      "/graph",
+    );
+
+    const summary = screen.getByTestId("graph-query-summary");
+
+    expect(within(summary).getByText("高级图谱查询结果")).toBeInTheDocument();
+    expect(within(summary).getByText("命中节点")).toBeInTheDocument();
+    expect(within(summary).getByText("8")).toBeInTheDocument();
+    expect(within(summary).getByText("关系类型: HAS_EFFICACY")).toBeInTheDocument();
+  });
+
+  it("syncs panel depth changes back to the workspace store", async () => {
+    const user = userEvent.setup();
+    const setDepth = vi.fn();
+
+    mockUseGraphWorkspace.mockReturnValue(
+      createWorkspaceResult({
+        graphData: null,
+        selected: null,
+        depth: 1,
+        setDepth,
+      }),
+    );
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/graph/:name?" element={<GraphPage />} />
+      </Routes>,
+      "/graph",
+    );
+
+    const depthInput = screen.getByRole("spinbutton", { name: "深度" });
+    await user.clear(depthInput);
+    await user.type(depthInput, "3");
+
+    expect(setDepth).toHaveBeenCalledWith(3);
   });
 });
