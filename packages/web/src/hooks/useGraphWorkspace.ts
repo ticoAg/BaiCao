@@ -12,19 +12,30 @@ import type {
 
 type GraphWorkspaceMode = "idle" | "herb" | "advanced-query";
 
+function withCurrentDepth(request: GraphQueryRequest, depth: number): GraphQueryRequest {
+  return {
+    ...request,
+    depth: request.depth ?? depth,
+  };
+}
+
 export function useGraphWorkspace(name: string | undefined) {
   const { selectedItem, depth, setSelected, setDepth, setGraphData, setLoading } =
     useGraphStore();
-  const [advancedRequest, setAdvancedRequest] = useState<GraphQueryRequest | null>(null);
+  const [activeAdvancedRequest, setActiveAdvancedRequest] =
+    useState<GraphQueryRequest | null>(null);
+  const [activeAdvancedResponse, setActiveAdvancedResponse] =
+    useState<GraphQueryResponse | null>(null);
 
   useEffect(() => {
-    setAdvancedRequest(null);
+    setActiveAdvancedRequest(null);
+    setActiveAdvancedResponse(null);
   }, [name]);
 
   const herbQuery = useQuery({
     queryKey: ["graphWorkspace", "herb", name, depth],
     queryFn: () => graphApi.getHerbGraph(name!, depth),
-    enabled: Boolean(name) && !advancedRequest,
+    enabled: Boolean(name) && !activeAdvancedRequest,
   });
 
   const advancedQuery = useMutation({
@@ -44,18 +55,18 @@ export function useGraphWorkspace(name: string | undefined) {
   }, [herbQuery.error]);
 
   const graphData: GraphData | null = useMemo(() => {
-    if (advancedRequest) {
-      return advancedQuery.data?.graph ?? null;
+    if (activeAdvancedResponse) {
+      return activeAdvancedResponse.graph;
     }
 
     return herbQuery.data ?? null;
-  }, [advancedQuery.data, advancedRequest, herbQuery.data]);
+  }, [activeAdvancedResponse, herbQuery.data]);
 
-  const querySummary: GraphQuerySummary | null = advancedRequest
-    ? advancedQuery.data?.summary ?? null
+  const querySummary: GraphQuerySummary | null = activeAdvancedResponse
+    ? activeAdvancedResponse.summary
     : null;
 
-  const mode: GraphWorkspaceMode = advancedRequest
+  const mode: GraphWorkspaceMode = activeAdvancedRequest
     ? "advanced-query"
     : name
       ? "herb"
@@ -90,38 +101,45 @@ export function useGraphWorkspace(name: string | undefined) {
 
   const runAdvancedQuery = useCallback(
     async (request: GraphQueryRequest): Promise<GraphQueryResponse> => {
-      const nextRequest = {
-        ...request,
-        depth: request.depth ?? depth,
-      };
+      const currentDepth = useGraphStore.getState().depth;
+      const nextRequest = withCurrentDepth(request, currentDepth);
 
-      if (typeof nextRequest.depth === "number" && nextRequest.depth !== depth) {
+      if (typeof nextRequest.depth === "number" && nextRequest.depth !== currentDepth) {
         setDepth(nextRequest.depth);
       }
 
-      setAdvancedRequest(nextRequest);
-      return advancedQuery.mutateAsync(nextRequest);
+      const response = await advancedQuery.mutateAsync(nextRequest);
+      setActiveAdvancedRequest(nextRequest);
+      setActiveAdvancedResponse(response);
+      return response;
     },
     [advancedQuery, depth, setDepth],
   );
 
   const refetch = useCallback(async () => {
-    if (advancedRequest) {
+    if (activeAdvancedRequest) {
       if (!advancedQuery.isPending) {
-        await advancedQuery.mutateAsync(advancedRequest);
+        const currentDepth = useGraphStore.getState().depth;
+        const nextRequest = {
+          ...activeAdvancedRequest,
+          depth: currentDepth,
+        };
+        const response = await advancedQuery.mutateAsync(nextRequest);
+        setActiveAdvancedRequest(nextRequest);
+        setActiveAdvancedResponse(response);
       }
       return;
     }
 
     await herbQuery.refetch();
-  }, [advancedQuery, advancedRequest, herbQuery]);
+  }, [activeAdvancedRequest, advancedQuery, herbQuery]);
 
   return {
     graphData,
     querySummary,
     mode,
     loading,
-    error: advancedRequest ? advancedQuery.error : herbQuery.error,
+    error: advancedQuery.error ?? herbQuery.error,
     selected: selectedItem,
     setSelected,
     depth,
