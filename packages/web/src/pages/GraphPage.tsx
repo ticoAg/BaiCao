@@ -3,11 +3,12 @@ import { Typography, Spin, Space, Button, Card, Tag, Divider } from "antd";
 import { ReloadOutlined } from "@ant-design/icons";
 import { useParams } from "react-router-dom";
 import { NetworkGraph } from "@ant-design/graphs";
-import { useGraph } from "../hooks/useGraph";
+import { useGraphWorkspace } from "../hooks/useGraphWorkspace";
 import {
   labelColorMap,
   labelTagColors,
-  defaultNodeColor,
+  nodeStyleMap,
+  defaultNodeStyle,
   relTypeLabels,
 } from "../types/graph";
 import NodeDetail from "../components/graph/NodeDetail";
@@ -19,13 +20,15 @@ const GraphPage = () => {
   const { name } = useParams<{ name: string }>();
   const {
     graphData,
+    querySummary,
+    mode,
     loading,
     selected,
     setSelected,
     depth,
     setDepth,
     refetch,
-  } = useGraph(name);
+  } = useGraphWorkspace(name);
 
   // 将后端数据转为 G6 格式
   const g6Data = useMemo(() => {
@@ -37,21 +40,27 @@ const GraphPage = () => {
       const nodeId = n.id || n.name;
       const primaryLabel = n.labels?.[0] || "Unknown";
       const isCenter = nodeId === centerId;
-      const color = labelColorMap[primaryLabel] || defaultNodeColor;
+      const style = nodeStyleMap[primaryLabel] || defaultNodeStyle;
 
       return {
         id: nodeId,
         data: { ...n },
         style: {
-          size: isCenter ? 48 : primaryLabel === "Herb" ? 36 : 28,
-          fill: color,
-          stroke: isCenter ? "#000" : color,
-          lineWidth: isCenter ? 3 : 1,
+          size: isCenter ? 56 : primaryLabel === "Herb" ? 40 : 30,
+          fill: style.fill,
+          stroke: style.stroke,
+          lineWidth: isCenter ? 3 : 2,
           labelText: n.name,
           labelFontSize: isCenter ? 14 : 11,
-          labelFill: "#333",
+          labelFill: style.textColor,
           labelPlacement: "bottom" as const,
           labelOffsetY: 4,
+          ...(isCenter && {
+            shadowColor: style.fill,
+            shadowBlur: 15,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0,
+          }),
         },
       };
     });
@@ -71,12 +80,18 @@ const GraphPage = () => {
           targetName: e.target?.name,
         },
         style: {
-          stroke: isVerified ? "#52c41a" : "#bfbfbf",
+          stroke: isVerified ? "#8DCC93" : "#A5ABB6",
           lineWidth: isVerified ? 2 : 1,
+          ...(isVerified ? {} : { lineDash: [4, 4] }),
           labelText: relTypeLabels[e.rel_type || ""] || e.rel_type || "",
           labelFontSize: 10,
-          labelFill: "#666",
+          labelFill: "#555",
+          labelBackground: true,
+          labelBackgroundFill: "#fff",
+          labelBackgroundOpacity: 0.85,
+          labelBackgroundRadius: 4,
           endArrow: true,
+          endArrowSize: 6,
         },
       };
     });
@@ -88,12 +103,50 @@ const GraphPage = () => {
   const graphOptions = useMemo(
     () => ({
       data: g6Data,
+      animation: true,
       behaviors: (behaviors: any[]) => [
         ...behaviors,
         { key: "drag-element", type: "drag-element" },
         { key: "hover-activate", type: "hover-activate" },
       ],
-      animation: false,
+      plugins: [
+        {
+          key: "background",
+          type: "background",
+          background: "#F8F9FA",
+        },
+        {
+          key: "grid-line",
+          type: "grid-line",
+          follow: false,
+          lineWidth: 0.5,
+          stroke: "#e8e8e8",
+        },
+        {
+          key: "tooltip",
+          type: "tooltip",
+          getContent: (_evt: any, items: any[]) => {
+            const item = items?.[0];
+            if (!item) return "";
+            const d = item.data || {};
+            if (item.source !== undefined && item.target !== undefined) {
+              // 边 tooltip
+              const relLabel =
+                relTypeLabels[d.rel_type || ""] || d.rel_type || "";
+              return `<div style="padding:6px 10px;font-size:13px;line-height:1.5">
+                <b>${relLabel}</b><br/>
+                <span style="color:#888">${d.sourceName || "?"} → ${d.targetName || "?"}</span>
+              </div>`;
+            }
+            // 节点 tooltip
+            const label = d.labels?.[0] || "";
+            return `<div style="padding:6px 10px;font-size:13px;line-height:1.5">
+              <b>${d.name || item.id}</b>
+              ${label ? `<span style="margin-left:6px;padding:1px 6px;border-radius:3px;background:#f0f0f0;font-size:11px;color:#666">${label}</span>` : ""}
+            </div>`;
+          },
+        },
+      ],
     }),
     [g6Data],
   );
@@ -147,10 +200,21 @@ const GraphPage = () => {
   if (!graphData) {
     return (
       <Card>
-        <Text>未找到相关图谱数据</Text>
+        <Text>
+          {mode === "idle"
+            ? "请选择药材进入图谱，或稍后使用高级查询。"
+            : "未找到相关图谱数据"}
+        </Text>
       </Card>
     );
   }
+
+  const pageTitle =
+    name ||
+    graphData.center?.name ||
+    (mode === "advanced-query"
+      ? querySummary?.active_filters[0] || "高级图谱查询结果"
+      : "图谱浏览");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -167,7 +231,7 @@ const GraphPage = () => {
       >
         <Space>
           <Title level={4} style={{ margin: 0 }}>
-            {name} 的知识图谱
+            {pageTitle} 的知识图谱
           </Title>
           <Tag>{graphData.nodes.length} 节点</Tag>
           <Tag>{graphData.edges.length} 关系</Tag>

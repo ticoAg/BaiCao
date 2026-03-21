@@ -1,10 +1,24 @@
 // API Service - 与后端通信
 import axios from "axios";
 import type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
-import type { GraphData, GraphNode, GraphEdge, SearchResult } from "../types/graph";
+import type {
+  GraphData,
+  GraphNode,
+  GraphEdge,
+  SearchResult,
+  GraphQueryRequest,
+  GraphQueryResponse,
+} from "../types/graph";
 
 // 从 types/ 重新导出，保持向后兼容
-export type { GraphNode, GraphEdge, GraphData, SearchResult } from "../types/graph";
+export type {
+  GraphNode,
+  GraphEdge,
+  GraphData,
+  SearchResult,
+  GraphQueryRequest,
+  GraphQueryResponse,
+} from "../types/graph";
 export type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
 export type { VerificationStatus } from "../types/index";
 
@@ -25,6 +39,12 @@ export const graphApi = {
     const { data } = await api.get(`/graph/herb/${encodeURIComponent(name)}`, {
       params: { depth },
     });
+    return data;
+  },
+
+  // 高级图谱查询
+  queryGraph: async (payload: GraphQueryRequest): Promise<GraphQueryResponse> => {
+    const { data } = await api.post("/graph/query", payload);
     return data;
   },
 
