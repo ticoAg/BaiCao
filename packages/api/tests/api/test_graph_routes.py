@@ -106,3 +106,36 @@ class TestGetPending:
         assert_json_keys(data, {"items", "type"})
         assert data["type"] == "nodes"
         assert len(data["items"]) == 1
+
+
+class TestGraphQuery:
+    """POST /api/v1/graph/query"""
+
+    @pytest.mark.asyncio
+    async def test_query_graph_returns_summary_and_graph(self, client):
+        """Advanced graph query returns summary and graph payload."""
+        payload = {
+            "node": {"name_contains": "人参", "label": "Herb"},
+            "edge": {"rel_type": "HAS_EFFICACY"},
+            "depth": 2,
+            "limit": 20,
+        }
+        service_response = {
+            "summary": {
+                "mode": "advanced-query",
+                "matched_nodes": 3,
+                "matched_edges": 2,
+                "truncated": False,
+                "active_filters": ["名称包含: 人参", "关系类型: HAS_EFFICACY"],
+            },
+            "graph": {"center": None, "nodes": [], "edges": []},
+        }
+
+        with patch("app.api.graph.graph_service") as mock_svc:
+            mock_svc.query_graph = AsyncMock(return_value=service_response)
+
+            resp = await client.post("/api/v1/graph/query", json=payload)
+
+        assert_status(resp, 200)
+        data = resp.json()
+        assert_json_keys(data, {"summary", "graph"})

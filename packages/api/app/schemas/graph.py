@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.enums import EdgeType, NodeStatus, NodeType
 
@@ -183,5 +183,49 @@ class GraphRecord(BaseModel):
     edges: list[dict] | None = None
     source: str
     status: NodeStatus = NodeStatus.PENDING
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryNodeFilters(BaseModel):
+    """图谱高级查询的节点过滤条件"""
+    name_contains: str | None = None
+    label: str | None = None
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryEdgeFilters(BaseModel):
+    """图谱高级查询的边过滤条件"""
+    rel_type: str | None = None
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryRequest(BaseModel):
+    """图谱高级查询请求"""
+    node: GraphQueryNodeFilters | None = None
+    edge: GraphQueryEdgeFilters | None = None
+    depth: int = Field(1, ge=1, le=6)
+    limit: int = Field(20, ge=1, le=100)
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQuerySummary(BaseModel):
+    """图谱高级查询摘要"""
+    mode: str
+    matched_nodes: int
+    matched_edges: int
+    truncated: bool
+    active_filters: list[str]
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphQueryResponse(BaseModel):
+    """图谱高级查询响应"""
+    summary: GraphQuerySummary
+    graph: GraphData
 
     model_config = ConfigDict(strict=True)
