@@ -36,6 +36,19 @@ class RuntimeHelpTests(unittest.TestCase):
         self.assertIn("deps", output)
         self.assertIn("api", output)
         self.assertIn("stack", output)
+        self.assertIn("PostgreSQL / Neo4j / Redis 等依赖服务", output)
+        self.assertIn("本地联调整体运行面", output)
+
+    def test_resource_help_lists_action_descriptions(self):
+        exit_code, output = self.runtime.run_cli(["api", "help"], env={})
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("up", output)
+        self.assertIn("确保 session 存在并启动本地 FastAPI", output)
+        self.assertIn("logs", output)
+        self.assertIn("读取 `api` window 最近输出", output)
+        self.assertIn("attach", output)
+        self.assertIn("attach 到 session，并优先切到 `api` window", output)
 
     def test_unknown_resource_suggests_help(self):
         exit_code, output = self.runtime.run_cli(["ap", "up"], env={})

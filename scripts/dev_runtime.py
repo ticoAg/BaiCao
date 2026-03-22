@@ -8,11 +8,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Callable, NamedTuple
+from typing import Callable, Final, NamedTuple
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
-SUPPORTED = {
+SUPPORTED: Final[dict[str, set[str]]] = {
     "help": {"help"},
     "deps": {"up", "down", "status", "logs", "help"},
     "api": {"up", "down", "restart", "status", "logs", "attach", "help"},
@@ -20,21 +20,63 @@ SUPPORTED = {
     "stack": {"up", "down", "restart", "status", "attach", "help"},
 }
 
-RESOURCE_DESCRIPTIONS = {
+RESOURCE_DESCRIPTIONS: Final[dict[str, str]] = {
     "deps": "PostgreSQL / Neo4j / Redis 等依赖服务",
     "api": "FastAPI 后端服务",
     "web": "React 前端服务",
     "stack": "本地联调整体运行面",
 }
+RESOURCE_ORDER: Final[tuple[str, ...]] = ("deps", "api", "web", "stack")
+ACTION_ORDER: Final[dict[str, tuple[str, ...]]] = {
+    "deps": ("up", "down", "status", "logs", "help"),
+    "api": ("up", "down", "restart", "status", "logs", "attach", "help"),
+    "web": ("up", "down", "restart", "status", "logs", "attach", "help"),
+    "stack": ("up", "down", "restart", "status", "attach", "help"),
+}
+ACTION_DESCRIPTIONS: Final[dict[str, dict[str, str]]] = {
+    "deps": {
+        "up": "启动 PostgreSQL / Neo4j / Redis 依赖服务",
+        "down": "关闭依赖容器",
+        "status": "查看 compose 状态和关键端口可达性",
+        "logs": "查看依赖服务最近日志",
+        "help": "显示 deps 资源帮助",
+    },
+    "api": {
+        "up": "确保 session 存在并启动本地 FastAPI",
+        "down": "关闭 `api` window",
+        "restart": "重启 `api` window 中的进程",
+        "status": "检查 window、端口和 `/health` 状态",
+        "logs": "读取 `api` window 最近输出",
+        "attach": "attach 到 session，并优先切到 `api` window",
+        "help": "显示 api 资源帮助",
+    },
+    "web": {
+        "up": "确保 session 存在并启动本地前端 dev server",
+        "down": "关闭 `web` window",
+        "restart": "重启 `web` window 中的进程",
+        "status": "检查 window、端口和前端可达性",
+        "logs": "读取 `web` window 最近输出",
+        "attach": "attach 到 session，并优先切到 `web` window",
+        "help": "显示 web 资源帮助",
+    },
+    "stack": {
+        "up": "启动 deps，并拉起 api 与 web",
+        "down": "关闭 api、web 并停止 deps",
+        "restart": "重启整个本地开发栈",
+        "status": "汇总 deps、api、web 的统一状态",
+        "attach": "attach 到默认 tmux session",
+        "help": "显示 stack 资源帮助",
+    },
+}
 
 
-DEPS_SERVICES = ("postgres", "neo4j", "redis")
-DEPS_PORTS = (
+DEPS_SERVICES: Final[tuple[str, ...]] = ("postgres", "neo4j", "redis")
+DEPS_PORTS: Final[tuple[tuple[str, int], ...]] = (
     ("postgres", 15433),
     ("neo4j", 17687),
     ("redis", 16380),
 )
-DEFAULT_ENV = {
+DEFAULT_ENV: Final[dict[str, str]] = {
     "LINES": "80",
     "SESSION": "baicao-dev",
     "API_PORT": "8000",
@@ -46,9 +88,9 @@ DEFAULT_ENV = {
     "NEO4J_PASSWORD": "neo4j_password",
     "REDIS_URL": "redis://localhost:16380",
 }
-ROOT_DIR = Path(__file__).resolve().parents[1]
-API_DIR = ROOT_DIR / "packages" / "api"
-WEB_DIR = ROOT_DIR / "packages" / "web"
+ROOT_DIR: Final[Path] = Path(__file__).resolve().parents[1]
+API_DIR: Final[Path] = ROOT_DIR / "packages" / "api"
+WEB_DIR: Final[Path] = ROOT_DIR / "packages" / "web"
 
 
 class CommandResult(NamedTuple):
@@ -91,6 +133,11 @@ def _closest_match(value: str, options: list[str]) -> str | None:
     return matches[0] if matches else None
 
 
+def _render_help_items(items: list[tuple[str, str]]) -> list[str]:
+    width = max(len(name) for name, _ in items)
+    return [f"  {name.ljust(width)}  {description}" for name, description in items]
+
+
 def _render_root_help() -> str:
     lines = [
         "BaiCao local runtime commands",
@@ -98,21 +145,30 @@ def _render_root_help() -> str:
         "Supported resources:",
     ]
 
-    for resource in ("deps", "api", "web", "stack"):
-        lines.append(f"  {resource:<5} {RESOURCE_DESCRIPTIONS[resource]}")
+    lines.extend(
+        _render_help_items(
+            [(resource, RESOURCE_DESCRIPTIONS[resource]) for resource in RESOURCE_ORDER]
+        )
+    )
 
     lines.extend(["", *_example_lines()])
     return "\n".join(lines)
 
 
 def _render_resource_help(resource: str) -> str:
-    actions = sorted(SUPPORTED[resource] - {"help"})
     lines = [
         f"Resource: {resource}",
         "",
         "Supported actions:",
     ]
-    lines.extend(f"  {action}" for action in actions)
+    lines.extend(
+        _render_help_items(
+            [
+                (action, ACTION_DESCRIPTIONS[resource][action])
+                for action in ACTION_ORDER[resource]
+            ]
+        )
+    )
     lines.extend(["", *_example_lines(resource)])
     return "\n".join(lines)
 
@@ -167,7 +223,9 @@ def _render_unexpected_arguments(
 
     lines = [f"Unexpected extra arguments: {extra_text}"]
     if action == "help":
-        lines.append(f"`{resource} help` does not accept additional positional arguments.")
+        lines.append(
+            f"`{resource} help` does not accept additional positional arguments."
+        )
     else:
         lines.append(
             f"`{resource} {action}` does not accept additional positional arguments in Task 1."
@@ -264,7 +322,9 @@ def _run_tmux(ctx: RuntimeContext, *parts: str) -> CommandResult:
         return CommandResult(exit_code=1, stderr=_render_missing_tmux())
 
 
-def _render_deps_status(ctx: RuntimeContext, compose_result: CommandResult) -> CommandResult:
+def _render_deps_status(
+    ctx: RuntimeContext, compose_result: CommandResult
+) -> CommandResult:
     lines = ["Dependency stack status"]
     compose_stdout = compose_result.stdout.strip()
     compose_stderr = compose_result.stderr.strip()
@@ -273,7 +333,9 @@ def _render_deps_status(ctx: RuntimeContext, compose_result: CommandResult) -> C
     if compose_stdout:
         lines.extend(["", "Compose:", compose_stdout])
     elif compose_result.exit_code == 0:
-        lines.extend(["", "Compose:", "No dependency containers are currently running."])
+        lines.extend(
+            ["", "Compose:", "No dependency containers are currently running."]
+        )
 
     if compose_stderr:
         lines.extend(["", "Compose diagnostics:", compose_stderr])
@@ -443,7 +505,9 @@ def _ensure_tmux_window(
     return CommandResult(0)
 
 
-def capture_window_logs(ctx: RuntimeContext, session: str, window: str, lines: int) -> CommandResult:
+def capture_window_logs(
+    ctx: RuntimeContext, session: str, window: str, lines: int
+) -> CommandResult:
     return _run_tmux(
         ctx,
         "capture-pane",
@@ -471,7 +535,9 @@ def render_status_table(rows: list[tuple[str, str, str, str, str]]) -> str:
     return "\n".join(lines)
 
 
-def _deps_status_row(ctx: RuntimeContext) -> tuple[tuple[str, str, str, str, str], CommandResult]:
+def _deps_status_row(
+    ctx: RuntimeContext,
+) -> tuple[tuple[str, str, str, str, str], CommandResult]:
     compose_result = _run_external(
         ctx,
         _compose_cmd("ps"),
@@ -479,7 +545,13 @@ def _deps_status_row(ctx: RuntimeContext) -> tuple[tuple[str, str, str, str, str
     )
     if compose_result.exit_code != 0:
         detail = compose_result.stderr.strip() or "compose unavailable"
-        return ("deps", "down", "docker", "postgres/neo4j/redis", detail), compose_result
+        return (
+            "deps",
+            "down",
+            "docker",
+            "postgres/neo4j/redis",
+            detail,
+        ), compose_result
 
     ports_healthy = all(ctx.port_checker("127.0.0.1", port) for _, port in DEPS_PORTS)
     check = "ports reachable" if ports_healthy else "ports missing"
@@ -487,7 +559,9 @@ def _deps_status_row(ctx: RuntimeContext) -> tuple[tuple[str, str, str, str, str
     return ("deps", state, "docker", "postgres/neo4j/redis", check), compose_result
 
 
-def _resource_status_row(ctx: RuntimeContext, resource: str) -> tuple[str, str, str, str, str]:
+def _resource_status_row(
+    ctx: RuntimeContext, resource: str
+) -> tuple[str, str, str, str, str]:
     session = _session_name(ctx)
     target = _tmux_target(session, resource)
     windows = _tmux_window_names(ctx, session)
@@ -511,7 +585,9 @@ def _render_resource_status(ctx: RuntimeContext, resource: str) -> CommandResult
         status = _handle_deps("status", ctx)
         if status.exit_code == 0:
             return status
-        return CommandResult(status.exit_code, stdout=status.stdout, stderr=status.stderr)
+        return CommandResult(
+            status.exit_code, stdout=status.stdout, stderr=status.stderr
+        )
 
     row = _resource_status_row(ctx, resource)
     table = render_status_table([row])
@@ -534,7 +610,9 @@ def _handle_stack_status(ctx: RuntimeContext) -> CommandResult:
     return CommandResult(exit_code=exit_code, stdout=f"{table}\n" + "\n".join(notes))
 
 
-def _wait_for_ports(ctx: RuntimeContext, ports: tuple[tuple[str, int], ...], retries: int = 60) -> CommandResult:
+def _wait_for_ports(
+    ctx: RuntimeContext, ports: tuple[tuple[str, int], ...], retries: int = 60
+) -> CommandResult:
     for _ in range(retries):
         if all(ctx.port_checker("127.0.0.1", port) for _, port in ports):
             return CommandResult(0)
@@ -618,7 +696,9 @@ def _handle_attach(ctx: RuntimeContext, resource: str) -> CommandResult:
     return attached
 
 
-def _handle_local_resource(action: str, resource: str, ctx: RuntimeContext) -> CommandResult:
+def _handle_local_resource(
+    action: str, resource: str, ctx: RuntimeContext
+) -> CommandResult:
     if action == "up":
         return _start_local_resource(ctx, resource)
     if action == "down":
@@ -650,10 +730,24 @@ def _handle_stack(action: str, ctx: RuntimeContext) -> CommandResult:
         stop_api = _stop_local_resource(ctx, "api")
         stop_web = _stop_local_resource(ctx, "web")
         stop_deps = _handle_deps("down", ctx)
-        outputs = [part for part in (stop_api.stdout, stop_web.stdout, stop_deps.stdout) if part]
-        errors = [part for part in (stop_api.stderr, stop_web.stderr, stop_deps.stderr) if part]
-        exit_code = 0 if all(result.exit_code == 0 for result in (stop_api, stop_web, stop_deps)) else 1
-        return CommandResult(exit_code=exit_code, stdout="\n".join(outputs), stderr="\n".join(errors))
+        outputs = [
+            part
+            for part in (stop_api.stdout, stop_web.stdout, stop_deps.stdout)
+            if part
+        ]
+        errors = [
+            part
+            for part in (stop_api.stderr, stop_web.stderr, stop_deps.stderr)
+            if part
+        ]
+        exit_code = (
+            0
+            if all(result.exit_code == 0 for result in (stop_api, stop_web, stop_deps))
+            else 1
+        )
+        return CommandResult(
+            exit_code=exit_code, stdout="\n".join(outputs), stderr="\n".join(errors)
+        )
     if action == "restart":
         down_result = _handle_stack("down", ctx)
         if down_result.exit_code not in (0, 1):
@@ -677,7 +771,11 @@ def _handle_stack(action: str, ctx: RuntimeContext) -> CommandResult:
         return web_up
 
     status = _handle_stack_status(ctx)
-    combined = "\n\n".join(part for part in (deps_up.stdout, api_up.stdout, web_up.stdout, status.stdout) if part)
+    combined = "\n\n".join(
+        part
+        for part in (deps_up.stdout, api_up.stdout, web_up.stdout, status.stdout)
+        if part
+    )
     return CommandResult(
         exit_code=0,
         stdout=combined,
