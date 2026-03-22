@@ -38,7 +38,7 @@ describe("VerificationPage", () => {
 
     expect(await screen.findByText("人参可大补元气")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "通过" }));
+    await user.click(screen.getByRole("button", { name: /通过/ }));
 
     await waitFor(() =>
       expect(verificationApi.verify).toHaveBeenCalledWith(

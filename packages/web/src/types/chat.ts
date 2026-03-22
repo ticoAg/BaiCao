@@ -43,7 +43,13 @@ export interface Message {
 
 // chat 上下文中的 graph 数据（后端返回字段可能不完整，用 Partial）
 export interface ChatGraphData {
-  center: Partial<GraphNode> & { name: string; labels?: string[]; status?: string };
+  center:
+    | (Partial<GraphNode> & {
+        name: string;
+        labels?: string[];
+        status?: string;
+      })
+    | null;
   nodes: Partial<GraphNode>[];
   edges: Partial<GraphEdge>[];
 }

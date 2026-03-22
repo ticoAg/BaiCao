@@ -21,7 +21,10 @@ describe("SearchPage", () => {
 
     renderWithProviders(<SearchPage />);
 
-    await user.type(screen.getByPlaceholderText("输入药材名称搜索..."), "人参");
+    await user.type(
+      screen.getByPlaceholderText("输入药材名称搜索，如：甘草、人参、黄芪..."),
+      "人参",
+    );
     await user.click(screen.getByRole("button", { name: /搜\s*索/ }));
 
     expect(await screen.findByText("人参")).toBeInTheDocument();

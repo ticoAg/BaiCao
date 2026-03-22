@@ -83,6 +83,7 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
 
   if (!graphData || !graphData.center) return null;
 
+  const center = graphData.center;
   const nodeCount = graphData.nodes?.length || 0;
   const edgeCount = graphData.edges?.length || 0;
 
@@ -99,12 +100,12 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
           ),
           children: (
             <div>
-              <Text strong>{graphData.center.name}</Text>
+              <Text strong>{center.name}</Text>
               <Tag
-                color={labelTagColors[graphData.center.labels?.[0] ?? ""] || "default"}
+                color={labelTagColors[center.labels?.[0] ?? ""] || "default"}
                 style={{ marginLeft: 8 }}
               >
-                {graphData.center.labels?.[0] || "Unknown"}
+                {center.labels?.[0] || "Unknown"}
               </Tag>
               <div style={{ marginTop: 8 }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>
@@ -112,17 +113,17 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
                 </Text>
                 <Tag
                   color={
-                    graphData.center.status === "verified"
+                    center.status === "verified"
                       ? "green"
-                      : graphData.center.status === "rejected"
+                      : center.status === "rejected"
                         ? "red"
                         : "gold"
                   }
                   style={{ marginLeft: 4 }}
                 >
-                  {graphData.center.status === "verified"
+                  {center.status === "verified"
                     ? "已验证"
-                    : graphData.center.status === "rejected"
+                    : center.status === "rejected"
                       ? "已拒绝"
                       : "待验证"}
                 </Tag>
@@ -130,9 +131,7 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
               <Button
                 type="link"
                 size="small"
-                onClick={() =>
-                  navigate(`/graph/${encodeURIComponent(graphData.center.name)}`)
-                }
+                onClick={() => navigate(`/graph/${encodeURIComponent(center.name)}`)}
                 style={{ padding: 0, marginTop: 8 }}
               >
                 查看完整图谱 →

@@ -1,3 +1,4 @@
+import { Route, Routes } from "react-router-dom";
 import { screen, waitFor } from "@testing-library/react";
 import HerbDetailPage from "./HerbDetailPage";
 import { renderWithProviders } from "../test/render-with-providers";
@@ -33,6 +34,14 @@ const mockEvidence = {
 };
 
 describe("HerbDetailPage", () => {
+  const renderPage = (route = "/herb/herb-001") =>
+    renderWithProviders(
+      <Routes>
+        <Route path="/herb/:id" element={<HerbDetailPage />} />
+      </Routes>,
+      route,
+    );
+
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -41,10 +50,10 @@ describe("HerbDetailPage", () => {
     vi.spyOn(herbApi, "get").mockResolvedValue(mockHerb);
     vi.spyOn(provenanceApi, "getEntityEvidence").mockResolvedValue(mockEvidence);
 
-    renderWithProviders(<HerbDetailPage />, "/herb/herb-001");
+    renderPage();
 
     // Wait for data to load and render
-    expect(await screen.findByText("人参")).toBeInTheDocument();
+    expect((await screen.findAllByText("人参")).length).toBeGreaterThan(0);
     expect(screen.getByText("补气药")).toBeInTheDocument();
     expect(screen.getByText("Panax ginseng")).toBeInTheDocument();
 
@@ -69,7 +78,7 @@ describe("HerbDetailPage", () => {
     vi.spyOn(herbApi, "get").mockReturnValue(new Promise(() => {}));
     vi.spyOn(provenanceApi, "getEntityEvidence").mockReturnValue(new Promise(() => {}));
 
-    const { container } = renderWithProviders(<HerbDetailPage />, "/herb/herb-001");
+    const { container } = renderPage();
 
     // Skeleton should be rendered
     const skeletons = container.querySelectorAll(".ant-skeleton");
@@ -80,7 +89,12 @@ describe("HerbDetailPage", () => {
     vi.spyOn(herbApi, "get").mockRejectedValue(new Error("Not found"));
     vi.spyOn(provenanceApi, "getEntityEvidence").mockResolvedValue({ evidence: [], count: 0 });
 
-    renderWithProviders(<HerbDetailPage />, "/herb/invalid-id");
+    renderWithProviders(
+      <Routes>
+        <Route path="/herb/:id" element={<HerbDetailPage />} />
+      </Routes>,
+      "/herb/invalid-id",
+    );
 
     expect(await screen.findByText("无法加载药材信息")).toBeInTheDocument();
   });
@@ -89,7 +103,7 @@ describe("HerbDetailPage", () => {
     const getSpy = vi.spyOn(herbApi, "get").mockResolvedValue(mockHerb);
     vi.spyOn(provenanceApi, "getEntityEvidence").mockResolvedValue(mockEvidence);
 
-    renderWithProviders(<HerbDetailPage />, "/herb/herb-001");
+    renderPage();
 
     await waitFor(() => {
       expect(getSpy).toHaveBeenCalledWith("herb-001");
@@ -100,7 +114,7 @@ describe("HerbDetailPage", () => {
     vi.spyOn(herbApi, "get").mockResolvedValue(mockHerb);
     const evidenceSpy = vi.spyOn(provenanceApi, "getEntityEvidence").mockResolvedValue(mockEvidence);
 
-    renderWithProviders(<HerbDetailPage />, "/herb/herb-001");
+    renderPage();
 
     await waitFor(() => {
       expect(evidenceSpy).toHaveBeenCalledWith("herb-001");
@@ -116,9 +130,14 @@ describe("HerbDetailPage", () => {
     vi.spyOn(herbApi, "get").mockResolvedValue(minimalHerb);
     vi.spyOn(provenanceApi, "getEntityEvidence").mockResolvedValue({ evidence: [], count: 0 });
 
-    renderWithProviders(<HerbDetailPage />, "/herb/herb-002");
+    renderWithProviders(
+      <Routes>
+        <Route path="/herb/:id" element={<HerbDetailPage />} />
+      </Routes>,
+      "/herb/herb-002",
+    );
 
-    expect(await screen.findByText("甘草")).toBeInTheDocument();
+    expect((await screen.findAllByText("甘草")).length).toBeGreaterThan(0);
     // Should have empty states for missing fields
     const emptyTexts = await screen.findAllByText(/暂无/);
     expect(emptyTexts.length).toBeGreaterThan(0);

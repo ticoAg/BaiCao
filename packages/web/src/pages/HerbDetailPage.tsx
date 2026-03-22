@@ -255,37 +255,46 @@ const HerbDetailPage = () => {
         {evidence.length > 0 ? (
           <List
             dataSource={evidence}
-            renderItem={(item: Record<string, unknown>, index: number) => (
-              <List.Item key={index}>
-                <List.Item.Meta
-                  title={
-                    <Text>
-                      {(item.source_name as string) || `证据 ${index + 1}`}
-                    </Text>
-                  }
-                  description={
-                    <Space direction="vertical" size={4}>
-                      {item.content && (
-                        <Text type="secondary">{item.content as string}</Text>
-                      )}
-                      {item.page_reference && (
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          页码: {item.page_reference as string}
-                        </Text>
-                      )}
-                      {item.status && (
-                        <Tag
-                          color={item.status === "verified" ? "green" : "gold"}
-                          style={{ borderRadius: 6 }}
-                        >
-                          {item.status === "verified" ? "已验证" : "待验证"}
-                        </Tag>
-                      )}
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
+            renderItem={(item: Record<string, unknown>, index: number) => {
+              const sourceName =
+                typeof item.source_name === "string"
+                  ? item.source_name
+                  : `证据 ${index + 1}`;
+              const content =
+                typeof item.content === "string" ? item.content : undefined;
+              const pageReference =
+                typeof item.page_reference === "string"
+                  ? item.page_reference
+                  : undefined;
+              const status =
+                typeof item.status === "string" ? item.status : undefined;
+
+              return (
+                <List.Item key={index}>
+                  <List.Item.Meta
+                    title={<Text>{sourceName}</Text>}
+                    description={
+                      <Space direction="vertical" size={4}>
+                        {content && <Text type="secondary">{content}</Text>}
+                        {pageReference && (
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            页码: {pageReference}
+                          </Text>
+                        )}
+                        {status && (
+                          <Tag
+                            color={status === "verified" ? "green" : "gold"}
+                            style={{ borderRadius: 6 }}
+                          >
+                            {status === "verified" ? "已验证" : "待验证"}
+                          </Tag>
+                        )}
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
           />
         ) : (
           <Empty description="暂无关联证据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
