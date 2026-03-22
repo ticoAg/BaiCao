@@ -6,6 +6,7 @@ import SearchPage from "./pages/SearchPage";
 import GraphPage from "./pages/GraphPage";
 import VerificationPage from "./pages/VerificationPage";
 import ChatPage from "./pages/ChatPage";
+import HerbDetailPage from "./pages/HerbDetailPage";
 
 const { Content, Footer } = Layout;
 
@@ -30,6 +31,7 @@ function App() {
             <Route path="/graph/:name?" element={<GraphPage />} />
             <Route path="/verification" element={<VerificationPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/herb/:id" element={<HerbDetailPage />} />
           </Routes>
         </div>
       </Content>
