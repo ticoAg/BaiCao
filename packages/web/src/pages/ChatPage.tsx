@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import { Typography } from "antd";
-import { MessageOutlined } from "@ant-design/icons";
+import { Typography, Tag, Button, Tooltip } from "antd";
+import { MessageOutlined, PlusOutlined } from "@ant-design/icons";
 import { useChat } from "../hooks/useChat";
 import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";
@@ -8,7 +8,7 @@ import MessageInput from "../components/chat/MessageInput";
 const { Title, Text } = Typography;
 
 const ChatPage = () => {
-  const { messages, isStreaming, input, setInput, sendMessage } = useChat();
+  const { messages, sessionId, isStreaming, input, setInput, sendMessage, startNewTopic } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,9 +54,26 @@ const ChatPage = () => {
           <Title level={4} style={{ margin: 0 }}>
             智能问答
           </Title>
-          <Text type="secondary" style={{ fontSize: 12, marginLeft: "auto" }}>
-            基于知识图谱的中药材问答
-          </Text>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            {sessionId && (
+              <>
+                <Tag color="green" style={{ margin: 0 }}>对话进行中</Tag>
+                <Tooltip title="新话题">
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={startNewTopic}
+                    disabled={isStreaming}
+                  >
+                    新话题
+                  </Button>
+                </Tooltip>
+              </>
+            )}
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              基于知识图谱的中药材问答
+            </Text>
+          </div>
         </div>
 
         {/* 消息区域 */}
