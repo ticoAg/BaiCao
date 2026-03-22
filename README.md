@@ -69,7 +69,7 @@
 | 模块 | 当前状态 | 说明 |
 | --- | --- | --- |
 | Monorepo 骨架 | 已有 | `packages/`、`infra/`、`docs/` 与 `docs/superpowers/` 已建立 |
-| 基础设施编排 | 已有 | Docker Compose 编排 PostgreSQL、Neo4j、Redis、API、Web、Nginx |
+| 基础设施编排 | 已有 | Docker Compose 管理 PostgreSQL、Neo4j、Redis，本地 `make` + `tmux` 管理 API 与 Web |
 | 后端 API | 初步可用 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat` 路由骨架 |
 | 前端页面 | 原型可用 | 已有首页、搜索、图谱、验证、问答等页面原型 |
 | 图谱数据 | 样例可用 | 已有 Neo4j 约束脚本和“陈皮”样例图谱种子数据 |
@@ -208,25 +208,45 @@ BaiCao/
 - Docker / Docker Compose
 - 推荐安装 `uv`
 
-### 方案 A：直接使用 Docker Compose 启动全栈
+### 方案 A：推荐，使用 `make` 管理本地开发栈
 
-这是最省心的启动方式。
+这是当前仓库推荐的本地开发方式：依赖服务走 Docker Compose，前后端走本地进程，并统一挂在一个 tmux session 里。
 
 ```bash
 cp infra/.env.example infra/.env
-docker compose -f infra/docker-compose.yml up --build
+make deps up
+make stack up
 ```
 
 启动后可访问：
 
-- Web: `http://localhost:13001`
-- API: `http://localhost:18001`
-- Nginx 统一入口: `http://localhost:18080`
+- Web: `http://localhost:3000`
+- API: `http://localhost:8000`
 - Neo4j Browser: `http://localhost:17474`
 - PostgreSQL: `localhost:15433`
 - Redis: `localhost:16380`
 
-### 方案 B：本地开发 API / Web，数据库走 Docker
+常用命令：
+
+```bash
+make help
+make deps status
+make stack status
+make api logs LINES=40
+make web logs LINES=40
+make stack attach
+make stack down
+```
+
+如果本机已有服务占用默认端口，可临时改端口启动：
+
+```bash
+make api up API_PORT=8010
+make web up WEB_PORT=3010
+make stack up API_PORT=8010 WEB_PORT=3010
+```
+
+### 方案 B：手动启动 API / Web，数据库走 Docker
 
 先启动基础设施：
 
@@ -260,22 +280,21 @@ uv run uvicorn app.main:app --reload --port 8000
 cd packages/web
 corepack enable
 pnpm install
-pnpm dev
+pnpm dev --host 0.0.0.0 --port 3000
 ```
 
 > **工具链说明**：前端使用 **vite-plus (`vp`)**。`pnpm-workspace.yaml` 的 catalog 将 `vite` 映射到 `@voidzero-dev/vite-plus-core`、`vitest` 映射到 `@voidzero-dev/vite-plus-test`。所有脚本（`dev` / `build` / `test` / `preview`）均通过 `vp` 命令执行。
 
-本地开发时：
+手动开发时：
 
 - Web 默认运行在 `http://localhost:3000`
 - Vite 已配置 `/api` 代理到 `http://localhost:8000`
 
-### 方案 C：演示与统一验证入口
+### 方案 C：统一验证入口
 
-仓库根目录已经提供统一测试与演示入口，推荐优先使用：
+仓库根目录提供统一验证入口：
 
 ```bash
-pnpm run demo
 pnpm run test:api
 pnpm run test:integration
 pnpm run test:web
@@ -286,7 +305,6 @@ pnpm run verify:full
 
 含义如下：
 
-- `pnpm run demo`：用 `tmux` 启动本地演示环境，并自动灌入 demo 数据
 - `pnpm run test:api`：运行后端 pytest 测试
 - `pnpm run test:integration`：运行后端真实依赖 integration 测试
 - `pnpm run test:web`：运行前端 Vitest + Testing Library 单测
@@ -351,7 +369,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 - monorepo 结构
 - FastAPI / React 初始化
-- Docker Compose 基础设施
+- Docker Compose 基础依赖
 - Neo4j 初始 schema 与样例数据
 
 ### Phase 2：核心能力

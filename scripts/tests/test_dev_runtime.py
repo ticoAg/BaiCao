@@ -99,3 +99,165 @@ class RuntimeHelpTests(unittest.TestCase):
         self.assertEqual(result.stdout, "")
         self.assertIn("Unexpected extra arguments: typo", result.stderr)
         self.assertIn("make api help", result.stderr)
+
+
+class DepsCommandTests(unittest.TestCase):
+    def setUp(self):
+        self.runtime = load_runtime_module()
+
+    def test_deps_up_targets_only_dependency_services(self):
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            calls.append(cmd)
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["deps", "up"],
+            env={},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            [
+                "docker",
+                "compose",
+                "-f",
+                "infra/docker-compose.yml",
+                "up",
+                "-d",
+                "postgres",
+                "neo4j",
+                "redis",
+            ],
+            calls,
+        )
+
+    def test_deps_status_reports_missing_compose_binary_cleanly(self):
+        def fake_run(cmd, **kwargs):
+            del cmd, kwargs
+            raise FileNotFoundError("docker")
+
+        exit_code, output = self.runtime.run_cli(
+            ["deps", "status"],
+            env={},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("docker compose", output)
+        self.assertIn("install", output.lower())
+
+    def test_deps_logs_honors_lines_env_override(self):
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            calls.append(cmd)
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["deps", "logs"],
+            env={"LINES": "5"},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            [
+                "docker",
+                "compose",
+                "-f",
+                "infra/docker-compose.yml",
+                "logs",
+                "--tail",
+                "5",
+                "postgres",
+                "neo4j",
+                "redis",
+            ],
+            calls,
+        )
+
+
+class TmuxRuntimeTests(unittest.TestCase):
+    def setUp(self):
+        self.runtime = load_runtime_module()
+
+    def test_api_up_creates_single_session_with_fixed_windows(self):
+        tmux_calls: list[list[str]] = []
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            tmux_calls.append(cmd)
+            if cmd[:3] == ["tmux", "has-session", "-t"]:
+                return self.runtime.CommandResult(1, "", "")
+            if cmd[:3] == ["tmux", "list-windows", "-t"]:
+                return self.runtime.CommandResult(0, "ops\n", "")
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["api", "up"],
+            env={"SESSION": "baicao-dev", "API_PORT": "8000"},
+            run_command=fake_run,
+            port_checker=lambda host, port: False,
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(any(cmd[:4] == ["tmux", "new-session", "-d", "-s"] for cmd in tmux_calls))
+        self.assertTrue(any("api" in cmd for cmd in tmux_calls))
+        self.assertTrue(any("ops" in cmd for cmd in tmux_calls))
+
+    def test_api_up_detects_external_process_outside_tmux(self):
+        original_http_check = self.runtime._http_check
+        self.runtime._http_check = lambda url: True
+        try:
+            def fake_run(cmd, **kwargs):
+                del kwargs
+                if cmd[:3] == ["tmux", "has-session", "-t"]:
+                    return self.runtime.CommandResult(0, "", "")
+                if cmd[:3] == ["tmux", "list-windows", "-t"]:
+                    return self.runtime.CommandResult(0, "ops\n", "")
+                return self.runtime.CommandResult(0, "", "")
+
+            exit_code, output = self.runtime.run_cli(
+                ["api", "up"],
+                env={"SESSION": "baicao-dev", "API_PORT": "8000"},
+                run_command=fake_run,
+                port_checker=lambda host, port: True,
+            )
+        finally:
+            self.runtime._http_check = original_http_check
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("outside tmux", output)
+        self.assertIn("API_PORT", output)
+
+    def test_stack_status_summarizes_deps_api_and_web(self):
+        summary = self.runtime.render_status_table(
+            [
+                ("deps", "up", "docker", "postgres/neo4j/redis", "ports reachable"),
+                ("api", "up", "tmux", "baicao-dev:api", "GET /health ok"),
+                ("web", "down", "tmux", "baicao-dev:web", "port unreachable"),
+            ]
+        )
+
+        self.assertIn("RESOURCE", summary)
+        self.assertIn("baicao-dev:api", summary)
+        self.assertIn("port unreachable", summary)
+
+    def test_attach_to_missing_session_returns_recovery_hint(self):
+        def fake_run(cmd, **kwargs):
+            del cmd, kwargs
+            return self.runtime.CommandResult(1, "", "no server running")
+
+        exit_code, output = self.runtime.run_cli(
+            ["stack", "attach"],
+            env={"SESSION": "baicao-dev"},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("make stack up", output)

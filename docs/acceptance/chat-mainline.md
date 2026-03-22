@@ -36,7 +36,7 @@ audience: developer
 
 ### 环境
 
-- 运行方式：本地 tmux demo
+- 运行方式：本地 `make` + tmux 单 session
 - 依赖服务：FastAPI、Neo4j、PostgreSQL、Vite
 - 样例数据：demo 用户、来源和”人参”图谱
 - LLM 配置（可选）：.env 中设置 `LLM_PROVIDER` + API key 启用 LLM；未配置时自动降级为规则引擎
@@ -44,7 +44,8 @@ audience: developer
 ### 启动命令
 
 ```bash
-pnpm run demo
+make deps up
+make stack up
 pnpm run test:web
 ```
 

@@ -4,7 +4,7 @@
 
 **Goal:** 为 BaiCao 提供一套以 `make <resource> <action>` 为入口、以单个 tmux session 为运行时、以 `deps` 容器栈为依赖边界的本地开发主链路。
 
-**Architecture:** 根目录 `Makefile` 只负责把 `resource/action` 转发给一个 Python 运行时脚本；运行时统一管理帮助提示、参数校验、`docker compose` 依赖栈、tmux 单 session 编排和状态观测。`infra/docker-compose.yml` 收敛为纯依赖容器，旧 tmux 脚本保留为薄兼容层并复用新运行时。
+**Architecture:** 根目录 `Makefile` 只负责把 `resource/action` 转发给一个 Python 运行时脚本；运行时统一管理帮助提示、参数校验、`docker compose` 依赖栈、tmux 单 session 编排和状态观测。`infra/docker-compose.yml` 收敛为纯依赖容器，旧 tmux 脚本直接移除，并把仍在使用它们的活入口迁移到新运行时。
 
 **Tech Stack:** GNU Make, Python 3 standard library, tmux, Docker Compose, uv, pnpm
 
@@ -20,10 +20,12 @@
   - 为运行时的解析、错误引导、session/window 策略、命令构造和状态汇总提供可重复的回归测试。
 - Modify: `infra/docker-compose.yml`
   - 移除 `api`、`web`、`nginx`，只保留 `postgres`、`neo4j`、`redis`。
-- Modify: `scripts/dev-tmux.sh`
-  - 改成兼容转发层，提示新的 Makefile 用法并复用 `scripts/dev_runtime.py`。
-- Modify: `scripts/start_demo_tmux.sh`
-  - 保留 demo 数据预热职责，但将 session/window 编排迁移到新运行时。
+- Delete: 旧 tmux 启动脚本
+  - 直接移除过时 tmux 入口，避免与 `make` 主路径并存。
+- Delete: 旧 demo 启动脚本
+  - 直接移除过时 demo tmux 入口。
+- Modify: `scripts/test_e2e.sh`
+  - 把本地自动起栈路径迁移到 `make stack up`，不再依赖已删除脚本。
 - Modify: `README.md`
   - 更新快速开始，明确“前后端本地启动、依赖走 compose、调试走 make/tmux”。
 
@@ -434,29 +436,24 @@ git add scripts/dev_runtime.py scripts/tests/test_dev_runtime.py
 git commit -m "feat(dev): add tmux-based local stack runtime"
 ```
 
-### Task 4: Migrate Legacy Scripts and Update Developer Docs
+### Task 4: Remove Legacy Scripts and Update Developer Docs
 
 **Files:**
-- Modify: `scripts/dev-tmux.sh`
-- Modify: `scripts/start_demo_tmux.sh`
+- Delete: 旧 tmux 启动脚本
+- Delete: 旧 demo 启动脚本
+- Modify: `scripts/test_e2e.sh`
 - Modify: `README.md`
 - Modify: `scripts/dev_runtime.py`
 - Modify: `scripts/tests/test_dev_runtime.py`
 
-- [ ] **Step 1: Write the failing regression tests for legacy compatibility messaging**
+- [ ] **Step 1: Write the failing regression tests for legacy cleanup**
 
 ```python
-class LegacyCompatibilityTests(unittest.TestCase):
+class LegacyCleanupTests(unittest.TestCase):
     def setUp(self):
         self.runtime = load_runtime_module()
 
-    def test_legacy_dev_tmux_message_points_to_make_commands(self):
-        message = self.runtime.render_legacy_notice("dev-tmux")
-
-        self.assertIn("make stack up", message)
-        self.assertIn("make stack attach", message)
-
-    def test_demo_start_sequence_reuses_stack_runtime(self):
+    def test_demo_start_sequence_uses_make_stack_runtime(self):
         calls: list[list[str]] = []
 
         def fake_run(cmd, **kwargs):
@@ -465,8 +462,8 @@ class LegacyCompatibilityTests(unittest.TestCase):
 
         self.runtime.run_demo_bootstrap(run_command=fake_run)
 
-        self.assertTrue(any("seed_demo_data.py" in " ".join(cmd) for cmd in calls))
-        self.assertTrue(any(cmd[:3] == ["docker", "compose", "-f"] for cmd in calls))
+        self.assertTrue(any(cmd[:3] == ["make", "-C", str(ROOT)] for cmd in calls))
+        self.assertTrue(any("stack" in cmd for cmd in calls))
 ```
 
 - [ ] **Step 2: Run the regression tests to verify they fail**
@@ -477,18 +474,9 @@ Run:
 python3 -m unittest discover -s scripts/tests -p 'test_dev_runtime.py' -v
 ```
 
-Expected: FAIL because the legacy notice renderer and demo bootstrap helper are not implemented yet.
+Expected: FAIL because E2E startup still depends on the removed scripts.
 
-- [ ] **Step 3: Implement compatibility wrappers and update README**
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-echo "Legacy entrypoint detected. Prefer: make stack up / make stack attach"
-exec python3 "$ROOT/scripts/dev_runtime.py" stack up "$@"
-```
+- [ ] **Step 3: Delete legacy scripts, migrate E2E startup, and update README**
 
 README 要覆盖：
 
@@ -499,11 +487,11 @@ README 要覆盖：
 - `make stack status`
 - 说明 `api` / `web` 默认本地运行
 
-`scripts/start_demo_tmux.sh` 要点：
+`scripts/test_e2e.sh` 要点：
 
-- 继续执行 demo seed
-- 启动 `deps`
-- 复用新运行时拉起 `api` / `web`
+- CI 仍保留当前本地子进程起栈方式
+- 非 CI 自动起栈改为 `make stack up`
+- 清理逻辑不再依赖已删除脚本
 
 - [ ] **Step 4: Run final verification for docs and command surface**
 
@@ -512,6 +500,7 @@ Run:
 ```bash
 python3 -m unittest discover -s scripts/tests -p 'test_dev_runtime.py' -v
 docker compose -f infra/docker-compose.yml config
+bash -n scripts/test_e2e.sh
 make help
 make deps up
 make stack up
@@ -525,13 +514,15 @@ Expected:
 
 - `unittest` PASS
 - `docker compose ... config` PASS
+- `bash -n scripts/test_e2e.sh` PASS
 - Make 命令主链路全部可执行
 - `stack status` / `logs` 输出具备清晰的可观测性和恢复提示
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add README.md scripts/dev-tmux.sh scripts/start_demo_tmux.sh scripts/dev_runtime.py scripts/tests/test_dev_runtime.py
+git add README.md scripts/test_e2e.sh scripts/dev_runtime.py scripts/tests/test_dev_runtime.py
+git rm <旧 tmux 启动脚本> <旧 demo 启动脚本>
 git commit -m "docs(dev): document local make and tmux workflow"
 ```
 

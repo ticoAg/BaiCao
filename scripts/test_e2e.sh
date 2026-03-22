@@ -9,6 +9,8 @@ API_PID=""
 WEB_PID=""
 API_BASE_URL="http://localhost:8000"
 WEB_BASE_URL="http://localhost:3000"
+LOCAL_API_PORT="${API_PORT:-8001}"
+LOCAL_WEB_PORT="${WEB_PORT:-3001}"
 
 export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://baicao:baicao_password@localhost:15433/baicao}"
 export NEO4J_URI="${NEO4J_URI:-bolt://localhost:17687}"
@@ -81,8 +83,12 @@ start_ci_stack() {
 if [ "${CI:-}" = "true" ]; then
   start_ci_stack
 elif ! curl -fsS http://localhost:8000/health >/dev/null 2>&1 || ! curl -fsS http://localhost:3000 >/dev/null 2>&1; then
-    "$ROOT/scripts/start_demo_tmux.sh" "$SESSION_NAME" >/dev/null
-    STARTED_LOCAL=1
+  API_BASE_URL="http://localhost:${LOCAL_API_PORT}"
+  WEB_BASE_URL="http://localhost:${LOCAL_WEB_PORT}"
+  export PLAYWRIGHT_BASE_URL="http://127.0.0.1:${LOCAL_WEB_PORT}"
+  export VITE_API_PROXY_TARGET="http://localhost:${LOCAL_API_PORT}"
+  make -C "$ROOT" stack up SESSION="$SESSION_NAME" API_PORT="$LOCAL_API_PORT" WEB_PORT="$LOCAL_WEB_PORT" >/dev/null
+  STARTED_LOCAL=1
 fi
 
 cleanup() {
@@ -93,6 +99,8 @@ cleanup() {
     kill "$WEB_PID" 2>/dev/null || true
   fi
   if [ "$STARTED_LOCAL" -eq 1 ]; then
+    make -C "$ROOT" api down SESSION="$SESSION_NAME" API_PORT="$LOCAL_API_PORT" >/dev/null 2>&1 || true
+    make -C "$ROOT" web down SESSION="$SESSION_NAME" WEB_PORT="$LOCAL_WEB_PORT" >/dev/null 2>&1 || true
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
   fi
   if [ -n "$TMP_DIR" ]; then

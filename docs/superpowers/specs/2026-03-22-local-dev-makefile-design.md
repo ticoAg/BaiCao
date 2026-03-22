@@ -2,11 +2,11 @@
 
 ## 背景
 
-当前仓库同时存在以下几类本地开发入口：
+在开始本轮设计时，仓库还保留着多套彼此并行的本地开发入口：
 
-- `infra/docker-compose.yml` 中包含 `api`、`web`、`nginx`、数据库和中间件
-- `scripts/dev-tmux.sh` 提供一套 tmux 启动方式
-- `scripts/start_demo_tmux.sh` 提供另一套 demo 启动方式
+- `infra/docker-compose.yml` 中同时编排 `api`、`web`、`nginx`、数据库和中间件
+- 一套旧的 tmux 启动脚本
+- 一套旧的 demo 启动脚本
 
 这带来几个问题：
 
@@ -310,9 +310,9 @@ web       up       tmux     baicao-dev:web     port reachable
 
 ### 旧脚本处理
 
-- `scripts/dev-tmux.sh` 不立即删除
-- 先改为薄兼容层：输出迁移提示，或直接转发到新运行时
-- `scripts/start_demo_tmux.sh` 保留 demo 数据预热职责，但 session/window 编排复用新运行时
+- 最终实现已直接删除旧 tmux 启动脚本
+- 最终实现已直接删除旧 demo 启动脚本
+- 相关活入口已迁移到 `Makefile`、`scripts/dev_runtime.py` 和更新后的 `scripts/test_e2e.sh`
 
 ### README 更新
 
@@ -328,8 +328,7 @@ web       up       tmux     baicao-dev:web     port reachable
 
 - `Makefile`
 - `scripts/dev_runtime.py`
-- `scripts/dev-tmux.sh`
-- `scripts/start_demo_tmux.sh`
+- `scripts/test_e2e.sh`
 - `infra/docker-compose.yml`
 - `README.md`
 

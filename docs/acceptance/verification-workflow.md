@@ -36,14 +36,15 @@ audience: developer
 
 ### 环境
 
-- 运行方式：本地 tmux demo
+- 运行方式：本地 `make` + tmux 单 session
 - 依赖服务：FastAPI、PostgreSQL、Neo4j、Vite
 - 样例数据：demo_user、demo_expert、pending verifications
 
 ### 启动命令
 
 ```bash
-pnpm run demo
+make deps up
+make stack up
 pnpm run test:web
 ```
 
