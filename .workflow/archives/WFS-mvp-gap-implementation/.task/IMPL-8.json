@@ -1,0 +1,174 @@
+{
+  "id": "IMPL-8",
+  "title": "审查结果通知 (通知模块)",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-mvp-gap-implementation/.process/context-package.json",
+  "cli_execution_id": "WFS-mvp-gap-implementation-IMPL-8",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": "frontend",
+    "depends_on": ["IMPL-7"],
+    "user_stories": ["US-012"],
+    "priority": "should_have",
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+  "context": {
+    "description": "实现审查结果通知功能。当前无任何通知基础设施，需从零构建前端通知模块。MVP 阶段采用轮询方案(定时查询用户的审查状态变更)而非 WebSocket 实时推送。包含后端通知 API 端点、前端通知 store/hook/组件。通知内容包括审查结论、专家意见和跳转链接。",
+    "requirements": [
+      "创建 1 个后端 API 路由文件: [notification.py] (packages/api/app/api/notification.py)，包含 2 个端点: GET /notifications/ (列表) 和 POST /notifications/:id/read (标记已读)",
+      "创建 1 个后端 model 文件: [notification.py] (packages/api/app/models/notification.py)，Notification SQLAlchemy model 含 6 个字段: [id, user_id, type, title, content, read, created_at]",
+      "修改 1 个后端文件: [packages/api/app/api/__init__.py 或 main.py] 注册 notification router",
+      "创建 1 个前端 API: 在 api.ts 新增 notificationApi 对象，含 2 个方法: [list, markRead]",
+      "创建 1 个前端 store: [notificationStore.ts] (packages/web/src/stores/notificationStore.ts) 含通知列表和未读数",
+      "创建 1 个前端 hook: [useNotifications.ts] (packages/web/src/hooks/useNotifications.ts) 封装轮询逻辑(30秒间隔)",
+      "创建 1 个前端组件: [NotificationBell.tsx] (packages/web/src/components/NotificationBell.tsx) Header 中的通知铃铛+未读 Badge+下拉面板",
+      "修改 1 个前端组件: [Header.tsx] 集成 NotificationBell 组件",
+      "通知项点击: 根据 notification.type 跳转到对应页面(verification -> /verification?id=xxx)"
+    ],
+    "acceptance_criteria": [
+      "后端 2 个新文件创建: verify by ls packages/api/app/api/notification.py packages/api/app/models/notification.py",
+      "后端路由注册: verify by grep 'notification' packages/api/app/main.py",
+      "前端 3 个新文件创建: verify by ls packages/web/src/stores/notificationStore.ts packages/web/src/hooks/useNotifications.ts packages/web/src/components/NotificationBell.tsx",
+      "notificationApi 在 api.ts 中定义: verify by grep 'notificationApi' packages/web/src/services/api.ts",
+      "NotificationBell 在 Header 中使用: verify by grep 'NotificationBell' packages/web/src/components/Header.tsx",
+      "轮询逻辑存在: verify by grep 'setInterval\\|useInterval\\|refetchInterval' packages/web/src/hooks/useNotifications.ts",
+      "前端构建无错误: verify by vp build exit code 0",
+      "后端语法检查: verify by cd packages/api && ruff check app/api/notification.py app/models/notification.py"
+    ],
+    "focus_paths": [
+      "packages/api/app/api/notification.py",
+      "packages/api/app/models/notification.py",
+      "packages/api/app/main.py",
+      "packages/web/src/services/api.ts",
+      "packages/web/src/stores/notificationStore.ts",
+      "packages/web/src/hooks/useNotifications.ts",
+      "packages/web/src/components/NotificationBell.tsx",
+      "packages/web/src/components/Header.tsx"
+    ],
+    "inherited": {
+      "from": "IMPL-7",
+      "context": ["审查申请提交流程已完成，审查完成后需触发通知"]
+    },
+    "shared_context": {
+      "tech_stack": {
+        "backend": ["FastAPI", "SQLAlchemy 2.0", "Pydantic v2"],
+        "frontend": ["React 18", "TypeScript", "Ant Design 5", "Zustand 5", "TanStack Query"]
+      },
+      "backend_pattern": "参考 packages/api/app/api/verification.py 的路由模式 + packages/api/app/models/verification.py 的 model 模式",
+      "frontend_pattern": "参考 packages/web/src/stores/chatStore.ts 的 store 模式 + packages/web/src/hooks/useVerification.ts 的 hook 模式",
+      "polling_strategy": "MVP 阶段用 TanStack Query 的 refetchInterval: 30_000 轮询，后续可升级为 WebSocket",
+      "notification_type": "verification_completed (审查结果通知)，后续可扩展 system/message 等类型"
+    },
+    "artifacts": [
+      {
+        "type": "individual_role_analysis",
+        "source": "brainstorm_roles",
+        "path": ".workflow/active/WFS-2026-03-19-001/.brainstorming/product-owner/analysis-user-stories.md",
+        "priority": "high",
+        "usage": "US-012 验收标准: 审查完成发送通知(站内消息), 包含审查结论/专家意见/跳转链接, 点击链接跳转原答案页",
+        "contains": "审查结果通知用户故事"
+      },
+      {
+        "type": "individual_role_analysis",
+        "source": "brainstorm_roles",
+        "path": ".workflow/active/WFS-2026-03-19-001/.brainstorming/system-architect/architecture-design.md",
+        "priority": "medium",
+        "usage": "通知模块架构参考: Event-Driven 通信模式，可用于审查状态变更事件触发通知",
+        "contains": "系统架构设计中的事件驱动通信"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      "Read packages/api/app/api/verification.py 参考后端路由模式",
+      "Read packages/api/app/models/verification.py 参考 SQLAlchemy model 模式(如存在)",
+      "Read packages/api/app/main.py 确认路由注册方式(include_router)",
+      "Read packages/web/src/components/Header.tsx 确认 Header 结构，定位 NotificationBell 放置位置",
+      "Read packages/web/src/stores/chatStore.ts 参考 Zustand store 模式",
+      "Read packages/web/src/hooks/useVerification.ts 参考 TanStack Query hook 模式"
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "创建后端通知 model 和 API",
+        "description": "新建 Notification SQLAlchemy model 和 FastAPI 路由",
+        "modification_points": [
+          "创建 packages/api/app/models/notification.py: Notification model(id, user_id, type, title, content, read, created_at)",
+          "创建 packages/api/app/api/notification.py: GET /notifications/ + POST /notifications/{id}/read",
+          "修改 packages/api/app/main.py: 注册 notification router"
+        ],
+        "logic_flow": [
+          "Model: class Notification(Base), 6 个列(id=UUID PK, user_id=String, type=String, title=String, content=JSON, read=Boolean default False, created_at=DateTime)",
+          "GET /notifications/: query params user_id, unread_only, limit; 返回 {items: [], total: int}",
+          "POST /notifications/{id}/read: 标记通知为已读",
+          "main.py: app.include_router(notification_router, prefix='/api/v1')"
+        ],
+        "depends_on": [],
+        "output": "后端通知 API"
+      },
+      {
+        "step": 2,
+        "title": "创建前端 notificationApi + store + hook",
+        "description": "新增 API 方法、Zustand store 和轮询 hook",
+        "modification_points": [
+          "修改 api.ts: 新增 notificationApi 对象 {list, markRead}",
+          "创建 notificationStore.ts: Zustand store {notifications[], unreadCount, setNotifications, markAsRead}",
+          "创建 useNotifications.ts: useQuery with refetchInterval=30000"
+        ],
+        "logic_flow": [
+          "api.ts: notificationApi.list(params) -> GET /notifications/, notificationApi.markRead(id) -> POST /notifications/{id}/read",
+          "store: notifications state + derived unreadCount + actions",
+          "hook: useQuery(['notifications'], notificationApi.list, {refetchInterval: 30_000}), 返回 {notifications, unreadCount, markAsRead, loading}"
+        ],
+        "depends_on": [1],
+        "output": "前端通知数据层"
+      },
+      {
+        "step": 3,
+        "title": "创建 NotificationBell 组件并集成到 Header",
+        "description": "铃铛图标 + 未读 Badge + 下拉通知面板",
+        "modification_points": [
+          "创建 NotificationBell.tsx: Badge(count=unreadCount) + Popover(content=通知列表)",
+          "通知列表: List + List.Item (title, content, time, 未读标记)",
+          "点击通知: markAsRead + navigate to target page",
+          "修改 Header.tsx: import 并放置 NotificationBell"
+        ],
+        "logic_flow": [
+          "const { notifications, unreadCount, markAsRead } = useNotifications()",
+          "Popover content: List renderItem with onClick => markAsRead(id) + navigate(notification.content.link)",
+          "Badge count={unreadCount} on BellOutlined icon",
+          "Header.tsx: 在右侧操作区添加 <NotificationBell />"
+        ],
+        "depends_on": [2],
+        "output": "NotificationBell 组件 + Header 集成"
+      }
+    ],
+    "verification": [
+      "vp build 无编译错误 (exit code 0)",
+      "cd packages/api && ruff check app/api/notification.py app/models/notification.py",
+      "ls packages/api/app/api/notification.py packages/api/app/models/notification.py 2 个后端文件存在",
+      "ls packages/web/src/stores/notificationStore.ts packages/web/src/hooks/useNotifications.ts packages/web/src/components/NotificationBell.tsx 3 个前端文件存在",
+      "grep 'notificationApi' packages/web/src/services/api.ts 命中 >= 1",
+      "grep 'NotificationBell' packages/web/src/components/Header.tsx 命中 >= 1"
+    ],
+    "target_files": [
+      "packages/api/app/models/notification.py",
+      "packages/api/app/api/notification.py",
+      "packages/api/app/main.py",
+      "packages/web/src/services/api.ts",
+      "packages/web/src/stores/notificationStore.ts",
+      "packages/web/src/hooks/useNotifications.ts",
+      "packages/web/src/components/NotificationBell.tsx",
+      "packages/web/src/components/Header.tsx"
+    ]
+  }
+}

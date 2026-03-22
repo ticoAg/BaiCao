@@ -1,0 +1,156 @@
+{
+  "id": "IMPL-2",
+  "title": "前端溯源展示组件 (ProvenanceDisplay)",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-mvp-gap-implementation/.process/context-package.json",
+  "cli_execution_id": "WFS-mvp-gap-implementation-IMPL-2",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-phase1",
+    "module": "frontend",
+    "depends_on": [],
+    "user_stories": ["US-007", "US-008"],
+    "priority": "must_have",
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+  "context": {
+    "description": "创建前端溯源展示组件套件，包括证据列表 EvidenceList、溯源链路 LineageChain、证据详情 EvidenceDetail。后端 provenanceApi 已完整(getEntityLineage/getEntityEvidence/checkCompleteness)，但前端完全没有消费组件。此任务创建独立的可复用溯源组件，不修改现有页面(集成在 IMPL-3 中完成)。",
+    "requirements": [
+      "创建 3 个新组件文件: [EvidenceList.tsx, LineageChain.tsx, EvidenceDetail.tsx] (packages/web/src/components/provenance/)",
+      "创建 1 个新 hook: [useProvenance.ts] (packages/web/src/hooks/useProvenance.ts)，封装 provenanceApi 的 3 个查询方法",
+      "EvidenceList 组件展示 4 个字段/列: [证据类型(Tag), 来源名称(Text), 摘要内容(Paragraph), 操作按钮(查看来源跳转)]",
+      "LineageChain 组件渲染溯源链路: entity -> evidence -> source 三层链路可视化(Steps 或 Timeline 组件)",
+      "EvidenceDetail 组件以 Drawer/Modal 展示单条证据详情: [内容全文, 来源信息, 页码引用, 关联度]",
+      "来源跳转: 内部来源在新页面打开，外部链接在新标签页打开(window.open)"
+    ],
+    "acceptance_criteria": [
+      "4 个新文件创建: verify by ls packages/web/src/components/provenance/EvidenceList.tsx packages/web/src/components/provenance/LineageChain.tsx packages/web/src/components/provenance/EvidenceDetail.tsx packages/web/src/hooks/useProvenance.ts | wc -l = 4",
+      "useProvenance hook 封装 3 个 API 调用: verify by grep -c 'provenanceApi\\.' packages/web/src/hooks/useProvenance.ts >= 3",
+      "EvidenceList 渲染 4 个字段: verify by grep -c 'Tag\\|Text\\|Paragraph\\|Button' packages/web/src/components/provenance/EvidenceList.tsx >= 4",
+      "来源跳转逻辑存在: verify by grep 'window.open\\|navigate' packages/web/src/components/provenance/EvidenceDetail.tsx",
+      "构建无错误: verify by vp build exit code 0"
+    ],
+    "focus_paths": [
+      "packages/web/src/components/provenance/",
+      "packages/web/src/hooks/useProvenance.ts",
+      "packages/web/src/services/api.ts"
+    ],
+    "shared_context": {
+      "tech_stack": ["React 18", "TypeScript", "Ant Design 5", "TanStack Query"],
+      "component_pattern": "Ant Design List/Timeline/Drawer 组合 (参考 ReasoningChain.tsx 的 Collapse+List 模式)",
+      "hook_pattern": "useQuery 封装 (参考 useVerification.ts)",
+      "existing_api": "provenanceApi.getEntityLineage(id) 返回 LineageChain{entity,evidence,source}; provenanceApi.getEntityEvidence(id) 返回 {evidence[],count}; provenanceApi.checkCompleteness(id) 返回 {entity,has_evidence,has_source,chain_complete}"
+    },
+    "artifacts": [
+      {
+        "type": "individual_role_analysis",
+        "source": "brainstorm_roles",
+        "path": ".workflow/active/WFS-2026-03-19-001/.brainstorming/product-owner/analysis-user-stories.md",
+        "priority": "high",
+        "usage": "US-007 验收标准: 证据列表含类型/来源/摘要/关联度; US-008: 来源跳转(内部新页面/外部新标签)",
+        "contains": "溯源证据展示用户故事"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      "Read packages/web/src/services/api.ts lines 280-358 确认 provenanceApi 全部接口签名和返回类型",
+      "Read packages/web/src/components/chat/ReasoningChain.tsx 了解现有 Collapse+List 组件组合模式",
+      "Read packages/web/src/pages/VerificationPage.tsx 了解 Table+Modal 展示模式"
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "创建 useProvenance hook",
+        "description": "新建 packages/web/src/hooks/useProvenance.ts，封装 provenanceApi 的 getEntityLineage/getEntityEvidence/checkCompleteness",
+        "modification_points": [
+          "创建 1 个新文件: useProvenance.ts",
+          "封装 3 个 useQuery: lineage, evidence, completeness",
+          "接受 entityId 参数，返回 { lineage, evidence, completeness, loading, error }"
+        ],
+        "logic_flow": [
+          "接收 entityId: string 参数",
+          "useQuery(['lineage', entityId], () => provenanceApi.getEntityLineage(entityId))",
+          "useQuery(['evidence', entityId], () => provenanceApi.getEntityEvidence(entityId))",
+          "useQuery(['completeness', entityId], () => provenanceApi.checkCompleteness(entityId))",
+          "返回聚合结果"
+        ],
+        "depends_on": [],
+        "output": "useProvenance hook"
+      },
+      {
+        "step": 2,
+        "title": "创建 EvidenceList 组件",
+        "description": "新建 packages/web/src/components/provenance/EvidenceList.tsx，接收 evidence[] 数组，渲染为 Ant Design List",
+        "modification_points": [
+          "创建 1 个新文件: EvidenceList.tsx",
+          "创建目录: packages/web/src/components/provenance/",
+          "List.Item 渲染 4 个字段: 类型Tag, 来源名Text, 摘要Paragraph, 操作Button"
+        ],
+        "logic_flow": [
+          "接收 props: { evidence: ProvenanceEvidence[], onViewDetail?: (id) => void }",
+          "空态: 无证据时显示 Empty",
+          "列表渲染: List + List.Item，每项展示类型/来源/摘要/查看详情按钮",
+          "点击查看详情触发 onViewDetail 回调"
+        ],
+        "depends_on": [],
+        "output": "EvidenceList component"
+      },
+      {
+        "step": 3,
+        "title": "创建 LineageChain 组件",
+        "description": "新建 packages/web/src/components/provenance/LineageChain.tsx，渲染 entity->evidence->source 三层溯源链路",
+        "modification_points": [
+          "创建 1 个新文件: LineageChain.tsx",
+          "使用 Steps 或 Timeline 组件渲染 3 层链路: 实体->证据->来源",
+          "每层显示名称和状态 Tag"
+        ],
+        "logic_flow": [
+          "接收 props: { lineage: LineageChain }",
+          "渲染 Timeline/Steps: entity节点 -> evidence节点 -> source节点",
+          "每个节点显示名称、类型标签、状态",
+          "chain_complete 时显示完整性标识"
+        ],
+        "depends_on": [],
+        "output": "LineageChain component"
+      },
+      {
+        "step": 4,
+        "title": "创建 EvidenceDetail 组件",
+        "description": "新建 packages/web/src/components/provenance/EvidenceDetail.tsx，以 Drawer 展示单条证据详情和来源跳转",
+        "modification_points": [
+          "创建 1 个新文件: EvidenceDetail.tsx",
+          "Drawer 展示: 内容全文, 来源信息, 页码引用",
+          "来源跳转按钮: 内部来源 navigate(), 外部来源 window.open()"
+        ],
+        "logic_flow": [
+          "接收 props: { evidence: ProvenanceEvidence | null, open: boolean, onClose: () => void }",
+          "Drawer open/close 控制",
+          "Descriptions 渲染详细字段",
+          "底部 Button: 判断来源类型决定跳转方式"
+        ],
+        "depends_on": [2],
+        "output": "EvidenceDetail component"
+      }
+    ],
+    "verification": [
+      "vp build 无编译错误 (exit code 0)",
+      "ls packages/web/src/components/provenance/ 目录下有 3 个 .tsx 文件",
+      "ls packages/web/src/hooks/useProvenance.ts 文件存在"
+    ],
+    "target_files": [
+      "packages/web/src/hooks/useProvenance.ts",
+      "packages/web/src/components/provenance/EvidenceList.tsx",
+      "packages/web/src/components/provenance/LineageChain.tsx",
+      "packages/web/src/components/provenance/EvidenceDetail.tsx"
+    ]
+  }
+}

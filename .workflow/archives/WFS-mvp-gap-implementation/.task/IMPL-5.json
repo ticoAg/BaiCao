@@ -1,0 +1,140 @@
+{
+  "id": "IMPL-5",
+  "title": "追问与上下文延续 (多轮对话)",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-mvp-gap-implementation/.process/context-package.json",
+  "cli_execution_id": "WFS-mvp-gap-implementation-IMPL-5",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": "frontend",
+    "depends_on": [],
+    "user_stories": ["US-003"],
+    "priority": "should_have",
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+  "context": {
+    "description": "完善多轮对话的上下文延续功能。当前 useChat.ts:39 已传递 sessionId 到 chatApi.ask()，chatStore.ts 已有 sessionId state，但缺少会话初始化、上下文维护和新话题切换逻辑。后端 session API 已有 createSession 和 getSession 端点。需要在首次提问时自动创建 session，后续追问自动携带 sessionId 保持上下文，并支持用户主动开启新话题(清除 sessionId)。",
+    "requirements": [
+      "修改 1 个 hook: [useChat.ts] 增加 3 个逻辑: (a)首次提问自动创建 session, (b)追问自动携带 sessionId, (c)新话题清除 session",
+      "修改 1 个 store: [chatStore.ts] 新增 2 个状态字段: [conversationContext: string | null (上下文摘要), isNewTopic: boolean (新话题标志)]",
+      "修改 1 个 store 方法: [clearMessages] 同时重置 sessionId 和 conversationContext",
+      "新增 1 个 store 方法: [startNewTopic] 只重置 sessionId 和 conversationContext 但保留消息历史",
+      "前端 UI: 在 ChatPage 输入框附近添加 1 个'新话题'按钮(或在 Header 区域添加切换)",
+      "会话过期处理: 若 chatApi.ask 返回错误(session expired)则自动创建新 session 重试"
+    ],
+    "acceptance_criteria": [
+      "首次提问创建 session: verify by grep 'createSession\\|chatApi.createSession' packages/web/src/hooks/useChat.ts",
+      "sessionId 传递到 API 调用: verify by grep 'sessionId' packages/web/src/hooks/useChat.ts (已存在但需确认逻辑完整)",
+      "新话题功能存在: verify by grep 'startNewTopic\\|newTopic\\|新话题' packages/web/src/stores/chatStore.ts packages/web/src/hooks/useChat.ts",
+      "conversationContext 状态新增: verify by grep 'conversationContext' packages/web/src/stores/chatStore.ts",
+      "构建无错误: verify by vp build exit code 0"
+    ],
+    "focus_paths": [
+      "packages/web/src/hooks/useChat.ts",
+      "packages/web/src/stores/chatStore.ts",
+      "packages/web/src/pages/ChatPage.tsx",
+      "packages/web/src/services/api.ts"
+    ],
+    "shared_context": {
+      "tech_stack": ["React 18", "TypeScript", "Zustand 5"],
+      "current_state": "useChat.ts line 39 已传 sessionId 到 chatApi.ask(); chatStore.ts line 7 已有 sessionId: string | null; clearMessages line 53 已重置 sessionId",
+      "backend_api": "chatApi.createSession(userId?) 返回 {id}; chatApi.getSession(sessionId) 返回 session 详情; chatApi.ask(question, sessionId?) 支持 sessionId",
+      "gap": "无 session 自动创建逻辑，无新话题切换，clearChat 重置 session 但无独立 newTopic 操作"
+    },
+    "artifacts": [
+      {
+        "type": "individual_role_analysis",
+        "source": "brainstorm_roles",
+        "path": ".workflow/active/WFS-2026-03-19-001/.brainstorming/product-owner/analysis-user-stories.md",
+        "priority": "high",
+        "usage": "US-003 验收标准: 60分钟内追问保持上下文, '新话题:'开头开启新上下文",
+        "contains": "追问与上下文延续用户故事"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      "Read packages/web/src/hooks/useChat.ts 确认完整的 sendMessage 和 clearChat 逻辑",
+      "Read packages/web/src/stores/chatStore.ts 确认完整的 state 和 actions",
+      "Read packages/web/src/pages/ChatPage.tsx 确认 UI 布局，定位'新话题'按钮放置位置",
+      "Read packages/web/src/services/api.ts lines 266-278 确认 chatApi.createSession/getSession 签名"
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "扩展 chatStore 状态",
+        "description": "在 chatStore.ts 新增 conversationContext 和 isNewTopic 状态，新增 startNewTopic action",
+        "modification_points": [
+          "修改 ChatState 接口: 新增 2 个字段 conversationContext: string | null, isNewTopic: boolean",
+          "新增 1 个 action: startNewTopic: () => void (重置 sessionId + conversationContext, 保留 messages)",
+          "新增 1 个 action: setConversationContext: (ctx: string | null) => void",
+          "修改 clearMessages: 同时重置 conversationContext 和 isNewTopic"
+        ],
+        "logic_flow": [
+          "ChatState 接口新增字段和 action 签名",
+          "初始值: conversationContext: null, isNewTopic: false",
+          "startNewTopic: set({ sessionId: null, conversationContext: null, isNewTopic: true })",
+          "clearMessages: set({ messages: [], sessionId: null, conversationContext: null, isNewTopic: false })"
+        ],
+        "depends_on": [],
+        "output": "扩展的 chatStore"
+      },
+      {
+        "step": 2,
+        "title": "增强 useChat hook 的 session 管理",
+        "description": "修改 useChat.ts 的 sendMessage，增加自动 session 创建、上下文携带和过期处理",
+        "modification_points": [
+          "修改 sendMessage: 若 sessionId 为 null，先调用 chatApi.createSession() 获取 sessionId",
+          "修改 sendMessage: 传递 sessionId 到 chatApi.ask()",
+          "新增 startNewTopic: 调用 store.startNewTopic()，暴露给 ChatPage",
+          "错误处理: 若 ask 返回 session-expired 类错误，自动 createSession + retry 一次"
+        ],
+        "logic_flow": [
+          "sendMessage 内部: if (!sessionId) { const {id} = await chatApi.createSession(); setSessionId(id); }",
+          "chatApi.ask(question, currentSessionId)",
+          "catch 中检查 error.response?.status === 404 或 error message 含 session: 自动 retry",
+          "暴露 startNewTopic 到返回值"
+        ],
+        "depends_on": [1],
+        "output": "增强的 useChat hook"
+      },
+      {
+        "step": 3,
+        "title": "ChatPage 新增新话题按钮",
+        "description": "在 ChatPage 的输入区域或 Header 位置添加'新话题'按钮",
+        "modification_points": [
+          "修改 ChatPage.tsx: 从 useChat 解构 startNewTopic",
+          "在输入框左侧或上方添加 Button(icon=PlusOutlined, tooltip='新话题', onClick=startNewTopic)"
+        ],
+        "logic_flow": [
+          "const { ..., startNewTopic } = useChat()",
+          "在 Input.Search 同行或上方添加 Tooltip + Button",
+          "按钮样式与现有 clearChat 按钮保持一致"
+        ],
+        "depends_on": [2],
+        "output": "ChatPage UI 更新"
+      }
+    ],
+    "verification": [
+      "vp build 无编译错误 (exit code 0)",
+      "grep 'startNewTopic' packages/web/src/stores/chatStore.ts 命中 >= 1",
+      "grep 'createSession' packages/web/src/hooks/useChat.ts 命中 >= 1",
+      "grep '新话题' packages/web/src/pages/ChatPage.tsx 命中 >= 1"
+    ],
+    "target_files": [
+      "packages/web/src/stores/chatStore.ts:ChatState:5-18",
+      "packages/web/src/stores/chatStore.ts:clearMessages:53",
+      "packages/web/src/hooks/useChat.ts:sendMessage:25-76",
+      "packages/web/src/pages/ChatPage.tsx"
+    ]
+  }
+}

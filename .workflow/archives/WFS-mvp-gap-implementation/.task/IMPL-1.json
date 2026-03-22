@@ -1,0 +1,141 @@
+{
+  "id": "IMPL-1",
+  "title": "独立药材详情页 (HerbDetailPage)",
+  "status": "pending",
+  "context_package_path": ".workflow/active/WFS-mvp-gap-implementation/.process/context-package.json",
+  "cli_execution_id": "WFS-mvp-gap-implementation-IMPL-1",
+  "cli_execution": {
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": "frontend",
+    "depends_on": [],
+    "user_stories": ["US-005"],
+    "priority": "must_have",
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+  "context": {
+    "description": "创建独立的药材详情页面 HerbDetailPage，展示药材基本信息、功效、主治、用法、禁忌、关联证据。当前仅在 GraphPage 的 NodeDetail 面板中简单展示，需要一个完整的独立页面。后端 herbApi.get/list/search 和 provenanceApi.getEntityEvidence 已就绪。",
+    "requirements": [
+      "创建 1 个新页面组件: [HerbDetailPage.tsx] (packages/web/src/pages/HerbDetailPage.tsx)",
+      "创建 1 个新 hook: [useHerbDetail.ts] (packages/web/src/hooks/useHerbDetail.ts)，封装 herbApi.get + provenanceApi.getEntityEvidence 调用",
+      "修改 1 个路由文件: [App.tsx] 新增 /herb/:id 路由 (在 line 32 附近的 Routes 中新增 1 条 Route)",
+      "页面展示 6 个信息区块: [基本信息(名称/拉丁名/分类/描述), 功效, 主治, 用法, 禁忌, 关联证据列表]",
+      "页面需支持从实体名点击跳转(useNavigate to /herb/:id)和从图谱节点跳转(Button link in NodeDetail)"
+    ],
+    "acceptance_criteria": [
+      "2 个新文件创建: verify by ls packages/web/src/pages/HerbDetailPage.tsx packages/web/src/hooks/useHerbDetail.ts",
+      "1 条新路由注册: verify by grep '/herb/:id' packages/web/src/App.tsx",
+      "页面渲染 6 个信息区块: verify by grep -c 'Card\\|Descriptions\\|Section' packages/web/src/pages/HerbDetailPage.tsx >= 6",
+      "herbApi.get 被调用: verify by grep 'herbApi.get' packages/web/src/hooks/useHerbDetail.ts",
+      "provenanceApi.getEntityEvidence 被调用: verify by grep 'provenanceApi.getEntityEvidence' packages/web/src/hooks/useHerbDetail.ts",
+      "页面在 /herb/test-id 路由下可渲染(无 crash): verify by vp build exit code 0"
+    ],
+    "focus_paths": [
+      "packages/web/src/pages/HerbDetailPage.tsx",
+      "packages/web/src/hooks/useHerbDetail.ts",
+      "packages/web/src/App.tsx",
+      "packages/web/src/services/api.ts",
+      "packages/web/src/components/graph/NodeDetail.tsx"
+    ],
+    "shared_context": {
+      "tech_stack": ["React 18", "TypeScript", "Ant Design 5", "TanStack Query", "react-router-dom v6"],
+      "page_pattern": "Functional component + custom hook + Ant Design layout (参考 VerificationPage.tsx 结构)",
+      "hook_pattern": "useQuery + API call 封装 (参考 useVerification.ts)",
+      "existing_api": "herbApi.get(id) 返回 Herb{id,name,latin_name,category,description}; provenanceApi.getEntityEvidence(id) 返回 {evidence[],count}"
+    },
+    "artifacts": [
+      {
+        "type": "individual_role_analysis",
+        "source": "brainstorm_roles",
+        "path": ".workflow/active/WFS-2026-03-19-001/.brainstorming/product-owner/analysis-user-stories.md",
+        "priority": "high",
+        "usage": "US-005 验收标准: 显示基本信息/功效/主治/用量/禁忌/来源，每项显示证据来源图标",
+        "contains": "药材详情页用户故事与验收条件"
+      }
+    ]
+  },
+  "flow_control": {
+    "pre_analysis": [
+      "Read packages/web/src/pages/VerificationPage.tsx 了解页面组件模式(hooks+AntD+状态管理)",
+      "Read packages/web/src/hooks/useVerification.ts 了解 hook 封装模式(useQuery+mutationFn)",
+      "Read packages/web/src/components/graph/NodeDetail.tsx 了解现有药材简要展示，确认需补充哪些字段",
+      "Read packages/web/src/services/api.ts lines 144-173 确认 herbApi 接口签名",
+      "Read packages/web/src/services/api.ts lines 296-358 确认 provenanceApi.getEntityEvidence 接口签名"
+    ],
+    "implementation_approach": [
+      {
+        "step": 1,
+        "title": "创建 useHerbDetail hook",
+        "description": "新建 packages/web/src/hooks/useHerbDetail.ts，使用 useQuery 封装 herbApi.get(id) 和 provenanceApi.getEntityEvidence(id)，返回 { herb, evidence, loading, error }",
+        "modification_points": [
+          "创建 1 个新文件: useHerbDetail.ts",
+          "导入 2 个 API: herbApi.get, provenanceApi.getEntityEvidence",
+          "使用 useQuery 并行加载药材详情和证据列表"
+        ],
+        "logic_flow": [
+          "接收 herbId 参数",
+          "useQuery(['herb', herbId], () => herbApi.get(herbId))",
+          "useQuery(['herbEvidence', herbId], () => provenanceApi.getEntityEvidence(herbId))",
+          "返回 { herb, evidence, loading, error, refetch }"
+        ],
+        "depends_on": [],
+        "output": "useHerbDetail hook"
+      },
+      {
+        "step": 2,
+        "title": "创建 HerbDetailPage 页面组件",
+        "description": "新建 packages/web/src/pages/HerbDetailPage.tsx，使用 useParams 获取 id，调用 useHerbDetail，渲染 6 个信息区块",
+        "modification_points": [
+          "创建 1 个新文件: HerbDetailPage.tsx",
+          "渲染 6 个 Card/Section: 基本信息(Descriptions), 功效, 主治, 用法, 禁忌, 关联证据(List)",
+          "面包屑导航: Breadcrumb 链接回首页/图谱",
+          "加载态: Skeleton/Spin",
+          "错误态: Result 组件显示 404/错误"
+        ],
+        "logic_flow": [
+          "const { id } = useParams<{id: string}>()",
+          "const { herb, evidence, loading, error } = useHerbDetail(id)",
+          "loading 时渲染 Skeleton",
+          "error 时渲染 Result status='error'",
+          "正常渲染: Breadcrumb + 6 个信息区块 + 证据列表"
+        ],
+        "depends_on": [1],
+        "output": "HerbDetailPage component"
+      },
+      {
+        "step": 3,
+        "title": "注册路由并添加导航入口",
+        "description": "在 App.tsx 新增 /herb/:id 路由，在 NodeDetail 中添加跳转链接",
+        "modification_points": [
+          "修改 App.tsx: import HerbDetailPage, 新增 <Route path='/herb/:id' element={<HerbDetailPage />} />",
+          "修改 NodeDetail.tsx: 添加 '查看完整详情' Button，onClick navigate to /herb/{node.id}"
+        ],
+        "logic_flow": [
+          "App.tsx: 在 /chat Route 下方新增 /herb/:id Route",
+          "NodeDetail.tsx: import useNavigate, 添加 Button onClick => navigate(`/herb/${node.id}`)"
+        ],
+        "depends_on": [2],
+        "output": "路由注册 + 导航入口"
+      }
+    ],
+    "verification": [
+      "vp build 无编译错误 (exit code 0)",
+      "grep '/herb/:id' packages/web/src/App.tsx 命中 1 行",
+      "ls packages/web/src/pages/HerbDetailPage.tsx packages/web/src/hooks/useHerbDetail.ts 2 个文件存在"
+    ],
+    "target_files": [
+      "packages/web/src/pages/HerbDetailPage.tsx",
+      "packages/web/src/hooks/useHerbDetail.ts",
+      "packages/web/src/App.tsx:Routes:27-33",
+      "packages/web/src/components/graph/NodeDetail.tsx"
+    ]
+  }
+}

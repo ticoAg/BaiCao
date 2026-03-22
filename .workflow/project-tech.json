@@ -92,17 +92,20 @@
         "IMPL-003: Frontend core (React + Vite + Ant Design)",
         "IMPL-004: Knowledge graph core (Neo4j + graph service)",
         "IMPL-005: Chat and visualization (ChatPage, GraphPage)",
-        "IMPL-006: Infrastructure (Docker Compose, PostgreSQL, Neo4j)"
+        "IMPL-006: Infrastructure (Docker Compose, PostgreSQL, Neo4j)",
+        "IMPL-007: MVP gap implementation (entity highlight, herb detail, provenance display, reasoning chain clickable, follow-up context, path explorer, review submit, notification)"
       ],
-      "enhancement": [],
+      "enhancement": [
+        "ENH-001: LLM dual-protocol (OpenAI Responses API + Anthropic Messages API, auto-detect)"
+      ],
       "bugfix": [],
       "refactor": [],
       "docs": []
     },
     "statistics": {
-      "total_features": 6,
-      "total_sessions": 1,
-      "last_updated": "2026-03-20T00:08:00Z"
+      "total_features": 7,
+      "total_sessions": 2,
+      "last_updated": "2026-03-22T12:00:00Z"
     }
   },
   "_metadata": {
