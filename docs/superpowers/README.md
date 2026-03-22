@@ -41,7 +41,7 @@
 
 在 BaiCao 仓库内：
 
-- 高层阶段目标看 `IMPL_PLAN.md`
+- 高层阶段目标与当前阶段说明看 `README.md`
 - 某轮任务的可执行拆解、进度勾选、验证步骤看 `plans/*.md`
 - 不再使用仓库自定义 JSON task 文件或单独的 TODO 台账作为任务真源
 
@@ -61,5 +61,5 @@
 
 - 仓库级工作流：`../workflow.md`
 - skill 路由：`../agent-skill-routing.md`
-- 项目高层规划：`../../IMPL_PLAN.md`
+- 项目总入口：`../../README.md`
 - 验收入口：`../acceptance/README.md`

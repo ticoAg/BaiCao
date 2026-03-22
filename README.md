@@ -18,7 +18,6 @@
 
 ## 快速导航
 
-- 项目规划：`IMPL_PLAN.md`
 - 架构入口：`docs/architecture/README.md`
 - 系统总览：`docs/architecture/system-overview.md`
 - 数据模型：`docs/architecture/data-model.md`
@@ -161,7 +160,6 @@ BaiCao/
 │   ├── acceptance/   # 验收文档
 │   ├── _dev/         # 草案与 brainstorm
 │   └── superpowers/  # spec / plan 与仓库级实施任务系统
-├── IMPL_PLAN.md      # 项目初始化与高层规划
 └── AGENTS.md         # 仓库级 AI Agent 研发规范
 ```
 
@@ -363,7 +361,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 ## 近期路线图
 
-结合 `IMPL_PLAN.md`、`docs/superpowers/plans/` 实施计划和 `docs/_dev/brainstorm`，当前比较清晰的研发路线是：
+结合 `README.md`、`docs/superpowers/plans/` 实施计划和 `docs/_dev/brainstorm`，当前比较清晰的研发路线是：
 
 ### Phase 1：基础骨架
 
@@ -395,7 +393,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 ## 文档入口
 
-- 项目规划：`IMPL_PLAN.md`
+- 项目总入口：`README.md`
 - 仓库规范：`AGENTS.md`
 - 架构文档：`docs/architecture/README.md`
 - 数据模型：`docs/architecture/data-model.md`
@@ -427,7 +425,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 如果你希望参与推进，推荐先从以下入口阅读：
 
 1. `README.md`
-2. `IMPL_PLAN.md`
+2. `docs/superpowers/README.md`
 3. `docs/_dev/brainstorm/README.md`
 4. `docs/architecture/system-overview.md`
 5. `docs/superpowers/plans/` 下的实施计划文件

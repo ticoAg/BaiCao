@@ -13,7 +13,7 @@ This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packag
 | Need to know...                             | Read...                       |
 | ------------------------------------------- | ----------------------------- |
 | 项目定位与现状                              | `README.md`                   |
-| 需求与阶段目标                              | `IMPL_PLAN.md`                |
+| 需求与阶段目标                              | `README.md` + `docs/superpowers/plans/` |
 | 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md`                 |
 | Skill 选择与多代理路由                      | `docs/agent-skill-routing.md` |
 | 各类改动的最低验证标准                      | `docs/verification-matrix.md` |
@@ -37,7 +37,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 ## Repo SSOT
 
-- **需求与阶段目标**：`IMPL_PLAN.md`
+- **需求与阶段目标**：`README.md`、`docs/superpowers/plans/`
 - **任务计划与实施颗粒度**：`docs/superpowers/plans/*.md`
 - **跨端共享协议入口**：`packages/shared/types/`
 - **后端领域模型 / API Schema / 服务真源**：`packages/api/app/models/`、`packages/api/app/schemas/`、`packages/api/app/services/`
@@ -79,7 +79,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 系统安全策略 > 用户当轮指令 > 最近的 `AGENTS.md` > 根目录 `AGENTS.md` > `workflow.md` > `docs/` / `README.md`
 
-补充口径：判断“项目目标 / 阶段任务”时，以 `IMPL_PLAN.md` 与 `docs/superpowers/plans/` 为准；判断“当前已实现事实”时，以仓库代码、配置、脚本为准。
+补充口径：判断“项目目标 / 阶段任务”时，以 `README.md` 与 `docs/superpowers/plans/` 为准；判断“当前已实现事实”时，以仓库代码、配置、脚本为准。
 
 ## Red Lines
 

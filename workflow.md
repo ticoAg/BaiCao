@@ -37,12 +37,12 @@ flowchart TD
 1. 读当前作用域内的 `AGENTS.md`
 2. 读根目录 `workflow.md`
 3. 判断任务主作用域：`packages/api/`、`packages/web/`、`packages/shared/`、`packages/db/`、`infra/`、`docs/`，还是跨模块任务
-4. 读目标作用域的 README、配置文件和最相关文档，同时确认 `IMPL_PLAN.md` 与相关 `docs/superpowers/plans/*.md` 中的目标/阶段定位
+4. 读目标作用域的 README、配置文件和最相关文档，同时确认 `README.md` 与相关 `docs/superpowers/plans/*.md` 中的目标/阶段定位
 5. 只补读与当前任务直接相关的代码、测试和调用点
 
 判定主作用域时，优先看“谁是真源”，不要看“哪里更容易打补丁”：
 
-- 需求与阶段目标真源：`IMPL_PLAN.md`
+- 需求与阶段目标真源：`README.md`、`docs/superpowers/plans/*.md`
 - 任务状态与实施分解真源：`docs/superpowers/plans/*.md`
 - 跨端共享协议入口：`packages/shared/types/index.ts`
 - 后端 API Schema / DTO 真源：`packages/api/app/schemas/**`

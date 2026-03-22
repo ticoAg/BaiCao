@@ -33,7 +33,7 @@
 1. [../../README.md](../../README.md)
 2. [../README.md](../README.md)
 3. [../architecture/README.md](../architecture/README.md)
-4. 对应功能的实施计划文件（`../superpowers/plans/`）或高层规划 `../../IMPL_PLAN.md`
+4. 对应功能的实施计划文件（`../superpowers/plans/`）或项目总入口 `../../README.md`
 5. 当前目录下对应功能的验收文档
 
 ## 验收的最小闭环
@@ -157,7 +157,7 @@ flowchart LR
 
 ## 与项目其他真源的关系
 
-- 需求与阶段目标：`../../IMPL_PLAN.md`
+- 需求与阶段目标：`../../README.md`、`../superpowers/plans/`
 - 当前实现事实：仓库代码、脚本、配置
 - 长期系统解释：`../architecture/`
 - 方案讨论来源：`../_dev/`

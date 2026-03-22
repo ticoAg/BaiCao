@@ -30,7 +30,7 @@
 1. [../AGENTS.md](../AGENTS.md)
 2. [../workflow.md](../workflow.md)
 3. [agent-skill-routing.md](agent-skill-routing.md)
-4. [../IMPL_PLAN.md](../IMPL_PLAN.md)
+4. [superpowers/README.md](superpowers/README.md)
 5. [architecture/system-overview.md](architecture/system-overview.md)
 6. [acceptance/README.md](acceptance/README.md)
 7. 对应 `superpowers/plans/` 计划文件
@@ -38,7 +38,7 @@
 ### 路径 C：要判断“当前代码”与“目标方案”的差异
 
 1. [../README.md](../README.md)
-2. [../IMPL_PLAN.md](../IMPL_PLAN.md)
+2. [superpowers/README.md](superpowers/README.md)
 3. [architecture/README.md](architecture/README.md)
 4. [_dev/README.md](_dev/README.md)
 5. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
@@ -55,7 +55,7 @@
 
 ```mermaid
 flowchart TB
-    Root[README / IMPL_PLAN / docs/superpowers/plans]
+    Root[README / docs/superpowers/plans]
     Root --> Guide[AGENTS / workflow / routing / verification]
     Root --> Arch[docs/architecture]
     Root --> Acc[docs/acceptance]
@@ -137,7 +137,7 @@ flowchart TB
 本项目文档统一使用以下口径：
 
 - 当前现状：以仓库代码、配置、脚本、现有接口为准
-- 目标形态：以 [../IMPL_PLAN.md](../IMPL_PLAN.md) 和 `_dev/brainstorm/` 中已收敛方向为准
+- 目标形态：以 [../README.md](../README.md)、[superpowers/README.md](superpowers/README.md) 和 `_dev/brainstorm/` 中已收敛方向为准
 - 若两者不一致，必须显式写明 `已实现`、`进行中` 或 `规划中`
 
 不要把草案里的目标能力直接写成当前事实。
@@ -219,7 +219,7 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 ## 与仓库其他真源的关系
 
 - 项目总入口：[../README.md](../README.md)
-- 项目规划真源：[../IMPL_PLAN.md](../IMPL_PLAN.md)
+- 项目入口与阶段信息：[../README.md](../README.md)、[superpowers/README.md](superpowers/README.md)
 - 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
 - 运行编排事实：`../infra/docker-compose.yml`
