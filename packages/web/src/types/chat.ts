@@ -1,6 +1,6 @@
 // 聊天相关类型定义
 
-import type { GraphData } from "./graph";
+import type { GraphData, GraphNode, GraphEdge } from "./graph";
 
 export interface ReasoningStep {
   step: number;
@@ -16,12 +16,19 @@ export interface Source {
   citation: string;
 }
 
+export interface Entity {
+  name: string;
+  type: string;
+  id?: string;
+}
+
 export interface ChatResponse {
   answer: string;
   reasoning_chain: ReasoningStep[];
   sources: Source[];
   graph_data: GraphData;
   session_id: string;
+  entities?: Entity[];
 }
 
 export interface Message {
@@ -31,13 +38,14 @@ export interface Message {
   reasoningChain?: ReasoningStep[];
   sources?: Source[];
   graphData?: ChatGraphData;
+  entities?: Entity[];
 }
 
-// chat 上下文中简化的 graph 数据（center 可能缺少完整字段）
+// chat 上下文中的 graph 数据（后端返回字段可能不完整，用 Partial）
 export interface ChatGraphData {
-  center: any;
-  nodes: any[];
-  edges: any[];
+  center: Partial<GraphNode> & { name: string; labels?: string[]; status?: string };
+  nodes: Partial<GraphNode>[];
+  edges: Partial<GraphEdge>[];
 }
 
 export interface SSECallbacks {

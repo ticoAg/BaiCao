@@ -8,6 +8,7 @@ import type {
   SearchResult,
   GraphQueryRequest,
   GraphQueryResponse,
+  PathResult,
 } from "../types/graph";
 
 // 从 types/ 重新导出，保持向后兼容
@@ -18,6 +19,7 @@ export type {
   SearchResult,
   GraphQueryRequest,
   GraphQueryResponse,
+  PathResult,
 } from "../types/graph";
 export type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
 export type { VerificationStatus } from "../types/index";
@@ -63,11 +65,19 @@ export const graphApi = {
   },
 
   // 获取待验证项
-  getPending: async (type: "nodes" | "relationships", limit = 50): Promise<any[]> => {
+  getPending: async (type: "nodes" | "relationships", limit = 50): Promise<{ items: GraphNode[]; total: number }> => {
     const { data } = await api.get("/graph/pending", {
       params: { type, limit },
     });
-    return data.items;
+    return data;
+  },
+
+  // 查找两节点之间的路径
+  getPath: async (fromName: string, toName: string, maxDepth = 4): Promise<PathResult> => {
+    const { data } = await api.get("/graph/path", {
+      params: { from_name: fromName, to_name: toName, max_depth: maxDepth },
+    });
+    return data;
   },
 };
 
@@ -149,6 +159,14 @@ export interface Herb {
   latin_name?: string;
   category: string;
   description?: string;
+  alias?: string[];
+  efficacy?: string[];
+  flavor?: string[];
+  meridian?: string[];
+  dosage?: string;
+  contraindications?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export const herbApi = {
@@ -271,7 +289,7 @@ export const chatApi = {
   },
 
   // 获取会话
-  getSession: async (sessionId: string): Promise<any> => {
+  getSession: async (sessionId: string): Promise<{ id: string; messages: unknown[]; created_at?: string }> => {
     const { data } = await api.get(`/chat/session/${sessionId}`);
     return data;
   },
@@ -353,6 +371,38 @@ export const provenanceApi = {
     const { data } = await api.get(
       `/provenance/entity/${entityId}/completeness`,
     );
+    return data;
+  },
+};
+
+// ============ Notification API ============
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  content?: {
+    message?: string;
+    link?: string;
+    verdict?: string;
+  };
+  read: boolean;
+  created_at: string;
+}
+
+export const notificationApi = {
+  list: async (params?: {
+    user_id?: string;
+    unread_only?: boolean;
+    limit?: number;
+  }): Promise<{ items: Notification[]; total: number; unread_count: number }> => {
+    const { data } = await api.get("/notifications/", { params });
+    return data;
+  },
+
+  markRead: async (id: string): Promise<{ id: string; read: boolean }> => {
+    const { data } = await api.post(`/notifications/${id}/read`);
     return data;
   },
 };
