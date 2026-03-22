@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import difflib
 import sys
+from typing import NamedTuple
 
 SUPPORTED = {
     "help": {"help"},
@@ -17,6 +18,12 @@ RESOURCE_DESCRIPTIONS = {
     "web": "React 前端服务",
     "stack": "本地联调整体运行面",
 }
+
+
+class CLIResult(NamedTuple):
+    exit_code: int
+    stdout: str = ""
+    stderr: str = ""
 
 
 def _example_lines(resource: str | None = None) -> list[str]:
@@ -99,23 +106,70 @@ def _render_unknown_action(resource: str, action: str) -> str:
     return "\n".join(lines)
 
 
-def run_cli(argv: list[str], env: dict[str, str] | None = None) -> tuple[int, str]:
-    del env
-
-    resource = argv[0] if argv else "help"
-    action = argv[1] if len(argv) > 1 else "help"
+def _render_unexpected_arguments(
+    resource: str,
+    extra_args: list[str],
+    action: str | None = None,
+) -> str:
+    extra_text = " ".join(extra_args)
 
     if resource == "help":
-        return 0, _render_root_help()
+        lines = [
+            f"Unexpected extra arguments: {extra_text}",
+            "Root help does not accept additional positional arguments.",
+            "Run `make help` to see supported resources.",
+            "",
+            *_example_lines(),
+        ]
+        return "\n".join(lines)
+
+    lines = [f"Unexpected extra arguments: {extra_text}"]
+    if action == "help":
+        lines.append(f"`{resource} help` does not accept additional positional arguments.")
+    else:
+        lines.append(
+            f"`{resource} {action}` does not accept additional positional arguments in Task 1."
+        )
+    lines.extend(
+        [
+            f"Run `make {resource} help` to see supported actions.",
+            "",
+            *_example_lines(resource),
+        ]
+    )
+    return "\n".join(lines)
+
+
+def run_cli_result(argv: list[str], env: dict[str, str] | None = None) -> CLIResult:
+    del env
+
+    args = list(argv)
+    resource = args[0] if args else "help"
+    action = args[1] if len(args) > 1 else "help"
+
+    if resource == "help" and len(args) > 1:
+        return CLIResult(
+            exit_code=2,
+            stderr=_render_unexpected_arguments("help", args[1:]),
+        )
 
     if resource not in SUPPORTED:
-        return 2, _render_unknown_resource(resource)
+        return CLIResult(exit_code=2, stderr=_render_unknown_resource(resource))
+
+    if len(args) > 2:
+        return CLIResult(
+            exit_code=2,
+            stderr=_render_unexpected_arguments(resource, args[2:], action=action),
+        )
+
+    if resource == "help":
+        return CLIResult(exit_code=0, stdout=_render_root_help())
 
     if action == "help":
-        return 0, _render_resource_help(resource)
+        return CLIResult(exit_code=0, stdout=_render_resource_help(resource))
 
     if action not in SUPPORTED[resource]:
-        return 2, _render_unknown_action(resource, action)
+        return CLIResult(exit_code=2, stderr=_render_unknown_action(resource, action))
 
     lines = [
         f"`{resource} {action}` is not implemented yet.",
@@ -123,14 +177,22 @@ def run_cli(argv: list[str], env: dict[str, str] | None = None) -> tuple[int, st
         "",
         *_example_lines(resource),
     ]
-    return 1, "\n".join(lines)
+    return CLIResult(exit_code=1, stderr="\n".join(lines))
+
+
+def run_cli(argv: list[str], env: dict[str, str] | None = None) -> tuple[int, str]:
+    result = run_cli_result(argv, env=env)
+    output_parts = [part for part in (result.stdout, result.stderr) if part]
+    return result.exit_code, "\n".join(output_parts)
 
 
 def main(argv: list[str] | None = None) -> int:
-    exit_code, output = run_cli(list(sys.argv[1:] if argv is None else argv))
-    if output:
-        print(output)
-    return exit_code
+    result = run_cli_result(list(sys.argv[1:] if argv is None else argv))
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr, file=sys.stderr)
+    return result.exit_code
 
 
 if __name__ == "__main__":

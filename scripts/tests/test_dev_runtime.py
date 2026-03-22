@@ -15,6 +15,16 @@ def load_runtime_module():
     return module
 
 
+def run_command(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        list(args),
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
 class RuntimeHelpTests(unittest.TestCase):
     def setUp(self):
         self.runtime = load_runtime_module()
@@ -42,18 +52,41 @@ class RuntimeHelpTests(unittest.TestCase):
         self.assertIn("Unknown action: upp", output)
         self.assertIn("make api help", output)
 
+    def test_root_help_rejects_extra_args(self):
+        exit_code, output = self.runtime.run_cli(["help", "typo"], env={})
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("Unexpected extra arguments: typo", output)
+        self.assertIn("make help", output)
+
     def test_make_unknown_resource_routes_to_runtime_guidance(self):
-        result = subprocess.run(
-            ["make", "ap", "up"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        combined_output = f"{result.stdout}\n{result.stderr}"
+        result = run_command("make", "ap", "up")
 
         self.assertEqual(result.returncode, 2)
-        self.assertIn("Unknown resource: ap", combined_output)
-        self.assertIn("Did you mean: api", combined_output)
-        self.assertIn("make help", combined_output)
-        self.assertNotIn("No rule to make target", combined_output)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Unknown resource: ap", result.stderr)
+        self.assertIn("Did you mean: api", result.stderr)
+        self.assertIn("make help", result.stderr)
+        self.assertNotIn("No rule to make target", result.stderr)
+
+    def test_make_help_rejects_extra_args(self):
+        result = run_command("make", "help", "typo")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Unexpected extra arguments: typo", result.stderr)
+        self.assertIn("make help", result.stderr)
+
+    def test_python_cli_rejects_extra_args_via_stderr(self):
+        result = run_command(
+            "python3",
+            "scripts/dev_runtime.py",
+            "api",
+            "help",
+            "typo",
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Unexpected extra arguments: typo", result.stderr)
+        self.assertIn("make api help", result.stderr)
