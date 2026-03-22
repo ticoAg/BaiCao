@@ -69,6 +69,15 @@ class RuntimeHelpTests(unittest.TestCase):
         self.assertIn("make help", result.stderr)
         self.assertNotIn("No rule to make target", result.stderr)
 
+    def test_make_same_name_directory_still_routes_to_runtime(self):
+        result = run_command("make", "docs", "up")
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("Unknown resource: docs", result.stderr)
+        self.assertIn("make help", result.stderr)
+        self.assertNotIn("is up to date", result.stderr)
+
     def test_make_help_rejects_extra_args(self):
         result = run_command("make", "help", "typo")
 

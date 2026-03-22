@@ -1,21 +1,21 @@
 .DEFAULT_GOAL := help
 
-RESOURCE := $(firstword $(MAKECMDGOALS))
-CLI_ARGS := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),help)
+ifeq ($(strip $(MAKECMDGOALS)),)
 
-VALID_RESOURCES := help deps api web stack
-
-.PHONY: help deps api web stack
+.PHONY: help
 
 help:
-	@if [ -z "$(RESOURCE)" ] || [ "$(RESOURCE)" = "help" ]; then \
-		python3 scripts/dev_runtime.py $(CLI_ARGS); \
-	fi
+	@python3 scripts/dev_runtime.py help
 
-deps api web stack:
-	@python3 scripts/dev_runtime.py $(CLI_ARGS)
+else
 
-%:
-	@if [ "$@" = "$(RESOURCE)" ] && [ -z "$(filter $(RESOURCE),$(VALID_RESOURCES))" ]; then \
-		python3 scripts/dev_runtime.py $(CLI_ARGS); \
-	fi
+RESOURCE := $(firstword $(MAKECMDGOALS))
+CLI_ARGS := $(MAKECMDGOALS)
+EXTRA_GOALS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
+.PHONY: $(MAKECMDGOALS)
+
+$(eval $(RESOURCE):;@python3 scripts/dev_runtime.py $(CLI_ARGS))
+$(foreach goal,$(EXTRA_GOALS),$(eval $(goal):;@:))
+
+endif
