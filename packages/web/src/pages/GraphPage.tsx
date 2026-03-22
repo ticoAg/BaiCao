@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import {
   Button,
+  Collapse,
   Divider,
   Empty,
   Select,
@@ -24,6 +25,7 @@ import NodeDetail from "../components/graph/NodeDetail";
 import EdgeDetail from "../components/graph/EdgeDetail";
 import GraphQueryPanel from "../components/graph/GraphQueryPanel";
 import GraphQuerySummary from "../components/graph/GraphQuerySummary";
+import PathExplorer from "../components/graph/PathExplorer";
 
 const { Title, Text } = Typography;
 
@@ -289,6 +291,25 @@ const GraphPage = () => {
             loading={loading}
             onSubmit={runAdvancedQuery}
             onDepthChange={setDepth}
+          />
+
+          <Divider style={{ margin: "20px 0 0" }} />
+
+          <Collapse
+            ghost
+            defaultActiveKey={[]}
+            style={{ marginTop: 4 }}
+            items={[
+              {
+                key: "path-explorer",
+                label: (
+                  <Text strong style={{ fontSize: 13, color: "#3D5A48" }}>
+                    路径探索
+                  </Text>
+                ),
+                children: <PathExplorer />,
+              },
+            ]}
           />
         </div>
       </aside>

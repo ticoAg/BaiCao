@@ -1,5 +1,7 @@
 // 节点详情面板
-import { Descriptions, Tag, Typography, message } from "antd";
+import { Descriptions, Tag, Typography, Button, Space, message } from "antd";
+import { EyeOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import type { GraphNode } from "../../types/graph";
 import { labelTagColors } from "../../types/graph";
 import { statusColors, statusLabels } from "../../types/index";
@@ -11,7 +13,9 @@ interface NodeDetailProps {
 }
 
 const NodeDetail = ({ node }: NodeDetailProps) => {
+  const navigate = useNavigate();
   const primaryLabel = node.labels?.[0] || "Unknown";
+  const isHerbNode = primaryLabel === "Herb";
   return (
     <div>
       <Text strong style={{ fontSize: 16 }}>
@@ -50,6 +54,19 @@ const NodeDetail = ({ node }: NodeDetailProps) => {
       {node.status === "pending" && (
         <div style={{ marginTop: 12 }}>
           <a onClick={() => message.info("跳转到验证申请页面")}>申请验证</a>
+        </div>
+      )}
+      {isHerbNode && (
+        <div style={{ marginTop: 12 }}>
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            size="small"
+            style={{ borderRadius: 6 }}
+            onClick={() => navigate(`/herb/${node.id}`)}
+          >
+            查看完整详情
+          </Button>
         </div>
       )}
     </div>

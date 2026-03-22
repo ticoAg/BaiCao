@@ -124,6 +124,16 @@ export type SelectedItem =
   | { type: "node"; data: GraphNode }
   | { type: "edge"; data: GraphEdge & { sourceName?: string; targetName?: string } };
 
+// 路径探索相关类型
+// 后端返回: { paths: [ { path: [ nodeDict, ... ] }, ... ] }
+export interface PathItem {
+  path: Record<string, unknown>[];
+}
+
+export interface PathResult {
+  paths: PathItem[];
+}
+
 // 节点类型 G6 颜色映射（hex 值）
 export const labelColorMap: Record<string, string> = {
   Herb: "#1677ff",
