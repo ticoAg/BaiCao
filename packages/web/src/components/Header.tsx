@@ -7,6 +7,7 @@ import {
   CheckCircleOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
+import NotificationBell from "./NotificationBell";
 
 const { Header: AntHeader } = Layout;
 
@@ -95,6 +96,7 @@ const HeaderComponent = () => {
           fontSize: 14,
         }}
       />
+      <NotificationBell />
     </AntHeader>
   );
 };

@@ -10,6 +10,7 @@ from .api.graph import router as graph_router
 from .api.verification import router as verification_router
 from .api.chat import router as chat_router
 from .api.provenance import router as provenance_router
+from .api.notification import router as notification_router
 
 settings = get_settings()
 
@@ -39,6 +40,7 @@ app.include_router(graph_router, prefix=settings.api_prefix)
 app.include_router(verification_router, prefix=settings.api_prefix)
 app.include_router(chat_router, prefix=settings.api_prefix)
 app.include_router(provenance_router, prefix=settings.api_prefix)
+app.include_router(notification_router, prefix=settings.api_prefix)
 
 
 @app.get("/health")
