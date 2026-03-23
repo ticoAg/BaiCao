@@ -29,6 +29,22 @@ export function useGraphWorkbenchPage(name: string | undefined) {
     queryKey: ["graphWorkbench", "meta", "summary"],
     queryFn: graphWorkbenchApi.getMetaSummary,
   });
+  const metaLabelsQuery = useQuery({
+    queryKey: ["graphWorkbench", "meta", "labels"],
+    queryFn: () => graphWorkbenchApi.getMetaLabels({ limit: 20, offset: 0 }),
+  });
+  const metaRelationshipTypesQuery = useQuery({
+    queryKey: ["graphWorkbench", "meta", "relationshipTypes"],
+    queryFn: () => graphWorkbenchApi.getMetaRelationshipTypes({ limit: 20, offset: 0 }),
+  });
+  const metaPropertyKeysQuery = useQuery({
+    queryKey: ["graphWorkbench", "meta", "propertyKeys"],
+    queryFn: () => graphWorkbenchApi.getMetaPropertyKeys({ limit: 20, offset: 0 }),
+  });
+  const metaSchemaQuery = useQuery({
+    queryKey: ["graphWorkbench", "meta", "schema"],
+    queryFn: graphWorkbenchApi.getMetaSchema,
+  });
 
   const selectNode = useCallback(
     (node: GraphNode) => {
@@ -72,6 +88,10 @@ export function useGraphWorkbenchPage(name: string | undefined) {
     resetAdvancedQuery: workspace.resetAdvancedQuery,
 
     metaSummary: metaSummaryQuery.data ?? null,
+    metaLabels: metaLabelsQuery.data?.items ?? [],
+    metaRelationshipTypes: metaRelationshipTypesQuery.data?.items ?? [],
+    metaPropertyKeys: metaPropertyKeysQuery.data?.items ?? [],
+    metaSchema: metaSchemaQuery.data ?? null,
     metaLoading: metaSummaryQuery.isLoading,
     metaError: metaSummaryQuery.error ?? null,
 

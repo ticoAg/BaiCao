@@ -58,6 +58,19 @@ function createWrapper() {
 describe("useGraphWorkbenchPage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(graphWorkbenchApi, "getMetaLabels").mockResolvedValue({ items: [], total: 0 });
+    vi.spyOn(graphWorkbenchApi, "getMetaRelationshipTypes").mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+    vi.spyOn(graphWorkbenchApi, "getMetaPropertyKeys").mockResolvedValue({
+      items: [],
+      total: 0,
+    });
+    vi.spyOn(graphWorkbenchApi, "getMetaSchema").mockResolvedValue({
+      indexes: [],
+      constraints: [],
+    });
     useGraphWorkbenchStore.setState({
       selectedItem: null,
       hoveredItem: null,
