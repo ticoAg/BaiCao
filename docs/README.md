@@ -23,7 +23,9 @@
 2. [architecture/README.md](architecture/README.md)
 3. [architecture/system-overview.md](architecture/system-overview.md)
 4. [architecture/data-model.md](architecture/data-model.md)
-5. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
+5. [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md)
+6. [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md)
+7. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
 
 ### 路径 B：要开始实现功能
 
@@ -155,6 +157,8 @@ flowchart TB
 | [architecture/README.md](architecture/README.md) | 架构入口页，统一架构口径与阅读顺序 |
 | [architecture/system-overview.md](architecture/system-overview.md) | 系统整体架构、模块边界、关键数据流 |
 | [architecture/data-model.md](architecture/data-model.md) | 图模型与关系模型设计 |
+| [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md) | 图模型唯一真源、中文知识结构定义与数据采集架构 |
+| [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md) | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [acceptance/README.md](acceptance/README.md) | 验收文档目录与基本原则 |
 | [acceptance/graph-query-mainline.md](acceptance/graph-query-mainline.md) | 图谱查询主链路验收 |
 | [acceptance/chat-mainline.md](acceptance/chat-mainline.md) | 智能问答主链路验收 |
@@ -222,4 +226,5 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 项目入口与阶段信息：[../README.md](../README.md)、[superpowers/README.md](superpowers/README.md)
 - 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
+- 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
 - 运行编排事实：`../infra/docker-compose.yml`

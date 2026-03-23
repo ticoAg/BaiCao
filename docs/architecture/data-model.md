@@ -12,6 +12,8 @@ audience: developer
 
 ## 1. 概述
 
+补充口径：本文件描述图模型的稳定业务结构；关于“仓库级唯一真源放在何处、数据采集如何消费该真源、中文语义如何统一维护”，见 [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md)。
+
 本项目采用**混合存储架构**：
 
 | 数据库 | 职责 | 存储内容 |

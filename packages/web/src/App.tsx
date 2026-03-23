@@ -6,6 +6,7 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const GraphPage = lazy(() => import("./pages/GraphPage"));
 const GraphWorkbenchPage = lazy(() => import("./pages/GraphWorkbenchPage"));
+const DataPipelinePage = lazy(() => import("./pages/DataPipelinePage"));
 const VerificationPage = lazy(() => import("./pages/VerificationPage"));
 const ChatPage = lazy(() => import("./pages/ChatPage"));
 const HerbDetailPage = lazy(() => import("./pages/HerbDetailPage"));
@@ -52,6 +53,7 @@ function App() {
               <Route path="/search" element={<SearchPage />} />
               <Route path="/graph/:name?" element={<GraphPage />} />
               <Route path="/graph/workbench" element={<GraphWorkbenchPage />} />
+              <Route path="/data/pipeline" element={<DataPipelinePage />} />
               <Route path="/verification" element={<VerificationPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/herb/:id" element={<HerbDetailPage />} />

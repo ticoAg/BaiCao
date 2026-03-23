@@ -6,6 +6,7 @@ import {
   NodeIndexOutlined,
   CheckCircleOutlined,
   MessageOutlined,
+  DatabaseOutlined,
 } from "@ant-design/icons";
 import NotificationBell from "./NotificationBell";
 
@@ -16,6 +17,7 @@ const menuKeyMap: Record<string, string> = {
   "/search": "search",
   "/verification": "verification",
   "/chat": "chat",
+  "/data/pipeline": "pipeline",
 };
 
 const HeaderComponent = () => {
@@ -54,6 +56,11 @@ const HeaderComponent = () => {
       key: "chat",
       icon: <MessageOutlined />,
       label: <Link to="/chat">智能问答</Link>,
+    },
+    {
+      key: "pipeline",
+      icon: <DatabaseOutlined />,
+      label: <Link to="/data/pipeline">数据处理</Link>,
     },
   ];
 
