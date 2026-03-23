@@ -1,5 +1,7 @@
 # Graph Workbench Browser Shell Implementation Plan
 
+> Superseded note: `/graph` 路径上的 Graph Workbench 改造以后以 `docs/superpowers/plans/2026-03-23-graph-workbench.md` 为准。本计划仅保留给独立命令式 workbench 路线参考。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 构建一个独立的 Neo4j Browser 风格图谱工作台页，连同可复用的命令/语义查询/Cypher 校验与只读执行能力，并让聊天页能够复用同一后端能力层。
