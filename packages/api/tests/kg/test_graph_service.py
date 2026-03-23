@@ -464,6 +464,12 @@ async def test_get_herb_graph(graph_service):
     assert len(result["nodes"]) >= 1
     assert len(result["edges"]) == 1
     assert result["edges"][0]["rel_type"] == "CONTAINS"
+    assert result["scene"] == {
+        "truncated": False,
+        "node_limit_hit": False,
+        "relationship_limit_hit": False,
+        "info_message": None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -596,6 +602,12 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     assert result["graph"]["center"] is None
     assert result["graph"]["nodes"][0]["name"] == "人参"
     assert result["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+    assert result["scene"] == {
+        "truncated": False,
+        "node_limit_hit": False,
+        "relationship_limit_hit": False,
+        "info_message": None,
+    }
 
     first_query = session.run.await_args_list[0].args[0]
     first_params = session.run.await_args_list[0].kwargs
@@ -636,6 +648,7 @@ async def test_query_graph_returns_empty_graph_when_no_match(graph_service):
     assert result["graph"]["center"] is None
     assert result["graph"]["nodes"] == []
     assert result["graph"]["edges"] == []
+    assert result["scene"]["truncated"] is False
     assert session.run.await_count == 1
 
 
@@ -735,6 +748,7 @@ async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph
     assert [edge["rel_type"] for edge in result["graph"]["edges"]] == ["HAS_EFFICACY"]
     assert [node["name"] for node in result["graph"]["nodes"]] == ["人参", "补气"]
     assert result["summary"]["matched_edges"] == 1
+    assert result["scene"]["relationship_limit_hit"] is False
 
 
 @pytest.mark.unit
@@ -831,6 +845,7 @@ async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
     assert result["summary"]["matched_edges"] == 1
     assert len(result["graph"]["nodes"]) == 2
     assert len(result["graph"]["edges"]) == 1
+    assert result["scene"]["node_limit_hit"] is False
 
 
 # ===========================================================================

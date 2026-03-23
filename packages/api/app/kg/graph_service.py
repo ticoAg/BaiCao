@@ -248,6 +248,21 @@ class GraphService:
             "limit": max(1, min(limit, 100)),
         }
 
+    def _build_scene_info(
+        self,
+        *,
+        truncated: bool = False,
+        node_limit_hit: bool = False,
+        relationship_limit_hit: bool = False,
+        info_message: str | None = None,
+    ) -> Dict[str, Any]:
+        return {
+            "truncated": truncated,
+            "node_limit_hit": node_limit_hit,
+            "relationship_limit_hit": relationship_limit_hit,
+            "info_message": info_message,
+        }
+
     def _build_active_filters(
         self,
         node_filters: Dict[str, Any],
@@ -1072,6 +1087,7 @@ class GraphService:
                     "center": center,
                     "nodes": nodes,
                     "edges": edges,
+                    "scene": self._build_scene_info(),
                 }
 
             legacy_center = self._record_value(record, "h") if record else None
@@ -1079,9 +1095,15 @@ class GraphService:
                 return {
                     "center": self._map_node_to_dict(legacy_center),
                     "nodes": [self._map_node_to_dict(n) for n in self._record_value(record, "nodes") or []],
-                    "edges": [self._map_relationship_to_dict(r) for r in self._record_value(record, "edges") or []]
+                    "edges": [self._map_relationship_to_dict(r) for r in self._record_value(record, "edges") or []],
+                    "scene": self._build_scene_info(),
                 }
-            return {"center": None, "nodes": [], "edges": []}
+            return {
+                "center": None,
+                "nodes": [],
+                "edges": [],
+                "scene": self._build_scene_info(),
+            }
 
     async def query_graph(self, payload: Any) -> Dict[str, Any]:
         """按过滤条件查询 seed nodes，并在指定深度内扩展为子图。"""
@@ -1112,6 +1134,7 @@ class GraphService:
                         "active_filters": active_filters,
                     },
                     "graph": {"center": None, "nodes": [], "edges": []},
+                    "scene": self._build_scene_info(),
                 }
 
             node_ids = [node["id"] for node in matched_seed_nodes if node.get("id")]
@@ -1129,6 +1152,7 @@ class GraphService:
                         "nodes": self._dedupe_nodes(matched_seed_nodes),
                         "edges": [],
                     },
+                    "scene": self._build_scene_info(truncated=truncated),
                 }
 
             expanded_nodes, edges = await self._expand_query_subgraph(
@@ -1149,6 +1173,7 @@ class GraphService:
                 "active_filters": active_filters,
             },
             "graph": {"center": None, "nodes": all_nodes, "edges": edges},
+            "scene": self._build_scene_info(truncated=truncated),
         }
 
     async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:

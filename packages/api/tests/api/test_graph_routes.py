@@ -25,6 +25,12 @@ class TestGetHerbGraph:
     async def test_get_herb_graph_found(self, client):
         """GET existing herb returns graph data."""
         graph_data = make_herb_graph("ginseng")
+        graph_data["scene"] = {
+            "truncated": False,
+            "node_limit_hit": False,
+            "relationship_limit_hit": False,
+            "info_message": None,
+        }
         with patch("app.api.graph.graph_service") as mock_svc:
             mock_svc.get_herb_graph = AsyncMock(return_value=graph_data)
 
@@ -33,6 +39,10 @@ class TestGetHerbGraph:
         assert_status(resp, 200)
         assert_graph_response(resp.json())
         assert resp.json()["center"]["name"] == "ginseng"
+        assert_json_keys(
+            resp.json()["scene"],
+            {"truncated", "node_limit_hit", "relationship_limit_hit", "info_message"},
+        )
 
     @pytest.mark.asyncio
     async def test_get_herb_graph_not_found(self, client):
@@ -332,6 +342,12 @@ class TestGraphQuery:
                     }
                 ],
             },
+            "scene": {
+                "truncated": False,
+                "node_limit_hit": False,
+                "relationship_limit_hit": False,
+                "info_message": None,
+            },
         }
 
         with patch("app.api.graph.graph_service") as mock_svc:
@@ -341,9 +357,13 @@ class TestGraphQuery:
 
         assert_status(resp, 200)
         data = resp.json()
-        assert_json_keys(data, {"summary", "graph"})
+        assert_json_keys(data, {"summary", "graph", "scene"})
         assert data["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
         assert data["graph"]["edges"][0]["source"]["name"] == "人参"
+        assert_json_keys(
+            data["scene"],
+            {"truncated", "node_limit_hit", "relationship_limit_hit", "info_message"},
+        )
         forwarded_payload = mock_svc.query_graph.await_args.args[0]
         assert forwarded_payload.node.label == NodeType.HERB
         assert forwarded_payload.node.status == NodeStatus.VERIFIED
