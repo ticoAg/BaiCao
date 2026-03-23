@@ -6,9 +6,16 @@ import zhCN from "antd/locale/zh_CN";
 import { graphApi } from "../services/api";
 import { useGraphStore } from "../stores/graphStore";
 import { useGraphWorkspace } from "./useGraphWorkspace";
-import type { GraphData, GraphQueryResponse } from "../types/graph";
+import type { GraphData, GraphQueryResponse, GraphSceneInfo, HerbGraphResponse } from "../types/graph";
 
-const herbGraph: GraphData = {
+const defaultScene: GraphSceneInfo = {
+  truncated: false,
+  node_limit_hit: false,
+  relationship_limit_hit: false,
+  info_message: null,
+};
+
+const herbGraph: HerbGraphResponse = {
   center: {
     id: "herb-1",
     name: "人参",
@@ -24,6 +31,7 @@ const herbGraph: GraphData = {
     },
   ],
   edges: [],
+  scene: defaultScene,
 };
 
 const advancedGraph: GraphData = {
@@ -48,6 +56,7 @@ const advancedResponse: GraphQueryResponse = {
     active_filters: ["名称包含: 补气"],
   },
   graph: advancedGraph,
+  scene: defaultScene,
 };
 
 function createWrapper() {

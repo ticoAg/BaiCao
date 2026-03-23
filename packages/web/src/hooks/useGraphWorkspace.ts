@@ -5,9 +5,11 @@ import { graphApi } from "../services/api";
 import { useGraphStore } from "../stores/graphStore";
 import type {
   GraphData,
+  GraphSceneInfo,
   GraphQueryRequest,
   GraphQueryResponse,
   GraphQuerySummary,
+  HerbGraphResponse,
 } from "../types/graph";
 
 type GraphWorkspaceMode = "idle" | "herb" | "advanced-query";
@@ -59,7 +61,27 @@ export function useGraphWorkspace(name: string | undefined) {
       return activeAdvancedResponse.graph;
     }
 
-    return herbQuery.data ?? null;
+    if (herbQuery.data) {
+      const { center, nodes, edges } = herbQuery.data;
+      return { center, nodes, edges };
+    }
+
+    return null;
+  }, [activeAdvancedResponse, herbQuery.data]);
+
+  const scene: GraphSceneInfo = useMemo(() => {
+    if (activeAdvancedResponse?.scene) {
+      return activeAdvancedResponse.scene;
+    }
+
+    return (
+      herbQuery.data?.scene ?? {
+        truncated: false,
+        node_limit_hit: false,
+        relationship_limit_hit: false,
+        info_message: null,
+      }
+    );
   }, [activeAdvancedResponse, herbQuery.data]);
 
   const querySummary: GraphQuerySummary | null = activeAdvancedResponse
@@ -141,6 +163,7 @@ export function useGraphWorkspace(name: string | undefined) {
 
   return {
     graphData,
+    scene,
     querySummary,
     mode,
     loading,

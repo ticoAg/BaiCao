@@ -6,7 +6,12 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "types": ["vitest/globals"],
+    "baseUrl": ".",
     "moduleResolution": "bundler",
+    "paths": {
+      "@bai-cao/shared": ["../shared/types/index.ts"],
+      "@bai-cao/shared/*": ["../shared/types/*"]
+    },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
