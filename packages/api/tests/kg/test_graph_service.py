@@ -134,6 +134,15 @@ def _inject_driver(svc: Any, record: Optional[MockNeo4jRecord]) -> MagicMock:
     return driver
 
 
+def _inject_data_driver(svc: Any, rows: List[Dict[str, Any]]) -> MagicMock:
+    """Wire a mock driver whose result.data() returns *rows*."""
+    result = _make_data_result(rows)
+    session = _make_session(result)
+    driver = _make_driver(session)
+    svc.driver = driver
+    return driver
+
+
 # ---------------------------------------------------------------------------
 # Test 1: test_create_node
 # ---------------------------------------------------------------------------
@@ -323,6 +332,75 @@ async def test_link_herb_source(graph_service):
     assert "ORIGINATED_FROM" in call_args[0][0]
 
 
+@pytest.mark.unit
+async def test_graph_metadata_service_summary_aggregates_database_counts():
+    from app.kg.graph_metadata_service import GraphMetadataService
+
+    svc = GraphMetadataService()
+    _inject_data_driver(
+        svc,
+        [
+            {"result": {"name": "nodes", "data": 12}},
+            {"result": {"name": "relationships", "data": 18}},
+            {"result": {"name": "labels", "data": ["Herb", "Efficacy"]}},
+            {"result": {"name": "relationshipTypes", "data": ["HAS_EFFICACY"]}},
+            {"result": {"name": "propertyKeys", "data": ["name", "category"]}},
+            {"result": {"name": "indexes", "data": [{"name": "idx_herb_name"}]}},
+            {"result": {"name": "constraints", "data": [{"name": "constraint_herb_name"}]}},
+        ],
+    )
+
+    summary = await svc.get_summary()
+
+    assert summary["node_count"] == 12
+    assert summary["relationship_count"] == 18
+    assert summary["label_count"] == 2
+    assert summary["property_key_count"] == 2
+    assert summary["index_count"] == 1
+    assert summary["constraint_count"] == 1
+
+
+@pytest.mark.unit
+async def test_graph_metadata_service_schema_normalizes_indexes_and_constraints():
+    from app.kg.graph_metadata_service import GraphMetadataService
+
+    svc = GraphMetadataService()
+    indexes_result = _make_data_result(
+        [
+            {
+                "name": "idx_herb_name",
+                "type": "RANGE",
+                "entityType": "NODE",
+                "labelsOrTypes": ["Herb"],
+                "properties": ["name"],
+                "state": "ONLINE",
+            }
+        ]
+    )
+    constraints_result = _make_data_result(
+        [
+            {
+                "name": "constraint_herb_name",
+                "type": "UNIQUENESS",
+                "entityType": "NODE",
+                "labelsOrTypes": ["Herb"],
+                "properties": ["name"],
+            }
+        ]
+    )
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[indexes_result, constraints_result])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    svc.driver = _make_driver(session)
+
+    schema = await svc.get_schema()
+
+    assert schema["indexes"][0]["labels_or_types"] == ["Herb"]
+    assert schema["indexes"][0]["state"] == "ONLINE"
+    assert schema["constraints"][0]["properties"] == ["name"]
+
+
 # ---------------------------------------------------------------------------
 # Test 8: test_get_herb_graph
 # ---------------------------------------------------------------------------
@@ -380,6 +458,12 @@ async def test_get_herb_graph(graph_service):
     assert len(result["nodes"]) >= 1
     assert len(result["edges"]) == 1
     assert result["edges"][0]["rel_type"] == "CONTAINS"
+    assert result["scene"] == {
+        "truncated": False,
+        "node_limit_hit": False,
+        "relationship_limit_hit": False,
+        "info_message": None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -512,6 +596,12 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     assert result["graph"]["center"] is None
     assert result["graph"]["nodes"][0]["name"] == "人参"
     assert result["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+    assert result["scene"] == {
+        "truncated": False,
+        "node_limit_hit": False,
+        "relationship_limit_hit": False,
+        "info_message": None,
+    }
 
     first_query = session.run.await_args_list[0].args[0]
     first_params = session.run.await_args_list[0].kwargs
@@ -552,6 +642,7 @@ async def test_query_graph_returns_empty_graph_when_no_match(graph_service):
     assert result["graph"]["center"] is None
     assert result["graph"]["nodes"] == []
     assert result["graph"]["edges"] == []
+    assert result["scene"]["truncated"] is False
     assert session.run.await_count == 1
 
 
@@ -651,6 +742,7 @@ async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph
     assert [edge["rel_type"] for edge in result["graph"]["edges"]] == ["HAS_EFFICACY"]
     assert [node["name"] for node in result["graph"]["nodes"]] == ["人参", "补气"]
     assert result["summary"]["matched_edges"] == 1
+    assert result["scene"]["relationship_limit_hit"] is False
 
 
 @pytest.mark.unit
@@ -747,6 +839,7 @@ async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
     assert result["summary"]["matched_edges"] == 1
     assert len(result["graph"]["nodes"]) == 2
     assert len(result["graph"]["edges"]) == 1
+    assert result["scene"]["node_limit_hit"] is False
 
 
 # ===========================================================================

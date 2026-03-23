@@ -5,6 +5,7 @@ import type {
   GraphData,
   GraphNode,
   GraphEdge,
+  HerbGraphResponse,
   SearchResult,
   GraphQueryRequest,
   GraphQueryResponse,
@@ -16,6 +17,7 @@ export type {
   GraphNode,
   GraphEdge,
   GraphData,
+  HerbGraphResponse,
   SearchResult,
   GraphQueryRequest,
   GraphQueryResponse,
@@ -37,7 +39,7 @@ const api = axios.create({
 
 export const graphApi = {
   // 获取药材图谱
-  getHerbGraph: async (name: string, depth = 1): Promise<GraphData> => {
+  getHerbGraph: async (name: string, depth = 1): Promise<HerbGraphResponse> => {
     const { data } = await api.get(`/graph/herb/${encodeURIComponent(name)}`, {
       params: { depth },
     });

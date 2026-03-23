@@ -68,6 +68,11 @@ const EdgeDetail = ({ edge }: EdgeDetailProps) => (
     </Space>
 
     <Descriptions column={1} size="small" style={{ marginTop: 18 }} styles={detailStyles}>
+      {edge.id ? (
+        <Descriptions.Item label="ID">
+          <InlineMetaValue label="关系ID" value={edge.id} />
+        </Descriptions.Item>
+      ) : null}
       <Descriptions.Item label="起始节点">{edge.sourceName || "\u2014"}</Descriptions.Item>
       <Descriptions.Item label="目标节点">{edge.targetName || "\u2014"}</Descriptions.Item>
       {edge.verification_id ? (

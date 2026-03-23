@@ -33,6 +33,17 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export interface GraphSceneInfo {
+  truncated: boolean;
+  node_limit_hit: boolean;
+  relationship_limit_hit: boolean;
+  info_message: string | null;
+}
+
+export interface HerbGraphResponse extends GraphData {
+  scene: GraphSceneInfo;
+}
+
 export type GraphQueryPropertyKey =
   | "latin_name"
   | "category"
@@ -113,6 +124,7 @@ export interface GraphQuerySummary {
 export interface GraphQueryResponse {
   summary: GraphQuerySummary;
   graph: GraphData;
+  scene: GraphSceneInfo;
 }
 
 export interface SearchResult {

@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.enums import EdgeType, NodeStatus, NodeType
+from .graph_workbench import GraphSceneInfo
 
 
 GRAPH_QUERY_PROPERTY_KEYS = (
@@ -280,5 +281,6 @@ class GraphQueryResponse(BaseModel):
     """图谱高级查询响应"""
     summary: GraphQuerySummary
     graph: GraphData
+    scene: GraphSceneInfo
 
     model_config = ConfigDict(strict=True)

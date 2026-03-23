@@ -360,4 +360,5 @@ export interface Evidence {
   createdAt: string
 }
 
+export * from './graph-workbench'
 export * from './workbench'
