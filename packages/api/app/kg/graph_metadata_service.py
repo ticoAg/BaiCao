@@ -22,12 +22,6 @@ RETURN {name:'nodes', data: count(n)} AS result
 UNION ALL
 MATCH ()-[r]->()
 RETURN {name:'relationships', data: count(r)} AS result
-UNION ALL
-CALL db.indexes() YIELD name
-RETURN {name:'indexes', data: collect({name: name})} AS result
-UNION ALL
-CALL db.constraints() YIELD name
-RETURN {name:'constraints', data: collect({name: name})} AS result
 """
 
 LABELS_QUERY = """
@@ -88,25 +82,50 @@ CALL db.propertyKeys() YIELD propertyKey
 RETURN count(propertyKey) AS total
 """
 
-SCHEMA_QUERY = """
-CALL db.indexes() YIELD name, type, entityType, labelsOrTypes, properties, state
-RETURN {name:'indexes', data: collect({
-    name: name,
-    type: type,
-    entityType: entityType,
-    labelsOrTypes: labelsOrTypes,
-    properties: properties,
-    state: state
-})} AS result
-UNION ALL
-CALL db.constraints() YIELD name, type, entityType, labelsOrTypes, properties
-RETURN {name:'constraints', data: collect({
-    name: name,
-    type: type,
-    entityType: entityType,
-    labelsOrTypes: labelsOrTypes,
-    properties: properties
-})} AS result
+INDEXES_QUERY = """
+SHOW INDEXES
+YIELD name, type, entityType, labelsOrTypes, properties, state
+RETURN
+    name,
+    type,
+    entityType,
+    labelsOrTypes,
+    properties,
+    state
+"""
+
+CONSTRAINTS_QUERY = """
+SHOW CONSTRAINTS
+YIELD name, type, entityType, labelsOrTypes, properties
+RETURN
+    name,
+    type,
+    entityType,
+    labelsOrTypes,
+    properties
+"""
+
+LEGACY_INDEXES_QUERY = """
+CALL db.indexes()
+YIELD name, type, entityType, labelsOrTypes, properties, state
+RETURN
+    name,
+    type,
+    entityType,
+    labelsOrTypes,
+    properties,
+    state
+"""
+
+LEGACY_CONSTRAINTS_QUERY = """
+CALL db.constraints()
+YIELD name, type, entityType, labelsOrTypes, properties
+RETURN
+    name,
+    type,
+    entityType,
+    labelsOrTypes,
+    properties
 """
 
 
@@ -158,8 +177,12 @@ class GraphMetadataService:
         labels = named.get("labels") or []
         rel_types = named.get("relationshipTypes") or []
         property_keys = named.get("propertyKeys") or []
-        indexes = named.get("indexes") or []
-        constraints = named.get("constraints") or []
+        indexes = named.get("indexes")
+        constraints = named.get("constraints")
+        if indexes is None or constraints is None:
+            schema = await self.get_schema()
+            indexes = schema["indexes"]
+            constraints = schema["constraints"]
 
         return {
             "node_count": named.get("nodes") or 0,
@@ -252,13 +275,15 @@ class GraphMetadataService:
     async def get_schema(self) -> dict[str, Any]:
         await self.ensure_connected()
         async with self.driver.session() as session:
-            rows = await (await session.run(SCHEMA_QUERY)).data()
+            try:
+                indexes_rows = await (await session.run(INDEXES_QUERY)).data()
+                constraints_rows = await (await session.run(CONSTRAINTS_QUERY)).data()
+            except Exception:
+                indexes_rows = await (await session.run(LEGACY_INDEXES_QUERY)).data()
+                constraints_rows = await (await session.run(LEGACY_CONSTRAINTS_QUERY)).data()
 
-        named = self._extract_named_rows(rows)
-        indexes = [self._normalize_schema_item(item) for item in named.get("indexes") or []]
-        constraints = [
-            self._normalize_schema_item(item) for item in named.get("constraints") or []
-        ]
+        indexes = [self._normalize_schema_item(item) for item in indexes_rows]
+        constraints = [self._normalize_schema_item(item) for item in constraints_rows]
         return {"indexes": indexes, "constraints": constraints}
 
 

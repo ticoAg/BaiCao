@@ -365,40 +365,34 @@ async def test_graph_metadata_service_schema_normalizes_indexes_and_constraints(
     from app.kg.graph_metadata_service import GraphMetadataService
 
     svc = GraphMetadataService()
-    _inject_data_driver(
-        svc,
+    indexes_result = _make_data_result(
         [
             {
-                "result": {
-                    "name": "indexes",
-                    "data": [
-                        {
-                            "name": "idx_herb_name",
-                            "type": "RANGE",
-                            "entityType": "NODE",
-                            "labelsOrTypes": ["Herb"],
-                            "properties": ["name"],
-                            "state": "ONLINE",
-                        }
-                    ],
-                }
-            },
-            {
-                "result": {
-                    "name": "constraints",
-                    "data": [
-                        {
-                            "name": "constraint_herb_name",
-                            "type": "UNIQUENESS",
-                            "entityType": "NODE",
-                            "labelsOrTypes": ["Herb"],
-                            "properties": ["name"],
-                        }
-                    ],
-                }
-            },
-        ],
+                "name": "idx_herb_name",
+                "type": "RANGE",
+                "entityType": "NODE",
+                "labelsOrTypes": ["Herb"],
+                "properties": ["name"],
+                "state": "ONLINE",
+            }
+        ]
     )
+    constraints_result = _make_data_result(
+        [
+            {
+                "name": "constraint_herb_name",
+                "type": "UNIQUENESS",
+                "entityType": "NODE",
+                "labelsOrTypes": ["Herb"],
+                "properties": ["name"],
+            }
+        ]
+    )
+    session = AsyncMock()
+    session.run = AsyncMock(side_effect=[indexes_result, constraints_result])
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=None)
+    svc.driver = _make_driver(session)
 
     schema = await svc.get_schema()
 
