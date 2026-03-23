@@ -134,6 +134,15 @@ def _inject_driver(svc: Any, record: Optional[MockNeo4jRecord]) -> MagicMock:
     return driver
 
 
+def _inject_data_driver(svc: Any, rows: List[Dict[str, Any]]) -> MagicMock:
+    """Wire a mock driver whose result.data() returns *rows*."""
+    result = _make_data_result(rows)
+    session = _make_session(result)
+    driver = _make_driver(session)
+    svc.driver = driver
+    return driver
+
+
 # ---------------------------------------------------------------------------
 # Test 1: test_create_node
 # ---------------------------------------------------------------------------
@@ -321,6 +330,81 @@ async def test_link_herb_source(graph_service):
     session = graph_service.driver.session.return_value.__aenter__.return_value
     call_args = session.run.call_args
     assert "ORIGINATED_FROM" in call_args[0][0]
+
+
+@pytest.mark.unit
+async def test_graph_metadata_service_summary_aggregates_database_counts():
+    from app.kg.graph_metadata_service import GraphMetadataService
+
+    svc = GraphMetadataService()
+    _inject_data_driver(
+        svc,
+        [
+            {"result": {"name": "nodes", "data": 12}},
+            {"result": {"name": "relationships", "data": 18}},
+            {"result": {"name": "labels", "data": ["Herb", "Efficacy"]}},
+            {"result": {"name": "relationshipTypes", "data": ["HAS_EFFICACY"]}},
+            {"result": {"name": "propertyKeys", "data": ["name", "category"]}},
+            {"result": {"name": "indexes", "data": [{"name": "idx_herb_name"}]}},
+            {"result": {"name": "constraints", "data": [{"name": "constraint_herb_name"}]}},
+        ],
+    )
+
+    summary = await svc.get_summary()
+
+    assert summary["node_count"] == 12
+    assert summary["relationship_count"] == 18
+    assert summary["label_count"] == 2
+    assert summary["property_key_count"] == 2
+    assert summary["index_count"] == 1
+    assert summary["constraint_count"] == 1
+
+
+@pytest.mark.unit
+async def test_graph_metadata_service_schema_normalizes_indexes_and_constraints():
+    from app.kg.graph_metadata_service import GraphMetadataService
+
+    svc = GraphMetadataService()
+    _inject_data_driver(
+        svc,
+        [
+            {
+                "result": {
+                    "name": "indexes",
+                    "data": [
+                        {
+                            "name": "idx_herb_name",
+                            "type": "RANGE",
+                            "entityType": "NODE",
+                            "labelsOrTypes": ["Herb"],
+                            "properties": ["name"],
+                            "state": "ONLINE",
+                        }
+                    ],
+                }
+            },
+            {
+                "result": {
+                    "name": "constraints",
+                    "data": [
+                        {
+                            "name": "constraint_herb_name",
+                            "type": "UNIQUENESS",
+                            "entityType": "NODE",
+                            "labelsOrTypes": ["Herb"],
+                            "properties": ["name"],
+                        }
+                    ],
+                }
+            },
+        ],
+    )
+
+    schema = await svc.get_schema()
+
+    assert schema["indexes"][0]["labels_or_types"] == ["Herb"]
+    assert schema["indexes"][0]["state"] == "ONLINE"
+    assert schema["constraints"][0]["properties"] == ["name"]
 
 
 # ---------------------------------------------------------------------------

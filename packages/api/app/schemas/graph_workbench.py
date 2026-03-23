@@ -69,6 +69,27 @@ class GraphWorkbenchSchemaResponse(BaseModel):
     model_config = ConfigDict(strict=True)
 
 
+class GraphWorkbenchLabelMetaListResponse(BaseModel):
+    items: list[GraphWorkbenchLabelMetaItem] = Field(default_factory=list)
+    total: int = Field(ge=0)
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphWorkbenchRelationshipTypeMetaListResponse(BaseModel):
+    items: list[GraphWorkbenchRelationshipTypeMetaItem] = Field(default_factory=list)
+    total: int = Field(ge=0)
+
+    model_config = ConfigDict(strict=True)
+
+
+class GraphWorkbenchPropertyKeyMetaListResponse(BaseModel):
+    items: list[GraphWorkbenchPropertyKeyMetaItem] = Field(default_factory=list)
+    total: int = Field(ge=0)
+
+    model_config = ConfigDict(strict=True)
+
+
 class GraphSceneInfo(BaseModel):
     truncated: bool = False
     node_limit_hit: bool = False

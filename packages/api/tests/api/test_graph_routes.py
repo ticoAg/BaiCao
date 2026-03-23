@@ -63,6 +63,103 @@ class TestSearchNodes:
         assert_list_response(resp.json(), min_items=2)
 
 
+class TestGraphMetadataRoutes:
+    """GET /api/v1/graph/meta/*"""
+
+    @pytest.mark.asyncio
+    async def test_get_graph_meta_summary(self, client):
+        """Summary endpoint returns database-level counts."""
+        summary = {
+            "node_count": 12,
+            "relationship_count": 18,
+            "label_count": 4,
+            "relationship_type_count": 6,
+            "property_key_count": 11,
+            "index_count": 2,
+            "constraint_count": 1,
+            "truncated": False,
+            "generated_at": "2026-03-23T10:00:00Z",
+        }
+
+        with patch("app.api.graph.graph_metadata_service") as mock_meta:
+            mock_meta.get_summary = AsyncMock(return_value=summary)
+
+            resp = await client.get("/api/v1/graph/meta/summary")
+
+        assert_status(resp, 200)
+        data = resp.json()
+        assert_json_keys(
+            data,
+            {
+                "node_count",
+                "relationship_count",
+                "label_count",
+                "relationship_type_count",
+                "property_key_count",
+                "index_count",
+                "constraint_count",
+                "truncated",
+                "generated_at",
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_get_graph_meta_labels_supports_limit(self, client):
+        """Labels endpoint returns paginated metadata list."""
+        labels = {
+            "items": [
+                {"name": "Herb", "count": 3, "property_keys": ["name", "category"]},
+                {"name": "Efficacy", "count": 2, "property_keys": ["name"]},
+            ],
+            "total": 2,
+        }
+
+        with patch("app.api.graph.graph_metadata_service") as mock_meta:
+            mock_meta.list_labels = AsyncMock(return_value=labels)
+
+            resp = await client.get("/api/v1/graph/meta/labels", params={"limit": 20})
+
+        assert_status(resp, 200)
+        assert_list_response(resp.json(), min_items=2)
+        mock_meta.list_labels.assert_awaited_once_with(q=None, limit=20, offset=0)
+
+    @pytest.mark.asyncio
+    async def test_get_graph_meta_schema_returns_indexes_and_constraints(self, client):
+        """Schema endpoint returns indexes and constraints."""
+        schema = {
+            "indexes": [
+                {
+                    "name": "idx_herb_name",
+                    "type": "RANGE",
+                    "entity_type": "NODE",
+                    "labels_or_types": ["Herb"],
+                    "properties": ["name"],
+                    "state": "ONLINE",
+                }
+            ],
+            "constraints": [
+                {
+                    "name": "constraint_herb_name",
+                    "type": "UNIQUENESS",
+                    "entity_type": "NODE",
+                    "labels_or_types": ["Herb"],
+                    "properties": ["name"],
+                }
+            ],
+        }
+
+        with patch("app.api.graph.graph_metadata_service") as mock_meta:
+            mock_meta.get_schema = AsyncMock(return_value=schema)
+
+            resp = await client.get("/api/v1/graph/meta/schema")
+
+        assert_status(resp, 200)
+        data = resp.json()
+        assert_json_keys(data, {"indexes", "constraints"})
+        assert data["indexes"][0]["labels_or_types"] == ["Herb"]
+        assert data["constraints"][0]["properties"] == ["name"]
+
+
 class TestGetNode:
     """GET /api/v1/graph/node/{node_id}"""
 

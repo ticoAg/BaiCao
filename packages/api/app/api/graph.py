@@ -2,10 +2,67 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
+from ..kg.graph_metadata_service import graph_metadata_service
 from ..kg.graph_service import graph_service
 from ..schemas.graph import GraphQueryRequest, GraphQueryResponse
+from ..schemas.graph_workbench import (
+    GraphWorkbenchLabelMetaListResponse,
+    GraphWorkbenchMetaSummary,
+    GraphWorkbenchPropertyKeyMetaListResponse,
+    GraphWorkbenchRelationshipTypeMetaListResponse,
+    GraphWorkbenchSchemaResponse,
+)
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+@router.get("/meta/summary", response_model=GraphWorkbenchMetaSummary)
+async def get_graph_meta_summary():
+    """返回数据库级图谱元信息总览。"""
+    return await graph_metadata_service.get_summary()
+
+
+@router.get("/meta/labels", response_model=GraphWorkbenchLabelMetaListResponse)
+async def get_graph_meta_labels(
+    q: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """返回 label 元数据列表。"""
+    return await graph_metadata_service.list_labels(q=q, limit=limit, offset=offset)
+
+
+@router.get(
+    "/meta/relationship-types",
+    response_model=GraphWorkbenchRelationshipTypeMetaListResponse,
+)
+async def get_graph_meta_relationship_types(
+    q: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """返回 relationship type 元数据列表。"""
+    return await graph_metadata_service.list_relationship_types(
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/meta/property-keys", response_model=GraphWorkbenchPropertyKeyMetaListResponse)
+async def get_graph_meta_property_keys(
+    q: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+):
+    """返回 property key 元数据列表。"""
+    return await graph_metadata_service.list_property_keys(q=q, limit=limit, offset=offset)
+
+
+@router.get("/meta/schema", response_model=GraphWorkbenchSchemaResponse)
+async def get_graph_meta_schema():
+    """返回数据库 schema 信息。"""
+    return await graph_metadata_service.get_schema()
 
 
 @router.post("/query", response_model=GraphQueryResponse)
