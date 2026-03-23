@@ -240,7 +240,7 @@ make stack up SESSION=baicao-dev
 推荐命令如下：
 
 - `api`：在 `packages/api` 下执行 `uv sync --extra dev` 后运行 `uv run uvicorn app.main:app --host 0.0.0.0 --port <API_PORT> --reload`
-- `web`：在 `packages/web` 下执行 `pnpm install` 后运行 `pnpm dev --host 0.0.0.0 --port <WEB_PORT>`
+- `web`：在 `packages/web` 下执行 `pnpm install` 后运行 `pnpm exec vp dev --host 0.0.0.0 --port <WEB_PORT>`
 
 说明：
 

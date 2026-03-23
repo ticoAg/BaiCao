@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -28,6 +28,7 @@ type GraphQueryPanelProps = {
   loading?: boolean;
   onSubmit: (request: GraphQueryRequest) => void | Promise<unknown>;
   onDepthChange?: (depth: number) => void;
+  onReset?: () => void;
 };
 
 const nodeLabelOptions: GraphNodeLabel[] = [
@@ -85,7 +86,7 @@ const sectionTitleStyle = {
   fontWeight: 600,
   letterSpacing: "0.08em",
   textTransform: "uppercase" as const,
-  color: "#5F6B62",
+  color: "#2e7d32",
 };
 
 function cleanText(value: unknown) {
@@ -114,8 +115,10 @@ const GraphQueryPanel = ({
   loading = false,
   onSubmit,
   onDepthChange,
+  onReset,
 }: GraphQueryPanelProps) => {
   const [form] = Form.useForm<GraphQueryRequest>();
+  const [showDeveloperPreview, setShowDeveloperPreview] = useState(false);
 
   useEffect(() => {
     form.setFieldValue("depth", depth);
@@ -146,6 +149,24 @@ const GraphQueryPanel = ({
     await onSubmit(pruneObject(nextRequest) ?? {});
   };
 
+  const handleReset = () => {
+    form.resetFields();
+    form.setFieldValue("depth", depth);
+    onDepthChange?.(depth);
+    onReset?.();
+  };
+
+  const rawValues = form.getFieldsValue(true);
+  const nodeFilters = pruneObject(rawValues.node);
+  const edgeFilters = pruneObject(rawValues.edge);
+  const payload = {
+    node: nodeFilters,
+    edge: edgeFilters,
+    depth: rawValues.depth,
+    limit: rawValues.limit,
+  };
+  const trimmedPayload = pruneObject(payload);
+
   return (
     <Form<GraphQueryRequest>
       form={form}
@@ -161,8 +182,9 @@ const GraphQueryPanel = ({
         style={{
           marginBottom: 20,
           borderRadius: 14,
-          border: "1px solid rgba(60, 110, 90, 0.16)",
-          background: "rgba(246, 250, 247, 0.95)",
+          border: "none",
+          background: "rgba(255, 255, 255, 0.4)",
+          backdropFilter: "blur(12px)",
         }}
       />
 
@@ -236,7 +258,7 @@ const GraphQueryPanel = ({
         <div>
           <Text style={sectionTitleStyle}>范围控制</Text>
           <Divider style={{ margin: "10px 0 16px" }} />
-          <Form.Item label="深度" name="depth">
+          <Form.Item label="查询深度" name="depth">
             <InputNumber min={1} max={3} precision={0} style={{ width: "100%" }} />
           </Form.Item>
           <Form.Item label="limit" name="limit">
@@ -250,6 +272,42 @@ const GraphQueryPanel = ({
           </Form.Item>
         </div>
       </Space>
+
+      <Space style={{ width: "100%", marginTop: 20 }} size={12}>
+        <Button onClick={handleReset} style={{ flex: 1, borderRadius: 14 }}>
+          重置条件
+        </Button>
+        <Button
+          type="text"
+          onClick={() => setShowDeveloperPreview((value) => !value)}
+          style={{ paddingInline: 0 }}
+        >
+          开发者预览
+        </Button>
+      </Space>
+
+      {showDeveloperPreview ? (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            borderRadius: 12,
+            background: "rgba(255, 255, 255, 0.5)",
+            border: "1px dashed rgba(46, 125, 50, 0.2)",
+            fontFamily: "monospace",
+            fontSize: 12,
+          }}
+        >
+          <Text style={{ ...sectionTitleStyle, fontSize: 11, marginBottom: 8, display: "block" }}>
+            实时请求预览 (JSON payload)
+          </Text>
+          <pre style={{ margin: 0, color: "#3D5A48", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {trimmedPayload && Object.keys(trimmedPayload).length > 0
+              ? JSON.stringify(trimmedPayload, null, 2)
+              : "{\n  // 请输入查询条件\n}"}
+          </pre>
+        </div>
+      ) : null}
 
       <Button
         type="primary"

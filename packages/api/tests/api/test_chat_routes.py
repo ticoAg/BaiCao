@@ -59,6 +59,36 @@ class TestAskQuestion:
         assert_status(resp, 200)
         assert resp.json()["session_id"] == sid
 
+    @pytest.mark.asyncio
+    async def test_ask_question_can_return_workbench_frames(self, client):
+        """POST should preserve optional workbench frame payloads for chat consumers."""
+        mock_response = make_answer_response()
+        mock_response["workbench_frames"] = [
+            {
+                "id": "frame-1",
+                "type": "graph",
+                "title": "人参图谱",
+                "status": "ok",
+                "payload": {
+                    "graph": {"center": None, "nodes": [], "edges": []},
+                    "summary": "graph",
+                    "mode": "exact",
+                },
+            }
+        ]
+
+        with patch("app.api.chat.ChatService") as MockChatService:
+            instance = MockChatService.return_value
+            instance.answer_question = AsyncMock(return_value=mock_response)
+
+            resp = await client.post(
+                "/api/v1/chat/question",
+                json={"question": "查人参图谱"},
+            )
+
+        assert_status(resp, 200)
+        assert resp.json()["workbench_frames"][0]["type"] == "graph"
+
 
 class TestGetSession:
     """GET /api/v1/chat/session/{session_id}"""

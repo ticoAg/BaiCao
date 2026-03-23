@@ -278,10 +278,10 @@ uv run uvicorn app.main:app --reload --port 8000
 cd packages/web
 corepack enable
 pnpm install
-pnpm dev --host 0.0.0.0 --port 3000
+pnpm exec vp dev --host 0.0.0.0 --port 3000
 ```
 
-> **工具链说明**：前端使用 **vite-plus (`vp`)**。`pnpm-workspace.yaml` 的 catalog 将 `vite` 映射到 `@voidzero-dev/vite-plus-core`、`vitest` 映射到 `@voidzero-dev/vite-plus-test`。所有脚本（`dev` / `build` / `test` / `preview`）均通过 `vp` 命令执行。
+> **工具链说明**：前端使用 **vite-plus (`vp`)**。`pnpm-workspace.yaml` 的 catalog 将 `vite` 映射到 `@voidzero-dev/vite-plus-core`、`vitest` 映射到 `@voidzero-dev/vite-plus-test`。`packages/web` 的 `dev` / `build` / `test` / `preview` 一律以 `vp` 为执行器；仓库根脚本（如 `pnpm run test:web`）只是对 `vp` 命令的统一封装。
 
 手动开发时：
 

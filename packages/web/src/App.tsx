@@ -1,14 +1,35 @@
+import { Suspense, lazy } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { Layout } from "antd";
+import { Layout, Skeleton, Space, Typography } from "antd";
 import Header from "./components/Header";
-import HomePage from "./pages/HomePage";
-import SearchPage from "./pages/SearchPage";
-import GraphPage from "./pages/GraphPage";
-import VerificationPage from "./pages/VerificationPage";
-import ChatPage from "./pages/ChatPage";
-import HerbDetailPage from "./pages/HerbDetailPage";
+const HomePage = lazy(() => import("./pages/HomePage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const GraphPage = lazy(() => import("./pages/GraphPage"));
+const GraphWorkbenchPage = lazy(() => import("./pages/GraphWorkbenchPage"));
+const VerificationPage = lazy(() => import("./pages/VerificationPage"));
+const ChatPage = lazy(() => import("./pages/ChatPage"));
+const HerbDetailPage = lazy(() => import("./pages/HerbDetailPage"));
 
 const { Content, Footer } = Layout;
+const { Text } = Typography;
+
+const RouteFallback = () => (
+  <div
+    style={{
+      minHeight: "calc(100vh - 180px)",
+      display: "grid",
+      placeItems: "center",
+      padding: "40px 24px",
+    }}
+  >
+    <Space direction="vertical" size={14} align="center" style={{ width: "min(420px, 100%)" }}>
+      <Text strong style={{ color: "#203127", fontSize: 16 }}>
+        页面加载中...
+      </Text>
+      <Skeleton active title={{ width: "46%" }} paragraph={{ rows: 4 }} style={{ width: "100%" }} />
+    </Space>
+  </div>
+);
 
 function App() {
   const location = useLocation();
@@ -25,14 +46,17 @@ function App() {
         }}
       >
         <div className="site-layout-content page-fade-in">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/graph/:name?" element={<GraphPage />} />
-            <Route path="/verification" element={<VerificationPage />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/herb/:id" element={<HerbDetailPage />} />
-          </Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/graph/:name?" element={<GraphPage />} />
+              <Route path="/graph/workbench" element={<GraphWorkbenchPage />} />
+              <Route path="/verification" element={<VerificationPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/herb/:id" element={<HerbDetailPage />} />
+            </Routes>
+          </Suspense>
         </div>
       </Content>
       <Footer

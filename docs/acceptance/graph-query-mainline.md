@@ -13,7 +13,7 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：图谱查询工作区主链路
-- 验收目标：验证 `/graph` 可直接进入查询工作区，高级查询可返回子图结果与查询摘要，且 `/graph/人参` 仍保持默认药材图谱入口
+- 验收目标：验证 `/graph` 进入画布优先工作区，高级查询通过抽屉唤出并返回子图结果，且 `/graph/人参` 仍保持默认药材图谱入口
 - 对应需求：可信图谱探索 / 图谱高级查询工作区
 - 对应计划：`docs/superpowers/plans/2026-03-21-graph-page-query-workspace.md`
 - 当前版本 / 日期：graph workspace / 2026-03-21
@@ -23,10 +23,12 @@ audience: developer
 ### 包含
 
 - `/graph` 直接进入图谱查询工作区，而不是先经过搜索页
-- 在左侧查询面板输入名称 / 属性 / 边过滤条件后返回图谱子图结果
+- 通过左上查询入口卡打开查询抽屉，输入名称 / 属性 / 边过滤条件后返回图谱子图结果
 - `/graph/人参` 继续按药材详情模式加载默认图谱
-- 查询摘要展示 `matched_nodes`、`matched_edges` 与 `active_filters`
-- 后端同时保留 `GET /api/v1/graph/herb/{name}` 和 `POST /api/v1/graph/query` 两条主链路
+- 查询入口卡展示当前图谱或当前查询摘要
+- 右下浮卡展示节点 / 边详情，左下悬浮图例始终可见
+- 双击节点可展开一跳邻居，再次双击同一节点可收起本次增量子图
+- 后端同时保留 `GET /api/v1/graph/herb/{name}`、`POST /api/v1/graph/query` 与 `GET /api/v1/graph/node/{node_id}/expand` 三条主链路
 
 ### 不包含
 
@@ -46,7 +48,7 @@ audience: developer
 ### 启动 / 准备命令
 
 ```bash
-pnpm --dir packages/web dev
+pnpm --dir packages/web exec vp dev
 ```
 
 补充说明：
@@ -62,7 +64,7 @@ pnpm --dir packages/web dev
 
 ### Step 2
 
-- 操作：在左侧查询面板填写高级查询条件并提交
+- 操作：点击左上“打开查询器”，在查询抽屉中填写高级查询条件并提交
 - 推荐输入：
   - 节点名称包含：`人参`
   - 属性键：`category`
@@ -108,29 +110,35 @@ curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: ap
 - 命令：
 
 ```bash
-pnpm --dir packages/web test --run src/components/graph/GraphQueryPanel.test.tsx src/pages/GraphPage.test.tsx src/hooks/useGraphWorkspace.test.tsx
+pnpm --dir packages/web exec vp test run src/components/graph/GraphQueryPanel.test.tsx src/pages/GraphPage.test.tsx src/components/graph/NodeDetail.test.tsx src/hooks/useGraphWorkspace.test.tsx
 pnpm --dir packages/web typecheck
+pnpm --dir packages/web exec vp build
 ```
+
+### Step 8
+
+- 操作：在 `/graph/人参` 中双击中心节点“人参”，再双击一次
+- 页面入口：`http://localhost:3000/graph/人参`
 
 ## 5. 期望结果
 
 ### Step 1 预期
 
 - `/graph` 不需要 `:name` 参数即可进入工作区
-- 页面可见“图谱条件查询”
-- 工作区容器使用整屏高度布局，最小高度为 `calc(100vh - 160px)`
+- 页面默认先看到图谱画布和左上查询入口卡，而不是常驻左侧表单
+- 工作区容器使用整屏高度布局，高度为 `calc(100vh - 64px)`
 
 ### Step 2 预期
 
-- 提交后工作区切换到“高级图谱查询结果”模式
-- 中间画布渲染命中子图，右侧仍可查看节点 / 边详情
-- 查询摘要显示“命中节点”“命中边数”“Active Filters”
-- 当同时输入名称 / 属性 / 边条件时，`active_filters` 应体现对应过滤项
+- 提交后工作区切换到“当前查询”模式
+- 中间画布渲染命中子图，右下浮卡仍可查看节点 / 边详情
+- 左上查询入口卡显示命中节点数和过滤条件摘要
+- 当同时输入名称 / 属性 / 边条件时，摘要中应体现对应过滤项
 
 ### Step 3 预期
 
 - `/graph/人参` 仍会加载默认药材图谱，而不是停留在空白工作区
-- 页面标题或副标题体现“当前默认加载 人参 的知识图谱”
+- 左上查询入口卡体现“当前图谱 / 人参”语义
 
 ### Step 4 预期
 
@@ -152,8 +160,13 @@ pnpm --dir packages/web typecheck
 
 ### Step 7 预期
 
-- 指定的 3 个 web 测试文件全部通过
-- `packages/web` typecheck 退出码为 0
+- 指定的 web 测试文件全部通过
+- `packages/web` typecheck 与 build 退出码均为 0
+
+### Step 8 预期
+
+- 第一次双击节点时，画布会请求并合并该节点的一跳关联节点与关系
+- 第二次双击同一节点时，只收起该节点本次展开出来的增量子图，不影响基础图谱
 
 ## 6. 证据记录
 
@@ -163,11 +176,13 @@ pnpm --dir packages/web typecheck
 - `packages/api/app/api/graph.py:17`
 - `packages/api/app/kg/graph_service.py:1053`
 - `packages/web/src/hooks/useGraphWorkspace.ts:22`
-- `packages/web/src/pages/GraphPage.tsx:40`
-- `packages/web/src/components/graph/GraphQuerySummary.tsx:10`
-- `packages/web/src/pages/GraphPage.test.tsx:108`
-- `packages/web/src/pages/GraphPage.test.tsx:148`
-- `packages/web/src/components/graph/GraphQueryPanel.test.tsx:7`
+- `packages/web/src/pages/GraphPage.tsx:1`
+- `packages/web/src/components/graph/GraphQueryPanel.tsx:1`
+- `packages/web/src/components/graph/NodeDetail.tsx:1`
+- `packages/web/src/components/graph/EdgeDetail.tsx:1`
+- `packages/web/src/pages/GraphPage.test.tsx:1`
+- `packages/web/src/components/graph/GraphQueryPanel.test.tsx:1`
+- `packages/web/src/components/graph/NodeDetail.test.tsx:1`
 - `packages/web/src/hooks/useGraphWorkspace.test.tsx:122`
 
 ### 运行证据
@@ -178,8 +193,9 @@ pnpm --dir packages/web typecheck
 curl -sS 'http://localhost:8000/api/v1/graph/herb/%E4%BA%BA%E5%8F%82?depth=1' | python3 -m json.tool
 curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: application/json' -d '{"node":{"name_contains":"人参","label":"Herb"},"edge":{"rel_type":"HAS_EFFICACY"},"depth":2,"limit":20}' | python3 -m json.tool
 curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: application/json' -d '{"node":{"name_contains":"人参","property_key":"category","property_value_contains":"补气"},"edge":{"rel_type":"HAS_EFFICACY"},"depth":2,"limit":20}' | python3 -m json.tool
-pnpm --dir packages/web test --run src/components/graph/GraphQueryPanel.test.tsx src/pages/GraphPage.test.tsx src/hooks/useGraphWorkspace.test.tsx
+pnpm --dir packages/web exec vp test run src/components/graph/GraphQueryPanel.test.tsx src/pages/GraphPage.test.tsx src/components/graph/NodeDetail.test.tsx src/hooks/useGraphWorkspace.test.tsx
 pnpm --dir packages/web typecheck
+pnpm --dir packages/web exec vp build
 ```
 
 ### 结果证据
@@ -187,7 +203,7 @@ pnpm --dir packages/web typecheck
 - 药材图谱接口返回 `center / nodes / edges`，其中 `center.name = 人参`；本次返回 `12` 个节点、`11` 条边
 - 高级查询接口返回 `summary / graph`；本次 `name + label + edge` 查询返回 `matched_nodes = 1`、`matched_edges = 4`，`active_filters` 为“名称包含: 人参 / 节点类型: 药材 / 关系类型: 功效”
 - 属性 spot-check 查询同样返回 `matched_nodes = 1`、`matched_edges = 4`，且 `active_filters` 包含“分类包含: 补气”
-- `pnpm --dir packages/web test --run ...` 结果为 `3 passed` / `9 passed`
+- `pnpm --dir packages/web exec vp test run ...` 结果为 `3 passed` / `9 passed`
 - `pnpm --dir packages/web typecheck` 退出码为 `0`
 - 本轮未执行浏览器人工验收，因此本次证据仅覆盖 API 返回与 Web 自动化最小验证
 

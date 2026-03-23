@@ -359,3 +359,5 @@ export interface Evidence {
   extractionMethod: string
   createdAt: string
 }
+
+export * from './workbench'

@@ -64,6 +64,14 @@ export const graphApi = {
     return data;
   },
 
+  // 按节点展开一跳邻居子图
+  expandNodeGraph: async (id: string, depth = 1, limit = 20): Promise<GraphData> => {
+    const { data } = await api.get(`/graph/node/${id}/expand`, {
+      params: { depth, limit },
+    });
+    return data;
+  },
+
   // 获取待验证项
   getPending: async (type: "nodes" | "relationships", limit = 50): Promise<{ items: GraphNode[]; total: number }> => {
     const { data } = await api.get("/graph/pending", {

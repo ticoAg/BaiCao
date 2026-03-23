@@ -15,6 +15,7 @@ function buildAssistantMessage(response: ChatResponse): Message {
     sources: response.sources,
     graphData: response.graph_data,
     entities: response.entities,
+    workbenchFrames: response.workbench_frames,
   };
 }
 

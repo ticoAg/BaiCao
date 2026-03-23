@@ -1,17 +1,15 @@
 # Chat Service - 智能问答服务
 # 支持 LLM 流式（OpenAI/Anthropic via LangChain）和规则引擎 fallback
 
-import json
 import re
 from typing import Optional, AsyncIterator, TypedDict, List
-from uuid import UUID, uuid4
+from uuid import uuid4
 from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from ..models import HerbModel, SourceModel
 from ..kg.graph_service import graph_service
+from .workbench_service import workbench_service
 from .llm_client import stream_llm, is_llm_available
 
 
@@ -92,13 +90,15 @@ class ChatService:
             answer = await self._generate_answer(question, entities, graph_data, reasoning_chain)
 
         sources = await self._collect_sources(graph_data)
+        workbench_frames = await self._build_workbench_frames(entities)
 
         response = {
             "answer": answer,
             "reasoning_chain": reasoning_chain,
             "sources": sources,
             "graph_data": graph_data,
-            "session_id": session_id or str(uuid4())
+            "session_id": session_id or str(uuid4()),
+            "workbench_frames": workbench_frames,
         }
 
         self._validate_response(response)
@@ -224,10 +224,27 @@ class ChatService:
         if not isinstance(response["session_id"], str):
             raise ValueError("Response 'session_id' must be a string")
 
+        if "workbench_frames" in response and not isinstance(response["workbench_frames"], list):
+            raise ValueError("Response 'workbench_frames' must be a list when provided")
+
     async def _extract_entities(self, question: str) -> list[str]:
         matches = herb_entity_pattern.pattern.findall(question)
         entities = list(dict.fromkeys(matches))
         return entities if entities else [DEFAULT_HERB]
+
+    async def _build_workbench_frames(self, entities: list[str]) -> list[dict]:
+        if not entities:
+            return []
+
+        try:
+            result = await workbench_service.execute(f"查{entities[0]}图谱", source="chat")
+        except Exception:
+            return []
+
+        if hasattr(result, "frames"):
+            return [frame.model_dump(mode="python") for frame in result.frames]
+
+        return list(result.get("frames", []))
 
     async def _query_knowledge_graph(self, entities: list[str]) -> dict:
         if not entities:

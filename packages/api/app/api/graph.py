@@ -46,6 +46,19 @@ async def get_node(node_id: str):
     return node
 
 
+@router.get("/node/{node_id}/expand")
+async def expand_node_graph(
+    node_id: str,
+    depth: int = Query(1, ge=1, le=1),
+    limit: int = Query(20, ge=1, le=50),
+):
+    """按节点 ID 扩展一跳邻居子图。"""
+    graph = await graph_service.expand_node_graph(node_id, depth=depth, limit=limit)
+    if not graph["center"]:
+        raise HTTPException(status_code=404, detail="Node not found")
+    return graph
+
+
 @router.get("/node/{node_id}/relationships")
 async def get_node_relationships(
     node_id: str,

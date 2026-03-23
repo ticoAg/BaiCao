@@ -34,6 +34,24 @@ describe("ChatPage", () => {
         nodes: [],
         edges: [],
       },
+      workbench_frames: [
+        {
+          id: "frame-graph-1",
+          type: "graph",
+          title: "人参图谱",
+          status: "ok",
+          command: "查人参图谱",
+          payload: {
+            graph: {
+              center: null,
+              nodes: [],
+              edges: [],
+            },
+            summary: "graph",
+            mode: "exact",
+          },
+        },
+      ],
       session_id: "session-1",
     });
 
@@ -48,5 +66,7 @@ describe("ChatPage", () => {
     expect(await screen.findByText(/关于「人参」的信息/)).toBeInTheDocument();
     expect(screen.getByText("推理链")).toBeInTheDocument();
     expect(screen.getByText("中国药典（2020年版）")).toBeInTheDocument();
+    expect(screen.getByText("Workbench 结果")).toBeInTheDocument();
+    expect(screen.getByText("人参图谱")).toBeInTheDocument();
   });
 });

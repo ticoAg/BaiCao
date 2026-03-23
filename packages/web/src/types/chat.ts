@@ -1,6 +1,7 @@
 // 聊天相关类型定义
 
 import type { GraphData, GraphNode, GraphEdge } from "./graph";
+import type { WorkbenchFrame } from "./workbench";
 
 export interface ReasoningStep {
   step: number;
@@ -29,6 +30,7 @@ export interface ChatResponse {
   graph_data: GraphData;
   session_id: string;
   entities?: Entity[];
+  workbench_frames?: WorkbenchFrame[];
 }
 
 export interface Message {
@@ -39,6 +41,7 @@ export interface Message {
   sources?: Source[];
   graphData?: ChatGraphData;
   entities?: Entity[];
+  workbenchFrames?: WorkbenchFrame[];
 }
 
 // chat 上下文中的 graph 数据（后端返回字段可能不完整，用 Partial）

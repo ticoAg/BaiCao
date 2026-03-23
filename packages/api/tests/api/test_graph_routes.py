@@ -89,6 +89,72 @@ class TestGetNode:
         assert_status(resp, 404)
 
 
+class TestExpandNodeGraph:
+    """GET /api/v1/graph/node/{node_id}/expand"""
+
+    @pytest.mark.asyncio
+    async def test_expand_node_graph_returns_one_hop_subgraph(self, client):
+        """Double-click expansion endpoint returns graph payload for one-hop neighbors."""
+        graph_data = {
+            "center": {
+                "id": "node-abc",
+                "name": "人参",
+                "labels": ["Herb"],
+                "status": "verified",
+            },
+            "nodes": [
+                {
+                    "id": "node-abc",
+                    "name": "人参",
+                    "labels": ["Herb"],
+                    "status": "verified",
+                },
+                {
+                    "id": "eff-1",
+                    "name": "补气",
+                    "labels": ["Efficacy"],
+                    "status": "verified",
+                },
+            ],
+            "edges": [
+                {
+                    "id": "edge-1",
+                    "rel_type": "HAS_EFFICACY",
+                    "status": "verified",
+                    "verification_id": None,
+                    "verified_by": None,
+                    "verified_at": None,
+                    "source": {
+                        "id": "node-abc",
+                        "name": "人参",
+                        "source": "中国药典",
+                        "status": "verified",
+                        "labels": ["Herb"],
+                    },
+                    "target": {
+                        "id": "eff-1",
+                        "name": "补气",
+                        "source": "中国药典",
+                        "status": "verified",
+                        "labels": ["Efficacy"],
+                    },
+                }
+            ],
+        }
+        with patch("app.api.graph.graph_service") as mock_svc:
+            mock_svc.expand_node_graph = AsyncMock(return_value=graph_data)
+
+            resp = await client.get(
+                "/api/v1/graph/node/node-abc/expand",
+                params={"depth": 1, "limit": 20},
+            )
+
+        assert_status(resp, 200)
+        assert_graph_response(resp.json())
+        assert resp.json()["center"]["id"] == "node-abc"
+        mock_svc.expand_node_graph.assert_awaited_once_with("node-abc", depth=1, limit=20)
+
+
 class TestGetPending:
     """GET /api/v1/graph/pending"""
 

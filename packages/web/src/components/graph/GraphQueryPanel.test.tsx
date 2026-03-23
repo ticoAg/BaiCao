@@ -31,4 +31,32 @@ describe("GraphQueryPanel", () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("resets all query fields and keeps the configured depth value", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    renderWithProviders(<GraphQueryPanel depth={2} onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("节点名称包含"), "人参");
+    await user.type(screen.getByRole("spinbutton", { name: "limit" }), "25");
+    await user.click(screen.getByRole("button", { name: "重置条件" }));
+
+    expect(screen.getByLabelText("节点名称包含")).toHaveValue("");
+    expect(screen.getByRole("spinbutton", { name: "查询深度" })).toHaveValue("2");
+    expect(screen.getByRole("spinbutton", { name: "limit" })).toHaveValue("");
+  });
+
+  it("hides developer payload preview by default and expands it on demand", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    renderWithProviders(<GraphQueryPanel depth={1} onSubmit={onSubmit} />);
+
+    expect(screen.queryByText("实时请求预览 (JSON payload)")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "开发者预览" }));
+
+    expect(screen.getByText("实时请求预览 (JSON payload)")).toBeInTheDocument();
+  });
 });

@@ -2,7 +2,7 @@
 # 支持 OpenAI 和 Anthropic 双后端，通过 .env 配置切换
 
 import logging
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
@@ -129,8 +129,40 @@ async def stream_llm(question: str, graph_context: str) -> AsyncIterator[str]:
     ]
 
     async for chunk in model.astream(messages):
-        if chunk.content:
-            yield chunk.content
+        normalized = _normalize_chunk_content(chunk.content)
+        if normalized:
+            yield normalized
+
+
+def _normalize_chunk_content(content: Any) -> str:
+    """将 LangChain 流式 chunk 的 content 统一规整为字符串。"""
+    if content is None:
+        return ""
+
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        parts: list[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+                continue
+            if isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+                    continue
+            text_attr = getattr(item, "text", None)
+            if isinstance(text_attr, str):
+                parts.append(text_attr)
+        return "".join(parts)
+
+    text_attr = getattr(content, "text", None)
+    if isinstance(text_attr, str):
+        return text_attr
+
+    return str(content)
 
 
 def is_llm_available() -> bool:

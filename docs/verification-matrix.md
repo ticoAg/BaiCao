@@ -4,9 +4,9 @@
 
 | 改动类型 | 最低验证 |
 |---|---|
-| `packages/web/` 页面 / 组件 / 前端服务 | `pnpm run test:web`；建议补 `pnpm --dir packages/web build` |
+| `packages/web/` 页面 / 组件 / 前端服务 | `pnpm run test:web`；建议补 `pnpm --dir packages/web exec vp build` |
 | `packages/api/` 服务 / 路由 / Schema | `uv run ruff check .` + `uv run pytest`（在 `packages/api/` 下执行） |
-| `packages/shared/` 共享类型 / DTO | `pnpm --dir packages/shared typecheck` + 至少一条消费方检查（通常是 `pnpm --dir packages/web build` 或相关 contract test） |
+| `packages/shared/` 共享类型 / DTO | `pnpm --dir packages/shared typecheck` + 至少一条消费方检查（通常是 `pnpm --dir packages/web exec vp build` 或相关 contract test） |
 | `packages/db/` 图谱结构 / 导入样例 / 种子数据 | 至少一条可复现的数据或查询验证说明；若影响主链路，补 `./scripts/test_integration.sh` 或一条 API / 页面消费检查 |
 | `infra/` 编排 / 环境模板 / 配置 | `docker compose -f infra/docker-compose.yml config`；若影响运行主链路，补一条启动或健康检查 |
 | API contract / 跨模块负载变化 | 后端验证 + 一条前端消费侧检查；若是用户可感知主链路，建议同步更新相关 `docs/acceptance/` |
@@ -29,6 +29,11 @@
 - 集成：`./scripts/test_integration.sh`
 - E2E：`CI=true pnpm run test:e2e`
 - 全量：`pnpm run verify:full`
+
+补充口径：
+
+- `packages/web` 的 `dev` / `build` / `test` / `preview` 统一走 `vp`；直接在包目录下执行时，优先使用 `pnpm --dir packages/web exec vp ...`
+- 仓库根脚本（如 `pnpm run test:web`）允许继续作为统一入口使用，但底层仍应映射到 `vp`
 
 ## 说明
 

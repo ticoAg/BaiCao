@@ -513,6 +513,39 @@ class GraphService:
                 return self._map_node_to_dict(record["n"], record["labels"])
             return None
 
+    async def expand_node_graph(
+        self,
+        node_id: str,
+        depth: int = 1,
+        limit: int = 20,
+    ) -> Dict[str, Any]:
+        """按节点 ID 扩展一跳邻居子图，供前端双击节点展开。"""
+        await self.ensure_connected()
+
+        bounded_depth = max(1, min(depth, 1))
+        bounded_limit = max(1, min(limit, 50))
+
+        async with self.driver.session() as session:
+            result = await session.run(QUERY_GET_NODE_BY_ID, node_id=node_id)
+            record = await result.single()
+            if not record:
+                return {"center": None, "nodes": [], "edges": []}
+
+            center = self._map_node_to_dict(record["n"], record["labels"])
+            expanded_nodes, edges = await self._expand_query_subgraph(
+                session,
+                [node_id],
+                bounded_depth,
+                bounded_limit,
+                {},
+            )
+
+        return {
+            "center": center,
+            "nodes": self._dedupe_nodes([center, *expanded_nodes]),
+            "edges": edges,
+        }
+
     async def get_node_by_name(self, name: str, label: str) -> Optional[Dict[str, Any]]:
         """根据名称和类型获取节点"""
         await self.ensure_connected()
@@ -1214,6 +1247,18 @@ class GraphService:
             result = await session.run(cypher, search_text=query_text, limit=limit)
             records = await result.data()
             return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
+
+    async def execute_readonly_cypher(
+        self,
+        query: str,
+        params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
+        """执行只读 Cypher 查询并返回原始记录列表。"""
+        await self.ensure_connected()
+
+        async with self.driver.session() as session:
+            result = await session.run(query, **(params or {}))
+            return await result.data()
 
     async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> List[Dict[str, Any]]:
         """查找两个节点之间的路径"""

@@ -61,3 +61,6 @@ test-results/
 
 # pnpm
 .pnpm-store/
+
+.tmp
+.tmp/neo4j-browser/

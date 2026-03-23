@@ -2,7 +2,7 @@
 # 8 test cases covering the QA pipeline with knowledge graph integration
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 from uuid import UUID
 
 
@@ -122,7 +122,7 @@ class TestChatServiceAnswerQuestion:
             from app.services.chat_service import ChatService
 
             svc = ChatService(mock_db)
-            result = await svc.answer_question("人参的功效和作用是什么？")
+            await svc.answer_question("人参的功效和作用是什么？")
 
         # Should have called get_herb_graph with the detected entity
         mock_graph_service.get_herb_graph.assert_called()
@@ -153,6 +153,42 @@ class TestChatServiceAnswerQuestion:
             result = await svc.answer_question("陈皮？", session_id="my-session-123")
 
         assert result["session_id"] == "my-session-123"
+
+    @pytest.mark.asyncio
+    async def test_answer_question_includes_workbench_frames(self, mock_db, mock_graph_service):
+        """Test chat responses expose reusable workbench frame payloads."""
+        with (
+            patch("app.services.chat_service.graph_service", mock_graph_service),
+            patch("app.services.chat_service.workbench_service") as mock_workbench_service,
+            patch("app.services.chat_service.is_llm_available", return_value=False),
+        ):
+            mock_workbench_service.execute = AsyncMock(
+                return_value={
+                    "command": "查陈皮图谱",
+                    "frames": [
+                        {
+                            "id": "frame-1",
+                            "type": "graph",
+                            "title": "陈皮图谱",
+                            "status": "ok",
+                            "payload": {
+                                "graph": mock_graph_service.get_herb_graph.return_value,
+                                "summary": "graph",
+                                "mode": "exact",
+                            },
+                        }
+                    ],
+                    "history_item": {"command": "查陈皮图谱", "source": "chat"},
+                }
+            )
+
+            from app.services.chat_service import ChatService
+
+            svc = ChatService(mock_db)
+            result = await svc.answer_question("陈皮有什么功效？")
+
+        assert "workbench_frames" in result
+        assert result["workbench_frames"][0]["type"] == "graph"
 
 
 class TestChatServiceExtractEntities:

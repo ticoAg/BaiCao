@@ -134,6 +134,11 @@ export function useGraphWorkspace(name: string | undefined) {
     await herbQuery.refetch();
   }, [activeAdvancedRequest, advancedQuery, herbQuery]);
 
+  const resetAdvancedQuery = useCallback(() => {
+    setActiveAdvancedRequest(null);
+    setActiveAdvancedResponse(null);
+  }, []);
+
   return {
     graphData,
     querySummary,
@@ -146,5 +151,6 @@ export function useGraphWorkspace(name: string | undefined) {
     setDepth,
     refetch,
     runAdvancedQuery,
+    resetAdvancedQuery,
   };
 }

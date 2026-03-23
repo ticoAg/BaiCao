@@ -144,6 +144,54 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
   );
 };
 
+const WorkbenchResultPreview = ({ frames }: { frames: Message["workbenchFrames"] }) => {
+  const navigate = useNavigate();
+
+  if (!frames || frames.length === 0) return null;
+
+  return (
+    <Collapse
+      ghost
+      defaultActiveKey={["workbench"]}
+      items={[
+        {
+          key: "workbench",
+          label: <Text type="secondary">Workbench 结果</Text>,
+          children: (
+            <Space direction="vertical" size={10} style={{ width: "100%" }}>
+              {frames.map((frame) => (
+                <Card
+                  key={frame.id}
+                  size="small"
+                  styles={{ body: { padding: "10px 12px" } }}
+                  extra={<Tag style={{ margin: 0 }}>{frame.type}</Tag>}
+                >
+                  <Text strong>{frame.title}</Text>
+                  {frame.command ? (
+                    <Text type="secondary" style={{ display: "block", marginTop: 4 }}>
+                      {frame.command}
+                    </Text>
+                  ) : null}
+                  {frame.type === "graph" ? (
+                    <Button
+                      type="link"
+                      size="small"
+                      style={{ padding: 0, marginTop: 8 }}
+                      onClick={() => navigate("/graph/workbench")}
+                    >
+                      在工作台中继续查看 →
+                    </Button>
+                  ) : null}
+                </Card>
+              ))}
+            </Space>
+          ),
+        },
+      ]}
+    />
+  );
+};
+
 const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerEntityId, setDrawerEntityId] = useState<string | undefined>();
@@ -254,6 +302,9 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
                       {msg.role === "assistant" &&
                         msg.graphData &&
                         <GraphPreview graphData={msg.graphData} />}
+                      {msg.role === "assistant" &&
+                        msg.workbenchFrames &&
+                        <WorkbenchResultPreview frames={msg.workbenchFrames} />}
                       {msg.role === "assistant" &&
                         msg.sources &&
                         renderSources(msg.sources, msg.content)}
