@@ -84,6 +84,9 @@ const NodeDetail = ({ node }: NodeDetailProps) => {
         style={{ marginTop: 18 }}
         styles={detailStyles}
       >
+        <Descriptions.Item label="ID">
+          <InlineMetaValue label="节点ID" value={node.id} />
+        </Descriptions.Item>
         {node.source ? <Descriptions.Item label="来源">{node.source}</Descriptions.Item> : null}
         {node.category ? <Descriptions.Item label="分类">{node.category}</Descriptions.Item> : null}
         {node.description ? (
