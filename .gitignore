@@ -64,3 +64,4 @@ test-results/
 
 .tmp
 .tmp/neo4j-browser/
+.worktrees/
