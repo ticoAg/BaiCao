@@ -6,7 +6,8 @@ from app.pipeline.models import (
     PipelineStepState,
     PipelineStepStatus,
 )
-from app.pipeline.schemas import PipelineStepPreviewResponse
+from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
+from app.pipeline.steps import build_map_to_knowledge_model_preview
 from app.pipeline.storage import InMemoryPipelineStorage
 
 
@@ -31,6 +32,9 @@ class PipelineService:
     async def get_run(self, run_id: str) -> PipelineRun:
         return await self.storage.get_run(run_id)
 
+    async def list_runs(self) -> list[PipelineRun]:
+        return await self.storage.list_runs()
+
     async def preview_step(
         self,
         run_id: str,
@@ -38,33 +42,34 @@ class PipelineService:
     ) -> PipelineStepPreviewResponse:
         run = await self.get_run(run_id)
         step_state = run.steps[step]
-        step_state.status = PipelineStepStatus.PREVIEW_READY
+        preview_response = self._build_preview_response(run, step)
+        step_state.status = preview_response.status
         step_state.preview_version += 1
-        step_state.summary = f"{step} preview ready"
+        step_state.summary = preview_response.summary
+        step_state.preview_kind = preview_response.preview_kind
+        step_state.preview_payload = preview_response.preview_payload
+        step_state.warnings = preview_response.warnings
+        step_state.errors = preview_response.errors
         run.status = PipelineRunStatus.PENDING_REVIEW
+        preview_response.preview_payload["preview_version"] = step_state.preview_version
+        preview_response.artifacts = [
+            PipelineArtifactReference(
+                key=f"{step.value}-preview-v{step_state.preview_version}",
+                label=f"{step.value} 预览快照 v{step_state.preview_version}",
+                uri=None,
+            )
+        ]
         await self.storage.save_run(run)
-
-        return PipelineStepPreviewResponse(
-            run_id=run.id,
-            step=step,
-            status=PipelineStepStatus.PREVIEW_READY,
-            summary="步骤预览已生成",
-            preview_kind="summary",
-            preview_payload={
-                "source_type": run.source_type,
-                "source_locator": run.source_locator,
-                "step": step.value,
-                "preview_version": step_state.preview_version,
-            },
-            warnings=[],
-            errors=[],
-            artifacts=[],
-            next_step_ready=False,
-        )
+        await self.storage.save_preview_artifact(preview_response)
+        return preview_response
 
     async def confirm_step(self, run_id: str, step: PipelineStepKey) -> PipelineRun:
         run = await self.get_run(run_id)
         step_state = run.steps[step]
+        if step == PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL:
+            validation = step_state.preview_payload.get("validation", {})
+            if not validation or validation.get("is_valid") is not True:
+                raise ValueError("当前映射结果未通过共享图模型校验，不能进入下一步")
         step_state.status = PipelineStepStatus.CONFIRMED
         step_state.summary = f"{step} confirmed"
 
@@ -76,3 +81,71 @@ class PipelineService:
             run.status = PipelineRunStatus.COMPLETED
 
         return await self.storage.save_run(run)
+
+    async def rerun_step(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse:
+        return await self.preview_step(run_id, step)
+
+    async def rollback_to_step(self, run_id: str, step: PipelineStepKey) -> PipelineRun:
+        run = await self.get_run(run_id)
+        rollback_index = PIPELINE_STEP_ORDER.index(step)
+
+        for index, step_key in enumerate(PIPELINE_STEP_ORDER):
+            if index >= rollback_index:
+                run.steps[step_key].status = PipelineStepStatus.PENDING
+                run.steps[step_key].summary = None
+                run.steps[step_key].preview_kind = None
+                run.steps[step_key].preview_payload = {}
+                run.steps[step_key].warnings = []
+                run.steps[step_key].errors = []
+                if index == rollback_index:
+                    run.steps[step_key].preview_version = 0
+
+        run.current_step = step
+        run.status = PipelineRunStatus.RUNNING
+        return await self.storage.save_run(run)
+
+    async def get_latest_preview(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse:
+        preview = await self.storage.get_latest_preview(run_id, step)
+        if preview is None:
+            raise KeyError(f"Preview for step '{step.value}' not found")
+        return preview
+
+    async def list_preview_artifacts(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> list[PipelineStepPreviewResponse]:
+        return await self.storage.list_preview_artifacts(run_id, step)
+
+    def _build_preview_response(
+        self,
+        run: PipelineRun,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse:
+        if step == PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL:
+            return build_map_to_knowledge_model_preview(run)
+
+        return PipelineStepPreviewResponse(
+            run_id=run.id,
+            step=step,
+            status=PipelineStepStatus.PREVIEW_READY,
+            summary="步骤预览已生成",
+            preview_kind="summary",
+            preview_payload={
+                "source_type": run.source_type,
+                "source_locator": run.source_locator,
+                "step": step.value,
+            },
+            warnings=[],
+            errors=[],
+            artifacts=[],
+            next_step_ready=False,
+        )

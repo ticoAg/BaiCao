@@ -19,10 +19,14 @@ export const usePipelineRun = () => {
     sourceType,
     sourceLocator,
     run,
+    recentRuns,
     preview,
+    previewHistory,
     isSubmitting,
     setRun,
+    setRecentRuns,
     setPreview,
+    setPreviewHistory,
     setSubmitting,
   } = usePipelineStore();
 
@@ -48,6 +52,8 @@ export const usePipelineRun = () => {
 
       const nextPreview = await pipelineApi.previewStep(activeRun.id, activeRun.currentStep);
       setPreview(nextPreview);
+      const history = await pipelineApi.listPreviewArtifacts(activeRun.id, activeRun.currentStep);
+      setPreviewHistory(history);
     } catch (error) {
       message.error("运行预览失败，请稍后重试");
     } finally {
@@ -65,6 +71,7 @@ export const usePipelineRun = () => {
       const updatedRun = await pipelineApi.confirmStep(run.id, run.currentStep);
       setRun(updatedRun);
       setPreview(null);
+      setPreviewHistory([]);
     } catch (error) {
       message.error("确认步骤失败，请稍后重试");
     } finally {
@@ -78,25 +85,84 @@ export const usePipelineRun = () => {
       try {
         const restored = await pipelineApi.getRun(runId);
         setRun(restored);
-        setPreview(null);
+        try {
+          const latestPreview = await pipelineApi.getLatestPreview(runId, restored.currentStep);
+          setPreview(latestPreview);
+          const history = await pipelineApi.listPreviewArtifacts(runId, restored.currentStep);
+          setPreviewHistory(history);
+        } catch (error) {
+          setPreview(null);
+          setPreviewHistory([]);
+        }
       } catch (error) {
         message.error("加载处理任务失败，请稍后重试");
       } finally {
         setSubmitting(false);
       }
     },
-    [setPreview, setRun, setSubmitting],
+    [setPreview, setPreviewHistory, setRun, setSubmitting],
   );
+
+  const loadRecentRuns = useCallback(async () => {
+    try {
+      const runs = await pipelineApi.listRuns();
+      setRecentRuns(runs);
+    } catch (error) {
+      message.error("加载最近任务失败，请稍后重试");
+    }
+  }, [setRecentRuns]);
+
+  const rerunCurrentStep = useCallback(async () => {
+    if (!run) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const nextPreview = await pipelineApi.rerunStep(run.id, run.currentStep);
+      setPreview(nextPreview);
+      const history = await pipelineApi.listPreviewArtifacts(run.id, run.currentStep);
+      setPreviewHistory(history);
+    } catch (error) {
+      message.error("重跑当前步骤失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [run, setPreview, setPreviewHistory, setSubmitting]);
+
+  const rollbackCurrentStep = useCallback(async () => {
+    if (!run) {
+      return;
+    }
+    const currentIndex = FIXED_STEPS.findIndex((step) => step.key === run.currentStep);
+    const targetStep = currentIndex > 0 ? FIXED_STEPS[currentIndex - 1].key : FIXED_STEPS[0].key;
+
+    setSubmitting(true);
+    try {
+      const updatedRun = await pipelineApi.rollbackStep(run.id, targetStep);
+      setRun(updatedRun);
+      setPreview(null);
+      setPreviewHistory([]);
+    } catch (error) {
+      message.error("回退步骤失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [run, setPreview, setPreviewHistory, setRun, setSubmitting]);
 
   return {
     fixedSteps: FIXED_STEPS,
     run,
+    recentRuns,
     preview,
+    previewHistory,
     isSubmitting,
     currentStep,
     currentStepLabel,
     runPreview,
     confirmCurrentStep,
     restoreRun,
+    loadRecentRuns,
+    rerunCurrentStep,
+    rollbackCurrentStep,
   };
 };

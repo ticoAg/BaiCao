@@ -6,20 +6,26 @@ interface PipelineActionPanelProps {
   currentStepLabel: string;
   sourceType: string;
   sourceLocator: string;
+  hasRun: boolean;
   hasPreview: boolean;
   isSubmitting: boolean;
   onPreview: () => void;
   onConfirm: () => void;
+  onRerun: () => void;
+  onRollback: () => void;
 }
 
 const PipelineActionPanel = ({
   currentStepLabel,
   sourceType,
   sourceLocator,
+  hasRun,
   hasPreview,
   isSubmitting,
   onPreview,
   onConfirm,
+  onRerun,
+  onRollback,
 }: PipelineActionPanelProps) => {
   return (
     <Card data-testid="pipeline-action-panel" bordered={false}>
@@ -44,6 +50,12 @@ const PipelineActionPanel = ({
           </Button>
           <Button disabled={!hasPreview || isSubmitting} onClick={onConfirm}>
             确认进入下一步
+          </Button>
+          <Button disabled={!hasRun || isSubmitting} onClick={onRerun}>
+            重新运行当前步骤
+          </Button>
+          <Button disabled={!hasRun || isSubmitting} onClick={onRollback}>
+            回退到上一步
           </Button>
         </Space>
       </Space>

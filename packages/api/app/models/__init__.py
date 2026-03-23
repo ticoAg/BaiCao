@@ -3,7 +3,7 @@ from .source import SourceModel
 from .user import UserModel
 from .verification import VerificationModel, VerificationEvidenceModel
 from .evidence import EvidenceModel
-from .pipeline import PipelineRunModel
+from .pipeline import PipelineRunModel, PipelineStepArtifactModel
 from .enums import (
     UserRole,
     SourceType,
@@ -26,6 +26,7 @@ __all__ = [
     "VerificationEvidenceModel",
     "EvidenceModel",
     "PipelineRunModel",
+    "PipelineStepArtifactModel",
     # Enums
     "UserRole",
     "SourceType",

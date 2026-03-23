@@ -1,5 +1,7 @@
-from app.models.pipeline import PipelineRunModel
+from app.models.pipeline import PipelineRunModel, PipelineStepArtifactModel
 from app.pipeline.models import PipelineRun, PipelineRunStatus, PipelineStepKey, PipelineStepState, PipelineStepStatus
+from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
+from sqlalchemy import select
 
 
 def _serialize_steps(run: PipelineRun) -> dict[str, dict[str, object]]:
@@ -9,6 +11,10 @@ def _serialize_steps(run: PipelineRun) -> dict[str, dict[str, object]]:
             "status": state.status.value,
             "summary": state.summary,
             "preview_version": state.preview_version,
+            "preview_kind": state.preview_kind,
+            "preview_payload": state.preview_payload,
+            "warnings": state.warnings,
+            "errors": state.errors,
         }
         for step_key, state in run.steps.items()
     }
@@ -27,15 +33,38 @@ def _deserialize_run(model: PipelineRunModel) -> PipelineRun:
                 status=PipelineStepStatus(payload["status"]),
                 summary=payload.get("summary"),
                 preview_version=payload.get("preview_version", 0),
+                preview_kind=payload.get("preview_kind"),
+                preview_payload=payload.get("preview_payload", {}),
+                warnings=payload.get("warnings", []),
+                errors=payload.get("errors", []),
             )
             for step_key, payload in model.steps.items()
         },
     )
 
 
+def _deserialize_preview(model: PipelineStepArtifactModel) -> PipelineStepPreviewResponse:
+    return PipelineStepPreviewResponse(
+        run_id=model.run_id,
+        step=PipelineStepKey(model.step),
+        status=PipelineStepStatus(model.status),
+        summary=model.summary,
+        preview_kind=model.preview_kind,
+        preview_payload=model.preview_payload,
+        warnings=list(model.warnings or []),
+        errors=list(model.errors or []),
+        artifacts=[
+            PipelineArtifactReference.model_validate(artifact)
+            for artifact in (model.artifacts or [])
+        ],
+        next_step_ready=model.next_step_ready,
+    )
+
+
 class InMemoryPipelineStorage:
     def __init__(self) -> None:
         self._runs: dict[str, PipelineRun] = {}
+        self._artifacts: dict[tuple[str, PipelineStepKey], list[PipelineStepPreviewResponse]] = {}
 
     async def save_run(self, run: PipelineRun) -> PipelineRun:
         self._runs[run.id] = run
@@ -43,6 +72,34 @@ class InMemoryPipelineStorage:
 
     async def get_run(self, run_id: str) -> PipelineRun:
         return self._runs[run_id]
+
+    async def list_runs(self) -> list[PipelineRun]:
+        return list(reversed(list(self._runs.values())))
+
+    async def save_preview_artifact(
+        self,
+        preview: PipelineStepPreviewResponse,
+    ) -> PipelineStepPreviewResponse:
+        key = (preview.run_id, preview.step)
+        self._artifacts.setdefault(key, []).append(preview.model_copy(deep=True))
+        return preview
+
+    async def get_latest_preview(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse | None:
+        artifacts = self._artifacts.get((run_id, step), [])
+        if not artifacts:
+            return None
+        return artifacts[-1].model_copy(deep=True)
+
+    async def list_preview_artifacts(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> list[PipelineStepPreviewResponse]:
+        return [artifact.model_copy(deep=True) for artifact in reversed(self._artifacts.get((run_id, step), []))]
 
 
 class SQLAlchemyPipelineStorage:
@@ -76,3 +133,65 @@ class SQLAlchemyPipelineStorage:
         if model is None:
             raise KeyError(run_id)
         return _deserialize_run(model)
+
+    async def list_runs(self) -> list[PipelineRun]:
+        stmt = select(PipelineRunModel).order_by(PipelineRunModel.created_at.desc())
+        result = await self.session.execute(stmt)
+        return [_deserialize_run(model) for model in result.scalars().all()]
+
+    async def save_preview_artifact(
+        self,
+        preview: PipelineStepPreviewResponse,
+    ) -> PipelineStepPreviewResponse:
+        model = PipelineStepArtifactModel(
+            run_id=preview.run_id,
+            step=preview.step.value,
+            preview_version=int(preview.preview_payload.get("preview_version", 0)),
+            status=preview.status.value,
+            summary=preview.summary,
+            preview_kind=preview.preview_kind,
+            preview_payload=preview.preview_payload,
+            warnings=preview.warnings,
+            errors=preview.errors,
+            artifacts=[artifact.model_dump(mode="json") for artifact in preview.artifacts],
+            next_step_ready=preview.next_step_ready,
+        )
+        self.session.add(model)
+        await self.session.commit()
+        return preview
+
+    async def get_latest_preview(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse | None:
+        stmt = (
+            select(PipelineStepArtifactModel)
+            .where(
+                PipelineStepArtifactModel.run_id == run_id,
+                PipelineStepArtifactModel.step == step.value,
+            )
+            .order_by(PipelineStepArtifactModel.preview_version.desc(), PipelineStepArtifactModel.id.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model is None:
+            return None
+        return _deserialize_preview(model)
+
+    async def list_preview_artifacts(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> list[PipelineStepPreviewResponse]:
+        stmt = (
+            select(PipelineStepArtifactModel)
+            .where(
+                PipelineStepArtifactModel.run_id == run_id,
+                PipelineStepArtifactModel.step == step.value,
+            )
+            .order_by(PipelineStepArtifactModel.preview_version.desc(), PipelineStepArtifactModel.id.desc())
+        )
+        result = await self.session.execute(stmt)
+        return [_deserialize_preview(model) for model in result.scalars().all()]

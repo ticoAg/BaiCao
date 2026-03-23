@@ -6,10 +6,12 @@ const { Text } = Typography;
 interface PipelineStepRailProps {
   steps: Array<{ key: PipelineStepKey; label: string }>;
   run: PipelineRun | null;
+  recentRuns: PipelineRun[];
   currentStep: PipelineStepKey;
+  onRestoreRun: (runId: string) => void;
 }
 
-const PipelineStepRail = ({ steps, run, currentStep }: PipelineStepRailProps) => {
+const PipelineStepRail = ({ steps, run, recentRuns, currentStep, onRestoreRun }: PipelineStepRailProps) => {
   return (
     <aside data-testid="pipeline-step-rail" style={{ display: "grid", gap: 12 }}>
       {steps.map((step, index) => {
@@ -37,6 +39,41 @@ const PipelineStepRail = ({ steps, run, currentStep }: PipelineStepRailProps) =>
           </div>
         );
       })}
+      <div
+        style={{
+          border: "1px solid #d9e3db",
+          borderRadius: 12,
+          padding: 12,
+          background: "#fff",
+          display: "grid",
+          gap: 8,
+        }}
+      >
+        <Text strong>最近任务</Text>
+        {recentRuns.length === 0 ? (
+          <Text type="secondary">暂无可恢复任务</Text>
+        ) : (
+          recentRuns.map((recentRun) => (
+            <button
+              key={recentRun.id}
+              type="button"
+              onClick={() => onRestoreRun(recentRun.id)}
+              style={{
+                textAlign: "left",
+                padding: "8px 10px",
+                borderRadius: 10,
+                border: "1px solid #d9e3db",
+                background: "#f8fbf8",
+                cursor: "pointer",
+              }}
+              aria-label={`恢复任务 ${recentRun.id}`}
+            >
+              <div style={{ fontWeight: 600 }}>{recentRun.id}</div>
+              <div style={{ fontSize: 12, color: "#5f6f63" }}>{recentRun.sourceLocator}</div>
+            </button>
+          ))
+        )}
+      </div>
     </aside>
   );
 };

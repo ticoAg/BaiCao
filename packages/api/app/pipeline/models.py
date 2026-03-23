@@ -49,6 +49,10 @@ class PipelineStepState(BaseModel):
     status: PipelineStepStatus = PipelineStepStatus.PENDING
     summary: str | None = None
     preview_version: int = 0
+    preview_kind: str | None = None
+    preview_payload: dict[str, object] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
 
     model_config = ConfigDict(use_enum_values=False)
 
