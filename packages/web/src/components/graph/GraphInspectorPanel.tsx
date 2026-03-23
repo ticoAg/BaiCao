@@ -28,10 +28,13 @@ const GraphInspectorPanel = ({
     <aside
       data-testid="graph-inspector-panel"
       style={{
-        minWidth: 320,
-        width: 360,
-        borderLeft: "1px solid #e7ece9",
-        background: "#fcfdfc",
+        minWidth: 288,
+        width: 312,
+        border: "1px solid rgba(170, 190, 176, 0.38)",
+        borderRadius: 24,
+        background: "linear-gradient(180deg, rgba(253, 253, 252, 0.98) 0%, rgba(248, 250, 248, 0.96) 100%)",
+        boxShadow:
+          "0 1px 0 rgba(255, 255, 255, 0.75) inset, 0 12px 30px rgba(27, 56, 36, 0.05)",
         padding: 20,
         overflow: "auto",
       }}

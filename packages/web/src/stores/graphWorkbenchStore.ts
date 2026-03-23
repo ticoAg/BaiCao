@@ -42,8 +42,14 @@ export const useGraphWorkbenchStore = create<GraphWorkbenchStoreState>((set) => 
   setMetadataSidebarCollapsed: (collapsed) => set({ isMetadataSidebarCollapsed: collapsed }),
   setInspectorCollapsed: (collapsed) => set({ isInspectorCollapsed: collapsed }),
   clearSelection: () =>
-    set({
-      selectedItem: null,
-      inspectorMode: "overview",
+    set((state) => {
+      if (!state.selectedItem && state.inspectorMode === "overview") {
+        return state;
+      }
+
+      return {
+        selectedItem: null,
+        inspectorMode: "overview",
+      };
     }),
 }));

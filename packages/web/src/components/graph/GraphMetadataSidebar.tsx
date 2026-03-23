@@ -36,10 +36,13 @@ const GraphMetadataSidebar = ({
     <aside
       data-testid="graph-metadata-sidebar"
       style={{
-        minWidth: 280,
-        width: 320,
-        borderRight: "1px solid #e7ece9",
-        background: "#f8fbf9",
+        minWidth: 260,
+        width: 288,
+        border: "1px solid rgba(170, 190, 176, 0.42)",
+        borderRadius: 24,
+        background: "linear-gradient(180deg, rgba(249, 251, 249, 0.98) 0%, rgba(244, 248, 245, 0.96) 100%)",
+        boxShadow:
+          "0 1px 0 rgba(255, 255, 255, 0.75) inset, 0 12px 30px rgba(27, 56, 36, 0.05)",
         padding: 20,
         overflow: "auto",
       }}

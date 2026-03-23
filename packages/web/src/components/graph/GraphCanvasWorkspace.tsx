@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Empty, Button, Space, Typography } from "antd";
 import { NetworkGraph } from "@ant-design/graphs/es/components/network-graph";
 
@@ -26,9 +27,13 @@ const GraphCanvasWorkspace = ({
       data-testid="graph-canvas-workspace"
       style={{
         position: "relative",
-        minHeight: "calc(100vh - 64px)",
+        height: "100%",
+        minHeight: "100%",
+        borderRadius: 22,
+        overflow: "hidden",
         background:
-          "radial-gradient(circle at 24% 18%, rgba(228, 240, 233, 0.95) 0%, rgba(245, 248, 246, 0.92) 30%, rgba(238, 244, 240, 0.9) 100%)",
+          "radial-gradient(circle at 24% 18%, rgba(228, 240, 233, 0.96) 0%, rgba(247, 250, 248, 0.94) 34%, rgba(239, 245, 241, 0.92) 100%)",
+        boxShadow: "inset 0 0 0 1px rgba(183, 201, 188, 0.38)",
       }}
     >
       {hasGraphData ? (
@@ -54,4 +59,8 @@ const GraphCanvasWorkspace = ({
   );
 };
 
-export default GraphCanvasWorkspace;
+const MemoizedGraphCanvasWorkspace = memo(GraphCanvasWorkspace);
+
+MemoizedGraphCanvasWorkspace.displayName = "GraphCanvasWorkspace";
+
+export default MemoizedGraphCanvasWorkspace;
