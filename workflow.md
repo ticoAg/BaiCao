@@ -247,6 +247,12 @@ flowchart TD
 3. 任务完成后同步相关入口页，避免“文档存在但无法被发现”
 4. 若 `docs/superpowers/plans/` 的计划状态发生变化，确保其证据可追到代码或验收结果
 
+补充口径：
+
+5. 若 `docs/superpowers/specs/` 或 `docs/superpowers/plans/` 对应任务已经完成，稳定事实必须毕业到 `docs/architecture/`，验收与结果必须毕业到 `docs/acceptance/`
+6. 若新需求已完整覆盖旧 spec / plan，删除旧文档，不并行维护多条互相冲突的 requirement lineage
+7. 毕业或删除后，同步更新目录 `README`、入口索引和状态字段
+
 ## 5. 渐进式披露约定
 
 - 简单问题或小修复：直接输出结论、改动点和验证方式

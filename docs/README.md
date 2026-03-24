@@ -134,6 +134,21 @@ flowchart TB
 - agent 编写的实现计划、拆解和执行中间产物
 - 仅服务于某轮任务，但对回溯实现过程有价值的文档
 
+### `superpowers` 完成后的毕业 / 归档
+
+当 `docs/superpowers/specs/` 或 `docs/superpowers/plans/` 对应的任务已经完成时，默认按下面的顺序处理：
+
+1. 稳定实现事实毕业到 `docs/architecture/`
+2. 验收步骤、验证命令、结果判定与实现证据毕业到 `docs/acceptance/`
+3. 会影响默认研发动作的规则毕业到根级协作文档或 `workflow.md` / `verification-matrix.md`
+4. `superpowers` 仅保留设计理由、任务拆解和过程回溯价值，不再继续承担稳定真源
+
+补充约束：
+
+- 若新需求已完整覆盖旧 spec / plan，旧文档应直接删除，而不是并行保留两条 requirement lineage
+- 若旧 spec / plan 仍有回溯价值但未被新需求覆盖，可以继续保留在 `superpowers/`
+- 完成毕业或删除后，必须同步更新相关 `README.md`、目录索引和状态字段，避免出现“文档存在但无法发现”或“入口仍指向旧真源”
+
 ## 现状与目标的区分规则
 
 本项目文档统一使用以下口径：
@@ -182,6 +197,7 @@ flowchart TB
 - 文档解释优先，协议和字段真源优先回到代码、规划文档或共享类型
 - 需要长期维护的内容，不要只留在 `_dev/` 或 `superpowers/`
 - 验收相关内容不要混进架构说明，保持“说明”和“验证”分层
+- `superpowers` 任务完成后，稳定内容必须毕业到稳定目录；被新需求完整覆盖的旧 spec / plan 必须删除
 
 ### 引用建议
 

@@ -57,6 +57,28 @@
 - 若某个 plan 已成为当前任务入口，相关 README / workflow / acceptance 文档应优先引用该 plan
 - 稳定规则不要只写在 plan 里；需要长期维护的规则应毕业到 `AGENTS.md`、`workflow.md` 或 `docs/` 下稳定文档
 
+## 完成后的毕业 / 归档规则
+
+`superpowers` 的 `spec` / `plan` 默认是过程真源，不是长期稳定真源。
+
+当对应任务完成后，按下面的规则收口：
+
+1. 已落地且需要长期维护的边界、结构、术语和运行时约束，毕业到 `docs/architecture/`
+2. 验收步骤、验证命令、结果判定和实现证据，毕业到 `docs/acceptance/`
+3. 影响仓库默认研发动作的规则，毕业到 `AGENTS.md`、`workflow.md`、`docs/verification-matrix.md` 等稳定协作文档
+4. `docs/superpowers/` 继续保留设计决策、任务拆解和执行回溯价值
+
+删除规则：
+
+- 若新的 spec / plan 已完整覆盖旧需求，旧文档直接删除，不并行保留
+- 若旧文档仍有独立回溯价值且未被覆盖，可以继续保留
+
+完成这一步时，还必须同步：
+
+- 相关目录 `README.md`
+- 稳定文档的状态字段
+- 验收文档和计划文档中的引用路径
+
 ## 当前关系
 
 - 仓库级工作流：`../workflow.md`
