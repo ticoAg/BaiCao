@@ -59,6 +59,12 @@ const advancedResponse: GraphQueryResponse = {
   scene: defaultScene,
 };
 
+const herbGraphData: GraphData = {
+  center: herbGraph.center,
+  nodes: herbGraph.nodes,
+  edges: herbGraph.edges,
+};
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -105,7 +111,8 @@ describe("useGraphWorkspace", () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => expect(result.current.graphData).toEqual(herbGraph));
+    await waitFor(() => expect(result.current.graphData).toEqual(herbGraphData));
+    expect(result.current.scene).toEqual(defaultScene);
 
     let advancedPromise: Promise<GraphQueryResponse> | undefined;
     await act(async () => {
@@ -117,14 +124,16 @@ describe("useGraphWorkspace", () => {
 
     await waitFor(() => expect(queryGraphSpy).toHaveBeenCalledTimes(1));
     expect(result.current.loading).toBe(true);
-    expect(result.current.graphData).toEqual(herbGraph);
+    expect(result.current.graphData).toEqual(herbGraphData);
+    expect(result.current.scene).toEqual(defaultScene);
 
     rejectAdvanced?.(new Error("advanced failed"));
 
     await expect(advancedPromise).rejects.toThrow("advanced failed");
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.mode).toBe("herb");
-    expect(result.current.graphData).toEqual(herbGraph);
+    expect(result.current.graphData).toEqual(herbGraphData);
+    expect(result.current.scene).toEqual(defaultScene);
     expect(result.current.querySummary).toBeNull();
   });
 
@@ -139,7 +148,8 @@ describe("useGraphWorkspace", () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => expect(result.current.graphData).toEqual(herbGraph));
+    await waitFor(() => expect(result.current.graphData).toEqual(herbGraphData));
+    expect(result.current.scene).toEqual(defaultScene);
 
     await act(async () => {
       await result.current.runAdvancedQuery({
