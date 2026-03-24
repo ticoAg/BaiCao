@@ -211,7 +211,6 @@ async def test_create_verification_with_evidence(client, mock_db, user_id, sourc
     now = datetime.now(timezone.utc)
 
     added_objects = []
-    original_add = mock_db.add
 
     def _track_add(obj):
         added_objects.append(obj)

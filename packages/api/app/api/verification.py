@@ -9,7 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from ..core.database import get_db
-from ..models import VerificationModel, VerificationEvidenceModel, UserModel, UserRole
+from ..models import (
+    VerificationEvidenceModel,
+    VerificationModel,
+    VerificationStatus,
+    UserModel,
+    UserRole,
+)
 from ..kg.graph_service import graph_service
 
 router = APIRouter(prefix="/verifications", tags=["verifications"])
@@ -136,7 +142,7 @@ async def _resolve_active_user_id(db: AsyncSession, role: Optional[UserRole] = N
 
 def _update_verification_status(
     verification: VerificationModel,
-    new_status: str,
+    new_status: VerificationStatus,
     verifier_id: UUID,
     verdict: str
 ) -> None:
@@ -298,7 +304,7 @@ async def verify_verification(
 
     _update_verification_status(
         verification=verification,
-        new_status=status,
+        new_status=VerificationStatus(status),
         verifier_id=resolved_verifier_id,
         verdict=verdict
     )

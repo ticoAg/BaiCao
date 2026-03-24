@@ -364,6 +364,7 @@ class TestGraphQuery:
             data["scene"],
             {"truncated", "node_limit_hit", "relationship_limit_hit", "info_message"},
         )
+        assert mock_svc.query_graph.await_args is not None
         forwarded_payload = mock_svc.query_graph.await_args.args[0]
         assert forwarded_payload.node.label == NodeType.HERB
         assert forwarded_payload.node.status == NodeStatus.VERIFIED

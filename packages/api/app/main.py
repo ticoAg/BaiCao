@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import get_settings
 from .core.database import init_db
+from .kg.db import init_kg_db
 from .api.herb import router as herb_router
 from .api.graph import router as graph_router
 from .api.workbench import router as workbench_router
@@ -20,6 +22,7 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await init_kg_db()
     yield
 
 
@@ -30,7 +33,7 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    CORSMiddleware,
+    cast(Any, CORSMiddleware),
     allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],

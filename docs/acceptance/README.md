@@ -136,6 +136,8 @@ flowchart LR
 
 ### 运行证据
 
+- 命令：`uv run ruff check app tests`
+- 命令：`uv run ty check`
 - 命令：`uv run pytest`
 - 命令：`pnpm build`
 - 命令：`docker compose -f infra/docker-compose.yml up --build`

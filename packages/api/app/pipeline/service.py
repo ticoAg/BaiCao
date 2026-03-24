@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from app.pipeline.models import (
     PIPELINE_STEP_ORDER,
     PipelineRun,
@@ -8,11 +10,11 @@ from app.pipeline.models import (
 )
 from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
 from app.pipeline.steps import build_map_to_knowledge_model_preview
-from app.pipeline.storage import InMemoryPipelineStorage
+from app.pipeline.storage import InMemoryPipelineStorage, PipelineStorage
 
 
 class PipelineService:
-    def __init__(self, storage: InMemoryPipelineStorage | None = None) -> None:
+    def __init__(self, storage: PipelineStorage | None = None) -> None:
         self.storage = storage or InMemoryPipelineStorage()
 
     async def create_run(self, source_type: str, source_locator: str) -> PipelineRun:
@@ -67,7 +69,7 @@ class PipelineService:
         run = await self.get_run(run_id)
         step_state = run.steps[step]
         if step == PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL:
-            validation = step_state.preview_payload.get("validation", {})
+            validation = cast(dict[str, Any], step_state.preview_payload.get("validation", {}))
             if not validation or validation.get("is_valid") is not True:
                 raise ValueError("当前映射结果未通过共享图模型校验，不能进入下一步")
         step_state.status = PipelineStepStatus.CONFIRMED

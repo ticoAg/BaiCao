@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from knowledge_model import HerbNodeModel, NODE_TYPE_LABELS
 from pydantic import ValidationError
 
@@ -11,8 +13,9 @@ def _resolve_candidate_name(run: PipelineRun) -> str:
         if PipelineStepKey.EXTRACT in run.steps
         else []
     )
-    if extracted_candidates:
-        first_candidate = extracted_candidates[0]
+    candidates = cast(list[Any], extracted_candidates)
+    if candidates:
+        first_candidate = candidates[0]
         if isinstance(first_candidate, dict):
             return str(first_candidate.get("name", "")).strip()
     return run.source_locator.strip()

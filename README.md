@@ -268,7 +268,9 @@ OPENAI_API_KEY=your_api_key_here
 
 ```bash
 cd packages/api
-uv sync
+uv sync --extra dev
+uv run ruff check app tests
+uv run ty check
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
@@ -303,7 +305,7 @@ pnpm run verify:full
 
 含义如下：
 
-- `pnpm run test:api`：运行后端 pytest 测试
+- `pnpm run test:api`：运行后端统一工具链验证（`uv + ruff + ty + pytest -m "not integration"`）
 - `pnpm run test:integration`：运行后端真实依赖 integration 测试
 - `pnpm run test:web`：运行前端 Vitest + Testing Library 单测
 - `pnpm run test:e2e`：运行 Playwright 主链路 smoke

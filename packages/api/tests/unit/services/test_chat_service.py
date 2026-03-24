@@ -3,7 +3,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4, UUID
+from uuid import UUID
 
 pytestmark = pytest.mark.unit
 

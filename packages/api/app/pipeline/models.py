@@ -1,3 +1,4 @@
+from typing import Any
 from enum import StrEnum
 from uuid import uuid4
 
@@ -50,7 +51,7 @@ class PipelineStepState(BaseModel):
     summary: str | None = None
     preview_version: int = 0
     preview_kind: str | None = None
-    preview_payload: dict[str, object] = Field(default_factory=dict)
+    preview_payload: dict[str, Any] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
 

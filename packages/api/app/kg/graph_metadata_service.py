@@ -1,10 +1,6 @@
 from typing import Any
 
-from neo4j import AsyncGraphDatabase
-
-from ..core.config import get_settings
-
-settings = get_settings()
+from .db import cypher_rows, cypher_single
 
 
 SUMMARY_QUERY = """
@@ -44,12 +40,14 @@ RETURN count(label) AS total
 """
 
 RELATIONSHIP_TYPES_QUERY = """
-MATCH ()-[r]->()
-WITH type(r) AS rel_type, collect(DISTINCT key IN keys(r) | key) AS nested_keys, count(r) AS rel_count
+CALL db.relationshipTypes() YIELD relationshipType
+WITH relationshipType AS rel_type
+OPTIONAL MATCH ()-[r]->() WHERE type(r) = rel_type
+WITH rel_type, count(r) AS rel_count, collect(DISTINCT keys(r)) AS all_keys
 RETURN
     rel_type AS name,
     rel_count AS count,
-    reduce(acc = [], keys IN nested_keys | acc + keys) AS property_keys
+    reduce(acc = [], ks IN all_keys | acc + ks) AS property_keys
 ORDER BY name
 SKIP $offset
 LIMIT $limit
@@ -133,21 +131,27 @@ class GraphMetadataService:
     def __init__(self) -> None:
         self.driver: Any | None = None
 
-    async def connect(self) -> None:
-        if not self.driver:
-            self.driver = AsyncGraphDatabase.driver(
-                settings.neo4j_uri,
-                auth=(settings.neo4j_user, settings.neo4j_password),
-            )
-
-    async def ensure_connected(self) -> None:
-        if not self.driver:
-            await self.connect()
-
-    async def close(self) -> None:
+    async def _query_rows(
+        self,
+        query: str,
+        params: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
         if self.driver:
-            await self.driver.close()
-            self.driver = None
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.data()
+        return await cypher_rows(query, params)
+
+    async def _query_single(
+        self,
+        query: str,
+        params: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        if self.driver:
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.single()
+        return await cypher_single(query, params)
 
     def _extract_named_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
         named: dict[str, Any] = {}
@@ -169,10 +173,7 @@ class GraphMetadataService:
         }
 
     async def get_summary(self) -> dict[str, Any]:
-        await self.ensure_connected()
-        async with self.driver.session() as session:
-            rows = await (await session.run(SUMMARY_QUERY)).data()
-
+        rows = await self._query_rows(SUMMARY_QUERY)
         named = self._extract_named_rows(rows)
         labels = named.get("labels") or []
         rel_types = named.get("relationshipTypes") or []
@@ -197,10 +198,8 @@ class GraphMetadataService:
         }
 
     async def list_labels(self, q: str | None = None, limit: int = 20, offset: int = 0) -> dict[str, Any]:
-        await self.ensure_connected()
-        async with self.driver.session() as session:
-            items = await (await session.run(LABELS_QUERY, offset=offset, limit=limit)).data()
-            total_record = await (await session.run(LABELS_TOTAL_QUERY)).single()
+        items = await self._query_rows(LABELS_QUERY, {"offset": offset, "limit": limit})
+        total_record = await self._query_single(LABELS_TOTAL_QUERY)
 
         normalized_items = [
             {
@@ -220,12 +219,11 @@ class GraphMetadataService:
         limit: int = 20,
         offset: int = 0,
     ) -> dict[str, Any]:
-        await self.ensure_connected()
-        async with self.driver.session() as session:
-            items = await (
-                await session.run(RELATIONSHIP_TYPES_QUERY, offset=offset, limit=limit)
-            ).data()
-            total_record = await (await session.run(RELATIONSHIP_TYPES_TOTAL_QUERY)).single()
+        items = await self._query_rows(
+            RELATIONSHIP_TYPES_QUERY,
+            {"offset": offset, "limit": limit},
+        )
+        total_record = await self._query_single(RELATIONSHIP_TYPES_TOTAL_QUERY)
 
         normalized_items = []
         for item in items:
@@ -248,12 +246,8 @@ class GraphMetadataService:
         limit: int = 20,
         offset: int = 0,
     ) -> dict[str, Any]:
-        await self.ensure_connected()
-        async with self.driver.session() as session:
-            items = await (
-                await session.run(PROPERTY_KEYS_QUERY, offset=offset, limit=limit)
-            ).data()
-            total_record = await (await session.run(PROPERTY_KEYS_TOTAL_QUERY)).single()
+        items = await self._query_rows(PROPERTY_KEYS_QUERY, {"offset": offset, "limit": limit})
+        total_record = await self._query_single(PROPERTY_KEYS_TOTAL_QUERY)
 
         normalized_items = []
         for item in items:
@@ -273,14 +267,12 @@ class GraphMetadataService:
         return {"items": normalized_items, "total": total}
 
     async def get_schema(self) -> dict[str, Any]:
-        await self.ensure_connected()
-        async with self.driver.session() as session:
-            try:
-                indexes_rows = await (await session.run(INDEXES_QUERY)).data()
-                constraints_rows = await (await session.run(CONSTRAINTS_QUERY)).data()
-            except Exception:
-                indexes_rows = await (await session.run(LEGACY_INDEXES_QUERY)).data()
-                constraints_rows = await (await session.run(LEGACY_CONSTRAINTS_QUERY)).data()
+        try:
+            indexes_rows = await self._query_rows(INDEXES_QUERY)
+            constraints_rows = await self._query_rows(CONSTRAINTS_QUERY)
+        except Exception:
+            indexes_rows = await self._query_rows(LEGACY_INDEXES_QUERY)
+            constraints_rows = await self._query_rows(LEGACY_CONSTRAINTS_QUERY)
 
         indexes = [self._normalize_schema_item(item) for item in indexes_rows]
         constraints = [self._normalize_schema_item(item) for item in constraints_rows]

@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
-from ..models import HerbModel
 from ..services.herb_service import HerbService
 
 router = APIRouter(prefix="/herbs", tags=["herbs"])

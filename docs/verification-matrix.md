@@ -5,7 +5,7 @@
 | 改动类型 | 最低验证 |
 |---|---|
 | `packages/web/` 页面 / 组件 / 前端服务 | `pnpm run test:web`；建议补 `pnpm --dir packages/web exec vp build` |
-| `packages/api/` 服务 / 路由 / Schema | `uv run ruff check .` + `uv run pytest`（在 `packages/api/` 下执行） |
+| `packages/api/` 服务 / 路由 / Schema | `uv run ruff check app tests` + `uv run ty check` + `uv run pytest -m "not integration"`（在 `packages/api/` 下执行） |
 | `packages/shared/` 共享类型 / DTO | `pnpm --dir packages/shared typecheck` + 至少一条消费方检查（通常是 `pnpm --dir packages/web exec vp build` 或相关 contract test） |
 | `packages/db/` 图谱结构 / 导入样例 / 种子数据 | 至少一条可复现的数据或查询验证说明；若影响主链路，补 `./scripts/test_integration.sh` 或一条 API / 页面消费检查 |
 | `infra/` 编排 / 环境模板 / 配置 | `docker compose -f infra/docker-compose.yml config`；若影响运行主链路，补一条启动或健康检查 |

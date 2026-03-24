@@ -2,7 +2,8 @@
 # 支持 OpenAI 和 Anthropic 双后端，通过 .env 配置切换
 
 import logging
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
@@ -39,7 +40,7 @@ def _try_openai() -> BaseChatModel | None:
         return None
     from langchain_openai import ChatOpenAI
 
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "api_key": settings.openai_api_key,
         "model": settings.openai_model,
         "temperature": settings.llm_temperature,
@@ -58,7 +59,7 @@ def _try_anthropic() -> BaseChatModel | None:
         return None
     from langchain_anthropic import ChatAnthropic
 
-    kwargs = {
+    kwargs: dict[str, Any] = {
         "api_key": settings.anthropic_api_key,
         "model": settings.anthropic_model,
         "temperature": settings.llm_temperature,
@@ -72,7 +73,7 @@ def _try_anthropic() -> BaseChatModel | None:
 
 
 # provider 名称 → 构建函数
-_PROVIDERS: dict[str, callable] = {
+_PROVIDERS: dict[str, Callable[[], BaseChatModel | None]] = {
     "openai": _try_openai,
     "anthropic": _try_anthropic,
 }

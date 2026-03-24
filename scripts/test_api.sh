@@ -5,4 +5,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 cd "$ROOT/packages/api"
 uv sync --extra dev
-uv run python -m pytest -q -m "unit or contract"
+uv run ruff check app tests
+uv run ty check
+uv run pytest -m "not integration"

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from .models import PipelineStepKey, PipelineStepStatus
@@ -17,7 +19,7 @@ class PipelineStepPreviewResponse(BaseModel):
     status: PipelineStepStatus
     summary: str
     preview_kind: str
-    preview_payload: dict[str, object] = Field(default_factory=dict)
+    preview_payload: dict[str, Any] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     artifacts: list[PipelineArtifactReference] = Field(default_factory=list)
@@ -39,6 +41,6 @@ class PipelineRunResponse(BaseModel):
     source_locator: str
     status: str
     current_step: str
-    steps: dict[str, dict[str, object]]
+    steps: dict[str, dict[str, Any]]
 
     model_config = ConfigDict(use_enum_values=False)

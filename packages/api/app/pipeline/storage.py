@@ -1,10 +1,40 @@
-from app.models.pipeline import PipelineRunModel, PipelineStepArtifactModel
-from app.pipeline.models import PipelineRun, PipelineRunStatus, PipelineStepKey, PipelineStepState, PipelineStepStatus
-from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
+from typing import Any, Protocol
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.pipeline import PipelineRunModel, PipelineStepArtifactModel
+from app.pipeline.models import (
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineStepKey,
+    PipelineStepState,
+    PipelineStepStatus,
+)
+from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
 
 
-def _serialize_steps(run: PipelineRun) -> dict[str, dict[str, object]]:
+class PipelineStorage(Protocol):
+    async def save_run(self, run: PipelineRun) -> PipelineRun: ...
+    async def get_run(self, run_id: str) -> PipelineRun: ...
+    async def list_runs(self) -> list[PipelineRun]: ...
+    async def save_preview_artifact(
+        self,
+        preview: PipelineStepPreviewResponse,
+    ) -> PipelineStepPreviewResponse: ...
+    async def get_latest_preview(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> PipelineStepPreviewResponse | None: ...
+    async def list_preview_artifacts(
+        self,
+        run_id: str,
+        step: PipelineStepKey,
+    ) -> list[PipelineStepPreviewResponse]: ...
+
+
+def _serialize_steps(run: PipelineRun) -> dict[str, dict[str, Any]]:
     return {
         step_key.value: {
             "key": state.key.value,
@@ -103,7 +133,7 @@ class InMemoryPipelineStorage:
 
 
 class SQLAlchemyPipelineStorage:
-    def __init__(self, session) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def save_run(self, run: PipelineRun) -> PipelineRun:
@@ -146,7 +176,7 @@ class SQLAlchemyPipelineStorage:
         model = PipelineStepArtifactModel(
             run_id=preview.run_id,
             step=preview.step.value,
-            preview_version=int(preview.preview_payload.get("preview_version", 0)),
+            preview_version=int(preview.preview_payload.get("preview_version") or 0),
             status=preview.status.value,
             summary=preview.summary,
             preview_kind=preview.preview_kind,

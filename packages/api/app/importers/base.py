@@ -5,7 +5,7 @@ SSOT 数据模型的核心抽象层，支持 CSV/JSONL/HuggingFace 等多种数�
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Iterable, Any
+from typing import Iterable
 
 from ..models.enums import EdgeType, NodeStatus, NodeType
 

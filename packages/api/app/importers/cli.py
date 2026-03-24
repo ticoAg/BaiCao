@@ -8,14 +8,13 @@
 """
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
 # 添加父目录到 path 以便导入 app 模块
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from app.importers import CSVImporter, JSONLImporter, GraphRecord
+from app.importers import CSVImporter, JSONLImporter
 
 
 def detect_importer(path: str) -> tuple[str, CSVImporter | JSONLImporter]:
@@ -38,7 +37,7 @@ def print_stats(name: str, stats, dry_run: bool):
     print(f"  成功: {stats.success}")
     print(f"  失败: {stats.failed}")
     if stats.errors:
-        print(f"  错误 (前10条):")
+        print("  错误 (前10条):")
         for err in stats.errors[:10]:
             print(f"    - {err}")
         if len(stats.errors) > 10:

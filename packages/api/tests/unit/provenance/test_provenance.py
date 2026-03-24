@@ -10,7 +10,7 @@ Data Model: Entity -> has_evidence -> Evidence -> derived_from -> Source
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from app.provenance import ProvenanceService

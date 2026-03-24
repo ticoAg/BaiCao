@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
+from typing import Any
 from uuid import uuid4
 
 from ..kg.graph_service import graph_service
@@ -172,7 +173,7 @@ class WorkbenchService:
         details: list[str] | None = None,
         command: str | None = None,
     ) -> WorkbenchFrame:
-        payload = {"message": message}
+        payload: dict[str, Any] = {"message": message}
         if details:
             payload["details"] = details
         return WorkbenchFrame(

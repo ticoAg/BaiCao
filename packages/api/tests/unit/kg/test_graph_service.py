@@ -156,20 +156,39 @@ async def test_create_herb(graph_service, mock_neo4j_driver):
 
 
 @pytest.mark.asyncio
-async def test_link_herb_parent(graph_service, mock_neo4j_driver):
-    """Test linking herb to parent using PARENT_OF relationship"""
-    mock_record = MagicMock()
-    mock_record.__getitem__ = lambda self, key: {
-        "r": {"type": "PARENT_OF", "status": "pending"}
-    }[key]
+async def test_create_relationship(graph_service):
+    """Test generic relationship creation delegates to neomodel manager"""
+    from_node = MagicMock()
+    rel_manager = MagicMock()
+    rel_manager.connect = AsyncMock(return_value=MagicMock(__properties__={"status": "pending"}))
+    from_node.has_efficacy = rel_manager
+    to_node = MagicMock()
 
-    mock_result = MagicMock()
-    mock_result.single = AsyncMock(return_value=mock_record)
-    mock_session = MagicMock()
-    mock_session.run = AsyncMock(return_value=mock_result)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=None)
-    mock_neo4j_driver.session = MagicMock(return_value=mock_session)
+    herb_model = MagicMock()
+    herb_model.nodes.get = AsyncMock(return_value=from_node)
+    efficacy_model = MagicMock()
+    efficacy_model.nodes.get = AsyncMock(return_value=to_node)
+
+    with patch.dict(
+        "app.kg.graph_service.NODE_MODEL_MAP",
+        {"Herb": herb_model, "Efficacy": efficacy_model},
+        clear=False,
+    ):
+        result = await graph_service.create_relationship(
+            "Herb", "RenShen", "Efficacy", "BuQi", "HAS_EFFICACY"
+        )
+
+    assert result["status"] == "pending"
+    assert result["type"] == "HAS_EFFICACY"
+    rel_manager.connect.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_link_herb_parent(graph_service):
+    """Test linking herb to parent using PARENT_OF relationship"""
+    graph_service.create_relationship = AsyncMock(
+        return_value={"type": "PARENT_OF", "status": "pending"}
+    )
 
     result = await graph_service.link_herb_parent(
         child_name="RenShen",
@@ -178,24 +197,17 @@ async def test_link_herb_parent(graph_service, mock_neo4j_driver):
 
     assert result["type"] == "PARENT_OF"
     assert result["status"] == "pending"
-    mock_session.run.assert_called_once()
+    graph_service.create_relationship.assert_awaited_once_with(
+        "Herb", "RenShen", "Herb", "Ginseng", "PARENT_OF"
+    )
 
 
 @pytest.mark.asyncio
-async def test_link_herb_child(graph_service, mock_neo4j_driver):
+async def test_link_herb_child(graph_service):
     """Test linking herb to child using CHILD_OF relationship"""
-    mock_record = MagicMock()
-    mock_record.__getitem__ = lambda self, key: {
-        "r": {"type": "CHILD_OF", "status": "pending"}
-    }[key]
-
-    mock_result = MagicMock()
-    mock_result.single = AsyncMock(return_value=mock_record)
-    mock_session = MagicMock()
-    mock_session.run = AsyncMock(return_value=mock_result)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=None)
-    mock_neo4j_driver.session = MagicMock(return_value=mock_session)
+    graph_service.create_relationship = AsyncMock(
+        return_value={"type": "CHILD_OF", "status": "pending"}
+    )
 
     result = await graph_service.link_herb_child(
         parent_name="Ginseng",
@@ -204,23 +216,17 @@ async def test_link_herb_child(graph_service, mock_neo4j_driver):
 
     assert result["type"] == "CHILD_OF"
     assert result["status"] == "pending"
+    graph_service.create_relationship.assert_awaited_once_with(
+        "Herb", "Ginseng", "Herb", "RenShen", "CHILD_OF"
+    )
 
 
 @pytest.mark.asyncio
-async def test_link_herb_source(graph_service, mock_neo4j_driver):
+async def test_link_herb_source(graph_service):
     """Test linking herb to source using ORIGINATED_FROM relationship"""
-    mock_record = MagicMock()
-    mock_record.__getitem__ = lambda self, key: {
-        "r": {"type": "ORIGINATED_FROM", "status": "pending"}
-    }[key]
-
-    mock_result = MagicMock()
-    mock_result.single = AsyncMock(return_value=mock_record)
-    mock_session = MagicMock()
-    mock_session.run = AsyncMock(return_value=mock_result)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=None)
-    mock_neo4j_driver.session = MagicMock(return_value=mock_session)
+    graph_service.create_relationship = AsyncMock(
+        return_value={"type": "ORIGINATED_FROM", "status": "pending"}
+    )
 
     result = await graph_service.link_herb_source(
         herb_name="RenShen",
@@ -229,6 +235,9 @@ async def test_link_herb_source(graph_service, mock_neo4j_driver):
 
     assert result["type"] == "ORIGINATED_FROM"
     assert result["status"] == "pending"
+    graph_service.create_relationship.assert_awaited_once_with(
+        "Herb", "RenShen", "Source", "Jilin", "ORIGINATED_FROM"
+    )
 
 
 @pytest.mark.asyncio

@@ -77,7 +77,7 @@ def create_mock_graph_response(herb_name="人参"):
 def create_mock_chat_response(session_id=None):
     """Create a consistent mock chat response."""
     return {
-        "answer": f"关于人参的信息：\n- 分类：补气药\n- 主要功效：补气",
+        "answer": "关于人参的信息：\n- 分类：补气药\n- 主要功效：补气",
         "reasoning_chain": [
             {
                 "step": 1,
@@ -107,8 +107,6 @@ async def test_ask_question(client, mock_db):
     """Test POST /api/v1/chat/question returns answer with reasoning chain."""
     question = "人参有什么功效？"
     session_id = str(uuid4())
-
-    mock_response = create_mock_chat_response(session_id)
 
     with patch("app.services.chat_service.graph_service") as mock_graph:
         mock_graph.get_herb_graph = AsyncMock(return_value=create_mock_graph_response())

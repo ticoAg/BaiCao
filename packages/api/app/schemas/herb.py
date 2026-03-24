@@ -5,8 +5,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from ..models.enums import HerbType
-
 
 class HerbCreate(BaseModel):
     """创建药材（PostgreSQL）"""

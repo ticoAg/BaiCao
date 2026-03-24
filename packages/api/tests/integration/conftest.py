@@ -1,4 +1,7 @@
+# ruff: noqa: E402
+
 import sys
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
@@ -33,7 +36,7 @@ def demo_seed_data() -> dict[str, object]:
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def seeded_demo_environment() -> None:
+async def seeded_demo_environment() -> AsyncIterator[None]:
     await engine.dispose()
     await seed_postgres()
     await seed_neo4j()

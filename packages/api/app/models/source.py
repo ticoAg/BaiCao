@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import String, Text, DateTime, Enum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .herb import Base, utc_now
 from .enums import SourceType

@@ -5,8 +5,7 @@ Refactoring 2: Add response validation helpers.
 Refactoring 3: Create consistent mock fixtures.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
 
@@ -93,7 +92,7 @@ def make_herb(**kwargs) -> MockHerb:
     return MockHerb(**kwargs)
 
 
-def make_answer_response(session_id: str = None) -> dict:
+def make_answer_response(session_id: str | None = None) -> dict:
     """Build a standard ChatService.answer_question return value."""
     return {
         "answer": "Test answer about herbs",
@@ -112,7 +111,7 @@ def make_answer_response(session_id: str = None) -> dict:
     }
 
 
-def make_session_data(session_id: str = None) -> dict:
+def make_session_data(session_id: str | None = None) -> dict:
     """Build a standard session dict."""
     sid = session_id or str(uuid4())
     return {

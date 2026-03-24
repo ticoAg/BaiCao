@@ -228,6 +228,7 @@ class ChatService:
             raise ValueError("Response 'workbench_frames' must be a list when provided")
 
     async def _extract_entities(self, question: str) -> list[str]:
+        assert herb_entity_pattern.pattern is not None
         matches = herb_entity_pattern.pattern.findall(question)
         entities = list(dict.fromkeys(matches))
         return entities if entities else [DEFAULT_HERB]

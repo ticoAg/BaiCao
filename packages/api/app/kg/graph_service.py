@@ -4,9 +4,6 @@
 from typing import Optional, Any, Dict, List
 from uuid import uuid4 as uuid_module_uuid4
 
-from neo4j import AsyncGraphDatabase
-
-from ..core.config import get_settings
 from ..models.enums import (
     NodeType,
     NodeStatus,
@@ -15,8 +12,8 @@ from ..models.enums import (
     TraitCategory,
 )
 from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
-
-settings = get_settings()
+from .db import cypher_rows, cypher_single
+from .models import NODE_MODEL_MAP, REL_TYPE_TO_ATTR
 
 QUERY_LABEL_DISPLAY = {
     NodeType.HERB.value: "药材",
@@ -155,26 +152,34 @@ class GraphService:
     def __init__(self) -> None:
         self.driver: Optional[Any] = None
 
-    async def connect(self) -> None:
-        """建立 Neo4j 连接"""
-        if not self.driver:
-            self.driver = AsyncGraphDatabase.driver(
-                settings.neo4j_uri,
-                auth=(settings.neo4j_user, settings.neo4j_password)
-            )
-
     async def close(self) -> None:
-        """关闭 Neo4j 连接"""
-        if self.driver:
+        if self.driver is not None and hasattr(self.driver, "close"):
             await self.driver.close()
-            self.driver = None
-
-    async def ensure_connected(self) -> None:
-        """确保已连接"""
-        if not self.driver:
-            await self.connect()
+        self.driver = None
 
     # ============ Helper Methods ============
+
+    async def _query_rows(
+        self,
+        query: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        if self.driver:
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.data()
+        return await cypher_rows(query, params)
+
+    async def _query_single(
+        self,
+        query: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any] | None:
+        if self.driver:
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.single()
+        return await cypher_single(query, params)
 
     def _map_node_to_dict(self, node: Any, labels: Optional[List[str]] = None) -> Dict[str, Any]:
         """Map Neo4j node to dictionary with optional labels"""
@@ -185,7 +190,69 @@ class GraphService:
 
     def _map_relationship_to_dict(self, rel: Any) -> Dict[str, Any]:
         """Map Neo4j relationship to dictionary"""
+        if hasattr(rel, "__properties__"):
+            return dict(rel.__properties__)
         return dict(rel)
+
+    def _default_relationship_props(
+        self,
+        extra_props: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        props: Dict[str, Any] = {
+            "status": NodeStatus.PENDING.value,
+            "verification_id": None,
+            "verified_by": None,
+            "verified_at": None,
+        }
+        if extra_props:
+            props.update(extra_props)
+        return props
+
+    def _clean_properties(self, props: Dict[str, Any]) -> Dict[str, Any]:
+        return {key: value for key, value in props.items() if value is not None}
+
+    def _map_connected_relationship(
+        self,
+        rel: Any,
+        rel_type: str,
+    ) -> Dict[str, Any]:
+        mapped = self._map_relationship_to_dict(rel) if rel is not None else {}
+        mapped.setdefault("type", rel_type)
+        return mapped
+
+    async def get_relationships(
+        self,
+        node_id: str,
+        status: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        query = """
+        MATCH (n {id: $node_id})-[r]-(connected)
+        WHERE $status IS NULL OR r.status = $status
+        RETURN {
+            id: coalesce(r.id, elementId(r)),
+            rel_type: type(r),
+            status: coalesce(r.status, 'pending'),
+            verification_id: r.verification_id,
+            verified_by: r.verified_by,
+            verified_at: toString(r.verified_at),
+            source: {
+                id: startNode(r).id,
+                name: startNode(r).name,
+                source: startNode(r).source,
+                status: startNode(r).status,
+                labels: labels(startNode(r))
+            },
+            target: {
+                id: endNode(r).id,
+                name: endNode(r).name,
+                source: endNode(r).source,
+                status: endNode(r).status,
+                labels: labels(endNode(r))
+            }
+        } AS edge
+        """
+        rows = await self._query_rows(query, {"node_id": node_id, "status": status})
+        return self._dedupe_edges([row["edge"] for row in rows if row.get("edge")])
 
     def _record_value(self, record: Any, key: str) -> Any:
         """Safely read a Neo4j record-like object by key."""
@@ -456,13 +523,25 @@ class GraphService:
             if hop_limit <= 0:
                 break
 
-            result = await session.run(
-                expand_query,
-                frontier_ids=frontier_ids,
-                hop_limit=hop_limit,
-                **expand_params,
-            )
-            rows = (await result.data())[:hop_limit]
+            if session is not None:
+                result = await session.run(
+                    expand_query,
+                    frontier_ids=frontier_ids,
+                    hop_limit=hop_limit,
+                    **expand_params,
+                )
+                rows = (await result.data())[:hop_limit]
+            else:
+                rows = (
+                    await self._query_rows(
+                        expand_query,
+                        {
+                            "frontier_ids": frontier_ids,
+                            "hop_limit": hop_limit,
+                            **expand_params,
+                        },
+                    )
+                )[:hop_limit]
             next_frontier: List[str] = []
 
             for row in rows:
@@ -498,35 +577,26 @@ class GraphService:
         properties: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """创建任意类型节点（默认 status=pending）"""
-        await self.ensure_connected()
-
         node_id = str(uuid_module_uuid4())
         props: Dict[str, Any] = properties or {}
         props.setdefault("id", node_id)
         props.setdefault("name", name)
         props.setdefault("source", source)
-        props.setdefault("imported_at", "datetime()")
         props.setdefault("status", NodeStatus.PENDING.value)
         props.setdefault("verification_id", None)
         props.setdefault("verified_by", None)
         props.setdefault("verified_at", None)
 
         query = QUERY_CREATE_NODE.format(label=label)
-        async with self.driver.session() as session:
-            result = await session.run(query, props=props)
-            record = await result.single()
-            return dict(record["n"])
+        record = await self._query_single(query, {"props": props})
+        return dict(record["n"]) if record else {}
 
     async def get_node(self, node_id: str) -> Optional[Dict[str, Any]]:
         """根据 ID 获取节点"""
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_GET_NODE_BY_ID, node_id=node_id)
-            record = await result.single()
-            if record:
-                return self._map_node_to_dict(record["n"], record["labels"])
-            return None
+        record = await self._query_single(QUERY_GET_NODE_BY_ID, {"node_id": node_id})
+        if record:
+            return self._map_node_to_dict(record["n"], record["labels"])
+        return None
 
     async def expand_node_graph(
         self,
@@ -535,25 +605,21 @@ class GraphService:
         limit: int = 20,
     ) -> Dict[str, Any]:
         """按节点 ID 扩展一跳邻居子图，供前端双击节点展开。"""
-        await self.ensure_connected()
-
         bounded_depth = max(1, min(depth, 1))
         bounded_limit = max(1, min(limit, 50))
 
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_GET_NODE_BY_ID, node_id=node_id)
-            record = await result.single()
-            if not record:
-                return {"center": None, "nodes": [], "edges": []}
+        record = await self._query_single(QUERY_GET_NODE_BY_ID, {"node_id": node_id})
+        if not record:
+            return {"center": None, "nodes": [], "edges": []}
 
-            center = self._map_node_to_dict(record["n"], record["labels"])
-            expanded_nodes, edges = await self._expand_query_subgraph(
-                session,
-                [node_id],
-                bounded_depth,
-                bounded_limit,
-                {},
-            )
+        center = self._map_node_to_dict(record["n"], record["labels"])
+        expanded_nodes, edges = await self._expand_query_subgraph(
+            self.driver.session() if self.driver else None,
+            [node_id],
+            bounded_depth,
+            bounded_limit,
+            {},
+        )
 
         return {
             "center": center,
@@ -563,15 +629,30 @@ class GraphService:
 
     async def get_node_by_name(self, name: str, label: str) -> Optional[Dict[str, Any]]:
         """根据名称和类型获取节点"""
-        await self.ensure_connected()
-
         query = QUERY_GET_NODE_BY_NAME.format(label=label)
-        async with self.driver.session() as session:
-            result = await session.run(query, name=name)
-            record = await result.single()
-            if record:
-                return self._map_node_to_dict(record["n"], record["labels"])
-            return None
+        record = await self._query_single(query, {"name": name})
+        if record:
+            return self._map_node_to_dict(record["n"], record["labels"])
+        return None
+
+    async def create_relationship(
+        self,
+        from_label: str,
+        from_name: str,
+        to_label: str,
+        to_name: str,
+        rel_type: str,
+        extra_props: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        from_node = await NODE_MODEL_MAP[from_label].nodes.get(name=from_name)
+        to_node = await NODE_MODEL_MAP[to_label].nodes.get(name=to_name)
+        rel_attr = REL_TYPE_TO_ATTR[rel_type]
+        rel_manager = getattr(from_node, rel_attr)
+        rel = await rel_manager.connect(
+            to_node,
+            properties=self._clean_properties(self._default_relationship_props(extra_props)),
+        )
+        return self._map_connected_relationship(rel, rel_type)
 
     # ============ 药材操作 ============
 
@@ -612,27 +693,14 @@ class GraphService:
         quantity: Optional[str] = None
     ) -> Dict[str, Any]:
         """创建药材-成分关系 (Herb)-[:CONTAINS]->(Component)"""
-        await self.ensure_connected()
-
-        props: Dict[str, Any] = {
-            "status": NodeStatus.PENDING.value,
-            "verification_id": None,
-            "verified_by": None,
-            "verified_at": None,
-            "quantity": quantity
-        }
-
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (c:Component {name: $component_name})
-        CREATE (h)-[r:CONTAINS]->(c)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, component_name=component_name, props=props)
-            record = await result.single()
-            return self._map_relationship_to_dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Component",
+            component_name,
+            EdgeType.CONTAINS.value,
+            {"quantity": quantity},
+        )
 
     async def link_herb_parent(
         self,
@@ -643,26 +711,13 @@ class GraphService:
 
         表示child是parent的子类/衍生物
         """
-        await self.ensure_connected()
-
-        props: Dict[str, Any] = {
-            "status": NodeStatus.PENDING.value,
-            "verification_id": None,
-            "verified_by": None,
-            "verified_at": None
-        }
-
-        query = """
-        MATCH (child:Herb {name: $child_name})
-        MATCH (parent:Herb {name: $parent_name})
-        CREATE (child)-[r:PARENT_OF]->(parent)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, child_name=child_name, parent_name=parent_name, props=props)
-            record = await result.single()
-            return self._map_relationship_to_dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            child_name,
+            "Herb",
+            parent_name,
+            EdgeType.PARENT_OF.value,
+        )
 
     async def link_herb_child(
         self,
@@ -673,26 +728,13 @@ class GraphService:
 
         表示parent是child的父级/来源
         """
-        await self.ensure_connected()
-
-        props: Dict[str, Any] = {
-            "status": NodeStatus.PENDING.value,
-            "verification_id": None,
-            "verified_by": None,
-            "verified_at": None
-        }
-
-        query = """
-        MATCH (parent:Herb {name: $parent_name})
-        MATCH (child:Herb {name: $child_name})
-        CREATE (parent)-[r:CHILD_OF]->(child)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, parent_name=parent_name, child_name=child_name, props=props)
-            record = await result.single()
-            return self._map_relationship_to_dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            parent_name,
+            "Herb",
+            child_name,
+            EdgeType.CHILD_OF.value,
+        )
 
     async def link_herb_source(
         self,
@@ -703,26 +745,13 @@ class GraphService:
 
         表示herb来源于source（产地、供应商等）
         """
-        await self.ensure_connected()
-
-        props: Dict[str, Any] = {
-            "status": NodeStatus.PENDING.value,
-            "verification_id": None,
-            "verified_by": None,
-            "verified_at": None
-        }
-
-        query = """
-        MATCH (herb:Herb {name: $herb_name})
-        MATCH (source:Source {name: $source_name})
-        CREATE (herb)-[r:ORIGINATED_FROM]->(source)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, source_name=source_name, props=props)
-            record = await result.single()
-            return self._map_relationship_to_dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Source",
+            source_name,
+            EdgeType.ORIGINATED_FROM.value,
+        )
 
     # ============ 品种操作 ============
 
@@ -746,39 +775,23 @@ class GraphService:
 
     async def link_variant_of(self, variant_name: str, herb_name: str) -> Dict[str, Any]:
         """创建品种-药材关系 (Variant)-[:VARIANT_OF]->(Herb)"""
-        await self.ensure_connected()
-
-        props = {"status": NodeStatus.PENDING.value}
-
-        query = """
-        MATCH (v:Variant {name: $variant_name})
-        MATCH (h:Herb {name: $herb_name})
-        CREATE (v)-[r:VARIANT_OF]->(h)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, variant_name=variant_name, herb_name=herb_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Variant",
+            variant_name,
+            "Herb",
+            herb_name,
+            EdgeType.VARIANT_OF.value,
+        )
 
     async def link_herb_has_variant(self, herb_name: str, variant_name: str) -> Dict[str, Any]:
         """创建药材-品种关系 (Herb)-[:HAS_VARIANT]->(Variant)"""
-        await self.ensure_connected()
-
-        props = {"status": NodeStatus.PENDING.value}
-
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (v:Variant {name: $variant_name})
-        CREATE (h)-[r:HAS_VARIANT]->(v)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, variant_name=variant_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Variant",
+            variant_name,
+            EdgeType.HAS_VARIANT.value,
+        )
 
     # ============ 工艺操作 ============
 
@@ -805,27 +818,19 @@ class GraphService:
         conditions: Optional[str] = None
     ) -> Dict[str, Any]:
         """创建药材-工艺关系 (Herb)-[:PROCESSED_BY]->(Process)"""
-        await self.ensure_connected()
-
-        props = {
-            "status": NodeStatus.PENDING.value,
-            "duration": duration,
-            "conditions": conditions,
-            "start_date": None,
-            "end_date": None
-        }
-
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (p:Process {name: $process_name})
-        CREATE (h)-[r:PROCESSED_BY]->(p)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, process_name=process_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Process",
+            process_name,
+            EdgeType.PROCESSED_BY.value,
+            {
+                "duration": duration,
+                "conditions": conditions,
+                "start_date": None,
+                "end_date": None,
+            },
+        )
 
     # ============ 性状操作 ============
 
@@ -851,26 +856,18 @@ class GraphService:
         year_range: Optional[str] = None
     ) -> Dict[str, Any]:
         """创建药材-性状关系 (Herb)-[:HAS_TRAIT]->(Trait)"""
-        await self.ensure_connected()
-
-        props = {
-            "status": NodeStatus.PENDING.value,
-            "value": value,
-            "observation": observation,
-            "year_range": year_range
-        }
-
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (t:Trait {name: $trait_name})
-        CREATE (h)-[r:HAS_TRAIT]->(t)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, trait_name=trait_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Trait",
+            trait_name,
+            EdgeType.HAS_TRAIT.value,
+            {
+                "value": value,
+                "observation": observation,
+                "year_range": year_range,
+            },
+        )
 
     # ============ 时间点操作 ============
 
@@ -895,29 +892,21 @@ class GraphService:
         start_date: Optional[str] = None
     ) -> Dict[str, Any]:
         """创建药材-储存时间关系 (Herb)-[:STORED_FOR]->(TimePoint)"""
-        await self.ensure_connected()
-
-        props = {
-            "status": NodeStatus.PENDING.value,
-            "years": years,
-            "start_date": start_date,
-            "end_date": None
-        }
-
         # 查找或创建时间点节点
         await self.create_timepoint(years, "system")
-
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (t:TimePoint {years: $years})
-        CREATE (h)-[r:STORED_FOR]->(t)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, years=years, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        timepoint_name = f"{years}年"
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "TimePoint",
+            timepoint_name,
+            EdgeType.STORED_FOR.value,
+            {
+                "years": years,
+                "start_date": start_date,
+                "end_date": None,
+            },
+        )
 
     # ============ 功效/性味/归经操作 ============
 
@@ -935,51 +924,33 @@ class GraphService:
 
     async def link_herb_has_efficacy(self, herb_name: str, efficacy_name: str) -> Dict[str, Any]:
         """创建药材-功效关系"""
-        await self.ensure_connected()
-        props = {"status": NodeStatus.PENDING.value}
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (e:Efficacy {name: $efficacy_name})
-        CREATE (h)-[r:HAS_EFFICACY]->(e)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, efficacy_name=efficacy_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Efficacy",
+            efficacy_name,
+            EdgeType.HAS_EFFICACY.value,
+        )
 
     async def link_herb_has_flavor(self, herb_name: str, flavor_name: str) -> Dict[str, Any]:
         """创建药材-性味关系"""
-        await self.ensure_connected()
-        props = {"status": NodeStatus.PENDING.value}
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (f:Flavor {name: $flavor_name})
-        CREATE (h)-[r:HAS_FLAVOR]->(f)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, flavor_name=flavor_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Flavor",
+            flavor_name,
+            EdgeType.HAS_FLAVOR.value,
+        )
 
     async def link_herb_enters_meridian(self, herb_name: str, meridian_name: str) -> Dict[str, Any]:
         """创建药材-归经关系"""
-        await self.ensure_connected()
-        props = {"status": NodeStatus.PENDING.value}
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (m:Meridian {name: $meridian_name})
-        CREATE (h)-[r:ENTERS_MERIDIAN]->(m)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(query, herb_name=herb_name, meridian_name=meridian_name, props=props)
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Meridian",
+            meridian_name,
+            EdgeType.ENTERS_MERIDIAN.value,
+        )
 
     async def create_disease(
         self, name: str, source: str, tcm_type: Optional[str] = None
@@ -989,56 +960,36 @@ class GraphService:
             label=NodeType.DISEASE.value,
             name=name,
             source=source,
-            extra_props={"tcm_type": tcm_type} if tcm_type else {},
+            properties={"tcm_type": tcm_type} if tcm_type else {},
         )
 
     async def link_herb_treats(self, herb_name: str, disease_name: str) -> Dict[str, Any]:
         """创建药材-主治关系 (Herb)-[:TREATS]->(Disease)"""
-        await self.ensure_connected()
-        props = {"status": NodeStatus.PENDING.value}
-        query = """
-        MATCH (h:Herb {name: $herb_name})
-        MATCH (d:Disease {name: $disease_name})
-        CREATE (h)-[r:TREATS]->(d)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(
-                query, herb_name=herb_name, disease_name=disease_name, props=props
-            )
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name,
+            "Disease",
+            disease_name,
+            EdgeType.TREATS.value,
+        )
 
     async def link_herb_similar(
         self, herb_name_1: str, herb_name_2: str, similarity_score: float = 0.0
     ) -> Dict[str, Any]:
         """创建药材相似关系 (Herb)-[:SIMILAR_TO]->(Herb)"""
-        await self.ensure_connected()
-        props = {"status": NodeStatus.PENDING.value, "similarity_score": similarity_score}
-        query = """
-        MATCH (h1:Herb {name: $herb_name_1})
-        MATCH (h2:Herb {name: $herb_name_2})
-        CREATE (h1)-[r:SIMILAR_TO]->(h2)
-        SET r = $props
-        RETURN r
-        """
-        async with self.driver.session() as session:
-            result = await session.run(
-                query,
-                herb_name_1=herb_name_1,
-                herb_name_2=herb_name_2,
-                props=props,
-            )
-            record = await result.single()
-            return dict(record["r"])
+        return await self.create_relationship(
+            "Herb",
+            herb_name_1,
+            "Herb",
+            herb_name_2,
+            EdgeType.SIMILAR_TO.value,
+            {"similarity_score": similarity_score},
+        )
 
     # ============ 图谱查询 ============
 
     async def get_herb_graph(self, herb_name: str, depth: int = 1) -> Dict[str, Any]:
         """获取以药材为中心的完整图谱"""
-        await self.ensure_connected()
-
         query = f"""
         MATCH (h:Herb {{name: $name}})
         OPTIONAL MATCH path = (h)-[*1..{depth}]-(connected)
@@ -1076,39 +1027,35 @@ class GraphService:
             ) AS edges
         """
 
-        async with self.driver.session() as session:
-            result = await session.run(query, name=herb_name)
-            record = await result.single()
-            center = self._record_value(record, "center") if record else None
-            if center:
-                nodes = self._dedupe_nodes([center, *(self._record_value(record, "nodes") or [])])
-                edges = self._dedupe_edges(self._record_value(record, "edges") or [])
-                return {
-                    "center": center,
-                    "nodes": nodes,
-                    "edges": edges,
-                    "scene": self._build_scene_info(),
-                }
-
-            legacy_center = self._record_value(record, "h") if record else None
-            if legacy_center:
-                return {
-                    "center": self._map_node_to_dict(legacy_center),
-                    "nodes": [self._map_node_to_dict(n) for n in self._record_value(record, "nodes") or []],
-                    "edges": [self._map_relationship_to_dict(r) for r in self._record_value(record, "edges") or []],
-                    "scene": self._build_scene_info(),
-                }
+        record = await self._query_single(query, {"name": herb_name})
+        center = self._record_value(record, "center") if record else None
+        if center:
+            nodes = self._dedupe_nodes([center, *(self._record_value(record, "nodes") or [])])
+            edges = self._dedupe_edges(self._record_value(record, "edges") or [])
             return {
-                "center": None,
-                "nodes": [],
-                "edges": [],
+                "center": center,
+                "nodes": nodes,
+                "edges": edges,
                 "scene": self._build_scene_info(),
             }
 
+        legacy_center = self._record_value(record, "h") if record else None
+        if legacy_center:
+            return {
+                "center": self._map_node_to_dict(legacy_center),
+                "nodes": [self._map_node_to_dict(n) for n in self._record_value(record, "nodes") or []],
+                "edges": [self._map_relationship_to_dict(r) for r in self._record_value(record, "edges") or []],
+                "scene": self._build_scene_info(),
+            }
+        return {
+            "center": None,
+            "nodes": [],
+            "edges": [],
+            "scene": self._build_scene_info(),
+        }
+
     async def query_graph(self, payload: Any) -> Dict[str, Any]:
         """按过滤条件查询 seed nodes，并在指定深度内扩展为子图。"""
-        await self.ensure_connected()
-
         normalized_payload = self._normalize_query_payload(payload)
         node_filters = normalized_payload["node"]
         edge_filters = normalized_payload["edge"]
@@ -1117,51 +1064,49 @@ class GraphService:
         active_filters = self._build_active_filters(node_filters, edge_filters)
         seed_query, seed_params = self._build_seed_query(node_filters, edge_filters, limit)
 
-        async with self.driver.session() as session:
-            seed_result = await session.run(seed_query, **seed_params)
-            seed_rows = await seed_result.data()
-            matched_seed_nodes = [row.get("node") for row in seed_rows if row.get("node")]
+        seed_rows = await self._query_rows(seed_query, seed_params)
+        matched_seed_nodes = [row["node"] for row in seed_rows if isinstance(row.get("node"), dict)]
 
-            truncated = len(matched_seed_nodes) > limit
-            matched_seed_nodes = matched_seed_nodes[:limit]
-            if not matched_seed_nodes:
-                return {
-                    "summary": {
-                        "mode": "advanced-query",
-                        "matched_nodes": 0,
-                        "matched_edges": 0,
-                        "truncated": False,
-                        "active_filters": active_filters,
-                    },
-                    "graph": {"center": None, "nodes": [], "edges": []},
-                    "scene": self._build_scene_info(),
-                }
+        truncated = len(matched_seed_nodes) > limit
+        matched_seed_nodes = matched_seed_nodes[:limit]
+        if not matched_seed_nodes:
+            return {
+                "summary": {
+                    "mode": "advanced-query",
+                    "matched_nodes": 0,
+                    "matched_edges": 0,
+                    "truncated": False,
+                    "active_filters": active_filters,
+                },
+                "graph": {"center": None, "nodes": [], "edges": []},
+                "scene": self._build_scene_info(),
+            }
 
-            node_ids = [node["id"] for node in matched_seed_nodes if node.get("id")]
-            if not node_ids:
-                return {
-                    "summary": {
-                        "mode": "advanced-query",
-                        "matched_nodes": len(matched_seed_nodes),
-                        "matched_edges": 0,
-                        "truncated": truncated,
-                        "active_filters": active_filters,
-                    },
-                    "graph": {
-                        "center": None,
-                        "nodes": self._dedupe_nodes(matched_seed_nodes),
-                        "edges": [],
-                    },
-                    "scene": self._build_scene_info(truncated=truncated),
-                }
+        node_ids = [node["id"] for node in matched_seed_nodes if node.get("id")]
+        if not node_ids:
+            return {
+                "summary": {
+                    "mode": "advanced-query",
+                    "matched_nodes": len(matched_seed_nodes),
+                    "matched_edges": 0,
+                    "truncated": truncated,
+                    "active_filters": active_filters,
+                },
+                "graph": {
+                    "center": None,
+                    "nodes": self._dedupe_nodes(matched_seed_nodes),
+                    "edges": [],
+                },
+                "scene": self._build_scene_info(truncated=truncated),
+            }
 
-            expanded_nodes, edges = await self._expand_query_subgraph(
-                session,
-                node_ids,
-                depth,
-                limit,
-                edge_filters,
-            )
+        expanded_nodes, edges = await self._expand_query_subgraph(
+            None,
+            node_ids,
+            depth,
+            limit,
+            edge_filters,
+        )
 
         all_nodes = self._dedupe_nodes([*matched_seed_nodes, *expanded_nodes])
         return {
@@ -1178,34 +1123,24 @@ class GraphService:
 
     async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有成分"""
-        await self.ensure_connected()
-
         query = """
         MATCH (h:Herb {name: $name})-[r:CONTAINS]->(c:Component)
         RETURN c, r.quantity as quantity, r.status as status
         """
-        async with self.driver.session() as session:
-            result = await session.run(query, name=herb_name)
-            records = await result.data()
-            return [{"component": dict(r["c"]), "quantity": r["quantity"], "status": r["status"]} for r in records]
+        records = await self._query_rows(query, {"name": herb_name})
+        return [{"component": dict(r["c"]), "quantity": r["quantity"], "status": r["status"]} for r in records]
 
     async def get_herb_variants(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有品种"""
-        await self.ensure_connected()
-
         query = """
         MATCH (h:Herb {name: $name})-[r:HAS_VARIANT]->(v:Variant)
         RETURN v, r.status as status
         """
-        async with self.driver.session() as session:
-            result = await session.run(query, name=herb_name)
-            records = await result.data()
-            return [{"variant": dict(r["v"]), "status": r["status"]} for r in records]
+        records = await self._query_rows(query, {"name": herb_name})
+        return [{"variant": dict(r["v"]), "status": r["status"]} for r in records]
 
     async def get_herb_traits(self, herb_name: str, year_range: Optional[str] = None) -> List[Dict[str, Any]]:
         """获取药材的性状特征"""
-        await self.ensure_connected()
-
         if year_range:
             query = """
             MATCH (h:Herb {name: $name})-[r:HAS_TRAIT]->(t:Trait)
@@ -1220,39 +1155,31 @@ class GraphService:
             """
             params = {"name": herb_name}
 
-        async with self.driver.session() as session:
-            result = await session.run(query, **params)
-            records = await result.data()
-            return [{"trait": dict(r["t"]), "value": r["value"], "observation": r["observation"], "year_range": r["year_range"], "status": r["status"]} for r in records]
+        records = await self._query_rows(query, params)
+        return [{"trait": dict(r["t"]), "value": r["value"], "observation": r["observation"], "year_range": r["year_range"], "status": r["status"]} for r in records]
 
     async def get_variant_details(self, variant_name: str) -> Dict[str, Any]:
         """获取品种详细信息"""
-        await self.ensure_connected()
-
         query = """
         MATCH (v:Variant {name: $name})-[:VARIANT_OF]->(h:Herb)
         OPTIONAL MATCH (v)-[r1:HAS_TRAIT]->(t:Trait)
         OPTIONAL MATCH (h)-[r2:HAS_EFFICACY]->(e:Efficacy)
         RETURN v, h.name as base_herb, collect(DISTINCT {trait: t, value: r1.value}) as traits, collect(DISTINCT e.name) as efficacies
         """
-        async with self.driver.session() as session:
-            result = await session.run(query, name=variant_name)
-            record = await result.single()
-            if record:
-                return {
-                    "variant": dict(record["v"]),
-                    "base_herb": record["base_herb"],
-                    "traits": record["traits"],
-                    "efficacies": record["efficacies"]
-                }
-            return {}
+        record = await self._query_single(query, {"name": variant_name})
+        if record:
+            return {
+                "variant": dict(record["v"]),
+                "base_herb": record["base_herb"],
+                "traits": record["traits"],
+                "efficacies": record["efficacies"]
+            }
+        return {}
 
     # ============ 搜索 ============
 
     async def search_nodes(self, query_text: str, label: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
         """搜索节点"""
-        await self.ensure_connected()
-
         if label:
             cypher = f"""
             MATCH (n:{label})
@@ -1268,10 +1195,8 @@ class GraphService:
             LIMIT $limit
             """
 
-        async with self.driver.session() as session:
-            result = await session.run(cypher, search_text=query_text, limit=limit)
-            records = await result.data()
-            return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
+        records = await self._query_rows(cypher, {"search_text": query_text, "limit": limit})
+        return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
 
     async def execute_readonly_cypher(
         self,
@@ -1279,32 +1204,22 @@ class GraphService:
         params: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """执行只读 Cypher 查询并返回原始记录列表。"""
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(query, **(params or {}))
-            return await result.data()
+        return await self._query_rows(query, params)
 
     async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> List[Dict[str, Any]]:
         """查找两个节点之间的路径"""
-        await self.ensure_connected()
-
         query = """
         MATCH path = (from {name: $from_name})-[*1..%d]-(to {name: $to_name})
         RETURN path
         """ % max_depth
 
-        async with self.driver.session() as session:
-            result = await session.run(query, from_name=from_name, to_name=to_name)
-            records = await result.data()
-            return [{"path": [dict(node) for node in record["path"]]} for record in records]
+        records = await self._query_rows(query, {"from_name": from_name, "to_name": to_name})
+        return [{"path": [dict(node) for node in record["path"]]} for record in records]
 
     # ============ 验证状态 ============
 
     async def get_pending_nodes(self, label: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证节点"""
-        await self.ensure_connected()
-
         if label:
             query = f"""
             MATCH (n:{label}) WHERE n.status = $status
@@ -1320,25 +1235,19 @@ class GraphService:
             """
             params = {"limit": limit, "status": NodeStatus.PENDING.value}
 
-        async with self.driver.session() as session:
-            result = await session.run(query, **params)
-            records = await result.data()
-            return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
+        records = await self._query_rows(query, params)
+        return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
 
     async def get_pending_relationships(self, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证关系"""
-        await self.ensure_connected()
-
         query = """
         MATCH ()-[r]->()
         WHERE r.status = $status
         RETURN r
         LIMIT $limit
         """
-        async with self.driver.session() as session:
-            result = await session.run(query, limit=limit, status=NodeStatus.PENDING.value)
-            records = await result.data()
-            return [dict(r["r"]) for r in records]
+        records = await self._query_rows(query, {"limit": limit, "status": NodeStatus.PENDING.value})
+        return [dict(r["r"]) for r in records]
 
     async def verify_node(
         self,
@@ -1348,20 +1257,18 @@ class GraphService:
         status: str = NodeStatus.VERIFIED.value
     ) -> Optional[Dict[str, Any]]:
         """验证节点"""
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(
-                QUERY_VERIFY_NODE,
-                node_id=node_id,
-                verification_id=verification_id,
-                verifier_id=verifier_id,
-                status=status
-            )
-            record = await result.single()
-            if record:
-                return self._map_node_to_dict(record["n"])
-            return None
+        record = await self._query_single(
+            QUERY_VERIFY_NODE,
+            {
+                "node_id": node_id,
+                "verification_id": verification_id,
+                "verifier_id": verifier_id,
+                "status": status,
+            },
+        )
+        if record:
+            return self._map_node_to_dict(record["n"])
+        return None
 
     async def verify_relationship(
         self,
@@ -1373,22 +1280,20 @@ class GraphService:
         status: str = NodeStatus.VERIFIED.value
     ) -> Optional[Dict[str, Any]]:
         """验证关系"""
-        await self.ensure_connected()
-
         query = QUERY_VERIFY_RELATIONSHIP.format(rel_type=rel_type)
-        async with self.driver.session() as session:
-            result = await session.run(
-                query,
-                from_name=from_name,
-                to_name=to_name,
-                verification_id=verification_id,
-                verifier_id=verifier_id,
-                status=status
-            )
-            record = await result.single()
-            if record:
-                return self._map_relationship_to_dict(record["r"])
-            return None
+        record = await self._query_single(
+            query,
+            {
+                "from_name": from_name,
+                "to_name": to_name,
+                "verification_id": verification_id,
+                "verifier_id": verifier_id,
+                "status": status,
+            },
+        )
+        if record:
+            return self._map_relationship_to_dict(record["r"])
+        return None
 
 
 # 全局单例

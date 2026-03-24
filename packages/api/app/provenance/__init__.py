@@ -4,12 +4,8 @@
 from typing import Optional, Any, Dict, List
 from uuid import uuid4
 
-from neo4j import AsyncGraphDatabase
-
-from ..core.config import get_settings
+from ..kg.db import cypher_rows, cypher_single
 from ..models.enums import NodeStatus
-
-settings = get_settings()
 
 
 # ============ Lineage Query Patterns (Extracted) ============
@@ -92,26 +88,29 @@ class ProvenanceService:
     def __init__(self) -> None:
         self.driver: Optional[Any] = None
 
-    async def connect(self) -> None:
-        """建立 Neo4j 连接"""
-        if not self.driver:
-            self.driver = AsyncGraphDatabase.driver(
-                settings.neo4j_uri,
-                auth=(settings.neo4j_user, settings.neo4j_password)
-            )
-
-    async def close(self) -> None:
-        """关闭 Neo4j 连接"""
-        if self.driver:
-            await self.driver.close()
-            self.driver = None
-
-    async def ensure_connected(self) -> None:
-        """确保已连接"""
-        if not self.driver:
-            await self.connect()
-
     # ============ Helper Methods ============
+
+    async def _query_rows(
+        self,
+        query: str,
+        params: Optional[NodeDict] = None,
+    ) -> List[Dict[str, Any]]:
+        if self.driver:
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.data()
+        return await cypher_rows(query, params)
+
+    async def _query_single(
+        self,
+        query: str,
+        params: Optional[NodeDict] = None,
+    ) -> Dict[str, Any] | None:
+        if self.driver:
+            async with self.driver.session() as session:
+                result = await session.run(query, **(params or {}))
+                return await result.single()
+        return await cypher_single(query, params)
 
     def _map_node_to_dict(self, node: Any) -> NodeDict:
         """Map Neo4j node to dictionary"""
@@ -158,8 +157,6 @@ class ProvenanceService:
         Returns:
             新建的证据节点字典
         """
-        await self.ensure_connected()
-
         evidence_id = str(uuid4())
         props: NodeDict = {
             "id": evidence_id,
@@ -169,10 +166,8 @@ class ProvenanceService:
             "status": status
         }
 
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_CREATE_EVIDENCE, props=props)
-            record = await result.single()
-            return self._map_node_to_dict(record["e"])
+        record = await self._query_single(QUERY_CREATE_EVIDENCE, {"props": props})
+        return self._map_node_to_dict(record["e"]) if record else {}
 
     async def get_evidence(self, evidence_id: str) -> Optional[NodeDict]:
         """根据 ID 获取证据
@@ -183,14 +178,10 @@ class ProvenanceService:
         Returns:
             证据节点字典, 不存在时返回 None
         """
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_GET_EVIDENCE_BY_ID, evidence_id=evidence_id)
-            record = await result.single()
-            if record:
-                return self._map_node_to_dict(record["e"])
-            return None
+        record = await self._query_single(QUERY_GET_EVIDENCE_BY_ID, {"evidence_id": evidence_id})
+        if record:
+            return self._map_node_to_dict(record["e"])
+        return None
 
     async def link_evidence_to_source(
         self,
@@ -208,23 +199,21 @@ class ProvenanceService:
         Returns:
             新建的关系字典
         """
-        await self.ensure_connected()
-
         props: NodeDict = {
             "status": status,
             "source_id": source_id,
             "evidence_id": evidence_id
         }
 
-        async with self.driver.session() as session:
-            result = await session.run(
-                QUERY_LINK_EVIDENCE_TO_SOURCE,
-                evidence_id=evidence_id,
-                source_id=source_id,
-                props=props
-            )
-            record = await result.single()
-            return self._map_relationship_to_dict(record["r"])
+        record = await self._query_single(
+            QUERY_LINK_EVIDENCE_TO_SOURCE,
+            {
+                "evidence_id": evidence_id,
+                "source_id": source_id,
+                "props": props,
+            },
+        )
+        return self._map_relationship_to_dict(record["r"]) if record else {}
 
     # ============ Lineage Query Operations ============
 
@@ -237,18 +226,14 @@ class ProvenanceService:
         Returns:
             溯源链字典 {entity, evidence, source}, 无链路时返回 None
         """
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_ENTITY_LINEAGE, entity_id=entity_id)
-            record = await result.single()
-            if record:
-                return self._build_lineage_chain(
-                    entity=self._map_node_to_dict(record["entity"]),
-                    evidence=self._map_node_to_dict(record["evidence"]),
-                    source=self._map_node_to_dict(record["source"])
-                )
-            return None
+        record = await self._query_single(QUERY_ENTITY_LINEAGE, {"entity_id": entity_id})
+        if record:
+            return self._build_lineage_chain(
+                entity=self._map_node_to_dict(record["entity"]),
+                evidence=self._map_node_to_dict(record["evidence"]),
+                source=self._map_node_to_dict(record["source"])
+            )
+        return None
 
     async def query_source_derivations(self, source_id: str) -> List[LineageChain]:
         """查找来源的所有派生实体
@@ -259,19 +244,15 @@ class ProvenanceService:
         Returns:
             溯源链列表, 每项为 {entity, evidence, source}
         """
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_SOURCE_DERIVATIONS, source_id=source_id)
-            records = await result.data()
-            return [
-                self._build_lineage_chain(
-                    entity=self._map_node_to_dict(r["entity"]),
-                    evidence=self._map_node_to_dict(r["evidence"]),
-                    source=self._map_node_to_dict(r["source"])
-                )
-                for r in records
-            ]
+        records = await self._query_rows(QUERY_SOURCE_DERIVATIONS, {"source_id": source_id})
+        return [
+            self._build_lineage_chain(
+                entity=self._map_node_to_dict(r["entity"]),
+                evidence=self._map_node_to_dict(r["evidence"]),
+                source=self._map_node_to_dict(r["source"])
+            )
+            for r in records
+        ]
 
     async def collect_evidence_for_entity(self, entity_id: str) -> List[EvidenceRecord]:
         """收集实体的所有证据
@@ -282,18 +263,14 @@ class ProvenanceService:
         Returns:
             证据记录列表, 每项为 {evidence, source}
         """
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_COLLECT_ENTITY_EVIDENCE, entity_id=entity_id)
-            records = await result.data()
-            return [
-                {
-                    "evidence": self._map_node_to_dict(r["evidence"]),
-                    "source": self._map_node_to_dict(r["source"]) if r["source"] else None
-                }
-                for r in records
-            ]
+        records = await self._query_rows(QUERY_COLLECT_ENTITY_EVIDENCE, {"entity_id": entity_id})
+        return [
+            {
+                "evidence": self._map_node_to_dict(r["evidence"]),
+                "source": self._map_node_to_dict(r["source"]) if r["source"] else None
+            }
+            for r in records
+        ]
 
     async def lineage_chain_completeness(self, entity_id: str) -> Optional[LineageChain]:
         """验证溯源链完整性
@@ -305,24 +282,20 @@ class ProvenanceService:
             包含完整性标记的溯源链字典:
             {entity, evidence, source, has_evidence, has_source, chain_complete}
         """
-        await self.ensure_connected()
-
-        async with self.driver.session() as session:
-            result = await session.run(QUERY_LINEAGE_COMPLETENESS, entity_id=entity_id)
-            record = await result.single()
-            if record:
-                entity = self._map_node_to_dict(record["entity"])
-                evidence = self._map_node_to_dict(record["evidence"]) if record["evidence"] else None
-                source = self._map_node_to_dict(record["source"]) if record["source"] else None
-                return {
-                    "entity": entity,
-                    "evidence": evidence,
-                    "source": source,
-                    "has_evidence": record["has_evidence"],
-                    "has_source": record["has_source"],
-                    "chain_complete": record["chain_complete"]
-                }
-            return None
+        record = await self._query_single(QUERY_LINEAGE_COMPLETENESS, {"entity_id": entity_id})
+        if record:
+            entity = self._map_node_to_dict(record["entity"])
+            evidence = self._map_node_to_dict(record["evidence"]) if record["evidence"] else None
+            source = self._map_node_to_dict(record["source"]) if record["source"] else None
+            return {
+                "entity": entity,
+                "evidence": evidence,
+                "source": source,
+                "has_evidence": record["has_evidence"],
+                "has_source": record["has_source"],
+                "chain_complete": record["chain_complete"]
+            }
+        return None
 
 
 # 全局单例

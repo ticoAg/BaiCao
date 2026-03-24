@@ -21,7 +21,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Run API fast suite
+      - name: Run API toolchain
         run: ./scripts/test_api.sh
 
   web-tests:
