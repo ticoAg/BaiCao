@@ -5,9 +5,8 @@ import { renderWithProviders } from "../test/render-with-providers";
 import { useGraphWorkbenchStore } from "../stores/workbenchStore";
 import { workbenchApi } from "../services/workbenchApi";
 
-// Mock D3 SVG rendering since jsdom doesn't support SVG layout
-vi.mock("../lib/graph-viz", () => ({
-  Visualization: vi.fn().mockImplementation(() => ({
+const graphVizMocks = vi.hoisted(() => {
+  const mockVisualizationInstance = {
     init: vi.fn(),
     precomputeAndStart: vi.fn(),
     update: vi.fn(),
@@ -19,7 +18,30 @@ vi.mock("../lib/graph-viz", () => ({
     on: vi.fn().mockReturnThis(),
     trigger: vi.fn(),
     forceSimulation: { simulation: { stop: vi.fn() } },
-  })),
+  }
+
+  const MockVisualization = vi.fn(function MockVisualization() {
+    return mockVisualizationInstance
+  })
+
+  const mockGraphEventHandlerInstance = {
+    bindEventHandlers: vi.fn(),
+  }
+
+  const MockGraphEventHandler = vi.fn(function MockGraphEventHandler() {
+    return mockGraphEventHandlerInstance
+  })
+
+  return {
+    mockVisualizationInstance,
+    MockVisualization,
+    mockGraphEventHandlerInstance,
+    MockGraphEventHandler,
+  }
+})
+
+vi.mock("../lib/graph-viz", () => ({
+  Visualization: graphVizMocks.MockVisualization,
   VizGraph: {
     fromGraphData: vi.fn().mockReturnValue({
       nodes: vi.fn().mockReturnValue([]),
@@ -32,13 +54,22 @@ vi.mock("../lib/graph-viz", () => ({
   },
   VizNode: vi.fn(),
   VizRelationship: vi.fn(),
-  GraphEventHandler: vi.fn().mockImplementation(() => ({
-    bindEventHandlers: vi.fn(),
-  })),
+  GraphEventHandler: graphVizMocks.MockGraphEventHandler,
 }));
 
 describe("GraphWorkbenchPage", () => {
   beforeEach(() => {
+    graphVizMocks.MockVisualization.mockClear()
+    graphVizMocks.MockGraphEventHandler.mockClear()
+    graphVizMocks.mockGraphEventHandlerInstance.bindEventHandlers.mockClear()
+    graphVizMocks.mockVisualizationInstance.init.mockClear()
+    graphVizMocks.mockVisualizationInstance.precomputeAndStart.mockClear()
+    graphVizMocks.mockVisualizationInstance.update.mockClear()
+    graphVizMocks.mockVisualizationInstance.destroy.mockClear()
+    graphVizMocks.mockVisualizationInstance.resize.mockClear()
+    graphVizMocks.mockVisualizationInstance.zoomIn.mockClear()
+    graphVizMocks.mockVisualizationInstance.zoomOut.mockClear()
+    graphVizMocks.mockVisualizationInstance.zoomToFit.mockClear()
     useGraphWorkbenchStore.setState({
       editorValue: "",
       frames: [],
