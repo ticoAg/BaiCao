@@ -8,6 +8,23 @@
 
 **Tech Stack:** TypeScript, React 18, React Router 6, Zustand, TanStack Query, Ant Design 5, `@ant-design/graphs`, FastAPI, Pydantic v2, Neo4j Python Driver, Vitest, Testing Library, Pytest, Ruff
 
+**Status:** 已实施（2026-03-24），但人工浏览器验收与更细的交互 parity 仍待补充
+
+**Implementation Summary:** `/graph` 已落地为三栏 Graph Workbench，后端补齐了 `/api/v1/graph/meta/*` 与 `scene` 信息，前端形成了 `Database information`、中央图谱结果区和右侧检查器闭环。实现阶段对中央图谱渲染做了进一步演进，已从计划中的图库方案切到仓库内自维护的 D3 结果视图。
+
+**Implementation Evidence:**
+- 提交：`c2850c4 feat(web): polish graph workbench interactions`
+- 提交：`252f740 feat(web): replace graph canvases with d3 visualization`
+- 提交：`76ed3af feat(tests): 重构图形可视化的模拟`
+- 提交：`1ec000e test(web): align graph workspace hook expectations`
+- 验收：`docs/acceptance/graph-workbench-mainline.md`
+
+**Verification Result:**
+- `./scripts/test_api.sh`：`208 passed, 3 deselected`
+- `pnpm run test:web`：`16 passed` / `45 passed`
+- `pnpm --dir packages/web typecheck`：通过
+- GitHub Actions `ci-fast` run `23497811413`：`success`
+
 ---
 
 ## Scope Check
@@ -23,7 +40,7 @@
 - 聊天页复用
 - 旧 `GraphWorkbenchPage` 独立路线的继续扩展
 
-仓库内已有 [docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md](/Users/ticoag/Documents/myws/BaiCao/docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md)，该计划在 `/graph` 路径上的前提已被新 spec 覆盖。本计划以 [docs/superpowers/specs/2026-03-23-graph-workbench-design.md](/Users/ticoag/Documents/myws/BaiCao/docs/superpowers/specs/2026-03-23-graph-workbench-design.md) 为唯一设计真源。
+旧的“独立 Browser workbench 页”方向以及更早的 query workspace / canvas redesign 中间态计划，均已被本计划覆盖并删除。本计划以 [docs/superpowers/specs/2026-03-23-graph-workbench-design.md](/Users/ticoag/Documents/myws/BaiCao/docs/superpowers/specs/2026-03-23-graph-workbench-design.md) 为唯一设计真源。
 
 ## File Map
 
@@ -83,7 +100,7 @@
   - 记录新的 `/graph` 主链路验收步骤与证据格式。
 - Modify: `docs/acceptance/README.md`
   - 将新验收文档纳入入口。
-- Modify: `docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md`
+- Delete: superseded graph workbench / graph workspace intermediate plans after acceptance and architecture graduation
   - 在文档头部补一条说明，标明 `/graph` 路径后续以新 plan 为准，避免执行者选错入口。
 
 ## Notes
@@ -613,7 +630,7 @@ git commit -m "feat(web): add graph workbench interaction parity"
 **Files:**
 - Create: `docs/acceptance/graph-workbench-mainline.md`
 - Modify: `docs/acceptance/README.md`
-- Modify: `docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md`
+- Delete: superseded graph workbench / graph workspace intermediate plans after acceptance and architecture graduation
 
 - [ ] **Step 1: Write the new acceptance doc for `/graph`**
 
@@ -632,7 +649,7 @@ Update `docs/acceptance/README.md` so the new Graph Workbench acceptance path is
 
 - [ ] **Step 3: Add a supersession note to the old browser-shell plan**
 
-At the top of `docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md`, add a short note that `/graph` path work should follow `2026-03-23-graph-workbench.md`, while the old plan remains relevant only for the separate command-style workbench track if still pursued.
+Delete superseded graph workbench intermediate docs so `/graph` only保留一条 requirement lineage。
 
 - [ ] **Step 4: Run a lightweight doc sanity check**
 
@@ -647,7 +664,7 @@ Expected: the new plan and acceptance references are visible and not contradicto
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/acceptance/graph-workbench-mainline.md docs/acceptance/README.md docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md
+git add docs/acceptance/graph-workbench-mainline.md docs/acceptance/README.md docs/architecture/graph-workbench.md
 git commit -m "docs: document graph workbench mainline"
 ```
 

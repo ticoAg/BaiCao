@@ -71,8 +71,7 @@ flowchart LR
 |------|------|------|
 | [README.md](README.md) | stable | 验收入口、规则、结构和证据格式 |
 | [template.md](template.md) | stable | 功能验收模板，适合复制后开始填写 |
-| [graph-query-mainline.md](graph-query-mainline.md) | stable | 图谱查询主链路验收 |
-| [graph-workbench-mainline.md](graph-workbench-mainline.md) | draft | Graph Workbench `/graph` 三栏工作台主链路验收 |
+| [graph-workbench-mainline.md](graph-workbench-mainline.md) | stable | Graph Workbench `/graph` 三栏工作台主链路验收 |
 | [chat-mainline.md](chat-mainline.md) | stable | 智能问答主链路验收 |
 | [verification-workflow.md](verification-workflow.md) | stable | 验证申请与审核闭环验收 |
 

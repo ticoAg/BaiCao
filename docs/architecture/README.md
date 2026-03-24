@@ -20,8 +20,9 @@
 |------|------|----------|------|
 | 1 | [system-overview.md](system-overview.md) | 新人建立全局视图 | 先看系统角色、模块边界、数据流和当前实现状态 |
 | 2 | [data-model.md](data-model.md) | 深入数据设计 | 看 Neo4j 节点/关系模型与 PostgreSQL 侧职责 |
-| 3 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | 理解共享图模型与数据采集边界 | 看仓库级图模型唯一真源、中文语义与数据采集二级子项目架构 |
-| 4 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
+| 3 | [graph-workbench.md](graph-workbench.md) | 理解 `/graph` 的当前稳定实现 | 看 Graph Workbench、metadata、D3 结果视图和 Neo4j 运行时边界 |
+| 4 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | 理解共享图模型与数据采集边界 | 看仓库级图模型唯一真源、中文语义与数据采集二级子项目架构 |
+| 5 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
 
 ## 文档索引
 
@@ -29,6 +30,7 @@
 |------|------|------|
 | [system-overview.md](system-overview.md) | stable | 系统整体架构、模块边界、当前实现与目标形态 |
 | [data-model.md](data-model.md) | stable | 数据模型设计，覆盖关系模型、图模型和验证状态 |
+| [graph-workbench.md](graph-workbench.md) | stable | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | stable | 仓库级图模型唯一真源、中文知识结构定义与数据采集架构 |
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 

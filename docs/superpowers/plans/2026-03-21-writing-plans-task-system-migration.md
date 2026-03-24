@@ -25,7 +25,7 @@
 - Modify: `docs/acceptance/README.md`
 - Modify: `docs/acceptance/template.md`
 - Modify: `docs/acceptance/chat-mainline.md`
-- Modify: `docs/acceptance/graph-query-mainline.md`
+- Modify: `docs/acceptance/graph-workbench-mainline.md`
 - Modify: `docs/acceptance/verification-workflow.md`
 - Create: `docs/superpowers/README.md`
 - Create: `docs/superpowers/plans/2026-03-21-writing-plans-task-system-migration.md`
@@ -150,6 +150,6 @@ Expected:
 - [x] **Step 3: Commit**
 
 ```bash
-git add AGENTS.md README.md workflow.md IMPL_PLAN.md docs/README.md docs/agent-skill-routing.md docs/verification-matrix.md docs/architecture/README.md docs/acceptance/README.md docs/acceptance/template.md docs/acceptance/chat-mainline.md docs/acceptance/graph-query-mainline.md docs/acceptance/verification-workflow.md docs/superpowers/README.md docs/superpowers/plans/2026-03-21-writing-plans-task-system-migration.md
+git add AGENTS.md README.md workflow.md IMPL_PLAN.md docs/README.md docs/agent-skill-routing.md docs/verification-matrix.md docs/architecture/README.md docs/acceptance/README.md docs/acceptance/template.md docs/acceptance/chat-mainline.md docs/acceptance/graph-workbench-mainline.md docs/acceptance/verification-workflow.md docs/superpowers/README.md docs/superpowers/plans/2026-03-21-writing-plans-task-system-migration.md
 git rm -r .task TODO_LIST.md
 ```

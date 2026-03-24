@@ -25,7 +25,7 @@ BaiCao ShiTan（白草药坛）是一个面向中药材知识场景的可信问�
 
 当前仓库处于 **MVP 早期实现中**，需要把“代码里已经存在的骨架”和“架构上已确认的目标形态”分开理解：
 
-- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI 基础路由、React 页面原型、Neo4j 样例图谱、CSV/JSONL 导入器
+- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI 基础路由、React 页面原型、Graph Workbench `/graph`、Neo4j 样例图谱、CSV/JSONL 导入器
 - 进行中：更完整的溯源链路、专家审查闭环、问答质量提升、图谱可视化增强
 - 规划中：事件驱动集成、缓存策略、SSE 流式输出、监控与追踪完善
 
@@ -69,8 +69,8 @@ flowchart TB
 
 | 层 | 主要职责 | 当前事实 |
 |------|------|------|
-| Web | 问答、搜索、图谱浏览、验证管理 | 已有页面原型和基础路由 |
-| API | 统一暴露 REST 接口，编排业务流程 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat` 路由 |
+| Web | 问答、搜索、图谱浏览、验证管理 | 已有页面原型、Graph Workbench `/graph` 和基础路由 |
+| API | 统一暴露 REST 接口，编排业务流程 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat` 路由，`graph` 已补 metadata 与 `scene` 契约 |
 | Application Modules | 组织图谱、问答、审查、溯源等业务能力 | 已有 kg / services / verification / chat 等主骨架 |
 | Data Layer | 存储图谱、事务数据和缓存 | Compose 已编排 PostgreSQL、Neo4j、Redis |
 
@@ -85,7 +85,7 @@ flowchart TB
 | `app/models/` | SQLAlchemy 模型 |
 | `app/schemas/` | Pydantic schema |
 | `app/services/` | 业务服务，如 herb、chat |
-| `app/kg/` | 图谱查询服务 |
+| `app/kg/` | 图谱查询、metadata、Neo4j 连接与声明式图模型 |
 | `app/importers/` | CSV / JSONL 导入器 |
 | `app/exporters/` | 导出器骨架 |
 | `app/provenance/` | 溯源模块（ProvenanceService - Evidence/Source 链路管理） |
@@ -95,7 +95,7 @@ flowchart TB
 | 路径 | 角色 |
 |------|------|
 | `src/components/` | 公共组件 |
-| `src/pages/` | 首页、搜索、图谱、验证、问答等页面 |
+| `src/pages/` | 首页、搜索、Graph Workbench、验证、问答等页面 |
 | `src/services/` | 前端 API 封装 |
 | `src/main.tsx` | 应用入口，挂载 Router / React Query / Ant Design |
 
@@ -154,7 +154,7 @@ flowchart LR
 | 存储 | 主要职责 | 当前状态 |
 |------|------|------|
 | PostgreSQL | 用户、验证申请、验证证据、结构化事务数据 | 已接入并由 API 初始化建表 |
-| Neo4j | 中药材知识图谱、节点关系、验证状态镜像 | 已有约束脚本和陈皮样例数据 |
+| Neo4j | 中药材知识图谱、节点关系、验证状态镜像 | 已有约束脚本和样例数据，运行时访问已统一到 `neomodel.adb` |
 | Redis | 缓存、会话、后续事件驱动与异步演进预留 | 基础设施已编排，业务侧仍在继续落地 |
 
 ## 8. 基础设施

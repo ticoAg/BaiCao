@@ -8,6 +8,32 @@
 
 **Tech Stack:** FastAPI、Neo4j 5+/6 driver、`neomodel`、pytest、ruff、ty
 
+**Status:** 已实施（2026-03-24）
+
+**Implementation Summary:** 本计划已按“渐进迁移”落地到 `packages/api/`。运行时 Neo4j 连接已统一收敛到 `app/kg/db.py` 和 `neomodel.adb`；`GraphService` 中 16 类高重复 `link_xxx` 关系创建已收缩到通用关系创建入口；metadata / provenance 改为经统一连接层执行 Cypher；对外 API / schema 契约保持不变。
+
+**Implementation Evidence:**
+- 提交：`2a3c8b9 feat(api): migrate neo4j access and standardize backend toolchain`
+- 新增：`packages/api/app/kg/db.py`
+- 新增：`packages/api/app/kg/models.py`
+- 修改：`packages/api/app/kg/graph_service.py`
+- 修改：`packages/api/app/kg/graph_metadata_service.py`
+- 修改：`packages/api/app/provenance/__init__.py`
+- 修改：`packages/api/app/main.py`
+- 修改：`packages/api/pyproject.toml`
+- 修改：`packages/api/uv.lock`
+
+**Verification Evidence:**
+- `cd packages/api && uv lock`
+- `cd packages/api && uv run ruff check app tests`
+- `cd packages/api && uv run pytest tests/unit/kg/test_db.py tests/unit/kg/test_models.py tests/unit/kg/test_graph_service.py tests/kg/test_graph_service.py tests/unit/provenance/test_provenance.py tests/api/test_graph_routes.py tests/api/test_provenance_routes.py tests/contract/test_routes.py tests/contract/test_graph_workbench_schema.py -v`
+- `./scripts/test_api.sh`
+
+**Verification Result:**
+- 目标测试集：`124 passed`
+- 后端统一脚本：`208 passed, 3 deselected`
+- 本轮未执行本地 `curl` 图谱接口 spot-check；如需复现，可使用计划中列出的 `/api/v1/graph/meta/*` 与 `/api/v1/graph/herb/{name}` 命令
+
 ---
 
 ### Task 1: 建立依赖与连接真源

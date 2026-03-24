@@ -26,14 +26,14 @@
 
 ## 与既有计划的关系
 
-仓库内现有计划 [docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md](/Users/ticoag/Documents/myws/BaiCao/docs/superpowers/plans/2026-03-23-graph-workbench-browser-shell.md) 以“独立 Browser 风格工作台页”为前提，并明确避免直接替换 `/graph` 页面。
+仓库内曾存在“独立 Browser 风格 workbench 页”的旧方向，但该方向已经被本规格覆盖并删除，不再作为并行目标维护。
 
 本规格覆盖该计划在 `/graph` 路径上的前提假设：
 
 - 旧前提：Browser 风格 shell 不直接落到 `/graph`
 - 新前提：`/graph` 本身升级为 Graph Workbench
 
-后续实施计划必须以本规格为准，并在需要时显式修订旧 plan，而不是并行维护两套互相冲突的目标。
+后续实施计划必须以本规格为准，不再并行维护独立 Browser 壳层路线。
 
 ## 目标
 

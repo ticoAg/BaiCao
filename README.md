@@ -21,6 +21,7 @@
 - 架构入口：`docs/architecture/README.md`
 - 系统总览：`docs/architecture/system-overview.md`
 - 数据模型：`docs/architecture/data-model.md`
+- Graph Workbench：`docs/architecture/graph-workbench.md`
 - brainstorm：`docs/_dev/brainstorm/README.md`
 - 实施计划入口：`docs/superpowers/README.md`
 
@@ -400,6 +401,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 - 架构文档：`docs/architecture/README.md`
 - 数据模型：`docs/architecture/data-model.md`
 - 系统总览：`docs/architecture/system-overview.md`
+- Graph Workbench：`docs/architecture/graph-workbench.md`
 - 验收文档：`docs/acceptance/README.md`
 - brainstorm 总索引：`docs/_dev/brainstorm/README.md`
 

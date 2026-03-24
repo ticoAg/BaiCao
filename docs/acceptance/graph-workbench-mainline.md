@@ -1,7 +1,7 @@
 <!--
 ---
 doc_kind: acceptance
-status: draft
+status: stable
 tags: ["acceptance", "graph", "workbench"]
 summary: Graph Workbench `/graph` 主链路验收
 audience: developer
@@ -13,10 +13,10 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：Graph Workbench `/graph`
-- 验收目标：验证 `/graph` 已升级为三栏 Graph Workbench，能够同时展示数据库级 `Database information`、中央图谱结果视图与右侧检查器
+- 验收目标：验证 `/graph` 已升级为三栏 Graph Workbench，能够同时展示数据库级 `Database information`、中央 D3 图谱结果视图与右侧检查器，并覆盖原图谱查询工作区主链路
 - 对应 spec：[../superpowers/specs/2026-03-23-graph-workbench-design.md](../superpowers/specs/2026-03-23-graph-workbench-design.md)
 - 对应 plan：[../superpowers/plans/2026-03-23-graph-workbench.md](../superpowers/plans/2026-03-23-graph-workbench.md)
-- 当前版本 / 日期：graph workbench / 2026-03-23
+- 当前版本 / 日期：graph workbench / 2026-03-24
 
 ## 2. 验收范围
 
@@ -24,10 +24,12 @@ audience: developer
 
 - `/graph` 页面三栏工作台布局
 - 左侧 `Database information`
-- 中央图谱结果视图
+- 中央 D3 图谱结果视图
 - 右侧 `Overview / Details` 检查器
 - `/api/v1/graph/meta/*` 元数据接口
 - `/api/v1/graph/herb/{name}` 与 `POST /api/v1/graph/query` 返回 `scene`
+- 查询入口、query summary 与属性 / 关系过滤高级查询
+- 图中节点双击展开与再次双击收起增量子图
 
 ### 不包含
 
@@ -45,25 +47,39 @@ audience: developer
 
 ### Step 1
 
-- 操作：打开 `http://localhost:3000/graph/人参`
+- 操作：打开 `http://localhost:3000/graph`
 
 ### Step 2
 
-- 操作：确认左侧出现 `Database information`
+- 操作：确认左侧出现 `Database information`，中央出现结果区，右侧出现 `Overview`
 
 ### Step 3
 
-- 操作：确认中央出现图谱结果视图，右侧出现 `Overview`
+- 操作：打开查询器并提交一组高级查询
+- 推荐输入：
+  - 节点名称包含：`人参`
+  - 属性键：`category`
+  - 属性值包含：`补气`
+  - 关系类型：`HAS_EFFICACY`
+  - 深度：`2`
 
 ### Step 4
 
-- 操作：点击左侧某个 label，例如 `Herb`
+- 操作：打开 `http://localhost:3000/graph/人参`
 
 ### Step 5
 
-- 操作：点击图谱中的节点或关系
+- 操作：点击左侧某个 label，例如 `Herb`
 
 ### Step 6
+
+- 操作：点击图谱中的节点或关系
+
+### Step 7
+
+- 操作：在 `/graph/人参` 中双击中心节点，再双击一次
+
+### Step 8
 
 - 操作：验证元数据接口
 - 命令：
@@ -74,42 +90,58 @@ curl -sS 'http://localhost:8000/api/v1/graph/meta/labels?limit=20' | python3 -m 
 curl -sS http://localhost:8000/api/v1/graph/meta/schema | python3 -m json.tool
 ```
 
-### Step 7
+### Step 9
 
 - 操作：验证图谱结果接口包含 `scene`
 - 命令：
 
 ```bash
 curl -sS 'http://localhost:8000/api/v1/graph/herb/%E4%BA%BA%E5%8F%82?depth=1' | python3 -m json.tool
-curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: application/json' -d '{"node":{"name_contains":"人参","label":"Herb"},"depth":1,"limit":20}' | python3 -m json.tool
+curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: application/json' -d '{"node":{"name_contains":"人参","label":"Herb"},"edge":{"rel_type":"HAS_EFFICACY"},"depth":2,"limit":20}' | python3 -m json.tool
+curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: application/json' -d '{"node":{"name_contains":"人参","property_key":"category","property_value_contains":"补气"},"edge":{"rel_type":"HAS_EFFICACY"},"depth":2,"limit":20}' | python3 -m json.tool
+```
+
+### Step 10
+
+- 操作：执行 Web 最小验证
+- 命令：
+
+```bash
+pnpm run test:web
+pnpm --dir packages/web typecheck
 ```
 
 ## 5. 期望结果
 
-### Step 1-3 预期
+### Step 1-4 预期
 
-- `/graph/人参` 以三栏工作台布局呈现
+- `/graph` 可直接进入 Graph Workbench
 - 左侧为 `Database information`
-- 中央为图谱结果视图
+- 中央为 D3 图谱结果视图
 - 右侧为检查器，默认显示 `Overview`
+- 提交高级查询后，工作区切换到 query result 语义
+- query summary 会体现名称 / 属性 / 关系过滤摘要
 
-### Step 4 预期
+### Step 5-6 预期
 
 - 点击 label 后不会清空当前图谱
 - 当前图谱中不匹配的节点会被弱化
-
-### Step 5 预期
-
 - 点击节点后右侧切换到节点详情
 - 点击关系后右侧切换到关系详情
 
-### Step 6 预期
+### Step 7-8 预期
+
+- `/graph/人参` 仍会加载默认 herb graph，而不是停在空工作台
+- 第一次双击节点时，请求并合并该节点的一跳邻居
+- 第二次双击同一节点时，只收起该节点本次展开出来的增量子图
+
+### Step 8 预期
 
 - `/graph/meta/summary` 返回数据库级计数
 - `/graph/meta/labels` 返回 `items + total`
 - `/graph/meta/schema` 返回 `indexes + constraints`
 
-### Step 7 预期
+### Step 9 预期
 
 - herb graph 与 advanced query 响应都包含 `scene`
 - `scene` 至少包含：
@@ -117,6 +149,13 @@ curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: ap
   - `node_limit_hit`
   - `relationship_limit_hit`
   - `info_message`
+- 高级查询响应返回 `summary` 与 `graph`
+- 属性过滤查询返回的 `active_filters` 中体现“分类包含: 补气”之类摘要
+
+### Step 10 预期
+
+- `pnpm run test:web` 通过
+- `packages/web` typecheck 退出码为 `0`
 
 ## 6. 证据记录
 
@@ -125,26 +164,48 @@ curl -sS -X POST 'http://localhost:8000/api/v1/graph/query' -H 'Content-Type: ap
 - `packages/api/app/api/graph.py`
 - `packages/api/app/kg/graph_metadata_service.py`
 - `packages/api/app/kg/graph_service.py`
+- `packages/api/app/kg/db.py`
+- `packages/api/app/kg/models.py`
 - `packages/web/src/hooks/useGraphWorkbenchPage.ts`
 - `packages/web/src/pages/GraphPage.tsx`
 - `packages/web/src/components/graph/GraphMetadataSidebar.tsx`
 - `packages/web/src/components/graph/GraphCanvasWorkspace.tsx`
+- `packages/web/src/components/graph/GraphToolbar.tsx`
+- `packages/web/src/components/graph/MiniGraphCanvas.tsx`
 - `packages/web/src/components/graph/GraphInspectorPanel.tsx`
+- `packages/web/src/components/workbench/frames/GraphResultFrame.tsx`
+- `packages/web/src/lib/graph-viz/Visualization.ts`
+- `packages/web/src/components/graph/GraphQueryPanel.tsx`
+- `packages/web/src/hooks/useGraphWorkspace.test.tsx`
+- `packages/web/src/pages/GraphPage.test.tsx`
 
 ### 运行证据
 
 ```bash
-uv run pytest tests/contract/test_graph_workbench_schema.py tests/api/test_graph_routes.py tests/kg/test_graph_service.py -v
-pnpm --dir packages/web exec vp test run src/hooks/useGraphWorkbenchPage.test.tsx src/pages/GraphPage.test.tsx src/components/graph/GraphMetadataSidebar.test.tsx src/components/graph/GraphInspectorPanel.test.tsx
+./scripts/test_api.sh
+pnpm run test:web
 pnpm --dir packages/web typecheck
+GitHub Actions: ci-fast run 23497811413
 ```
+
+执行日期：`2026-03-24`
+
+### 结果证据
+
+- `./scripts/test_api.sh` 结果为 `208 passed, 3 deselected`
+- `pnpm run test:web` 结果为 `16 passed` / `45 passed`
+- `pnpm --dir packages/web typecheck` 退出码为 `0`
+- GitHub Actions `ci-fast` run `23497811413` 结果为 `success`，其中 `api-tests` 与 `web-tests` 均通过
+- 本轮新增回归修复覆盖了 `packages/web/src/hooks/useGraphWorkspace.test.tsx`，保证 `scene` 与 `graphData` 的 hook 契约断言一致
+- 本验收已吸收原图谱查询工作区的高级查询与节点展开主链路，不再维护第二份 `/graph` 验收真源
 
 ## 7. 风险与未覆盖项
 
-- 当前验收文档仍是 draft；浏览器人工交互证据尚未补截图
-- 当前图谱视图只补了第一档高亮弱化，还未对齐 Neo4j Browser 的全部细节
+- 本轮仍未补浏览器人工交互截图，因此三栏布局、点击弱化和检查器切换的最终视觉效果仍缺少人工复核
+- 本轮未重新执行本地 `curl` 验证 `/api/v1/graph/meta/*` 与图谱查询接口，当前接口结论主要来自后端测试与 CI 证据
+- 当前图谱视图已切到 D3 自绘实现，但仍未追求与 Neo4j Browser 的全部交互细节完全对齐
 
 ## 8. 结论
 
 - 结果：`risk`
-- 结论一句话：Graph Workbench 主链路已形成协议、接口和页面壳层闭环，但仍需继续补齐更细的图谱交互 parity 和人工浏览器验收
+- 结论一句话：Graph Workbench 的协议、后端接口、D3 结果视图与主链测试已形成闭环，但浏览器人工验收与本地接口 spot-check 仍待补充

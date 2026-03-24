@@ -8,6 +8,32 @@
 
 **Tech Stack:** `uv`、`ruff`、`ty`、`pytest`、GitHub Actions、Bash
 
+**Status:** 已实施（2026-03-24）
+
+**Implementation Summary:** 后端开发、验证、CI 与文档口径已统一到 `uv + ruff + ty + pytest`。`packages/api/pyproject.toml` 成为工具链真源，`scripts/test_api.sh` 成为统一验证入口，GitHub Actions 与仓库文档均已同步到同一条命令链。
+
+**Implementation Evidence:**
+- 提交：`2a3c8b9 feat(api): migrate neo4j access and standardize backend toolchain`
+- 修改：`packages/api/pyproject.toml`
+- 修改：`packages/api/uv.lock`
+- 修改：`scripts/test_api.sh`
+- 修改：`.github/workflows/ci-fast.yml`
+- 修改：`README.md`
+- 修改：`docs/verification-matrix.md`
+- 修改：`docs/acceptance/README.md`
+
+**Verification Evidence:**
+- `cd packages/api && uv run ruff check app tests`
+- `cd packages/api && uv run ty check`
+- `./scripts/test_api.sh`
+- GitHub Actions：`ci-fast` run `23497811413`
+
+**Verification Result:**
+- `uv run ruff check app tests`：通过
+- `uv run ty check`：通过
+- `./scripts/test_api.sh`：`208 passed, 3 deselected`
+- `ci-fast`：`api-tests` 与 `web-tests` 均通过
+
 ---
 
 ### Task 1: 将后端工具链真源集中到 `pyproject.toml`
