@@ -1,17 +1,16 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Button, Empty, Space, Tag, Typography } from "antd";
 import { AimOutlined, BorderOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
-import { NetworkGraph } from "@ant-design/graphs/es/components/network-graph";
 import type { WorkbenchFrame } from "../../../types/workbench";
 import type { GraphData, GraphEdge, GraphNode, SelectedItem } from "../../../types/graph";
 import {
-  defaultNodeStyle,
-  nodeStyleMap,
   relTypeLabels,
 } from "../../../types/graph";
 import FrameChrome from "./FrameChrome";
 import NodeDetail from "../../graph/NodeDetail";
 import EdgeDetail from "../../graph/EdgeDetail";
+import MiniGraphCanvas from "../../graph/MiniGraphCanvas";
+import type { VizNode, VizRelationship } from "../../../lib/graph-viz";
 
 const { Paragraph, Text } = Typography;
 
@@ -20,16 +19,6 @@ type GraphResultFrameProps = {
   onDismiss?: () => void;
   onRerun?: () => void;
 };
-
-function getGraphEventId(event: unknown) {
-  const target = event as {
-    target?: { id?: string };
-    item?: { id?: string };
-    id?: string;
-  };
-
-  return target?.target?.id || target?.item?.id || target?.id;
-}
 
 function isGraphNode(value: unknown): value is GraphNode {
   return Boolean(
@@ -73,7 +62,6 @@ function normalizeGraphData(payload: Record<string, unknown>): GraphData | null 
 }
 
 const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) => {
-  const graphRef = useRef<any | null>(null);
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const [hoveredItem, setHoveredItem] = useState<SelectedItem | null>(null);
   const graphData = useMemo(() => normalizeGraphData(frame.payload), [frame.payload]);
@@ -82,8 +70,6 @@ const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) 
   const mode =
     typeof frame.payload.mode === "string" ? frame.payload.mode : "exact";
   const inspectorItem = hoveredItem ?? selected;
-  const centerId =
-    graphData?.center?.id || graphData?.center?.name || graphData?.nodes[0]?.id;
 
   const graphOverview = useMemo(() => {
     if (!graphData) {
@@ -111,184 +97,50 @@ const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) 
     };
   }, [graphData]);
 
-  const g6Data = useMemo(() => {
-    if (!graphData) {
-      return { nodes: [], edges: [] };
-    }
+  const handleNodeClick = useCallback((vizNode: VizNode) => {
+    setHoveredItem(null);
+    setSelected({ type: "node", data: vizNode.data });
+  }, []);
 
-    const computedCenterId = graphData.center?.id || graphData.center?.name;
-
-    const nodes = graphData.nodes.map((node) => {
-      const nodeId = node.id || node.name;
-      const primaryLabel = node.labels?.[0] || "Unknown";
-      const isCenter = nodeId === computedCenterId;
-      const style = nodeStyleMap[primaryLabel] || defaultNodeStyle;
-
-      return {
-        id: nodeId,
-        data: { ...node },
-        style: {
-          size: isCenter ? 76 : 52,
-          fill: style.fill,
-          stroke: style.stroke,
-          lineWidth: isCenter ? 4 : 2,
-          labelText: node.name,
-          labelPlacement: "center" as const,
-          labelFill: style.textColor,
-          labelFontSize: isCenter ? 16 : 11,
-          labelMaxWidth: isCenter ? 60 : 44,
-          labelFontWeight: isCenter ? 700 : 500,
-          shadowColor: style.stroke,
-          shadowBlur: isCenter ? 22 : 12,
-          shadowOffsetX: 0,
-          shadowOffsetY: 4,
-        },
-      };
-    });
-
-    const edges = graphData.edges.map((edge, index) => ({
-      id: edge.id || `workbench-edge-${index}`,
-      source: edge.source?.id || edge.source?.name || "",
-      target: edge.target?.id || edge.target?.name || "",
+  const handleEdgeClick = useCallback((vizRel: VizRelationship) => {
+    setHoveredItem(null);
+    setSelected({
+      type: "edge",
       data: {
-        ...edge,
-        sourceName: edge.source?.name,
-        targetName: edge.target?.name,
+        ...vizRel.data,
+        sourceName: vizRel.data.source?.name,
+        targetName: vizRel.data.target?.name,
       },
-      style: {
-        stroke: edge.status === "verified" ? "#8DCC93" : "#A5ABB6",
-        lineWidth: edge.status === "verified" ? 2.5 : 1.5,
-        labelText: relTypeLabels[edge.rel_type || ""] || edge.rel_type || "",
-        labelFill: "#526158",
-        labelFontSize: 12,
-        labelBackground: true,
-        labelBackgroundFill: "rgba(255,255,255,0.94)",
-        labelBackgroundRadius: 999,
-        endArrow: true,
-        endArrowSize: 8,
-      },
-    }));
+    });
+  }, []);
 
-    return { nodes, edges };
-  }, [graphData]);
+  const handleNodeHover = useCallback((vizNode: VizNode | null) => {
+    if (vizNode) {
+      setHoveredItem({ type: "node", data: vizNode.data });
+    } else {
+      setHoveredItem(null);
+    }
+  }, []);
 
-  const clearSelection = useCallback(() => {
+  const handleEdgeHover = useCallback((vizRel: VizRelationship | null) => {
+    if (vizRel) {
+      setHoveredItem({
+        type: "edge",
+        data: {
+          ...vizRel.data,
+          sourceName: vizRel.data.source?.name,
+          targetName: vizRel.data.target?.name,
+        },
+      });
+    } else {
+      setHoveredItem(null);
+    }
+  }, []);
+
+  const handleCanvasClick = useCallback(() => {
     setHoveredItem(null);
     setSelected(null);
   }, []);
-
-  const handleReady = useCallback(
-    (graph: any) => {
-      if (!graphData) return;
-
-      graphRef.current = graph;
-
-      graph.on("canvas:click", clearSelection);
-
-      graph.on("node:click", (event: unknown) => {
-        const nodeId = getGraphEventId(event);
-        if (!nodeId) return;
-
-        const node = graphData.nodes.find((item) => (item.id || item.name) === nodeId);
-        if (node) {
-          setHoveredItem(null);
-          setSelected({ type: "node", data: node });
-        }
-      });
-
-      graph.on("edge:click", (event: unknown) => {
-        const edgeId = getGraphEventId(event);
-        if (!edgeId) return;
-
-        const edgeModel = graph.getEdgeData?.(edgeId);
-        if (edgeModel?.data) {
-          setHoveredItem(null);
-          setSelected({
-            type: "edge",
-            data: {
-              ...edgeModel.data,
-              sourceName: edgeModel.data.sourceName || edgeModel.data.source?.name,
-              targetName: edgeModel.data.targetName || edgeModel.data.target?.name,
-            },
-          });
-        }
-      });
-
-      graph.on("node:mouseenter", (event: unknown) => {
-        const nodeId = getGraphEventId(event);
-        if (!nodeId) return;
-
-        const node = graphData.nodes.find((item) => (item.id || item.name) === nodeId);
-        if (node) {
-          setHoveredItem({ type: "node", data: node });
-        }
-      });
-
-      graph.on("node:mouseleave", () => {
-        setHoveredItem(null);
-      });
-
-      graph.on("edge:mouseenter", (event: unknown) => {
-        const edgeId = getGraphEventId(event);
-        if (!edgeId) return;
-
-        const edgeModel = graph.getEdgeData?.(edgeId);
-        if (edgeModel?.data) {
-          setHoveredItem({
-            type: "edge",
-            data: {
-              ...edgeModel.data,
-              sourceName: edgeModel.data.sourceName || edgeModel.data.source?.name,
-              targetName: edgeModel.data.targetName || edgeModel.data.target?.name,
-            },
-          });
-        }
-      });
-
-      graph.on("edge:mouseleave", () => {
-        setHoveredItem(null);
-      });
-
-      setTimeout(() => {
-        try {
-          graph.fitView?.();
-        } catch {
-          // ignore graph fit failures
-        }
-      }, 120);
-    },
-    [clearSelection, graphData],
-  );
-
-  const zoomCanvas = useCallback((delta: number) => {
-    const graph = graphRef.current;
-    if (!graph) return;
-
-    try {
-      const currentZoom = graph.getZoom?.() ?? 1;
-      graph.zoomTo?.(Math.max(0.3, currentZoom + delta));
-    } catch {
-      // ignore graph zoom failures
-    }
-  }, []);
-
-  const fitCanvas = useCallback(() => {
-    try {
-      graphRef.current?.fitView?.();
-    } catch {
-      // ignore graph fit failures
-    }
-  }, []);
-
-  const focusCenterNode = useCallback(() => {
-    if (!centerId) return;
-
-    try {
-      graphRef.current?.focusElement?.(centerId, true);
-    } catch {
-      fitCanvas();
-    }
-  }, [centerId, fitCanvas]);
 
   return (
     <FrameChrome frame={frame} onDismiss={onDismiss} onRerun={onRerun}>
@@ -317,12 +169,6 @@ const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) 
               <Tag style={{ borderRadius: 999, marginInlineEnd: 0 }}>{graphOverview.edgeCount} 关系</Tag>
               <Tag style={{ borderRadius: 999, marginInlineEnd: 0 }}>{mode}</Tag>
             </Space>
-            <Space.Compact>
-              <Button aria-label="放大图谱" icon={<PlusOutlined />} onClick={() => zoomCanvas(0.15)} />
-              <Button aria-label="缩小图谱" icon={<MinusOutlined />} onClick={() => zoomCanvas(-0.15)} />
-              <Button aria-label="适应画布" icon={<BorderOutlined />} onClick={fitCanvas} />
-              <Button aria-label="回到中心节点" icon={<AimOutlined />} onClick={focusCenterNode} />
-            </Space.Compact>
           </Space>
 
           {summary ? (
@@ -341,7 +187,14 @@ const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) 
 
           {graphData?.nodes.length ? (
             <div style={{ height: 320 }}>
-              <NetworkGraph data={g6Data} onReady={handleReady} />
+              <MiniGraphCanvas
+                graphData={graphData}
+                onNodeClick={handleNodeClick}
+                onEdgeClick={handleEdgeClick}
+                onNodeHover={handleNodeHover}
+                onEdgeHover={handleEdgeHover}
+                onCanvasClick={handleCanvasClick}
+              />
             </div>
           ) : (
             <div style={{ height: 320, display: "grid", placeItems: "center" }}>

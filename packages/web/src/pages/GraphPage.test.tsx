@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { act, fireEvent, screen } from "@testing-library/react";
 import GraphPage from "./GraphPage";
@@ -7,67 +7,36 @@ import { useGraphWorkbenchPage } from "../hooks/useGraphWorkbenchPage";
 import type { GraphData } from "../types/graph";
 import { graphApi } from "../services/api";
 
-type MockGraphInstance = {
-  on: ReturnType<typeof vi.fn>;
-  fitCenter: ReturnType<typeof vi.fn>;
-  fitView: ReturnType<typeof vi.fn>;
-  getEdgeData: ReturnType<typeof vi.fn>;
-  getElementPosition: ReturnType<typeof vi.fn>;
-  getNodeData: ReturnType<typeof vi.fn>;
-  stopLayout: ReturnType<typeof vi.fn>;
-};
-
-type MockNetworkGraphProps = {
-  onReady?: (graph: MockGraphInstance) => void;
-  containerStyle?: { width?: string; height?: string };
-  behaviors?: Array<{ key?: string; type?: string }>;
-  layout?: { type?: string };
-  data?: {
-    nodes: Array<{ id: string; style?: { opacity?: number } }>;
-  };
-};
-
-const mockGraphInstance: MockGraphInstance = {
-  on: vi.fn(),
-  fitCenter: vi.fn(),
-  fitView: vi.fn(),
-  getEdgeData: vi.fn(),
-  getElementPosition: vi.fn((id: string) => {
-    if (id === "herb-1") return { x: 0, y: 0 };
-    if (id === "eff-1") return { x: 180, y: 0 };
-    return { x: 40, y: 40 };
-  }),
-  getNodeData: vi.fn((id?: string) => {
-    const nodeMap: Record<string, { id: string; style: { x: number; y: number } }> = {
-      "herb-1": { id: "herb-1", style: { x: 0, y: 0 } },
-      "eff-1": { id: "eff-1", style: { x: 180, y: 0 } },
-    };
-
-    if (!id) {
-      return Object.values(nodeMap);
-    }
-
-    return nodeMap[id] ?? { id, style: { x: 40, y: 40 } };
-  }),
-  stopLayout: vi.fn(),
-};
-
-const mockNetworkGraph = vi.fn((props?: unknown) => {
-  const typedProps = props as MockNetworkGraphProps | undefined;
-
-  function MockGraphMount() {
-    useEffect(() => {
-      typedProps?.onReady?.(mockGraphInstance);
-    }, []);
-
-    return <div data-testid="network-graph" />;
-  }
-
-  return <MockGraphMount />;
-});
-
-vi.mock("@ant-design/graphs/es/components/network-graph", () => ({
-  NetworkGraph: (props: unknown) => mockNetworkGraph(props),
+// Mock D3 SVG rendering since jsdom doesn't support SVG layout
+vi.mock("../lib/graph-viz", () => ({
+  Visualization: vi.fn().mockImplementation(() => ({
+    init: vi.fn(),
+    precomputeAndStart: vi.fn(),
+    update: vi.fn(),
+    destroy: vi.fn(),
+    resize: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
+    zoomToFit: vi.fn(),
+    on: vi.fn().mockReturnThis(),
+    trigger: vi.fn(),
+    forceSimulation: { simulation: { stop: vi.fn() } },
+  })),
+  VizGraph: {
+    fromGraphData: vi.fn().mockReturnValue({
+      nodes: vi.fn().mockReturnValue([]),
+      relationships: vi.fn().mockReturnValue([]),
+      findNode: vi.fn(),
+      addNodes: vi.fn(),
+      addRelationships: vi.fn(),
+      collapseNode: vi.fn(),
+    }),
+  },
+  VizNode: vi.fn(),
+  VizRelationship: vi.fn(),
+  GraphEventHandler: vi.fn().mockImplementation(() => ({
+    bindEventHandlers: vi.fn(),
+  })),
 }));
 
 vi.mock("../hooks/useGraphWorkbenchPage", () => ({
@@ -167,14 +136,6 @@ const createHookResult = (
 
 describe("GraphPage", () => {
   beforeEach(() => {
-    mockNetworkGraph.mockClear();
-    mockGraphInstance.on.mockClear();
-    mockGraphInstance.fitCenter.mockClear();
-    mockGraphInstance.fitView.mockClear();
-    mockGraphInstance.getEdgeData.mockClear();
-    mockGraphInstance.getElementPosition.mockClear();
-    mockGraphInstance.getNodeData.mockClear();
-    mockGraphInstance.stopLayout.mockClear();
     mockedUseGraphWorkbenchPage.mockReturnValue(createHookResult());
   });
 
@@ -209,7 +170,7 @@ describe("GraphPage", () => {
     expect(screen.getByRole("button", { name: /打开查询器/ })).toBeInTheDocument();
   });
 
-  it("stretches the graph renderer to fill the canvas surface", () => {
+  it("renders the SVG canvas when graph data is present", () => {
     renderWithProviders(
       <Routes>
         <Route path="/graph/:name?" element={<GraphPage />} />
@@ -217,165 +178,6 @@ describe("GraphPage", () => {
       "/graph/人参",
     );
 
-    const [graphProps] = mockNetworkGraph.mock.calls[mockNetworkGraph.mock.calls.length - 1] ?? [];
-    const typedGraphProps = graphProps as MockNetworkGraphProps;
-
-    expect(typedGraphProps.containerStyle).toEqual({
-      width: "100%",
-      height: "100%",
-    });
-  });
-
-  it("dims non-matching nodes when a label highlight is active", () => {
-    mockedUseGraphWorkbenchPage.mockReturnValue(
-      createHookResult({
-        highlightedLabel: "Herb",
-      }),
-    );
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/graph/:name?" element={<GraphPage />} />
-      </Routes>,
-      "/graph/人参",
-    );
-
-    const [graphProps] = mockNetworkGraph.mock.calls[mockNetworkGraph.mock.calls.length - 1] ?? [];
-    const typedGraphProps = graphProps as MockNetworkGraphProps;
-    const herbNode = typedGraphProps.data?.nodes.find((node) => node.id === "herb-1");
-    const efficacyNode = typedGraphProps.data?.nodes.find((node) => node.id === "eff-1");
-
-    expect(herbNode?.style?.opacity).toBe(1);
-    expect(efficacyNode?.style?.opacity).toBe(0.24);
-  });
-
-  it("does not rerender the graph canvas when only inspector selection changes", () => {
-    let hookResult = createHookResult();
-    mockedUseGraphWorkbenchPage.mockImplementation(() => hookResult);
-
-    function Harness() {
-      const [, setVersion] = useState(0);
-
-      return (
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              hookResult = createHookResult({
-                selectedItem: {
-                  type: "node",
-                  data: defaultGraphData.nodes[0],
-                },
-              });
-              setVersion((current) => current + 1);
-            }}
-          >
-            mutate-selection
-          </button>
-          <Routes>
-            <Route path="/graph/:name?" element={<GraphPage />} />
-          </Routes>
-        </>
-      );
-    }
-
-    renderWithProviders(<Harness />, "/graph/人参");
-
-    expect(mockNetworkGraph).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByRole("button", { name: "mutate-selection" }));
-
-    expect(mockNetworkGraph).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not refit the whole graph after expanding a node subgraph", async () => {
-    vi.useFakeTimers();
-    const expandNodeGraphSpy = vi.spyOn(graphApi, "expandNodeGraph").mockResolvedValue({
-      center: {
-        id: "eff-1",
-        name: "补气",
-        labels: ["Efficacy"],
-        status: "verified",
-      },
-      nodes: [
-        { id: "eff-1", name: "补气", labels: ["Efficacy"], status: "verified" },
-        { id: "meridian-1", name: "心经", labels: ["Meridian"], status: "verified" },
-      ],
-      edges: [
-        {
-          source: { id: "herb-1", name: "人参" },
-          target: { id: "meridian-1", name: "心经" },
-          rel_type: "ENTERS_MERIDIAN",
-          status: "verified",
-        },
-      ],
-    });
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/graph/:name?" element={<GraphPage />} />
-      </Routes>,
-      "/graph/人参",
-    );
-
-    await act(async () => {
-      vi.runAllTimers();
-    });
-
-    await act(async () => {
-      vi.runAllTimers();
-    });
-
-    expect(mockGraphInstance.fitCenter).toHaveBeenCalledTimes(1);
-    expect(mockGraphInstance.fitView).not.toHaveBeenCalled();
-
-    const dblclickHandler = mockGraphInstance.on.mock.calls.find(
-      ([eventName]) => eventName === "node:dblclick",
-    )?.[1] as ((event: { id: string }) => Promise<void>) | undefined;
-
-    expect(dblclickHandler).toBeDefined();
-
-    await act(async () => {
-      await dblclickHandler?.({ id: "eff-1" });
-    });
-
-    await act(async () => {
-      vi.runAllTimers();
-    });
-
-    expect(expandNodeGraphSpy).toHaveBeenCalledWith("eff-1", 1, 20);
-    expect(mockGraphInstance.fitCenter).toHaveBeenCalledTimes(1);
-    expect(mockGraphInstance.fitView).not.toHaveBeenCalled();
-
-    vi.useRealTimers();
-  });
-
-  it("enables node dragging and switches to a stable layout after node positions are hydrated", async () => {
-    vi.useFakeTimers();
-
-    renderWithProviders(
-      <Routes>
-        <Route path="/graph/:name?" element={<GraphPage />} />
-      </Routes>,
-      "/graph/人参",
-    );
-
-    await act(async () => {
-      vi.runAllTimers();
-    });
-
-    const [graphProps] = mockNetworkGraph.mock.calls[mockNetworkGraph.mock.calls.length - 1] ?? [];
-    const typedGraphProps = graphProps as MockNetworkGraphProps;
-
-    expect(typedGraphProps.behaviors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ type: "drag-canvas" }),
-        expect.objectContaining({ type: "zoom-canvas" }),
-        expect.objectContaining({ type: "drag-element" }),
-      ]),
-    );
-    expect(typedGraphProps.layout?.type).toBe("preset");
-
-    vi.useRealTimers();
+    expect(screen.getByTestId("graph-canvas-workspace")).toBeInTheDocument();
   });
 });

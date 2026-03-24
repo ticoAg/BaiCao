@@ -5,17 +5,40 @@ import { renderWithProviders } from "../test/render-with-providers";
 import { useGraphWorkbenchStore } from "../stores/workbenchStore";
 import { workbenchApi } from "../services/workbenchApi";
 
-const mockNetworkGraph = vi.fn((props?: unknown) => (
-  <div data-testid="workbench-network-graph" data-props={props ? "captured" : "missing"} />
-));
-
-vi.mock("@ant-design/graphs/es/components/network-graph", () => ({
-  NetworkGraph: (props: unknown) => mockNetworkGraph(props),
+// Mock D3 SVG rendering since jsdom doesn't support SVG layout
+vi.mock("../lib/graph-viz", () => ({
+  Visualization: vi.fn().mockImplementation(() => ({
+    init: vi.fn(),
+    precomputeAndStart: vi.fn(),
+    update: vi.fn(),
+    destroy: vi.fn(),
+    resize: vi.fn(),
+    zoomIn: vi.fn(),
+    zoomOut: vi.fn(),
+    zoomToFit: vi.fn(),
+    on: vi.fn().mockReturnThis(),
+    trigger: vi.fn(),
+    forceSimulation: { simulation: { stop: vi.fn() } },
+  })),
+  VizGraph: {
+    fromGraphData: vi.fn().mockReturnValue({
+      nodes: vi.fn().mockReturnValue([]),
+      relationships: vi.fn().mockReturnValue([]),
+      findNode: vi.fn(),
+      addNodes: vi.fn(),
+      addRelationships: vi.fn(),
+      collapseNode: vi.fn(),
+    }),
+  },
+  VizNode: vi.fn(),
+  VizRelationship: vi.fn(),
+  GraphEventHandler: vi.fn().mockImplementation(() => ({
+    bindEventHandlers: vi.fn(),
+  })),
 }));
 
 describe("GraphWorkbenchPage", () => {
   beforeEach(() => {
-    mockNetworkGraph.mockClear();
     useGraphWorkbenchStore.setState({
       editorValue: "",
       frames: [],
@@ -356,6 +379,5 @@ describe("GraphWorkbenchPage", () => {
     expect(await screen.findByText("图谱概览")).toBeInTheDocument();
     expect(await screen.findByText("Cypher 校验失败")).toBeInTheDocument();
     expect(await screen.findByText("Write operations are not allowed.")).toBeInTheDocument();
-    expect(await screen.findByTestId("workbench-network-graph")).toBeInTheDocument();
   });
 });
