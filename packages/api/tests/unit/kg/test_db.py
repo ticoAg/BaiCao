@@ -2,10 +2,6 @@ from unittest.mock import AsyncMock, PropertyMock, patch
 
 import pytest
 
-
-from app.core.config import get_settings
-
-
 def test_build_neomodel_url_includes_auth() -> None:
     from app.kg.db import build_neomodel_url
 
