@@ -159,7 +159,47 @@ uv run ruff check app/pipeline tests/unit/pipeline/test_service.py tests/api/tes
 uv run pytest tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py -q
 ```
 
-- 当前结果：`ruff` 通过；`pytest` 结果为 `24 passed in 0.97s`
+- 当前结果：`ruff` 通过；`pytest` 结果为 `24 passed`
+
+```bash
+pnpm --dir packages/web test --run src/pages/DataPipelinePage.test.tsx
+pnpm --dir packages/web typecheck
+```
+
+- 当前结果：页面测试 `5 passed`；`typecheck` 通过
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/v1/pipeline/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"source_type":"manual","source_locator":"候选实体：陈皮（药材）"}'
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/source_ingest/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/source_preview/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/normalize/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/extract/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/map_to_knowledge_model/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/human_review/preview"
+curl -sS -X POST "http://127.0.0.1:8000/api/v1/pipeline/runs/$RUN_ID/steps/export/preview"
+```
+
+- 当前结果：七步分别返回 `source_descriptor`、`source_contents`、`normalized_content`、`extraction_candidates`、`graph_mapping`、`review_decision`、`export_plan`
+- `extract.preview_payload.candidates` 在本轮手工验证中返回 1 个候选项；`map_to_knowledge_model.preview_payload.validation.is_valid = true`
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/api/v1/pipeline/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"source_type":"jsonl","source_locator":"packages/db/import/herbs.jsonl"}'
+curl -sS -X POST http://127.0.0.1:8000/api/v1/pipeline/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"source_type":"csv","source_locator":"packages/db/import/herbs.csv"}'
+curl -sS -X POST http://127.0.0.1:8000/api/v1/pipeline/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"source_type":"huggingface","source_locator":"datasets/ticoag/herbs-demo"}'
+```
+
+- 当前结果：`manual` 的 `source_summary.kind = text`；`jsonl` / `csv` 的 `kind = file`；`huggingface` 的 `kind = remote_locator`
+- 空白 `manual` 来源在 `map_to_knowledge_model/confirm` 返回 `400`，错误信息仍为“当前映射结果未通过共享图模型校验，不能进入下一步”
+- `source_ingest` 在 `confirm` 后推进到 `source_preview`；`rollback` 后 `source_ingest` 到 `export` 全部恢复为 `pending`
+- 浏览器页面 spot-check：本地打开 `/data/pipeline` 与 `/data/pipeline?runId=<id>`，可见固定七步、最近任务列表、当前步骤切到“原始内容预览”、来源类型 `jsonl` 与恢复后的预览内容文本
 
 ### 结果证据
 
@@ -170,12 +210,12 @@ uv run pytest tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes
 
 ## 7. 风险与未覆盖项
 
-- 本文档对应的本轮 fresh 证据来自 API / unit 测试；页面级交互表现未在本 wave 重新做浏览器验收
+- 本轮页面验收是本地浏览器事实检查，不是完整截图回归或 E2E 套件
 - `huggingface` 仍为 locator 校验与摘要预览，不代表远端数据抓取已接入
 - 文件来源仍是最小预览路径，不代表批量导入链路已在工作台内执行
 
 ## 8. 结论
 
-- 结果：`risk`
-- 结论一句话：数据处理工作台后端七步预览主链路已具备可复现证据，页面级人工验收仍需在集成阶段补一轮
-- 后续动作：由主代理在合并后补目录索引与跨模块统一验收结论
+- 结果：`pass`
+- 结论一句话：数据处理工作台七步预览主链路已完成 API、页面与真实来源分发的本地复核，Wave 1 的验收目标成立
+- 后续动作：后续只需在更高层补充真实 HuggingFace 远端抓取、批量导入执行与更完整的页面回归证据

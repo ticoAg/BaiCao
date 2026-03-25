@@ -270,21 +270,18 @@ packages/knowledge_model/
 
 ## 10. 当前事实与目标形态
 
-当前仓库内的图谱定义还分散在多个位置：
+当前仓库内已经完成这条主线收敛：
 
-- `packages/shared/types/index.ts`
-- `packages/api/app/models/enums.py`
-- `packages/api/app/schemas/graph.py`
-- `packages/api/app/importers/*.py`
+- `packages/knowledge_model/` 已成为共享图模型与导入记录的代码真源
+- API graph schema 直接复用共享 `NodeType` / `NodeStatus`
+- importer / exporter 统一消费共享 `GraphImportRecord`
+- `packages/data_ingestion/` 已作为共享模型消费者落地，不再重复定义图谱枚举
 
-这说明“仓库级共享图模型”方向已经出现雏形，但还没有真正收敛为唯一真源。
+当前仍保留的边界差异与后续扩展点是：
 
-本架构文档确认的目标形态是：
-
-- 共享图模型提升为独立共享代码包
-- API、导入器和数据采集统一改为依赖该共享包
-- 中文语义与英文技术标识通过共享包集中维护
-- 稳定架构文档只解释口径，不再承担可执行真源角色
+- API `EdgeType` 仍保留少量 API-only superset
+- 真实导入执行、更多来源接入与更高层联调证据还可继续补强
+- 稳定架构文档继续只解释边界与口径，不承担可执行真源角色
 
 ## 11. 与其他文档的关系
 

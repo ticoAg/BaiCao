@@ -25,10 +25,13 @@
 - `cd packages/api && uv run pytest tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py -q` → `24 passed`
 - `cd packages/api && uv run ruff check app/pipeline tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py` → `All checks passed!`
 - `pnpm --dir packages/web test --run src/pages/DataPipelinePage.test.tsx` → `5 passed`
+- `pnpm --dir packages/web typecheck` → `passed`
+- 本地 API spot-check 复核了四类来源分发、七步 preview kind、map 门禁与 confirm / rollback 主路径
+- 本地浏览器页面事实检查复核了 `/data/pipeline` 与 `/data/pipeline?runId=<id>` 的固定七步、最近任务、当前步骤恢复与预览内容展示
 
 ### 风险
 
-- 当前工作台后端七步预览已闭环，但页面级人工验收与真实来源联调仍未在本轮完整展开
+- 本轮已经补齐页面级人工验收与真实来源分发的本地复核，但未扩展到完整截图回归或 E2E 套件
 - `huggingface` 来源目前仅做 locator 校验与摘要预览，不代表远端数据抓取已接入
 - 历史步骤中的 checkbox 未逐项回填；本节作为当前已实现事实与验证证据的聚合更新
 

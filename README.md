@@ -7,13 +7,13 @@
 ![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20Neo4j%20%7C%20PostgreSQL-0f766e)
 ![LLM](https://img.shields.io/badge/LLM-LangChain%20%2B%20OpenAI-7c3aed)
 
-> 当前阶段：MVP 早期实现中。仓库内已具备 monorepo 骨架、基础设施编排、首批后端接口、前端页面原型和 Neo4j 样例数据，但距离生产可用仍有较大差距。
+> 当前阶段：MVP 早期实现中。仓库内已具备 monorepo 骨架、基础设施编排、多条可复现主链路、前端工作台页面和 Neo4j 样例数据，但距离生产可用仍有较大差距。
 
 ## 一页看懂
 
 - 定位：把中药材问答从“黑盒回答”升级为“图谱支撑 + 推理可见 + 证据可查 + 专家可审”的可信知识系统
 - 架构：以 FastAPI 为应用入口，Neo4j 承担图谱查询，PostgreSQL 承担结构化事务数据，React 提供问答与探索界面
-- 现状：主骨架、首批 API、前端原型、样例图谱和导入脚本已具备；审查闭环、完整溯源、SSE 和事件驱动仍在持续建设
+- 现状：Graph Workbench、智能问答、验证闭环、数据处理工作台、共享知识模型与 review/export 持久化都已有主链路验收；完整溯源、专家权限和事件驱动仍在持续建设
 - 适合谁：中医师、执业药师、研究者，以及关心知识图谱问答和可信 AI 的开发者
 
 ## 快速导航
@@ -22,6 +22,9 @@
 - 系统总览：`docs/architecture/system-overview.md`
 - 数据模型：`docs/architecture/data-model.md`
 - Graph Workbench：`docs/architecture/graph-workbench.md`
+- 数据处理工作台：`docs/architecture/data-pipeline-workbench.md`
+- 共享知识模型 / 数据采集：`docs/architecture/knowledge-model-and-ingestion.md`
+- 验收入口：`docs/acceptance/README.md`
 - brainstorm：`docs/_dev/brainstorm/README.md`
 - 实施计划入口：`docs/superpowers/README.md`
 
@@ -69,14 +72,16 @@
 | 模块 | 当前状态 | 说明 |
 | --- | --- | --- |
 | Monorepo 骨架 | 已有 | `packages/`、`infra/`、`docs/` 与 `docs/superpowers/` 已建立 |
-| 基础设施编排 | 已有 | Docker Compose 管理 PostgreSQL、Neo4j、Redis，本地 `make` + `tmux` 管理 API 与 Web |
-| 后端 API | 初步可用 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat` 路由骨架 |
-| 前端页面 | 原型可用 | 已有首页、搜索、图谱、验证、问答等页面原型 |
+| 基础设施编排 | 已有 | Docker Compose 管理 PostgreSQL、Neo4j、Redis、MinIO，本地 `make` + `tmux` 管理 API 与 Web |
+| 后端 API | 多条主链路可验证 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat`、`pipeline`、`review/export` 路由 |
+| 前端页面 | 核心工作台可用 | 已有首页、搜索、图谱、Graph Workbench、验证、问答、数据处理页面 |
 | 图谱数据 | 样例可用 | 已有 Neo4j 约束脚本和“陈皮”样例图谱种子数据 |
-| 数据导入 | 初步可用 | 已有 CSV / JSONL 导入器和 dry-run CLI |
-| 溯源链路 | 设计明确 | 完整证据链与来源联动仍在继续实现 |
-| 专家审查闭环 | 初步可用 | 验证申请与审核接口已有骨架，完整角色/权限流未完成 |
-| 事件驱动 / 缓存 / SSE | 规划中 | 已写入架构草案，尚未在仓库内完整落地 |
+| 共享知识模型 / 数据采集 | 主链路可验证 | `packages/knowledge_model/` 与 `packages/data_ingestion/` 已落地并有验收证据 |
+| 数据导入 / 导出 | 主路径可用 | 已有 CSV / JSONL 导入器、共享导入记录、显式 export execute 与 JSONL snapshot |
+| SSE 问答 | 初版可用 | `POST /api/v1/chat/stream` 与前端流式消费已落地 |
+| 溯源链路 | 进行中 | 更完整证据链与来源联动仍在继续实现 |
+| 专家审查治理 | 进行中 | 验证申请与审核主链已通过，完整角色/权限 / 审计流未完成 |
+| 事件驱动 / 缓存 / 监控 | 规划中 | 已写入架构草案，尚未在仓库内完整落地 |
 
 换句话说：这是一个“方向明确、主干已立、能力还在持续生长”的仓库，而不是一个已经封版的成品。
 
@@ -151,10 +156,12 @@ sequenceDiagram
 ```text
 BaiCao/
 ├── packages/
-│   ├── api/          # FastAPI 后端
-│   ├── web/          # React 前端
-│   ├── shared/       # 共享类型与工具
-│   └── db/           # 数据脚本、Cypher、导入数据
+│   ├── api/              # FastAPI 后端
+│   ├── web/              # React 前端
+│   ├── shared/           # 跨端共享类型与工具
+│   ├── knowledge_model/  # 共享知识模型 Python 包
+│   ├── data_ingestion/   # 数据采集边界包
+│   └── db/               # 数据脚本、Cypher、导入数据
 ├── infra/            # Docker Compose 与基础设施配置
 ├── docs/             # 架构、验收、研发草案与 superpowers 文档
 │   ├── architecture/ # 稳定架构文档
@@ -168,7 +175,7 @@ BaiCao/
 
 ### 后端
 
-当前后端已经有一批可继续演进的接口骨架：
+当前后端已经有一批可继续演进的主链路接口：
 
 - `GET /health`：健康检查
 - `GET /api/v1/herbs/`：药材列表
@@ -177,18 +184,26 @@ BaiCao/
 - `GET /api/v1/graph/search`：图谱节点搜索
 - `GET /api/v1/graph/path`：查询两个节点之间的路径
 - `GET /api/v1/graph/pending`：获取待验证节点或关系
+- `GET /api/v1/graph/meta/*`：图谱 metadata / schema 摘要
 - `GET/POST /api/v1/verifications/...`：验证申请与审核
 - `POST /api/v1/chat/question`：原型版智能问答接口
+- `POST /api/v1/chat/stream`：SSE 流式问答接口
+- `POST /api/v1/pipeline/runs`：数据处理 run 创建
+- `POST /api/v1/pipeline/runs/{run_id}/steps/{step}/preview`：七步预览
+- `POST /api/v1/pipeline/runs/{run_id}/review-session`：人工确认会话
+- `POST /api/v1/pipeline/runs/{run_id}/export-executions`：显式导出执行
 
 ### 前端
 
-当前前端已具备基础导航和页面原型：
+当前前端已具备基础导航和一批可实际验证的页面：
 
 - 首页
 - 知识搜索页
 - 图谱浏览页
+- Graph Workbench
 - 验证管理页
 - 智能问答页
+- 数据处理工作台
 
 ### 数据与脚本
 
@@ -196,6 +211,7 @@ BaiCao/
 - “陈皮”样例图谱种子数据
 - `herbs.csv` / `herbs.jsonl` 样例导入文件
 - CSV / JSONL 导入 CLI（支持 dry-run）
+- 共享知识模型包与数据采集边界包
 
 ## 快速开始
 
@@ -224,6 +240,8 @@ make stack up
 - Neo4j Browser: `http://localhost:17474`
 - PostgreSQL: `localhost:15433`
 - Redis: `localhost:16380`
+- MinIO API: `http://localhost:19000`
+- MinIO Console: `http://localhost:19001`
 
 常用命令：
 
@@ -251,7 +269,7 @@ make stack up API_PORT=8010 WEB_PORT=3010
 
 ```bash
 cp infra/.env.example infra/.env
-docker compose -f infra/docker-compose.yml up -d postgres neo4j redis
+docker compose -f infra/docker-compose.yml up -d postgres neo4j redis minio
 ```
 
 然后为本地 API 准备环境变量，例如在 `packages/api/.env` 中配置：
@@ -391,7 +409,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 - Redis 缓存
 - 事件驱动模块集成
-- SSE 流式输出
+- 多轮会话持久化与更强来源选择
 - 更完整的监控、追踪和性能优化
 
 ## 文档入口
@@ -413,6 +431,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 - AI + 知识库 + 溯源的可信系统设计
 - 中药材知识数字化
 - Neo4j 与应用层联动
+- 数据工作台 / review / export 持久化
 - 专家审查与 AI 生成内容协同
 
 ## 当前限制
@@ -423,6 +442,7 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 - 仍有不少功能处于原型或骨架阶段
 - 完整鉴权、权限模型和专家工作流尚未闭环
+- 完整溯源链路、跨模块审计与更多集成回归仍需继续补强
 - 问答质量依赖后续图谱质量、提示词工程和审查机制
 - 部分能力已经在 brainstorm / architecture 文档中设计，但尚未全部代码化
 

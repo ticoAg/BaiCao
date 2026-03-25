@@ -135,6 +135,61 @@ uv run --with pytest pytest tests/test_models.py -q
 
 执行日期：`2026-03-25`
 
+```bash
+cd packages/api
+uv run pytest tests/contract/test_graph_shared_model_contract.py \
+  tests/contract/test_import_record_contract.py \
+  tests/api/test_graph_routes.py \
+  tests/unit/kg/test_models.py -q
+
+cd ../knowledge_model
+uv run --with pytest pytest tests -q
+```
+
+- 当前结果：API contract + route + unit 聚焦验证 `21 passed`；共享模型包测试 `8 passed`；`data_ingestion` 测试 `1 passed`
+
+```bash
+cd packages/api
+uv run python - <<'PY'
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from app.importers.jsonl_importer import JSONLImporter
+from app.exporters.jsonl_exporter import JSONLExporter
+from knowledge_model.import_records import GraphImportRecord
+
+source = Path("../db/import/herbs.jsonl")
+records = list(JSONLImporter().load(str(source)))
+print(type(records[0]).__name__, records[0].node_name, records[0].node_type)
+with TemporaryDirectory() as tmpdir:
+    output = Path(tmpdir) / "roundtrip.jsonl"
+    JSONLExporter().export(records[:2], str(output))
+    first = GraphImportRecord.model_validate_json(output.read_text(encoding="utf-8").splitlines()[0])
+    print(type(first).__name__, first.node_name, len(first.edges))
+PY
+```
+
+- 当前结果：样例 `packages/db/import/herbs.jsonl` 导入后直接得到 `GraphImportRecord`；导出到临时 JSONL 后可再次由共享 `GraphImportRecord` 成功回读
+
+```bash
+cd packages/data_ingestion
+uv run python - <<'PY'
+from data_ingestion.models import ExtractionCandidate
+from knowledge_model.constants import NodeType
+
+candidate = ExtractionCandidate(node_type=NodeType.HERB, node_name="陈皮", source_name="demo")
+print(candidate.node_type is NodeType.HERB, candidate.node_type)
+PY
+```
+
+- 当前结果：`ExtractionCandidate` 在真实运行中直接消费共享 `NodeType.HERB`
+
+```bash
+curl -sS http://127.0.0.1:8000/api/v1/graph/meta/schema
+```
+
+- 当前结果：API graph 元信息接口在本地集成环境可正常返回 schema 摘要，证明共享图模型迁移后的 graph 主路径仍可工作
+
 ### 结果证据
 
 - `tests/contract/test_graph_shared_model_contract.py` 通过，锁住共享图模型枚举绑定与 edge 子集
@@ -144,12 +199,12 @@ uv run --with pytest pytest tests/test_models.py -q
 
 ## 7. 风险与未覆盖项
 
-- 本验收只覆盖共享图模型、导入记录与数据采集边界的最小主线，没有补充全量 API 测试、lint、type check
-- 当前 importer / exporter 只验证了 JSONL 主路径；CSV 行为依赖同一共享导入记录抽象，但未在本验收文档中单独展开样例
-- 未补充真实 Neo4j 导入或浏览器端人工验收，因此结果更偏向 contract / unit 证据
+- 当前 importer / exporter 的手工 round-trip 主要覆盖 JSONL 主路径；CSV 仍依赖同一共享导入记录抽象，但未在本文单独展开样例
+- 本轮没有补真实 Neo4j 导入执行，也没有补浏览器端人工验收；这条验收聚焦的是共享结构真源与消费者边界
+- API `EdgeType` 仍保留 superset 策略；shared 与 API-only edge 的完全收敛不在本轮范围
 
 ## 8. 结论
 
-- 结果：`risk`
-- 结论一句话：共享图模型已经成为 API schema、导入记录与数据采集边界的单一事实来源，但更高层联调与人工验收仍待补充
-- 后续动作：由主代理在集成阶段决定是否追加更高层 API / acceptance 验证
+- 结果：`pass`
+- 结论一句话：共享知识模型已经成为 API schema、导入导出与数据采集边界的单一事实来源，并已补齐样例 round-trip 与本地集成环境复核
+- 后续动作：后续只需在真实导入执行与更广覆盖的 CSV / integration 层补更多样例证据

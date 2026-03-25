@@ -26,10 +26,13 @@
 - `cd packages/api && uv run pytest tests/contract/test_import_record_contract.py tests/api/test_graph_routes.py -q` → `15 passed`
 - `cd packages/api && uv run pytest tests/contract/test_graph_shared_model_contract.py tests/contract/test_import_record_contract.py tests/api/test_graph_routes.py tests/unit/kg/test_models.py -q` → `21 passed`
 - `cd packages/data_ingestion && uv run --with pytest pytest tests/test_models.py -q` → `1 passed`
+- `cd packages/knowledge_model && uv run --with pytest pytest tests -q` → `8 passed`
+- JSONL 主路径手工 round-trip 已复核：`JSONLImporter` 直接产出共享 `GraphImportRecord`，`JSONLExporter` 导出的临时文件可再被共享 `GraphImportRecord` 回读
+- 本地集成环境下 `GET /api/v1/graph/meta/schema` 返回有效 schema 摘要，证明共享模型迁移后 graph 主路径仍可工作
 
 ### 风险
 
-- 当前验收主要覆盖 contract / unit 层，未补充更高层 API 全量验证、真实导入执行与浏览器端人工验收
+- 当前验收已经补齐一轮样例 round-trip 与本地 API spot-check，但仍未扩展到真实 Neo4j 导入执行和浏览器端人工验收
 - API `EdgeType` 仍保留 superset 策略；shared 与 API edge 的完全收敛不在本轮范围
 - 历史步骤中的 checkbox 未逐项回填；本节作为当前已实现事实与验证证据的聚合更新
 

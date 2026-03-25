@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, React 18, React Router 6, Zustand, TanStack Query, Ant Design 5, `@ant-design/graphs`, FastAPI, Pydantic v2, Neo4j Python Driver, Vitest, Testing Library, Pytest, Ruff
 
-**Status:** 已实施（2026-03-24），但人工浏览器验收与更细的交互 parity 仍待补充
+**Status:** 已实施并补齐主链路验收（2026-03-25），更细的交互 parity 仍待后续扩展
 
 **Implementation Summary:** `/graph` 已落地为三栏 Graph Workbench，后端补齐了 `/api/v1/graph/meta/*` 与 `scene` 信息，前端形成了 `Database information`、中央图谱结果区和右侧检查器闭环。实现阶段对中央图谱渲染做了进一步演进，已从计划中的图库方案切到仓库内自维护的 D3 结果视图。
 
@@ -20,10 +20,11 @@
 - 验收：`docs/acceptance/graph-workbench-mainline.md`
 
 **Verification Result:**
-- `./scripts/test_api.sh`：`208 passed, 3 deselected`
-- `pnpm run test:web`：`16 passed` / `45 passed`
+- `uv run pytest tests/unit/kg/test_db.py tests/api/test_graph_routes.py -q`：`15 passed`
+- `pnpm --dir packages/web test --run src/pages/GraphPage.test.tsx`：`3 passed`
 - `pnpm --dir packages/web typecheck`：通过
-- GitHub Actions `ci-fast` run `23497811413`：`success`
+- 本地 `curl` spot-check：`/graph/meta/*` 与 `/graph/herb/人参` 返回有效 JSON
+- 页面事实检查：`/graph/人参` 同时呈现 `Database information`、图谱结果区与 `Overview`
 
 ---
 

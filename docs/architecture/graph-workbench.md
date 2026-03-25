@@ -152,10 +152,10 @@ Graph Workbench 当前 Neo4j 访问口径已经统一到 `neomodel` 连接层：
 - D3 图谱结果视图已替代旧结果壳层
 - `scene` 已成为图谱结果稳定契约的一部分
 - Neo4j 连接管理已统一到 `neomodel.adb`
+- 浏览器页面事实检查与本地 API spot-check 已补齐
 
 ### 仍未完成
 
-- 浏览器人工验收与截图证据
 - 与 Neo4j Browser 更细的交互 parity
 - 完整 Cypher workbench / 写操作 / 数据库管理能力
 

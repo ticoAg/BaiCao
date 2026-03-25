@@ -188,24 +188,28 @@ pnpm --dir packages/web typecheck
 GitHub Actions: ci-fast run 23497811413
 ```
 
-执行日期：`2026-03-24`
+执行日期：`2026-03-25`
 
 ### 结果证据
 
-- `./scripts/test_api.sh` 结果为 `208 passed, 3 deselected`
-- `pnpm run test:web` 结果为 `16 passed` / `45 passed`
+- `uv run pytest tests/unit/kg/test_db.py tests/api/test_graph_routes.py -q` 结果为 `15 passed`
+- `pnpm --dir packages/web test --run src/pages/GraphPage.test.tsx` 结果为 `3 passed`
 - `pnpm --dir packages/web typecheck` 退出码为 `0`
-- GitHub Actions `ci-fast` run `23497811413` 结果为 `success`，其中 `api-tests` 与 `web-tests` 均通过
-- 本轮新增回归修复覆盖了 `packages/web/src/hooks/useGraphWorkspace.test.tsx`，保证 `scene` 与 `graphData` 的 hook 契约断言一致
-- 本验收已吸收原图谱查询工作区的高级查询与节点展开主链路，不再维护第二份 `/graph` 验收真源
+- `curl http://127.0.0.1:8000/api/v1/graph/meta/summary`、`/meta/labels`、`/meta/schema` 与 `/graph/herb/人参?depth=1` 均返回有效 JSON
+- Playwright 页面事实检查显示 `/graph/人参` 页面正文同时包含：
+  - `Database information`
+  - `当前图谱12 个节点11 条关系`
+  - `Overview`
+  - `图谱概览`
+  - `Component7 | Efficacy10 | Flavor5 | Herb3 ...`
+- 本轮 spot-check 额外暴露并修复了 `packages/api/app/kg/db.py` 中 `neomodel.adb` 连接可能回落到默认 `7687` 的问题，现已由 `ensure_kg_db()` 在查询前兜底
 
 ## 7. 风险与未覆盖项
 
-- 本轮仍未补浏览器人工交互截图，因此三栏布局、点击弱化和检查器切换的最终视觉效果仍缺少人工复核
-- 本轮未重新执行本地 `curl` 验证 `/api/v1/graph/meta/*` 与图谱查询接口，当前接口结论主要来自后端测试与 CI 证据
 - 当前图谱视图已切到 D3 自绘实现，但仍未追求与 Neo4j Browser 的全部交互细节完全对齐
+- 本轮补的是最小页面事实检查，不是完整视觉回归截图集
 
 ## 8. 结论
 
-- 结果：`risk`
-- 结论一句话：Graph Workbench 的协议、后端接口、D3 结果视图与主链测试已形成闭环，但浏览器人工验收与本地接口 spot-check 仍待补充
+- 结果：`pass`
+- 结论一句话：Graph Workbench 的协议、后端接口、D3 结果视图、本地接口 spot-check 与页面事实检查已形成可复现闭环
