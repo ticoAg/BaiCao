@@ -63,7 +63,7 @@ flowchart LR
 |------|------|------|
 | 验收入口页 | 已有 | 当前文件作为目录入口与规则说明 |
 | 验收模板 | 已补齐 | 使用 [template.md](template.md) 作为后续新文档起点 |
-| 具体功能验收文档 | 已补更多主链路 | 已补图谱查询、智能问答、验证闭环、共享知识模型/数据采集、数据处理工作台五条主链路 |
+| 具体功能验收文档 | 已补更多主链路 | 已补图谱查询、智能问答、验证闭环、共享知识模型/数据采集、数据处理工作台、review/export 持久化六条主链路 |
 
 ## 文档索引
 
@@ -76,6 +76,7 @@ flowchart LR
 | [verification-workflow.md](verification-workflow.md) | stable | 验证申请与审核闭环验收 |
 | [data-ingestion-and-knowledge-model.md](data-ingestion-and-knowledge-model.md) | stable | 共享图模型、导入导出与数据采集边界主链路验收 |
 | [data-pipeline-workbench-mainline.md](data-pipeline-workbench-mainline.md) | stable | 数据处理工作台七步预览、映射门禁与回退主链路验收 |
+| [review-export-persistence-wave-2.md](review-export-persistence-wave-2.md) | stable | 数据工作台人工确认持久化、显式导出执行、JSONL snapshot 与 Neo4j 写入验收 |
 
 ## 一份好的验收文档应该写什么
 

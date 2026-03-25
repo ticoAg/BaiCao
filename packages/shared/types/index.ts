@@ -319,6 +319,54 @@ export interface VerificationRequest {
   }[]
 }
 
+// ============ Pipeline Review & Export ============
+
+export type ReviewSessionStatus = 'draft' | 'confirmed' | 'rejected'
+
+export type ReviewItemDecision = 'pending' | 'confirm' | 'reject' | 'edit'
+
+export interface PipelineReviewItem {
+  item_key: string
+  node_type?: string | null
+  original_payload: Record<string, unknown>
+  revised_payload: Record<string, unknown>
+  decision: ReviewItemDecision
+  comment?: string | null
+}
+
+export interface ReviewSession {
+  id: string
+  run_id: string
+  step: string
+  status: ReviewSessionStatus
+  items: PipelineReviewItem[]
+  comment?: string | null
+  confirmed_at?: string | null
+}
+
+export type ExportRecordStatus =
+  | 'pending'
+  | 'snapshot_written'
+  | 'partial_failed'
+  | 'completed'
+  | 'failed'
+
+export type GraphWriteStatus = 'pending' | 'succeeded' | 'failed'
+
+export interface ExportRecord {
+  id: string
+  run_id: string
+  review_session_id: string
+  status: ExportRecordStatus
+  graph_write_status: GraphWriteStatus
+  snapshot_bucket?: string | null
+  snapshot_object_key?: string | null
+  snapshot_checksum?: string | null
+  snapshot_size?: number | null
+  error_message?: string | null
+  retry_count: number
+}
+
 export interface VerificationVerdict {
   verificationId: string
   status: 'verified' | 'rejected'

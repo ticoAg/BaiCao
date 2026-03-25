@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_db
+from .pipeline_dependencies import get_pipeline_service
 from ..pipeline.schemas import (
     CreatePipelineRunRequest,
     PipelineRunResponse,
@@ -9,14 +8,9 @@ from ..pipeline.schemas import (
 )
 from ..pipeline.service import PipelineService
 from ..pipeline.models import PipelineStepKey
-from ..pipeline.storage import SQLAlchemyPipelineStorage
 
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
-
-
-async def get_pipeline_service(db: AsyncSession = Depends(get_db)) -> PipelineService:
-    return PipelineService(storage=SQLAlchemyPipelineStorage(db))
 
 
 def _serialize_run(run) -> PipelineRunResponse:

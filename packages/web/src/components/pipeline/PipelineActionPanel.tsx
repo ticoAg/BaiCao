@@ -1,32 +1,46 @@
+import type { ExportRecord, PipelineStepKey, ReviewSession } from "../../types/pipeline";
 import { Button, Card, Space, Typography } from "antd";
 
 const { Paragraph, Text, Title } = Typography;
 
 interface PipelineActionPanelProps {
+  currentStep: PipelineStepKey;
   currentStepLabel: string;
   sourceType: string;
   sourceLocator: string;
   hasRun: boolean;
   hasPreview: boolean;
   isSubmitting: boolean;
+  reviewSession: ReviewSession | null;
+  latestExport: ExportRecord | null;
   onPreview: () => void;
   onConfirm: () => void;
   onRerun: () => void;
   onRollback: () => void;
+  onLockReview: () => void;
+  onExecuteExport: () => void;
 }
 
 const PipelineActionPanel = ({
+  currentStep,
   currentStepLabel,
   sourceType,
   sourceLocator,
   hasRun,
   hasPreview,
   isSubmitting,
+  reviewSession,
+  latestExport,
   onPreview,
   onConfirm,
   onRerun,
   onRollback,
+  onLockReview,
+  onExecuteExport,
 }: PipelineActionPanelProps) => {
+  const confirmLabel = currentStep === "export" ? "确认允许执行" : "确认进入下一步";
+  const previewLabel = currentStep === "export" ? "生成导出计划" : "运行预览";
+
   return (
     <Card data-testid="pipeline-action-panel" bordered={false}>
       <Space direction="vertical" size={14} style={{ width: "100%" }}>
@@ -46,11 +60,21 @@ const PipelineActionPanel = ({
         </div>
         <Space wrap>
           <Button type="primary" loading={isSubmitting} onClick={onPreview}>
-            运行预览
+            {previewLabel}
           </Button>
           <Button disabled={!hasPreview || isSubmitting} onClick={onConfirm}>
-            确认进入下一步
+            {confirmLabel}
           </Button>
+          {currentStep === "human_review" ? (
+            <Button disabled={!reviewSession || isSubmitting} onClick={onLockReview}>
+              {reviewSession?.status === "confirmed" ? "人工审阅已锁定" : "锁定人工审阅"}
+            </Button>
+          ) : null}
+          {currentStep === "export" ? (
+            <Button disabled={!hasRun || isSubmitting} onClick={onExecuteExport}>
+              {latestExport ? "重新执行导出" : "执行导出"}
+            </Button>
+          ) : null}
           <Button disabled={!hasRun || isSubmitting} onClick={onRerun}>
             重新运行当前步骤
           </Button>

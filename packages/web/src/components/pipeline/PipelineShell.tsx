@@ -13,6 +13,8 @@ const PipelineShell = () => {
     recentRuns,
     preview,
     previewHistory,
+    reviewSession,
+    latestExport,
     isSubmitting,
     currentStep,
     currentStepLabel,
@@ -22,6 +24,9 @@ const PipelineShell = () => {
     loadRecentRuns,
     rerunCurrentStep,
     rollbackCurrentStep,
+    saveReviewItem,
+    lockReviewSession,
+    executeExport,
   } = usePipelineRun();
 
   useEffect(() => {
@@ -49,12 +54,15 @@ const PipelineShell = () => {
         }}
       />
       <PipelineActionPanel
+        currentStep={currentStep}
         currentStepLabel={currentStepLabel}
         sourceType={run?.sourceType ?? sourceType}
         sourceLocator={run?.sourceLocator ?? sourceLocator}
         hasRun={Boolean(run)}
         hasPreview={Boolean(preview)}
         isSubmitting={isSubmitting}
+        reviewSession={reviewSession}
+        latestExport={latestExport}
         onPreview={() => {
           void runPreview();
         }}
@@ -67,8 +75,22 @@ const PipelineShell = () => {
         onRollback={() => {
           void rollbackCurrentStep();
         }}
+        onLockReview={() => {
+          void lockReviewSession();
+        }}
+        onExecuteExport={() => {
+          void executeExport();
+        }}
       />
-      <PipelinePreviewPanel preview={preview} previewHistory={previewHistory} />
+      <PipelinePreviewPanel
+        preview={preview}
+        previewHistory={previewHistory}
+        reviewSession={reviewSession}
+        latestExport={latestExport}
+        onSaveReviewItem={(itemKey, payload) => {
+          void saveReviewItem(itemKey, payload);
+        }}
+      />
     </div>
   );
 };

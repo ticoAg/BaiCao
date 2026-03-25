@@ -24,6 +24,7 @@ dependencies = [
     "langgraph>=1.1.3",
     "langchain-anthropic>=1.4.0",
     "neomodel>=6.0.0",
+    "minio>=7.2.18",
 ]
 
 [tool.hatch.build.targets.wheel]

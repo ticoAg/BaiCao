@@ -1,6 +1,8 @@
 from typing import Any, cast
 
 from app.pipeline.adapters import build_source_adapters, get_source_adapter
+from app.review.service import ReviewService
+from app.export.service import ExportService
 from app.pipeline.models import (
     PIPELINE_STEP_ORDER,
     PipelineRun,
@@ -15,9 +17,16 @@ from app.pipeline.storage import InMemoryPipelineStorage, PipelineStorage
 
 
 class PipelineService:
-    def __init__(self, storage: PipelineStorage | None = None) -> None:
+    def __init__(
+        self,
+        storage: PipelineStorage | None = None,
+        review_service: ReviewService | None = None,
+        export_service: ExportService | None = None,
+    ) -> None:
         self.storage = storage or InMemoryPipelineStorage()
         self.source_adapters = build_source_adapters()
+        self.review_service = review_service
+        self.export_service = export_service
 
     async def create_run(self, source_type: str, source_locator: str) -> PipelineRun:
         steps = {
@@ -46,7 +55,7 @@ class PipelineService:
     ) -> PipelineStepPreviewResponse:
         run = await self.get_run(run_id)
         step_state = run.steps[step]
-        preview_response = self._build_preview_response(run, step)
+        preview_response = await self._build_preview_response(run, step)
         step_state.status = preview_response.status
         step_state.preview_version += 1
         step_state.summary = preview_response.summary
@@ -74,6 +83,12 @@ class PipelineService:
             validation = cast(dict[str, Any], step_state.preview_payload.get("validation", {}))
             if not validation or validation.get("is_valid") is not True:
                 raise ValueError("当前映射结果未通过共享图模型校验，不能进入下一步")
+        if step == PipelineStepKey.HUMAN_REVIEW:
+            if self.review_service is None:
+                raise ValueError("人工确认服务不可用，不能锁定当前步骤")
+            review_session = await self.review_service.get_session(run_id)
+            if review_session.status.value != "confirmed":
+                raise ValueError("人工确认会话尚未确认，不能进入下一步")
         step_state.status = PipelineStepStatus.CONFIRMED
         step_state.summary = f"{step} confirmed"
 
@@ -129,17 +144,20 @@ class PipelineService:
     ) -> list[PipelineStepPreviewResponse]:
         return await self.storage.list_preview_artifacts(run_id, step)
 
-    def _build_preview_response(
+    async def _build_preview_response(
         self,
         run: PipelineRun,
         step: PipelineStepKey,
     ) -> PipelineStepPreviewResponse:
         source_adapter = get_source_adapter(run.source_type, self.source_adapters)
         source_descriptor = source_adapter.describe(run.source_locator)
-        handler = STEP_HANDLERS[step]
-        return handler(
-            PipelineStepContext(
-                run=run,
-                source_descriptor=source_descriptor,
-            )
+        context = PipelineStepContext(
+            run=run,
+            source_descriptor=source_descriptor,
         )
+        if step == PipelineStepKey.HUMAN_REVIEW and self.review_service is not None:
+            return await self.review_service.build_preview(run, context)
+        if step == PipelineStepKey.EXPORT and self.export_service is not None:
+            return await self.export_service.build_preview(run, context)
+        handler = STEP_HANDLERS[step]
+        return handler(context)

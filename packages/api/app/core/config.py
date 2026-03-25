@@ -34,6 +34,13 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     redis_enabled: bool = False
 
+    # Object Storage
+    object_storage_endpoint: str = "localhost:19000"
+    object_storage_access_key: str = "minioadmin"
+    object_storage_secret_key: str = "minioadmin"
+    object_storage_bucket: str = "baicao-pipeline-exports"
+    object_storage_secure: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

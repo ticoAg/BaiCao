@@ -1,3 +1,5 @@
+import type { ExportRecord, ReviewItemDecision, ReviewSession } from "@bai-cao/shared";
+
 export type PipelineRunStatus =
   | "pending"
   | "running"
@@ -63,3 +65,11 @@ export interface CreatePipelineRunRequest {
   sourceType: string;
   sourceLocator: string;
 }
+
+export interface UpdateReviewItemRequest {
+  decision?: ReviewItemDecision;
+  revisedPayload?: Record<string, unknown>;
+  comment?: string | null;
+}
+
+export type { ExportRecord, ReviewSession };

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { message } from "antd";
 import { pipelineApi } from "../services/pipelineApi";
 import { usePipelineStore } from "../stores/pipelineStore";
-import type { PipelineStepKey } from "../types/pipeline";
+import type { PipelineStepKey, UpdateReviewItemRequest } from "../types/pipeline";
 
 const FIXED_STEPS: Array<{ key: PipelineStepKey; label: string }> = [
   { key: "source_ingest", label: "接入来源" },
@@ -22,11 +22,15 @@ export const usePipelineRun = () => {
     recentRuns,
     preview,
     previewHistory,
+    reviewSession,
+    latestExport,
     isSubmitting,
     setRun,
     setRecentRuns,
     setPreview,
     setPreviewHistory,
+    setReviewSession,
+    setLatestExport,
     setSubmitting,
   } = usePipelineStore();
 
@@ -35,6 +39,38 @@ export const usePipelineRun = () => {
   const currentStepLabel = useMemo(
     () => FIXED_STEPS.find((step) => step.key === currentStep)?.label ?? "接入来源",
     [currentStep],
+  );
+
+  const loadStepSidecars = useCallback(
+    async (runId: string, step: PipelineStepKey) => {
+      if (step === "human_review") {
+        try {
+          setReviewSession(await pipelineApi.getReviewSession(runId));
+        } catch (error) {
+          setReviewSession(null);
+        }
+        setLatestExport(null);
+        return;
+      }
+
+      if (step === "export") {
+        try {
+          setReviewSession(await pipelineApi.getReviewSession(runId));
+        } catch (error) {
+          setReviewSession(null);
+        }
+        try {
+          setLatestExport(await pipelineApi.getLatestExportExecution(runId));
+        } catch (error) {
+          setLatestExport(null);
+        }
+        return;
+      }
+
+      setReviewSession(null);
+      setLatestExport(null);
+    },
+    [setLatestExport, setReviewSession],
   );
 
   const runPreview = useCallback(async () => {
@@ -54,12 +90,13 @@ export const usePipelineRun = () => {
       setPreview(nextPreview);
       const history = await pipelineApi.listPreviewArtifacts(activeRun.id, activeRun.currentStep);
       setPreviewHistory(history);
+      await loadStepSidecars(activeRun.id, activeRun.currentStep);
     } catch (error) {
       message.error("运行预览失败，请稍后重试");
     } finally {
       setSubmitting(false);
     }
-  }, [run, setPreview, setRun, setSubmitting, sourceLocator, sourceType]);
+  }, [loadStepSidecars, run, setPreview, setPreviewHistory, setRun, setSubmitting, sourceLocator, sourceType]);
 
   const confirmCurrentStep = useCallback(async () => {
     if (!run) {
@@ -72,12 +109,13 @@ export const usePipelineRun = () => {
       setRun(updatedRun);
       setPreview(null);
       setPreviewHistory([]);
+      await loadStepSidecars(updatedRun.id, updatedRun.currentStep);
     } catch (error) {
       message.error("确认步骤失败，请稍后重试");
     } finally {
       setSubmitting(false);
     }
-  }, [run, setPreview, setRun, setSubmitting]);
+  }, [loadStepSidecars, run, setPreview, setPreviewHistory, setRun, setSubmitting]);
 
   const restoreRun = useCallback(
     async (runId: string) => {
@@ -94,13 +132,14 @@ export const usePipelineRun = () => {
           setPreview(null);
           setPreviewHistory([]);
         }
+        await loadStepSidecars(runId, restored.currentStep);
       } catch (error) {
         message.error("加载处理任务失败，请稍后重试");
       } finally {
         setSubmitting(false);
       }
     },
-    [setPreview, setPreviewHistory, setRun, setSubmitting],
+    [loadStepSidecars, setPreview, setPreviewHistory, setRun, setSubmitting],
   );
 
   const loadRecentRuns = useCallback(async () => {
@@ -122,12 +161,13 @@ export const usePipelineRun = () => {
       setPreview(nextPreview);
       const history = await pipelineApi.listPreviewArtifacts(run.id, run.currentStep);
       setPreviewHistory(history);
+      await loadStepSidecars(run.id, run.currentStep);
     } catch (error) {
       message.error("重跑当前步骤失败，请稍后重试");
     } finally {
       setSubmitting(false);
     }
-  }, [run, setPreview, setPreviewHistory, setSubmitting]);
+  }, [loadStepSidecars, run, setPreview, setPreviewHistory, setSubmitting]);
 
   const rollbackCurrentStep = useCallback(async () => {
     if (!run) {
@@ -142,12 +182,67 @@ export const usePipelineRun = () => {
       setRun(updatedRun);
       setPreview(null);
       setPreviewHistory([]);
+      await loadStepSidecars(updatedRun.id, updatedRun.currentStep);
     } catch (error) {
       message.error("回退步骤失败，请稍后重试");
     } finally {
       setSubmitting(false);
     }
-  }, [run, setPreview, setPreviewHistory, setRun, setSubmitting]);
+  }, [loadStepSidecars, run, setPreview, setPreviewHistory, setRun, setSubmitting]);
+
+  const saveReviewItem = useCallback(
+    async (itemKey: string, payload: UpdateReviewItemRequest) => {
+      if (!run) {
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const session = await pipelineApi.updateReviewItem(run.id, itemKey, payload);
+        setReviewSession(session);
+        const refreshedPreview = await pipelineApi.previewStep(run.id, "human_review");
+        setPreview(refreshedPreview);
+      } catch (error) {
+        message.error("保存人工修订失败，请稍后重试");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [run, setPreview, setReviewSession, setSubmitting],
+  );
+
+  const lockReviewSession = useCallback(async () => {
+    if (!run) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const session = await pipelineApi.confirmReviewSession(run.id);
+      setReviewSession(session);
+      const refreshedPreview = await pipelineApi.previewStep(run.id, "human_review");
+      setPreview(refreshedPreview);
+    } catch (error) {
+      message.error("锁定人工确认会话失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [run, setPreview, setReviewSession, setSubmitting]);
+
+  const executeExport = useCallback(async () => {
+    if (!run) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const record = await pipelineApi.executeExport(run.id);
+      setLatestExport(record);
+      const refreshedPreview = await pipelineApi.buildExportPlan(run.id);
+      setPreview(refreshedPreview);
+    } catch (error) {
+      message.error("执行导出失败，请稍后重试");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [run, setLatestExport, setPreview, setSubmitting]);
 
   return {
     fixedSteps: FIXED_STEPS,
@@ -155,6 +250,8 @@ export const usePipelineRun = () => {
     recentRuns,
     preview,
     previewHistory,
+    reviewSession,
+    latestExport,
     isSubmitting,
     currentStep,
     currentStepLabel,
@@ -164,5 +261,8 @@ export const usePipelineRun = () => {
     loadRecentRuns,
     rerunCurrentStep,
     rollbackCurrentStep,
+    saveReviewItem,
+    lockReviewSession,
+    executeExport,
   };
 };

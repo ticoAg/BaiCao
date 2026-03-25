@@ -4,6 +4,8 @@ from .user import UserModel
 from .verification import VerificationModel, VerificationEvidenceModel
 from .evidence import EvidenceModel
 from .pipeline import PipelineRunModel, PipelineStepArtifactModel
+from .review import ReviewSessionModel, ReviewItemModel
+from .export import ExportRecordModel
 from .enums import (
     UserRole,
     SourceType,
@@ -27,6 +29,9 @@ __all__ = [
     "EvidenceModel",
     "PipelineRunModel",
     "PipelineStepArtifactModel",
+    "ReviewSessionModel",
+    "ReviewItemModel",
+    "ExportRecordModel",
     # Enums
     "UserRole",
     "SourceType",

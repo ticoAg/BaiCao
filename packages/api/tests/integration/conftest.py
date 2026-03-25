@@ -20,6 +20,7 @@ for path in (REPO_ROOT, API_DIR):
 
 from app.core.config import get_settings
 from app.core.database import AsyncSessionLocal, engine
+from app.kg.db import init_kg_db
 from app.kg.graph_service import graph_service
 from app.main import app
 from scripts.seed_demo_data import DATASET_TAG, HERBS, SOURCES, USERS, seed_neo4j, seed_postgres
@@ -38,6 +39,7 @@ def demo_seed_data() -> dict[str, object]:
 @pytest_asyncio.fixture(autouse=True)
 async def seeded_demo_environment() -> AsyncIterator[None]:
     await engine.dispose()
+    await init_kg_db()
     await seed_postgres()
     await seed_neo4j()
     yield
