@@ -6,6 +6,7 @@
 |---|---|
 | `packages/web/` 页面 / 组件 / 前端服务 | `pnpm run test:web`；建议补 `pnpm --dir packages/web exec vp build` |
 | `packages/api/` 服务 / 路由 / Schema | `uv run ruff check app tests` + `uv run ty check` + `uv run pytest -m "not integration"`（在 `packages/api/` 下执行） |
+| 共享知识模型 / 导入导出 / `packages/data_ingestion/` | API 最低验证 + `cd packages/data_ingestion && uv run --with pytest pytest tests -q`；若改了共享契约，补对应 contract test |
 | `packages/shared/` 共享类型 / DTO | `pnpm --dir packages/shared typecheck` + 至少一条消费方检查（通常是 `pnpm --dir packages/web exec vp build` 或相关 contract test） |
 | `packages/db/` 图谱结构 / 导入样例 / 种子数据 | 至少一条可复现的数据或查询验证说明；若影响主链路，补 `./scripts/test_integration.sh` 或一条 API / 页面消费检查 |
 | `infra/` 编排 / 环境模板 / 配置 | `docker compose -f infra/docker-compose.yml config`；若影响运行主链路，补一条启动或健康检查 |
@@ -34,6 +35,7 @@
 
 - `packages/web` 的 `dev` / `build` / `test` / `preview` 统一走 `vp`；直接在包目录下执行时，优先使用 `pnpm --dir packages/web exec vp ...`
 - 仓库根脚本（如 `pnpm run test:web`）允许继续作为统一入口使用，但底层仍应映射到 `vp`
+- 对数据处理工作台这类页面定向回归，可使用 `pnpm --dir packages/web test --run src/pages/DataPipelinePage.test.tsx` 作为前端消费侧最小补充验证，再视情况补 `pnpm --dir packages/web exec vp build`
 
 ## 说明
 

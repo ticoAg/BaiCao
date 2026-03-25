@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .base import AbstractDataImporter, EdgeRecord, GraphRecord, ImportStats
-from ..models.enums import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import EdgeType, NodeStatus, NodeType
 
 
 class JSONLImporter(AbstractDataImporter):
@@ -54,11 +54,13 @@ class JSONLImporter(AbstractDataImporter):
             edge_type_str = edge_data.get("type", "")
             target = edge_data.get("target", "")
             if edge_type_str and target:
-                edges.append(EdgeRecord(
-                    type=EdgeType(edge_type_str),
-                    target=target,
-                    properties=edge_data.get("properties", {}),
-                ))
+                edges.append(
+                    EdgeRecord(
+                        type=EdgeType(edge_type_str),
+                        target=target,
+                        properties=edge_data.get("properties", {}),
+                    )
+                )
 
         return GraphRecord(
             node_type=node_type,

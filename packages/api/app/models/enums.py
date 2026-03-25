@@ -6,6 +6,13 @@ BaiCao SSOT 枚举层
 
 from enum import StrEnum
 
+from knowledge_model.constants import (
+    HerbType,
+    NodeStatus,
+    NodeType,
+    TraitCategory,
+)
+
 
 # ============ User & Auth ============
 
@@ -42,27 +49,6 @@ class EntityType(StrEnum):
     RELATION = "relation"
 
 
-# ============ Graph Node Types ============
-
-class NodeType(StrEnum):
-    HERB = "Herb"
-    COMPONENT = "Component"
-    VARIANT = "Variant"
-    PROCESS = "Process"
-    TRAIT = "Trait"
-    EFFICACY = "Efficacy"
-    FLAVOR = "Flavor"
-    MERIDIAN = "Meridian"
-    DISEASE = "Disease"
-    TIMEPOINT = "TimePoint"
-
-
-class NodeStatus(StrEnum):
-    PENDING = "pending"
-    VERIFIED = "verified"
-    REJECTED = "rejected"
-
-
 # ============ Graph Edge Types ============
 
 class EdgeType(StrEnum):
@@ -86,22 +72,23 @@ class EdgeType(StrEnum):
     ORIGINATED_FROM = "ORIGINATED_FROM"
 
 
-# ============ Node-specific Enums ============
-
-class HerbType(StrEnum):
-    BASE = "base"
-    BYPRODUCT = "byproduct"
-
-
-class TraitCategory(StrEnum):
-    EXTERNAL = "external"
-    INTERNAL = "internal"
-    CHEMICAL = "chemical"
-
-
 # ============ Chat ============
 
 class MessageRole(StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
+
+
+__all__ = [
+    "UserRole",
+    "SourceType",
+    "VerificationStatus",
+    "EntityType",
+    "NodeType",
+    "NodeStatus",
+    "EdgeType",
+    "HerbType",
+    "TraitCategory",
+    "MessageRole",
+]

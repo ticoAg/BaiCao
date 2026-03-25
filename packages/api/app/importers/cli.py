@@ -62,7 +62,7 @@ def main():
         if args.dry_run:
             print("\n[DRY-RUN] 前5条有效记录预览:")
             for i, record in enumerate(result.records[:5]):
-                print(f"  {i+1}. {record.to_dict()}")
+                print(f"  {i+1}. {record.model_dump(mode='json')}")
 
         if args.neo4j and not args.dry_run:
             print("\n[Neo4j] 导入功能待实现，需要 GraphService 集成")

@@ -73,6 +73,35 @@ class TestPipelinePreviewStep:
         )
         assert data["step"] == "source_ingest"
         assert data["status"] == "preview_ready"
+        assert data["preview_kind"] == "source_descriptor"
+        assert data["preview_payload"]["adapter"] == "csv"
+        assert data["preview_payload"]["source_summary"]["format"] == "csv"
+
+    @pytest.mark.asyncio
+    async def test_preview_routes_return_step_specific_payloads(self, client):
+        create_resp = await client.post(
+            "/api/v1/pipeline/runs",
+            json={
+                "source_type": "manual",
+                "source_locator": "候选实体：陈皮（药材）",
+            },
+        )
+        run_id = create_resp.json()["id"]
+
+        source_preview = await client.post(f"/api/v1/pipeline/runs/{run_id}/steps/source_preview/preview")
+        normalize = await client.post(f"/api/v1/pipeline/runs/{run_id}/steps/normalize/preview")
+        extract = await client.post(f"/api/v1/pipeline/runs/{run_id}/steps/extract/preview")
+        mapping = await client.post(f"/api/v1/pipeline/runs/{run_id}/steps/map_to_knowledge_model/preview")
+
+        assert_status(source_preview, 200)
+        assert_status(normalize, 200)
+        assert_status(extract, 200)
+        assert_status(mapping, 200)
+        assert source_preview.json()["preview_kind"] == "source_contents"
+        assert normalize.json()["preview_kind"] == "normalized_content"
+        assert extract.json()["preview_kind"] == "extraction_candidates"
+        assert extract.json()["preview_payload"]["candidates"][0]["name"] == "陈皮"
+        assert mapping.json()["preview_payload"]["nodes"][0]["name"] == "陈皮"
 
     @pytest.mark.asyncio
     async def test_get_latest_preview_returns_persisted_snapshot(self, client):

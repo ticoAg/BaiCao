@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from .base import AbstractDataExporter, ExportStats
-from ..importers.base import GraphRecord, EdgeRecord
+from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
 
 
 class CSVExporter(AbstractDataExporter):
@@ -14,7 +14,7 @@ class CSVExporter(AbstractDataExporter):
     def __init__(self):
         self._stats = ExportStats()
 
-    def export(self, records: list[GraphRecord], destination: str) -> ExportStats:
+    def export(self, records: list[GraphImportRecord], destination: str) -> ExportStats:
         self._stats = ExportStats(total=len(records))
         path = Path(destination)
 
@@ -38,7 +38,7 @@ class CSVExporter(AbstractDataExporter):
 
         return self._stats
 
-    def _record_to_row(self, record: GraphRecord) -> dict:
+    def _record_to_row(self, record: GraphImportRecord) -> dict:
         """将 GraphRecord 转换为 CSV 行"""
         props = record.properties or {}
 
@@ -48,7 +48,7 @@ class CSVExporter(AbstractDataExporter):
         edge_props = "{}"
 
         if record.edges:
-            first_edge: EdgeRecord = record.edges[0]
+            first_edge: GraphImportEdge = record.edges[0]
             edge_type = first_edge.type.value
             edge_target = first_edge.target
             edge_props = json.dumps(first_edge.properties or {}, ensure_ascii=False)

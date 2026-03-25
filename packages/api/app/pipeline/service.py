@@ -1,5 +1,6 @@
 from typing import Any, cast
 
+from app.pipeline.adapters import build_source_adapters, get_source_adapter
 from app.pipeline.models import (
     PIPELINE_STEP_ORDER,
     PipelineRun,
@@ -9,13 +10,14 @@ from app.pipeline.models import (
     PipelineStepStatus,
 )
 from app.pipeline.schemas import PipelineArtifactReference, PipelineStepPreviewResponse
-from app.pipeline.steps import build_map_to_knowledge_model_preview
+from app.pipeline.steps import STEP_HANDLERS, PipelineStepContext
 from app.pipeline.storage import InMemoryPipelineStorage, PipelineStorage
 
 
 class PipelineService:
     def __init__(self, storage: PipelineStorage | None = None) -> None:
         self.storage = storage or InMemoryPipelineStorage()
+        self.source_adapters = build_source_adapters()
 
     async def create_run(self, source_type: str, source_locator: str) -> PipelineRun:
         steps = {
@@ -132,22 +134,12 @@ class PipelineService:
         run: PipelineRun,
         step: PipelineStepKey,
     ) -> PipelineStepPreviewResponse:
-        if step == PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL:
-            return build_map_to_knowledge_model_preview(run)
-
-        return PipelineStepPreviewResponse(
-            run_id=run.id,
-            step=step,
-            status=PipelineStepStatus.PREVIEW_READY,
-            summary="步骤预览已生成",
-            preview_kind="summary",
-            preview_payload={
-                "source_type": run.source_type,
-                "source_locator": run.source_locator,
-                "step": step.value,
-            },
-            warnings=[],
-            errors=[],
-            artifacts=[],
-            next_step_ready=False,
+        source_adapter = get_source_adapter(run.source_type, self.source_adapters)
+        source_descriptor = source_adapter.describe(run.source_locator)
+        handler = STEP_HANDLERS[step]
+        return handler(
+            PipelineStepContext(
+                run=run,
+                source_descriptor=source_descriptor,
+            )
         )

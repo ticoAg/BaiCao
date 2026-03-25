@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .base import AbstractDataImporter, EdgeRecord, GraphRecord, ImportStats
-from ..models.enums import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import EdgeType, NodeStatus, NodeType
 
 
 class CSVImporter(AbstractDataImporter):
@@ -64,11 +64,13 @@ class CSVImporter(AbstractDataImporter):
                     edge_props = json.loads(edge_props_str)
                 except json.JSONDecodeError:
                     edge_props = {}
-            edges.append(EdgeRecord(
-                type=EdgeType(edge_type_str),
-                target=target,
-                properties=edge_props,
-            ))
+            edges.append(
+                EdgeRecord(
+                    type=EdgeType(edge_type_str),
+                    target=target,
+                    properties=edge_props,
+                )
+            )
 
         # 解析属性
         props = {}

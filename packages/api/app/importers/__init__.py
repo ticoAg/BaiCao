@@ -7,11 +7,14 @@ from .base import (
 )
 from .csv_importer import CSVImporter
 from .jsonl_importer import JSONLImporter
+from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
 
 __all__ = [
     "AbstractDataImporter",
     "EdgeRecord",
     "GraphRecord",
+    "GraphImportEdge",
+    "GraphImportRecord",
     "ImportResult",
     "ImportStats",
     "CSVImporter",

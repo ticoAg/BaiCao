@@ -7,44 +7,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from ..models.enums import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import EdgeType, NodeType
+from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
 
 
-@dataclass
-class EdgeRecord:
-    """边记录"""
-    type: EdgeType
-    target: str
-    properties: dict | None = None
-
-
-@dataclass
-class GraphRecord:
-    """图谱记录 - 导入/导出的最小单位"""
-    node_type: NodeType | None = None
-    node_name: str = ""
-    properties: dict = field(default_factory=dict)
-    edges: list[EdgeRecord] = field(default_factory=list)
-    source: str = ""
-    status: NodeStatus = NodeStatus.PENDING
-
-    def to_dict(self) -> dict:
-        return {
-            "node_type": self.node_type.value if self.node_type else None,
-            "node_name": self.node_name,
-            "properties": self.properties,
-            "edges": [
-                {
-                    "type": e.type.value,
-                    "target": e.target,
-                    "properties": e.properties or {},
-                }
-                for e in self.edges
-            ],
-            "source": self.source,
-            "status": self.status.value,
-        }
-
+EdgeRecord = GraphImportEdge
+GraphRecord = GraphImportRecord
 
 @dataclass
 class ImportStats:
@@ -91,15 +59,17 @@ class AbstractDataImporter(ABC):
         # 验证 node_type 合法性
         if record.node_type is not None:
             try:
-                NodeType(record.node_type.value)
+                NodeType(getattr(record.node_type, "value", record.node_type))
             except ValueError:
-                errors.append(f"invalid node_type: {record.node_type.value}")
+                errors.append(
+                    f"invalid node_type: {getattr(record.node_type, 'value', record.node_type)}"
+                )
         # 验证 edge types
         for edge in record.edges:
             try:
-                EdgeType(edge.type.value)
+                EdgeType(getattr(edge.type, "value", edge.type))
             except ValueError:
-                errors.append(f"invalid edge type: {edge.type.value}")
+                errors.append(f"invalid edge type: {getattr(edge.type, 'value', edge.type)}")
         return errors
 
     @abstractmethod

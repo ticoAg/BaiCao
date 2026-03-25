@@ -10,6 +10,28 @@
 
 ---
 
+## 实施状态更新（2026-03-25）
+
+### 已完成
+
+- 后端 `pipeline` 路由、持久化 `PipelineRun`、预览快照 / 历史版本、确认 / 重跑 / 回退主链路已经落地，见 `packages/api/app/api/pipeline.py`、`packages/api/app/pipeline/service.py`、`packages/api/app/pipeline/storage.py`
+- 前端 `/data/pipeline` 页面、路由与导航入口已经落地，见 `packages/web/src/pages/DataPipelinePage.tsx`、`packages/web/src/App.tsx`、`packages/web/src/components/Header.tsx`
+- 第 5 步共享模型映射门禁已经接入，且空白来源无法绕过确认进入下一步，见 `packages/api/app/pipeline/steps/map_to_knowledge_model.py`
+- 本轮补齐了七步固定 handler 与来源 adapter，`source_ingest`、`source_preview`、`normalize`、`extract`、`map_to_knowledge_model`、`human_review`、`export` 不再统一返回通用 summary 占位，见 `packages/api/app/pipeline/steps/` 与 `packages/api/app/pipeline/adapters/`
+- 本轮新增工作台主链路验收文档，见 `docs/acceptance/data-pipeline-workbench-mainline.md`
+
+### 验证结果
+
+- `cd packages/api && uv run pytest tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py -q` → `24 passed`
+- `cd packages/api && uv run ruff check app/pipeline tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py` → `All checks passed!`
+- `pnpm --dir packages/web test --run src/pages/DataPipelinePage.test.tsx` → `5 passed`
+
+### 风险
+
+- 当前工作台后端七步预览已闭环，但页面级人工验收与真实来源联调仍未在本轮完整展开
+- `huggingface` 来源目前仅做 locator 校验与摘要预览，不代表远端数据抓取已接入
+- 历史步骤中的 checkbox 未逐项回填；本节作为当前已实现事实与验证证据的聚合更新
+
 ## File Map
 
 - Create: `packages/api/app/api/pipeline.py`

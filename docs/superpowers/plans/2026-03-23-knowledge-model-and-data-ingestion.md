@@ -10,6 +10,29 @@
 
 ---
 
+## 实施状态更新（2026-03-25）
+
+### 已完成
+
+- 共享知识模型包已经落地并作为仓库内结构真源使用，见 `packages/knowledge_model/knowledge_model/constants.py`、`packages/knowledge_model/knowledge_model/import_records.py`、`packages/knowledge_model/knowledge_model/schema.py`
+- API graph schema 已直接复用共享 `NodeType` / `NodeStatus`，同时保留 API `EdgeType` superset，见 `packages/api/app/models/enums.py`、`packages/api/app/schemas/graph.py`
+- importer / exporter 已统一切到共享 `GraphImportRecord`，并保留 `app.importers` 的兼容导出，见 `packages/api/app/importers/` 与 `packages/api/app/exporters/`
+- `packages/data_ingestion/` 子项目骨架已建立，并直接消费共享 `NodeType`，见 `packages/data_ingestion/data_ingestion/models.py`
+- 本轮新增共享模型主链路验收文档，见 `docs/acceptance/data-ingestion-and-knowledge-model.md`
+
+### 验证结果
+
+- `cd packages/api && uv run pytest tests/contract/test_graph_shared_model_contract.py tests/api/test_graph_routes.py tests/unit/kg/test_models.py -q` → `18 passed`
+- `cd packages/api && uv run pytest tests/contract/test_import_record_contract.py tests/api/test_graph_routes.py -q` → `15 passed`
+- `cd packages/api && uv run pytest tests/contract/test_graph_shared_model_contract.py tests/contract/test_import_record_contract.py tests/api/test_graph_routes.py tests/unit/kg/test_models.py -q` → `21 passed`
+- `cd packages/data_ingestion && uv run --with pytest pytest tests/test_models.py -q` → `1 passed`
+
+### 风险
+
+- 当前验收主要覆盖 contract / unit 层，未补充更高层 API 全量验证、真实导入执行与浏览器端人工验收
+- API `EdgeType` 仍保留 superset 策略；shared 与 API edge 的完全收敛不在本轮范围
+- 历史步骤中的 checkbox 未逐项回填；本节作为当前已实现事实与验证证据的聚合更新
+
 ## File Map
 
 - Create: `packages/knowledge_model/pyproject.toml`

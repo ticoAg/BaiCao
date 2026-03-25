@@ -101,3 +101,115 @@ async def test_mapping_step_with_invalid_candidate_cannot_be_confirmed():
     assert preview.preview_payload["validation"]["is_valid"] is False
     with pytest.raises(ValueError):
         await service.confirm_step(run.id, PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL)
+
+
+@pytest.mark.asyncio
+async def test_preview_returns_step_specific_payloads():
+    service = PipelineService()
+    run = await service.create_run(
+        source_type="manual",
+        source_locator="陈皮。归经：脾经；功效：理气。",
+    )
+
+    source_ingest = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+    source_preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_PREVIEW)
+    normalize = await service.preview_step(run.id, PipelineStepKey.NORMALIZE)
+    extract = await service.preview_step(run.id, PipelineStepKey.EXTRACT)
+    mapping = await service.preview_step(run.id, PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL)
+    human_review = await service.preview_step(run.id, PipelineStepKey.HUMAN_REVIEW)
+    export = await service.preview_step(run.id, PipelineStepKey.EXPORT)
+
+    assert source_ingest.preview_kind == "source_descriptor"
+    assert source_ingest.preview_payload["adapter"] == "manual"
+    assert source_preview.preview_kind == "source_contents"
+    assert source_preview.preview_payload["content_preview"]
+    assert normalize.preview_kind == "normalized_content"
+    assert normalize.preview_payload["normalized_text"]
+    assert extract.preview_kind == "extraction_candidates"
+    assert extract.preview_payload["candidates"]
+    assert mapping.preview_kind == "graph_mapping"
+    assert human_review.preview_kind == "review_decision"
+    assert human_review.preview_payload["review_items"]
+    assert export.preview_kind == "export_plan"
+    assert export.preview_payload["export_targets"]
+
+
+@pytest.mark.asyncio
+async def test_extract_step_feeds_map_step_validation():
+    service = PipelineService()
+    run = await service.create_run(
+        source_type="manual",
+        source_locator="候选实体：陈皮（药材）",
+    )
+
+    await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+    await service.preview_step(run.id, PipelineStepKey.SOURCE_PREVIEW)
+    await service.preview_step(run.id, PipelineStepKey.NORMALIZE)
+    extract = await service.preview_step(run.id, PipelineStepKey.EXTRACT)
+    mapping = await service.preview_step(run.id, PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL)
+
+    assert extract.preview_payload["candidates"][0]["name"] == "陈皮"
+    assert mapping.preview_payload["validation"]["is_valid"] is True
+    assert mapping.preview_payload["nodes"][0]["name"] == "陈皮"
+
+
+@pytest.mark.asyncio
+async def test_manual_source_builds_text_preview():
+    service = PipelineService()
+    run = await service.create_run(
+        source_type="manual",
+        source_locator="陈皮 性温，味辛苦。",
+    )
+
+    preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+
+    assert preview.preview_kind == "source_descriptor"
+    assert preview.preview_payload["adapter"] == "manual"
+    assert preview.preview_payload["source_summary"]["kind"] == "text"
+    assert preview.preview_payload["source_summary"]["character_count"] > 0
+
+
+@pytest.mark.asyncio
+async def test_jsonl_source_reads_local_file_preview(tmp_path):
+    source = tmp_path / "mini.jsonl"
+    source.write_text('{"node_name":"陈皮","source":"本草纲目"}\n', encoding="utf-8")
+    service = PipelineService()
+    run = await service.create_run(source_type="jsonl", source_locator=str(source))
+
+    preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+
+    assert preview.preview_kind == "source_descriptor"
+    assert preview.preview_payload["adapter"] == "jsonl"
+    assert preview.preview_payload["source_summary"]["kind"] == "file"
+    assert preview.preview_payload["source_summary"]["sample_lines"][0].startswith('{"node_name":"陈皮"')
+
+
+@pytest.mark.asyncio
+async def test_csv_source_builds_file_preview(tmp_path):
+    source = tmp_path / "mini.csv"
+    source.write_text("node_name,source\n陈皮,本草纲目\n", encoding="utf-8")
+    service = PipelineService()
+    run = await service.create_run(source_type="csv", source_locator=str(source))
+
+    preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+
+    assert preview.preview_kind == "source_descriptor"
+    assert preview.preview_payload["adapter"] == "csv"
+    assert preview.preview_payload["source_summary"]["format"] == "csv"
+    assert preview.preview_payload["source_summary"]["sample_lines"][0] == "node_name,source"
+
+
+@pytest.mark.asyncio
+async def test_huggingface_source_builds_locator_preview():
+    service = PipelineService()
+    run = await service.create_run(
+        source_type="huggingface",
+        source_locator="ZJUFanLab/TCMChat-dataset-600k",
+    )
+
+    preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+
+    assert preview.preview_kind == "source_descriptor"
+    assert preview.preview_payload["adapter"] == "huggingface"
+    assert preview.preview_payload["source_summary"]["kind"] == "remote_locator"
+    assert preview.preview_payload["source_summary"]["dataset"] == "ZJUFanLab/TCMChat-dataset-600k"

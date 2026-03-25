@@ -6,7 +6,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from ..importers.base import GraphRecord
+from knowledge_model.import_records import GraphImportRecord
 
 
 @dataclass
@@ -21,7 +21,7 @@ class AbstractDataExporter(ABC):
     """抽象数据导出器"""
 
     @abstractmethod
-    def export(self, records: list[GraphRecord], destination: str) -> ExportStats:
+    def export(self, records: list[GraphImportRecord], destination: str) -> ExportStats:
         """导出记录到目标"""
         ...
 
