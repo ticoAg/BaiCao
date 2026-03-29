@@ -1,5 +1,6 @@
 import importlib.util
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -117,6 +118,13 @@ class RuntimeHelpTests(unittest.TestCase):
 class DepsCommandTests(unittest.TestCase):
     def setUp(self):
         self.runtime = load_runtime_module()
+        self.original_root = self.runtime.ROOT_DIR
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.runtime.ROOT_DIR = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.runtime.ROOT_DIR = self.original_root
+        self.temp_dir.cleanup()
 
     def test_deps_up_targets_only_dependency_services(self):
         calls: list[list[str]] = []
@@ -163,6 +171,111 @@ class DepsCommandTests(unittest.TestCase):
         self.assertIn("docker compose", output)
         self.assertIn("install", output.lower())
 
+    def test_deps_up_wraps_compose_with_infisical_when_requested(self):
+        calls: list[list[str]] = []
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            calls.append(cmd)
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["deps", "up"],
+            env={
+                "INFISICAL_TOKEN": "token",
+                "INFISICAL_PROJECT_ID": "project-123",
+                "INFISICAL_ENV": "dev",
+                "INFISICAL_PATH": "/",
+            },
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            [
+                "infisical",
+                "run",
+                "--env=dev",
+                "--path=/",
+                "--projectId=project-123",
+                "--",
+                "docker",
+                "compose",
+                "-f",
+                "infra/docker-compose.yml",
+                "up",
+                "-d",
+                "postgres",
+                "neo4j",
+                "redis",
+            ],
+            calls,
+        )
+
+    def test_deps_status_reports_missing_infisical_binary_cleanly(self):
+        def fake_run(cmd, **kwargs):
+            del cmd, kwargs
+            raise FileNotFoundError("infisical")
+
+        exit_code, output = self.runtime.run_cli(
+            ["deps", "status"],
+            env={"INFISICAL_TOKEN": "token"},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 1)
+        self.assertIn("infisical", output)
+        self.assertIn("install", output.lower())
+
+    def test_deps_up_loads_infisical_token_from_repo_env_file(self):
+        calls: list[list[str]] = []
+
+        temp_root = Path(self.temp_dir.name)
+        (temp_root / ".env").write_text(
+            "\n".join(
+                [
+                    "INFISICAL_TOKEN=token-from-env-file",
+                    "INFISICAL_PROJECT_ID=project-from-env-file",
+                    "INFISICAL_ENV=dev",
+                    "INFISICAL_PATH=/",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            calls.append(cmd)
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["deps", "up"],
+            env={},
+            run_command=fake_run,
+        )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn(
+            [
+                "infisical",
+                "run",
+                "--env=dev",
+                "--path=/",
+                "--projectId=project-from-env-file",
+                "--",
+                "docker",
+                "compose",
+                "-f",
+                "infra/docker-compose.yml",
+                "up",
+                "-d",
+                "postgres",
+                "neo4j",
+                "redis",
+            ],
+            calls,
+        )
+
     def test_deps_logs_honors_lines_env_override(self):
         calls: list[list[str]] = []
 
@@ -198,6 +311,13 @@ class DepsCommandTests(unittest.TestCase):
 class TmuxRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.runtime = load_runtime_module()
+        self.original_root = self.runtime.ROOT_DIR
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.runtime.ROOT_DIR = Path(self.temp_dir.name)
+
+    def tearDown(self):
+        self.runtime.ROOT_DIR = self.original_root
+        self.temp_dir.cleanup()
 
     def test_api_up_creates_single_session_with_fixed_windows(self):
         tmux_calls: list[list[str]] = []
@@ -247,6 +367,43 @@ class TmuxRuntimeTests(unittest.TestCase):
         self.assertEqual(exit_code, 1)
         self.assertIn("outside tmux", output)
         self.assertIn("API_PORT", output)
+
+    def test_api_up_wraps_tmux_command_with_infisical(self):
+        tmux_calls: list[list[str]] = []
+
+        def fake_run(cmd, **kwargs):
+            del kwargs
+            tmux_calls.append(cmd)
+            if cmd[:3] == ["tmux", "has-session", "-t"]:
+                return self.runtime.CommandResult(1, "", "")
+            if cmd[:3] == ["tmux", "list-windows", "-t"]:
+                return self.runtime.CommandResult(0, "ops\n", "")
+            return self.runtime.CommandResult(0, "", "")
+
+        exit_code, _ = self.runtime.run_cli(
+            ["api", "up"],
+            env={
+                "SESSION": "baicao-dev",
+                "API_PORT": "8000",
+                "INFISICAL_TOKEN": "token",
+                "INFISICAL_PROJECT_ID": "project-123",
+                "INFISICAL_ENV": "dev",
+                "INFISICAL_PATH": "/backend",
+            },
+            run_command=fake_run,
+            port_checker=lambda host, port: False,
+        )
+
+        self.assertEqual(exit_code, 0)
+        send_keys_calls = [
+            cmd for cmd in tmux_calls if cmd[:3] == ["tmux", "send-keys", "-t"]
+        ]
+        self.assertEqual(len(send_keys_calls), 1)
+        command = send_keys_calls[0][4]
+        self.assertIn("infisical run", command)
+        self.assertIn("--projectId=project-123", command)
+        self.assertIn("--env=dev", command)
+        self.assertIn("--path=/backend", command)
 
     def test_stack_status_summarizes_deps_api_and_web(self):
         summary = self.runtime.render_status_table(

@@ -10,6 +10,34 @@
 
 ---
 
+## 实施状态更新（2026-03-25）
+
+### 已完成
+
+- 共享知识模型消费者迁移已经落地：API graph schema 复用共享 `NodeType` / `NodeStatus`，importer/exporter 切到共享 `GraphImportRecord`，见 `packages/api/app/models/enums.py`、`packages/api/app/schemas/graph.py`、`packages/api/app/importers/`、`packages/api/app/exporters/`
+- `packages/data_ingestion/` 子项目骨架已经建立，并直接消费共享模型，见 `packages/data_ingestion/README.md`、`packages/data_ingestion/pyproject.toml`、`packages/data_ingestion/data_ingestion/models.py`
+- 数据处理工作台剩余固定步骤与来源适配器已经补齐，七步预览不再停留在通用 summary 占位，见 `packages/api/app/pipeline/steps/`、`packages/api/app/pipeline/adapters/`、`packages/api/app/pipeline/service.py`
+- 对应验收与历史计划回填已经落地，见 `docs/acceptance/data-ingestion-and-knowledge-model.md`、`docs/acceptance/data-pipeline-workbench-mainline.md`、`docs/superpowers/plans/2026-03-23-knowledge-model-and-data-ingestion.md`、`docs/superpowers/plans/2026-03-23-data-pipeline-workbench.md`
+- 后续 Wave 2 已在此基础上继续把 review/export 从 preview-only 推进到真实持久化与显式执行，说明本 plan 的 Wave 1 主线已先行完成并成为后续迭代基础
+
+### 验证结果
+
+- `cd packages/api && uv run pytest tests/contract/test_graph_shared_model_contract.py tests/contract/test_import_record_contract.py tests/unit/pipeline/test_service.py tests/api/test_pipeline_routes.py -q` → `30 passed`
+- `cd packages/data_ingestion && uv run --with pytest pytest tests/test_models.py -q` → `1 passed`
+- `pnpm --dir packages/web test --run src/pages/DataPipelinePage.test.tsx` → `5 passed`
+
+### 风险与备注
+
+- 本轮补齐的是 Wave 1 闭环，不代表已经覆盖完整浏览器 E2E、截图回归或全部真实外部来源接入
+- `huggingface` 来源当前仍以 locator 校验与摘要预览为主；正式远端抓取与生产级任务编排不在本 plan 范围
+- review/export 的真实持久化与显式执行已在后续 `2026-03-25-review-export-persistence-wave-2.md` 中继续推进，因此本计划应被视为后续 Wave 的已完成前置
+- 历史步骤中的 checkbox 未逐项回填；本节作为当前实现事实与验证证据的聚合更新
+
+### 当前结论
+
+- 这份 plan 的 Wave 1 目标已完成，属于“实现先落地，计划状态后补记”的情况
+- 它也是“checkbox 仍显示未开始，但相关代码、验收和后续 Wave 已经建立在其结果之上”的典型例子
+
 ## File Map
 
 - Modify: `packages/api/app/models/enums.py`

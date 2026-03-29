@@ -10,6 +10,33 @@
 
 ---
 
+## 实施状态更新（2026-03-25）
+
+### 已完成
+
+- 本地开发主入口已经统一到根目录 `Makefile` 和 `scripts/dev_runtime.py`，支持 `make help`、`make deps help`、`make api up`、`make stack status` 等统一命令面
+- 运行时测试已落地到 `scripts/tests/test_dev_runtime.py`，覆盖帮助提示、错误引导、`deps` 编排、单 session tmux 管理、状态汇总与 attach 恢复提示
+- `scripts/test_e2e.sh` 的本地自起栈路径已经切到 `make stack up`，不再依赖旧 tmux/demo 启动脚本；仓库中当前只保留 `dev_runtime.py`、测试脚本与种子脚本等活入口
+- `README.md` 已切换到“依赖服务走 Docker Compose、API/Web 走本地进程、统一挂到 tmux session”的主路径说明
+- `infra/docker-compose.yml` 当前已作为依赖容器编排真源继续使用；后续 Wave 2 为 review/export 持久化又把 `minio` 纳入 compose 依赖栈，但未改变“依赖走 compose、应用走本地 tmux”的主设计
+
+### 验证结果
+
+- `python3 -m unittest discover -s scripts/tests -p 'test_dev_runtime.py' -v` → `16 tests OK`
+- `make help` → 正常输出 `deps` / `api` / `web` / `stack` 资源总览
+- `docker compose -f infra/docker-compose.yml config` → `OK`
+
+### 风险与备注
+
+- 这份计划最初把 `deps` 明确写成 `postgres`、`neo4j`、`redis` 三个服务；当前仓库事实已在后续波次扩展为包含 `minio` 的依赖栈，应以“compose 管理依赖边界”作为稳定结论，而不是把三服务列表视为不可变化的约束
+- `scripts/test_e2e.sh` 在 CI 路径下仍直接起本地 API/Web 进程；该脚本的本地 fallback 已迁移到 `make stack up`，两条路径的设计意图不同
+- 历史步骤中的 checkbox 未逐项回填；本节作为当前实现事实与验证证据的聚合更新
+
+### 当前结论
+
+- 这份 plan 已实施完成，属于“文档未回填，但实现已落地”的情况
+- 同时它也是“checkbox 仍显示未开始，但仓库已经在继续基于该主路径演进”的典型例子
+
 ## File Map
 
 - Create: `Makefile`

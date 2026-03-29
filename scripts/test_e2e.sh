@@ -11,12 +11,72 @@ API_BASE_URL="http://localhost:8000"
 WEB_BASE_URL="http://localhost:3000"
 LOCAL_API_PORT="${API_PORT:-8001}"
 LOCAL_WEB_PORT="${WEB_PORT:-3001}"
+INFISICAL_CONFIG_DIR=""
+
+load_repo_env() {
+  local env_file
+  for env_file in "$ROOT/infisical.defaults.env" "$ROOT/.env" "$ROOT/.env.local"; do
+    if [[ -f "$env_file" ]]; then
+      set -a
+      # shellcheck disable=SC1090
+      source "$env_file"
+      set +a
+    fi
+  done
+}
+
+load_repo_env
+
+if [[ -f "$ROOT/infisical.json" || -f "$ROOT/.infisical.json" ]]; then
+  INFISICAL_CONFIG_DIR="$ROOT"
+fi
 
 export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://baicao:baicao_password@localhost:15433/baicao}"
 export NEO4J_URI="${NEO4J_URI:-bolt://localhost:17687}"
 export NEO4J_USER="${NEO4J_USER:-neo4j}"
 export NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j_password}"
 export REDIS_URL="${REDIS_URL:-redis://localhost:16380}"
+
+infisical_requested() {
+  [[ -n "$INFISICAL_CONFIG_DIR" \
+    || -n "${INFISICAL_TOKEN:-}" \
+    || -n "${INFISICAL_API_URL:-}" \
+    || -n "${INFISICAL_ENV:-}" \
+    || -n "${INFISICAL_SECRET_PATH:-}" \
+    || -n "${INFISICAL_PATH:-}" \
+    || -n "${INFISICAL_PROJECT_ID:-}" \
+    || -n "${INFISICAL_DISABLE_UPDATE_CHECK:-}" ]]
+}
+
+run_with_infisical() {
+  if ! infisical_requested; then
+    "$@"
+    return
+  fi
+
+  if ! command -v infisical >/dev/null 2>&1; then
+    echo "`infisical` is required when Infisical env injection is enabled." >&2
+    return 1
+  fi
+
+  local cmd=(infisical run)
+  if [[ -n "$INFISICAL_CONFIG_DIR" ]]; then
+    cmd+=("--project-config-dir=$INFISICAL_CONFIG_DIR")
+  fi
+  if [[ -n "${INFISICAL_ENV:-}" ]]; then
+    cmd+=("--env=$INFISICAL_ENV")
+  fi
+  if [[ -n "${INFISICAL_SECRET_PATH:-}" ]]; then
+    cmd+=("--path=$INFISICAL_SECRET_PATH")
+  elif [[ -n "${INFISICAL_PATH:-}" ]]; then
+    cmd+=("--path=$INFISICAL_PATH")
+  fi
+  if [[ -n "${INFISICAL_PROJECT_ID:-}" ]]; then
+    cmd+=("--projectId=$INFISICAL_PROJECT_ID")
+  fi
+  cmd+=(-- "$@")
+  "${cmd[@]}"
+}
 
 wait_for_url() {
   local url="$1"
@@ -57,25 +117,25 @@ start_ci_stack() {
   API_BASE_URL="http://localhost:${api_port}"
   WEB_BASE_URL="http://localhost:${web_port}"
   export PLAYWRIGHT_BASE_URL="http://127.0.0.1:${web_port}"
-  export VITE_API_PROXY_TARGET="http://localhost:${api_port}"
+  export WEB_API_BASE_URL="http://localhost:${api_port}"
 
-  docker compose -f "$ROOT/infra/docker-compose.yml" up -d postgres neo4j redis
+  run_with_infisical docker compose -f "$ROOT/infra/docker-compose.yml" up -d postgres neo4j redis
   wait_for_port localhost 15433 120
   wait_for_port localhost 17687 120
   wait_for_port localhost 16380 120
 
   (
     cd "$ROOT/packages/api"
-    uv sync --extra dev
-    uv run python ../../scripts/seed_demo_data.py
-    uv run python -m uvicorn app.main:app --host 0.0.0.0 --port "$api_port"
+    run_with_infisical uv sync --extra dev
+    run_with_infisical uv run python ../../scripts/seed_demo_data.py
+    run_with_infisical uv run python -m uvicorn app.main:app --host 0.0.0.0 --port "$api_port"
   ) >"$TMP_DIR/api.log" 2>&1 &
   API_PID=$!
 
   (
     cd "$ROOT/packages/web"
     pnpm install
-    pnpm dev --host 0.0.0.0 --port "$web_port"
+    run_with_infisical pnpm dev --host 0.0.0.0 --port "$web_port"
   ) >"$TMP_DIR/web.log" 2>&1 &
   WEB_PID=$!
 }
@@ -86,7 +146,7 @@ elif ! curl -fsS http://localhost:8000/health >/dev/null 2>&1 || ! curl -fsS htt
   API_BASE_URL="http://localhost:${LOCAL_API_PORT}"
   WEB_BASE_URL="http://localhost:${LOCAL_WEB_PORT}"
   export PLAYWRIGHT_BASE_URL="http://127.0.0.1:${LOCAL_WEB_PORT}"
-  export VITE_API_PROXY_TARGET="http://localhost:${LOCAL_API_PORT}"
+  export WEB_API_BASE_URL="http://localhost:${LOCAL_API_PORT}"
   make -C "$ROOT" stack up SESSION="$SESSION_NAME" API_PORT="$LOCAL_API_PORT" WEB_PORT="$LOCAL_WEB_PORT" >/dev/null
   STARTED_LOCAL=1
 fi

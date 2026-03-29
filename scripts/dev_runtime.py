@@ -88,6 +88,27 @@ DEFAULT_ENV: Final[dict[str, str]] = {
     "NEO4J_PASSWORD": "neo4j_password",
     "REDIS_URL": "redis://localhost:16380",
 }
+REPO_ENV_FILES: Final[tuple[str, ...]] = (
+    "infisical.defaults.env",
+    ".env",
+    ".env.local",
+)
+INFISICAL_CONFIG_FILES: Final[tuple[str, ...]] = ("infisical.json", ".infisical.json")
+INFISICAL_OPTION_ENV_KEYS: Final[tuple[tuple[str, str], ...]] = (
+    ("INFISICAL_ENV", "--env"),
+    ("INFISICAL_SECRET_PATH", "--path"),
+    ("INFISICAL_PATH", "--path"),
+    ("INFISICAL_PROJECT_ID", "--projectId"),
+)
+INFISICAL_TRIGGER_ENV_KEYS: Final[tuple[str, ...]] = (
+    "INFISICAL_TOKEN",
+    "INFISICAL_API_URL",
+    "INFISICAL_ENV",
+    "INFISICAL_SECRET_PATH",
+    "INFISICAL_PATH",
+    "INFISICAL_PROJECT_ID",
+    "INFISICAL_DISABLE_UPDATE_CHECK",
+)
 ROOT_DIR: Final[Path] = Path(__file__).resolve().parents[1]
 API_DIR: Final[Path] = ROOT_DIR / "packages" / "api"
 WEB_DIR: Final[Path] = ROOT_DIR / "packages" / "web"
@@ -242,10 +263,42 @@ def _render_unexpected_arguments(
 
 def _merge_env(env: dict[str, str] | None) -> dict[str, str]:
     merged = DEFAULT_ENV.copy()
+    merged.update(_load_repo_env())
     merged.update(os.environ)
     if env:
         merged.update(env)
     return merged
+
+
+def _load_repo_env() -> dict[str, str]:
+    loaded: dict[str, str] = {}
+    for name in REPO_ENV_FILES:
+        candidate = ROOT_DIR / name
+        if not candidate.exists():
+            continue
+        loaded.update(_parse_env_file(candidate))
+    return loaded
+
+
+def _parse_env_file(path: Path) -> dict[str, str]:
+    parsed: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+            value = value[1:-1]
+        parsed[key] = value
+    return parsed
 
 
 def _default_run_command(
@@ -285,7 +338,7 @@ def _render_missing_binary(tool_label: str) -> str:
     return "\n".join(
         [
             f"`{tool_label}` is not available in PATH.",
-            "Please install Docker Desktop or the docker compose plugin and try again.",
+            "Please install the required tool and try again.",
         ]
     )
 
@@ -313,6 +366,56 @@ def _run_external(
             exit_code=1,
             stderr=_render_missing_binary(missing_tool or cmd[0]),
         )
+
+
+def _find_infisical_config_dir() -> Path | None:
+    for name in INFISICAL_CONFIG_FILES:
+        candidate = ROOT_DIR / name
+        if candidate.exists():
+            return candidate.parent
+    return None
+
+
+def _infisical_triggered(env: dict[str, str]) -> bool:
+    has_env_trigger = any(env.get(key) for key in INFISICAL_TRIGGER_ENV_KEYS)
+    return has_env_trigger or _find_infisical_config_dir() is not None
+
+
+def _infisical_command_prefix(ctx: RuntimeContext) -> list[str] | None:
+    if not _infisical_triggered(ctx.env):
+        return None
+
+    prefix = ["infisical", "run"]
+    config_dir = _find_infisical_config_dir()
+    if config_dir is not None:
+        prefix.append(f"--project-config-dir={config_dir}")
+
+    appended_flags: set[str] = set()
+    for env_key, flag in INFISICAL_OPTION_ENV_KEYS:
+        value = ctx.env.get(env_key)
+        if value and flag not in appended_flags:
+            prefix.append(f"{flag}={value}")
+            appended_flags.add(flag)
+
+    return prefix
+
+
+def _wrap_external_command_with_infisical(
+    ctx: RuntimeContext,
+    cmd: list[str],
+) -> tuple[list[str], str | None]:
+    prefix = _infisical_command_prefix(ctx)
+    if prefix is None:
+        return cmd, None
+    return [*prefix, "--", *cmd], "infisical"
+
+
+def _wrap_shell_command_with_infisical(ctx: RuntimeContext, command: str) -> str:
+    prefix = _infisical_command_prefix(ctx)
+    if prefix is None:
+        return command
+    quoted_prefix = " ".join(shlex.quote(part) for part in prefix)
+    return f"{quoted_prefix} --command={shlex.quote(command)}"
 
 
 def _run_tmux(ctx: RuntimeContext, *parts: str) -> CommandResult:
@@ -353,30 +456,46 @@ def _render_deps_status(
 
 def _handle_deps(action: str, ctx: RuntimeContext) -> CommandResult:
     if action == "up":
-        return _run_external(
+        command, missing_tool = _wrap_external_command_with_infisical(
             ctx,
             _compose_cmd("up", "-d", *DEPS_SERVICES),
-            missing_tool="docker compose",
+        )
+        return _run_external(
+            ctx,
+            command,
+            missing_tool=missing_tool or "docker compose",
         )
 
     if action == "down":
-        return _run_external(
+        command, missing_tool = _wrap_external_command_with_infisical(
             ctx,
             _compose_cmd("down"),
-            missing_tool="docker compose",
+        )
+        return _run_external(
+            ctx,
+            command,
+            missing_tool=missing_tool or "docker compose",
         )
 
     if action == "logs":
-        return _run_external(
+        command, missing_tool = _wrap_external_command_with_infisical(
             ctx,
             _compose_cmd("logs", "--tail", ctx.env["LINES"], *DEPS_SERVICES),
-            missing_tool="docker compose",
+        )
+        return _run_external(
+            ctx,
+            command,
+            missing_tool=missing_tool or "docker compose",
         )
 
-    compose_result = _run_external(
+    command, missing_tool = _wrap_external_command_with_infisical(
         ctx,
         _compose_cmd("ps"),
-        missing_tool="docker compose",
+    )
+    compose_result = _run_external(
+        ctx,
+        command,
+        missing_tool=missing_tool or "docker compose",
     )
     if compose_result.exit_code != 0:
         return compose_result
@@ -463,21 +582,23 @@ def _build_api_command(ctx: RuntimeContext) -> str:
     )
     prefix = f"export {exports} && " if exports else ""
     port = _resource_port(ctx, "api")
-    return (
+    command = (
         f"cd {shlex.quote(str(API_DIR))} && "
         f"{prefix}"
         "uv sync --extra dev && "
         f"uv run uvicorn app.main:app --host 0.0.0.0 --port {port} --reload"
     )
+    return _wrap_shell_command_with_infisical(ctx, command)
 
 
 def _build_web_command(ctx: RuntimeContext) -> str:
     port = _resource_port(ctx, "web")
-    return (
+    command = (
         f"cd {shlex.quote(str(WEB_DIR))} && "
         "pnpm install && "
         f"pnpm dev --host 0.0.0.0 --port {port}"
     )
+    return _wrap_shell_command_with_infisical(ctx, command)
 
 
 def _ensure_tmux_window(
@@ -538,10 +659,14 @@ def render_status_table(rows: list[tuple[str, str, str, str, str]]) -> str:
 def _deps_status_row(
     ctx: RuntimeContext,
 ) -> tuple[tuple[str, str, str, str, str], CommandResult]:
-    compose_result = _run_external(
+    command, missing_tool = _wrap_external_command_with_infisical(
         ctx,
         _compose_cmd("ps"),
-        missing_tool="docker compose",
+    )
+    compose_result = _run_external(
+        ctx,
+        command,
+        missing_tool=missing_tool or "docker compose",
     )
     if compose_result.exit_code != 0:
         detail = compose_result.stderr.strip() or "compose unavailable"

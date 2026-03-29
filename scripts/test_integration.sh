@@ -3,6 +3,25 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 API_DIR="$ROOT/packages/api"
+INFISICAL_CONFIG_DIR=""
+
+load_repo_env() {
+  local env_file
+  for env_file in "$ROOT/infisical.defaults.env" "$ROOT/.env" "$ROOT/.env.local"; do
+    if [[ -f "$env_file" ]]; then
+      set -a
+      # shellcheck disable=SC1090
+      source "$env_file"
+      set +a
+    fi
+  done
+}
+
+load_repo_env
+
+if [[ -f "$ROOT/infisical.json" || -f "$ROOT/.infisical.json" ]]; then
+  INFISICAL_CONFIG_DIR="$ROOT"
+fi
 
 export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://baicao:baicao_password@localhost:15433/baicao}"
 export NEO4J_URI="${NEO4J_URI:-bolt://localhost:17687}"
@@ -14,6 +33,47 @@ export OBJECT_STORAGE_ACCESS_KEY="${OBJECT_STORAGE_ACCESS_KEY:-minioadmin}"
 export OBJECT_STORAGE_SECRET_KEY="${OBJECT_STORAGE_SECRET_KEY:-minioadmin}"
 export OBJECT_STORAGE_BUCKET="${OBJECT_STORAGE_BUCKET:-baicao-pipeline-exports}"
 export OBJECT_STORAGE_SECURE="${OBJECT_STORAGE_SECURE:-false}"
+
+infisical_requested() {
+  [[ -n "$INFISICAL_CONFIG_DIR" \
+    || -n "${INFISICAL_TOKEN:-}" \
+    || -n "${INFISICAL_API_URL:-}" \
+    || -n "${INFISICAL_ENV:-}" \
+    || -n "${INFISICAL_SECRET_PATH:-}" \
+    || -n "${INFISICAL_PATH:-}" \
+    || -n "${INFISICAL_PROJECT_ID:-}" \
+    || -n "${INFISICAL_DISABLE_UPDATE_CHECK:-}" ]]
+}
+
+run_with_infisical() {
+  if ! infisical_requested; then
+    "$@"
+    return
+  fi
+
+  if ! command -v infisical >/dev/null 2>&1; then
+    echo "`infisical` is required when Infisical env injection is enabled." >&2
+    return 1
+  fi
+
+  local cmd=(infisical run)
+  if [[ -n "$INFISICAL_CONFIG_DIR" ]]; then
+    cmd+=("--project-config-dir=$INFISICAL_CONFIG_DIR")
+  fi
+  if [[ -n "${INFISICAL_ENV:-}" ]]; then
+    cmd+=("--env=$INFISICAL_ENV")
+  fi
+  if [[ -n "${INFISICAL_SECRET_PATH:-}" ]]; then
+    cmd+=("--path=$INFISICAL_SECRET_PATH")
+  elif [[ -n "${INFISICAL_PATH:-}" ]]; then
+    cmd+=("--path=$INFISICAL_PATH")
+  fi
+  if [[ -n "${INFISICAL_PROJECT_ID:-}" ]]; then
+    cmd+=("--projectId=$INFISICAL_PROJECT_ID")
+  fi
+  cmd+=(-- "$@")
+  "${cmd[@]}"
+}
 
 has_integration_tests() {
   rg -l \
@@ -83,8 +143,8 @@ PY
 }
 
 # 集成脚本需要从干净卷启动，避免旧 schema 让 create_all 无法补齐字段。
-docker compose -f "$ROOT/infra/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1 || true
-docker compose -f "$ROOT/infra/docker-compose.yml" up -d postgres neo4j redis minio
+run_with_infisical docker compose -f "$ROOT/infra/docker-compose.yml" down -v --remove-orphans >/dev/null 2>&1 || true
+run_with_infisical docker compose -f "$ROOT/infra/docker-compose.yml" up -d postgres neo4j redis minio
 wait_for_port localhost 15433 120
 wait_for_port localhost 17687 120
 wait_for_port localhost 16380 120
@@ -95,7 +155,7 @@ wait_for_health baicao-redis 120
 wait_for_health baicao-minio 120
 
 cd "$API_DIR"
-uv sync --extra dev
+run_with_infisical uv sync --extra dev
 wait_for_neo4j_bolt 120
 
 if ! has_integration_tests; then
@@ -103,5 +163,5 @@ if ! has_integration_tests; then
   exit 0
 fi
 
-uv run python ../../scripts/seed_demo_data.py
-uv run python -m pytest -q -m integration
+run_with_infisical uv run python ../../scripts/seed_demo_data.py
+run_with_infisical uv run python -m pytest -q -m integration

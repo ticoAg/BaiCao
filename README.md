@@ -227,9 +227,44 @@ BaiCao/
 
 这是当前仓库推荐的本地开发方式：依赖服务走 Docker Compose，前后端走本地进程，并统一挂在一个 tmux session 里。
 
+如果你使用 Infisical CLI 管理本地环境变量，`make deps/api/web/stack ...` 和仓库测试脚本会在检测到以下任一条件时自动改为通过 `infisical run` 启动：
+
+- 仓库根目录的 `infisical.defaults.env`、`.env`、`.env.local` 中存在任一 Infisical 相关环境变量
+- 当前 shell 配置了任一 Infisical 相关环境变量：`INFISICAL_TOKEN`、`INFISICAL_PROJECT_ID`、`INFISICAL_ENV`、`INFISICAL_SECRET_PATH`、`INFISICAL_API_URL`
+
+这样本地只需要配置 Infisical 相关变量，业务变量如 `DATABASE_URL`、`OPENAI_API_KEY`、`NEO4J_PASSWORD`、`WEB_API_BASE_URL` 等都可以放在 Infisical secret 中统一注入。
+
 ```bash
 cp infra/.env.example infra/.env
 make deps up
+make stack up
+```
+
+如果仓库根目录的 `infisical.defaults.env` / `.env` 已配置好，或当前 shell 已导出 Infisical 相关变量，上面的命令不需要再手动加 `infisical run` 前缀。
+
+仓库根目录的 `infisical.defaults.env`、`.env`、`.env.local` 都会被本地运行时和测试脚本自动读取。推荐做法是：
+
+- 把固定不变的默认项放进仓库跟踪的 `infisical.defaults.env`
+- 把 `INFISICAL_TOKEN` 这类敏感鉴权项放进本地 `.env`
+- 如需切换环境，再在本地 `.env` 中覆盖 `INFISICAL_ENV`
+
+一个最小示例：
+
+`infisical.defaults.env`
+
+```env
+INFISICAL_API_URL=https://infisical.ticoag.fun
+INFISICAL_PROJECT_ID=0c396ff3-177f-4347-a716-d3107dadfcf1
+INFISICAL_SECRET_PATH=/
+```
+
+`.env`
+
+```env
+INFISICAL_TOKEN=your_service_token
+```
+
+```bash
 make stack up
 ```
 
@@ -272,7 +307,7 @@ cp infra/.env.example infra/.env
 docker compose -f infra/docker-compose.yml up -d postgres neo4j redis minio
 ```
 
-然后为本地 API 准备环境变量，例如在 `packages/api/.env` 中配置：
+如果不用 Infisical，可以为本地 API 准备环境变量，例如在 `packages/api/.env` 中配置：
 
 ```env
 DATABASE_URL=postgresql+asyncpg://baicao:baicao_password@localhost:15433/baicao
@@ -293,6 +328,13 @@ uv run ty check
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
+如果手动模式下也想走 Infisical，建议从仓库根目录执行：
+
+```bash
+infisical run --project-config-dir="$PWD" -- \
+  bash -lc 'cd packages/api && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000'
+```
+
 启动前端：
 
 ```bash
@@ -300,6 +342,13 @@ cd packages/web
 corepack enable
 pnpm install
 pnpm exec vp dev --host 0.0.0.0 --port 3000
+```
+
+对应前端也可以从仓库根目录执行：
+
+```bash
+infisical run --project-config-dir="$PWD" -- \
+  bash -lc 'cd packages/web && pnpm install && pnpm dev --host 0.0.0.0 --port 3000'
 ```
 
 > **工具链说明**：前端使用 **vite-plus (`vp`)**。`pnpm-workspace.yaml` 的 catalog 将 `vite` 映射到 `@voidzero-dev/vite-plus-core`、`vitest` 映射到 `@voidzero-dev/vite-plus-test`。`packages/web` 的 `dev` / `build` / `test` / `preview` 一律以 `vp` 为执行器；仓库根脚本（如 `pnpm run test:web`）只是对 `vp` 命令的统一封装。
@@ -321,6 +370,8 @@ pnpm run test:e2e
 pnpm run verify
 pnpm run verify:full
 ```
+
+如果根目录存在 `infisical.json` / `.infisical.json`，或当前 shell 配置了 Infisical 相关变量，上述集成测试和 E2E 脚本也会自动通过 `infisical run` 注入环境变量。
 
 含义如下：
 
