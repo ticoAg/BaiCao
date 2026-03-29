@@ -33,6 +33,7 @@
 | [graph-workbench.md](graph-workbench.md) | stable | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | stable | 仓库级图模型唯一真源、中文知识结构定义与数据采集架构 |
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
+| [data-sources.md](data-sources.md) | stable | 图谱数据候选源评估与分级整理（Hugging Face 数据集调研） |
 
 ## 架构主线
 
