@@ -158,3 +158,68 @@ audience: developer, data-team
 - [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) — 仓库级图模型与数据采集边界
 - [data-model.md](data-model.md) — Neo4j 节点与关系模型
 - `docs/superpowers/specs/2026-03-23-knowledge-model-and-data-ingestion-design.md` — 原始调研设计文档
+
+---
+
+## 7. TCM 训练语料构建（ TCMChat 数据体系）
+
+本章节整理中医药大语言模型训练语料的完整构建流程，涵盖数据来源、预处理方式及七类场景数据构造策略。
+
+### 7.1 数据来源
+
+| 来源 | 类型 | 规模 | 说明 |
+|------|------|------|------|
+| 图书（国家标准、医学教材、医学案例） | 结构化文本 | 4 项国家标准、7 部医学教材、18 个医学案例 | 通过 OCR 提取 PDF 文本，人工校对 |
+| TCM-DaYi（<https://www.dayi.org.cn/>） | 疾病与证候数据 | 4214 条记录 | 中国医药信息查询平台 |
+| ETCM（<http://www.tcmip.cn/ETCM2/front/>） | 中药与方剂数据 | 1852 味中药、8872 条方剂数据 | 中医药百科 |
+| CNKI 文献摘要 | 文献 | 近 50 万篇摘要 | 关键词："Herb"、"Formula"、"Ingredient" |
+| BaiduBaike | 百科 | — | 从 baby-llama2-chinese 代码库获取 |
+| AliTianchi 平台 | 阅读理解 + NER | 18478 条阅读理解、2480 条实体识别 | TCM 阅读理解数据 + TCM-NER 数据集 |
+| ZY-BERT（GitHub） | 辨证论治文献 | — | 文献支持的证候数据 |
+| ShenNong_TCM_Dataset（HuggingFace） | 方剂/中药推荐 | 11 万条 | 药材或方剂推荐场景 |
+| Herb2.0（<http://47.92.70.12/>） | TCM 分子数据 | 6893 条 TCM 数据、49259 条分子数据 | ADMET 预测场景 |
+| PharmaBench（GitHub） | ADMET 数据 | LogD(14140)、AMES(9140)、BBB(8653)、PPB(1263)、CYP2C9(1000)、CYP2D6(4505)、CYP3A4(4506) | 分子属性预测 |
+
+### 7.2 数据预处理
+
+#### 7.2.1 无监督数据处理
+
+主要处理对象：图书、BaiduBaike、TCM-DaYi、专业文献、ShenNong_TCM_Dataset。
+
+- **图书**：使用 OCR 提取 PDF 文本，人工校对（纠正错别字、标点修正、段落格式化）
+- **文献摘要**：去除 HTML 标签，修正符号错误
+- **TCM-DaYi / ShenNong_TCM_Dataset**：简单分词处理
+
+#### 7.2.2 有监督指令数据构建策略
+
+构建方式分三类：
+
+1. **人机交互指令创建**（Human-AI Interaction Instruction Creation）
+2. **模板转换为文本格式**（Template Conversion to Text Format）
+3. **开源数据集收集**（Open-source Dataset Collection）
+
+最终通过人工验证过滤，生成七类核心场景数据。
+
+### 7.3 七类场景数据构造
+
+| 场景 | 数据内容 | 构建方式 |
+|------|----------|----------|
+| **TCM 知识库** | 药材的性味归经、功效主治、组成、配伍等 | 模板转换为文本格式 |
+| **选择题** | 五选一选项 + 答案 + 分析描述 | 人机交互指令 + 模板转换 |
+| **阅读理解** | 基于《黄帝内经》、名医百科、专利中药、慢性病保健等文献 | 模板转换为文本格式 |
+| **实体抽取** | 13 类实体：药材、药物成分、疾病、症状等 | 模板转换为文本格式 |
+| **医学案例诊断** | 主诉、疾病、证候、治法、中药/方剂建议 | TCM-SD 与 ETCM 映射构建 |
+| **方剂/中药推荐** | 功效、靶点、证据、疾病等属性 | 公开数据库（ChatMed-TCM、ETCM、图书）整合 + 模板转换 |
+| **ADMET 预测** | TCM SMILES 指令集、ADMET 回归/分类预测任务 | Herb2.0 + PharmaBench，模板转换 |
+
+#### 场景详情
+
+**医学案例诊断数据构造**：
+
+- 数据源：TCM-SD（疾病、证候、症状）、ETCM（中药功效）
+- 构建方式：通过证候与治法映射构建，输出字段包括：主诉、疾病、证候、治法、中药/方剂建议
+
+**ADMET 预测数据构造**：
+
+- TCM 分子 SMILES 指令集 ← Herb2.0
+- ADMET 回归/分类预测任务 ← PharmaBench（LogD、AMES、BBB、PPB、CYP2C9、CYP2D6、CYP3A4）
