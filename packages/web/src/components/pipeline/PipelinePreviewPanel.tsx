@@ -72,8 +72,12 @@ const PipelinePreviewPanel = ({
   latestExport,
   onSaveReviewItem,
 }: PipelinePreviewPanelProps) => {
+  const repoUrl = preview?.previewPayload.repo_url;
+  const readmeUrl = preview?.previewPayload.readme_url;
+  const readmeContent = preview?.previewPayload.readme_content;
+
   return (
-    <Card data-testid="pipeline-preview-panel" bordered={false}>
+    <Card data-testid="pipeline-preview-panel" variant="borderless">
       {!preview ? (
         <Empty description="运行预览后，这里会展示当前步骤的结果摘要。" />
       ) : (
@@ -96,6 +100,26 @@ const PipelinePreviewPanel = ({
               <Text type="secondary">{`快照对象：${latestExport.snapshot_object_key ?? "-"}`}</Text>
               {latestExport.error_message ? <Text type="danger">{latestExport.error_message}</Text> : null}
             </div>
+          ) : null}
+          {repoUrl || readmeUrl ? (
+            <div style={{ display: "grid", gap: 6 }}>
+              <Text strong>来源链接</Text>
+              {repoUrl ? (
+                <a href={String(repoUrl)} target="_blank" rel="noreferrer">
+                  打开仓库页
+                </a>
+              ) : null}
+              {readmeUrl ? (
+                <a href={String(readmeUrl)} target="_blank" rel="noreferrer">
+                  打开 README 原文
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+          {typeof readmeContent === "string" && readmeContent.length > 0 ? (
+            <Card size="small" title="README 预览" variant="borderless">
+              <Paragraph style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>{readmeContent}</Paragraph>
+            </Card>
           ) : null}
           <Paragraph style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>
             {JSON.stringify(preview.previewPayload, null, 2)}

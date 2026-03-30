@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.export.service import ExportService, Neo4jGraphWriter, SQLAlchemyExportStorage
+from app.pipeline.materialization import SourceMaterializationService
 from app.pipeline.service import PipelineService
 from app.pipeline.storage import SQLAlchemyPipelineStorage
+from app.pipeline.uploads import SourceUploadService
 from app.review.service import ReviewService, SQLAlchemyReviewStorage
 from app.storage.objects import build_object_storage
 
@@ -33,8 +35,15 @@ async def get_pipeline_service(
     review_service: ReviewService = Depends(get_review_service),
     export_service: ExportService = Depends(get_export_service),
 ) -> PipelineService:
+    settings = get_settings()
     return PipelineService(
         storage=SQLAlchemyPipelineStorage(db),
         review_service=review_service,
         export_service=export_service,
+        materialization_service=SourceMaterializationService(settings.pipeline_source_storage_dir),
     )
+
+
+def get_source_upload_service() -> SourceUploadService:
+    settings = get_settings()
+    return SourceUploadService(storage_root=settings.pipeline_source_storage_dir)

@@ -1,5 +1,6 @@
 import pytest
 
+from app.pipeline.materialization import SourceMaterializationService
 from app.pipeline.models import PipelineStepKey, PipelineStepStatus
 from app.pipeline.service import PipelineService
 
@@ -213,3 +214,31 @@ async def test_huggingface_source_builds_locator_preview():
     assert preview.preview_payload["adapter"] == "huggingface"
     assert preview.preview_payload["source_summary"]["kind"] == "remote_locator"
     assert preview.preview_payload["source_summary"]["dataset"] == "ZJUFanLab/TCMChat-dataset-600k"
+
+
+@pytest.mark.asyncio
+async def test_source_ingest_preview_returns_materialized_paths(tmp_path, monkeypatch):
+    materialization_service = SourceMaterializationService(str(tmp_path))
+
+    def fake_snapshot(repo_id: str, cache_dir):
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        (cache_dir / "README.md").write_text("# hf repo\n", encoding="utf-8")
+        (cache_dir / "data.jsonl").write_text('{"name":"陈皮"}\n', encoding="utf-8")
+
+    monkeypatch.setattr(materialization_service, "_download_huggingface_repo", fake_snapshot)
+    service = PipelineService(materialization_service=materialization_service)
+    run = await service.create_run(
+        source_type="huggingface_repo",
+        source_locator="ZJUFanLab/TCMChat-dataset-600k",
+        source_payload={
+            "source_type": "huggingface_repo",
+            "source_input": {"repo_id": "ZJUFanLab/TCMChat-dataset-600k"},
+        },
+    )
+
+    preview = await service.preview_step(run.id, PipelineStepKey.SOURCE_INGEST)
+
+    assert preview.preview_payload["run_workdir"]
+    assert preview.preview_payload["repo_url"] == "https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k"
+    assert "/runs/" in preview.preview_payload["run_workdir"]
+    assert "/source" not in preview.preview_payload["run_workdir"]

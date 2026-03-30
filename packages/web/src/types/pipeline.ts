@@ -1,4 +1,11 @@
-import type { ExportRecord, ReviewItemDecision, ReviewSession } from "@bai-cao/shared";
+import type {
+  ExportRecord,
+  PipelineSourceDefinition,
+  PipelineSourceType,
+  PipelineUploadResponse,
+  ReviewItemDecision,
+  ReviewSession,
+} from "@bai-cao/shared";
 
 export type PipelineRunStatus =
   | "pending"
@@ -37,6 +44,7 @@ export interface PipelineRun {
   id: string;
   sourceType: string;
   sourceLocator: string;
+  sourcePayload?: PipelineSourceDefinition;
   status: PipelineRunStatus;
   currentStep: PipelineStepKey;
   steps: Partial<Record<PipelineStepKey, PipelineStepState>>;
@@ -62,8 +70,9 @@ export interface PipelinePreview {
 }
 
 export interface CreatePipelineRunRequest {
-  sourceType: string;
+  sourceType: PipelineSourceType;
   sourceLocator: string;
+  sourcePayload: PipelineSourceDefinition;
 }
 
 export interface UpdateReviewItemRequest {
@@ -72,4 +81,4 @@ export interface UpdateReviewItemRequest {
   comment?: string | null;
 }
 
-export type { ExportRecord, ReviewSession };
+export type { ExportRecord, PipelineSourceDefinition, PipelineSourceType, PipelineUploadResponse, ReviewSession };

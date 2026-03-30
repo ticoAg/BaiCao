@@ -55,6 +55,7 @@ def _deserialize_run(model: PipelineRunModel) -> PipelineRun:
         id=model.id,
         source_type=model.source_type,
         source_locator=model.source_locator,
+        source_payload=model.source_payload,
         status=PipelineRunStatus(model.status),
         current_step=PipelineStepKey(model.current_step),
         steps={
@@ -143,6 +144,7 @@ class SQLAlchemyPipelineStorage:
                 id=run.id,
                 source_type=run.source_type,
                 source_locator=run.source_locator,
+                source_payload=run.source_payload,
                 status=run.status.value,
                 current_step=run.current_step.value,
                 steps=_serialize_steps(run),
@@ -151,6 +153,7 @@ class SQLAlchemyPipelineStorage:
         else:
             model.source_type = run.source_type
             model.source_locator = run.source_locator
+            model.source_payload = run.source_payload
             model.status = run.status.value
             model.current_step = run.current_step.value
             model.steps = _serialize_steps(run)

@@ -1,18 +1,26 @@
 import type { ExportRecord, PipelineStepKey, ReviewSession } from "../../types/pipeline";
 import { Button, Card, Space, Typography } from "antd";
+import SourceIngestionForm from "./SourceIngestionForm";
+import type { PipelineSourceType, PipelineUploadResponse } from "../../types/pipeline";
 
 const { Paragraph, Text, Title } = Typography;
 
 interface PipelineActionPanelProps {
   currentStep: PipelineStepKey;
   currentStepLabel: string;
-  sourceType: string;
-  sourceLocator: string;
+  formSourceType: PipelineSourceType;
+  formSourceLocator: string;
+  displaySourceType: string;
+  displaySourceLocator: string;
+  uploadedSource: PipelineUploadResponse | null;
   hasRun: boolean;
   hasPreview: boolean;
   isSubmitting: boolean;
   reviewSession: ReviewSession | null;
   latestExport: ExportRecord | null;
+  onSourceTypeChange: (value: PipelineSourceType) => void;
+  onSourceLocatorChange: (value: string) => void;
+  onUploadFile: (file: File) => void;
   onPreview: () => void;
   onConfirm: () => void;
   onRerun: () => void;
@@ -24,13 +32,19 @@ interface PipelineActionPanelProps {
 const PipelineActionPanel = ({
   currentStep,
   currentStepLabel,
-  sourceType,
-  sourceLocator,
+  formSourceType,
+  formSourceLocator,
+  displaySourceType,
+  displaySourceLocator,
+  uploadedSource,
   hasRun,
   hasPreview,
   isSubmitting,
   reviewSession,
   latestExport,
+  onSourceTypeChange,
+  onSourceLocatorChange,
+  onUploadFile,
   onPreview,
   onConfirm,
   onRerun,
@@ -53,10 +67,19 @@ const PipelineActionPanel = ({
         <Paragraph style={{ marginBottom: 0 }}>
           当前以固定步骤模板执行处理任务。来源适配可以变化，但步骤顺序保持一致，并在关键步骤间等待人工放行。
         </Paragraph>
+        <SourceIngestionForm
+          sourceType={formSourceType}
+          sourceLocator={formSourceLocator}
+          uploadedSource={uploadedSource}
+          disabled={isSubmitting}
+          onSourceTypeChange={onSourceTypeChange}
+          onSourceLocatorChange={onSourceLocatorChange}
+          onUploadFile={onUploadFile}
+        />
         <div>
-          <Text type="secondary">{`来源类型：${sourceType}`}</Text>
+          <Text type="secondary">{`来源类型：${displaySourceType}`}</Text>
           <br />
-          <Text type="secondary">{`来源定位：${sourceLocator}`}</Text>
+          <Text type="secondary">{`来源定位：${displaySourceLocator}`}</Text>
         </div>
         <Space wrap>
           <Button type="primary" loading={isSubmitting} onClick={onPreview}>

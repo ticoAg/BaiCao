@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable
 
 from app.pipeline.adapters import SourceDescriptor
+from app.pipeline.materialization import MaterializedSource
 from app.pipeline.models import PipelineRun, PipelineStepKey, PipelineStepStatus
 from app.pipeline.schemas import PipelineStepPreviewResponse
 
@@ -13,6 +15,7 @@ from app.pipeline.schemas import PipelineStepPreviewResponse
 class PipelineStepContext:
     run: PipelineRun
     source_descriptor: SourceDescriptor
+    materialized_source: MaterializedSource | None = None
 
 
 StepHandler = Callable[[PipelineStepContext], PipelineStepPreviewResponse]
@@ -57,6 +60,13 @@ def source_ready(source_descriptor: SourceDescriptor) -> bool:
 
 
 def get_source_text(context: PipelineStepContext) -> str:
+    if context.materialized_source is not None:
+        if context.materialized_source.readme_content:
+            return context.materialized_source.readme_content.strip()
+        for candidate in context.materialized_source.candidate_files:
+            path = Path(candidate)
+            if path.exists():
+                return path.read_text(encoding="utf-8").strip()
     if context.source_descriptor.raw_text:
         return context.source_descriptor.raw_text.strip()
     if context.source_descriptor.sample_lines:

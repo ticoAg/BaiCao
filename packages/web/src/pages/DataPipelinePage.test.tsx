@@ -5,6 +5,12 @@ import { renderWithProviders } from "../test/render-with-providers";
 
 vi.mock("../services/pipelineApi", () => ({
   pipelineApi: {
+    uploadSourceFile: vi.fn().mockResolvedValue({
+      upload_token: "upload-demo.zip",
+      filename: "demo.zip",
+      stored_path: ".tmp/pipeline_sources/uploads/upload-demo.zip",
+      content_type: "application/zip",
+    }),
     createRun: vi.fn().mockResolvedValue({
       id: "pipeline-1",
       sourceType: "huggingface",
@@ -27,8 +33,11 @@ vi.mock("../services/pipelineApi", () => ({
       summary: "步骤预览已生成",
       previewKind: "summary",
       previewPayload: {
-        source_type: "huggingface",
+        source_type: "huggingface_repo",
         source_locator: "ZJUFanLab/TCMChat-dataset-600k",
+        repo_url: "https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k",
+        readme_url: "https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k/resolve/main/README.md",
+        readme_content: "# TCMChat dataset\n",
         step: "source_ingest",
         preview_version: 1,
       },
@@ -207,6 +216,55 @@ describe("DataPipelinePage", () => {
       expect(screen.getByText("步骤预览已生成")).toBeInTheDocument();
     });
     expect(screen.getByText("当前步骤：接入来源")).toBeInTheDocument();
+  });
+
+  it("shows source type options and local upload control", async () => {
+    renderWithProviders(<App />, "/data/pipeline");
+
+    expect(await screen.findByLabelText("来源类型")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Hugging Face Repo" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "远程直链" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "本地上传" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Repo ID")).toBeInTheDocument();
+  });
+
+  it("sends structured source payload when creating a Hugging Face run", async () => {
+    const user = userEvent.setup();
+    const { pipelineApi } = await import("../services/pipelineApi");
+
+    renderWithProviders(<App />, "/data/pipeline");
+
+    await user.clear(await screen.findByLabelText("Repo ID"));
+    await user.type(screen.getByLabelText("Repo ID"), "ZJUFanLab/TCMChat-dataset-600k");
+    await user.click(screen.getByRole("button", { name: "运行预览" }));
+
+    await waitFor(() => {
+      expect(pipelineApi.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceType: "huggingface_repo",
+          sourceLocator: "ZJUFanLab/TCMChat-dataset-600k",
+          sourcePayload: {
+            source_type: "huggingface_repo",
+            source_input: { repo_id: "ZJUFanLab/TCMChat-dataset-600k" },
+          },
+        }),
+      );
+    });
+  });
+
+  it("renders Hugging Face links and README content in the preview panel", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(<App />, "/data/pipeline");
+
+    await user.click(await screen.findByRole("button", { name: "运行预览" }));
+
+    expect(await screen.findByText("README 预览")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "打开仓库页" })).toHaveAttribute(
+      "href",
+      "https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k",
+    );
+    expect(screen.getByText("# TCMChat dataset")).toBeInTheDocument();
   });
 
   it("restores an existing run from the URL query", async () => {

@@ -2,7 +2,7 @@ from typing import Any
 from enum import StrEnum
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class PipelineRunStatus(StrEnum):
@@ -45,6 +45,43 @@ PIPELINE_STEP_ORDER = (
 )
 
 
+class PipelineSourceType(StrEnum):
+    HUGGINGFACE_REPO = "huggingface_repo"
+    REMOTE_URL = "remote_url"
+    LOCAL_UPLOAD = "local_upload"
+
+
+class PipelineSourceDefinition(BaseModel):
+    source_type: PipelineSourceType
+    source_input: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(use_enum_values=True)
+
+    @model_validator(mode="after")
+    def validate_source_input(self):
+        if self.source_type == PipelineSourceType.HUGGINGFACE_REPO:
+            repo_id = str(self.source_input.get("repo_id", "")).strip()
+            if not repo_id:
+                raise ValueError("repo_id is required for huggingface_repo")
+        elif self.source_type == PipelineSourceType.REMOTE_URL:
+            url = str(self.source_input.get("url", "")).strip()
+            if not url:
+                raise ValueError("url is required for remote_url")
+        elif self.source_type == PipelineSourceType.LOCAL_UPLOAD:
+            upload_token = str(self.source_input.get("upload_token", "")).strip()
+            if not upload_token:
+                raise ValueError("upload_token is required for local_upload")
+        return self
+
+    @property
+    def display_locator(self) -> str:
+        if self.source_type == PipelineSourceType.HUGGINGFACE_REPO:
+            return str(self.source_input.get("repo_id", ""))
+        if self.source_type == PipelineSourceType.REMOTE_URL:
+            return str(self.source_input.get("url", ""))
+        return str(self.source_input.get("upload_token", ""))
+
+
 class PipelineStepState(BaseModel):
     key: PipelineStepKey
     status: PipelineStepStatus = PipelineStepStatus.PENDING
@@ -62,6 +99,7 @@ class PipelineRun(BaseModel):
     id: str = Field(default_factory=lambda: f"pipeline-{uuid4()}")
     source_type: str
     source_locator: str
+    source_payload: dict[str, Any] = Field(default_factory=dict)
     status: PipelineRunStatus = PipelineRunStatus.PENDING
     current_step: PipelineStepKey = PipelineStepKey.SOURCE_INGEST
     steps: dict[PipelineStepKey, PipelineStepState]

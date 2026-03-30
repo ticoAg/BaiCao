@@ -31,6 +31,7 @@ class PipelineStepPreviewResponse(BaseModel):
 class CreatePipelineRunRequest(BaseModel):
     source_type: str
     source_locator: str
+    source_payload: dict[str, Any] = Field(default_factory=dict)
 
     model_config = ConfigDict(use_enum_values=False)
 
@@ -39,8 +40,18 @@ class PipelineRunResponse(BaseModel):
     id: str
     source_type: str
     source_locator: str
+    source_payload: dict[str, Any] = Field(default_factory=dict)
     status: str
     current_step: str
     steps: dict[str, dict[str, Any]]
+
+    model_config = ConfigDict(use_enum_values=False)
+
+
+class UploadedSourceFileResponse(BaseModel):
+    upload_token: str
+    filename: str
+    stored_path: str
+    content_type: str | None = None
 
     model_config = ConfigDict(use_enum_values=False)

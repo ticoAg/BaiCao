@@ -4,6 +4,7 @@ import type {
   ExportRecord,
   PipelinePreview,
   PipelineRun,
+  PipelineUploadResponse,
   PipelineStepKey,
   PipelineStepState,
   ReviewSession,
@@ -82,6 +83,7 @@ export const pipelineApi = {
       id: item.id as string,
       sourceType: item.source_type as string,
       sourceLocator: item.source_locator as string,
+      sourcePayload: item.source_payload as PipelineRun["sourcePayload"],
       status: item.status as PipelineRun["status"],
       currentStep: item.current_step as PipelineRun["currentStep"],
       steps: mapSteps(item.steps as Record<string, {
@@ -103,6 +105,7 @@ export const pipelineApi = {
       id: data.id,
       sourceType: data.source_type,
       sourceLocator: data.source_locator,
+      sourcePayload: data.source_payload,
       status: data.status,
       currentStep: data.current_step,
       steps: mapSteps(data.steps),
@@ -115,6 +118,7 @@ export const pipelineApi = {
       id: data.id,
       sourceType: data.source_type,
       sourceLocator: data.source_locator,
+      sourcePayload: data.source_payload,
       status: data.status,
       currentStep: data.current_step,
       steps: mapSteps(data.steps),
@@ -147,6 +151,7 @@ export const pipelineApi = {
       id: data.id,
       sourceType: data.source_type,
       sourceLocator: data.source_locator,
+      sourcePayload: data.source_payload,
       status: data.status,
       currentStep: data.current_step,
       steps: mapSteps(data.steps),
@@ -159,10 +164,20 @@ export const pipelineApi = {
       id: data.id,
       sourceType: data.source_type,
       sourceLocator: data.source_locator,
+      sourcePayload: data.source_payload,
       status: data.status,
       currentStep: data.current_step,
       steps: mapSteps(data.steps),
     };
+  },
+
+  uploadSourceFile: async (file: File): Promise<PipelineUploadResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const { data } = await api.post("/pipeline/uploads", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data as PipelineUploadResponse;
   },
 
   createReviewSession: async (runId: string): Promise<ReviewSession> => {

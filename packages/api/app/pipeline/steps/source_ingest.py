@@ -5,6 +5,32 @@ from .base import PipelineStepContext, build_preview_response, source_ready
 
 def build_source_ingest_preview(context: PipelineStepContext):
     descriptor = context.source_descriptor
+    materialized = context.materialized_source
+    if materialized is not None:
+        return build_preview_response(
+            context=context,
+            step=PipelineStepKey.SOURCE_INGEST,
+            summary="来源接入预览已生成",
+            preview_kind="source_descriptor",
+            preview_payload={
+                "resolved_source_type": context.run.source_type,
+                "source_locator": context.run.source_locator,
+                "run_workdir": materialized.run_workdir,
+                "source_dir": materialized.source_dir,
+                "extracted_dir": materialized.extracted_dir,
+                "cache_hit": materialized.cache_hit,
+                "is_archive": materialized.is_archive,
+                "archive_format": materialized.archive_format,
+                "readme_path": materialized.readme_path,
+                "candidate_files": materialized.candidate_files,
+                "repo_url": materialized.repo_url,
+                "readme_url": materialized.readme_url,
+            },
+            warnings=descriptor.warnings,
+            errors=descriptor.errors,
+            next_step_ready=True,
+        )
+
     return build_preview_response(
         context=context,
         step=PipelineStepKey.SOURCE_INGEST,

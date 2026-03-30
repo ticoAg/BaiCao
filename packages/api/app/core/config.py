@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     object_storage_bucket: str = "baicao-pipeline-exports"
     object_storage_secure: bool = False
 
+    # Pipeline Source Storage
+    pipeline_source_storage_dir: str = "tmp/data"
+
 
 @lru_cache
 def get_settings() -> Settings:

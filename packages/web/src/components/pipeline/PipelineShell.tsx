@@ -6,7 +6,7 @@ import { usePipelineStore } from "../../stores/pipelineStore";
 import { useEffect } from "react";
 
 const PipelineShell = () => {
-  const { sourceType, sourceLocator } = usePipelineStore();
+  const { sourceType, sourceLocator, uploadedSource, setSourceType, setSourceLocator, setUploadedSource } = usePipelineStore();
   const {
     fixedSteps,
     run,
@@ -27,6 +27,7 @@ const PipelineShell = () => {
     saveReviewItem,
     lockReviewSession,
     executeExport,
+    uploadSourceFile,
   } = usePipelineRun();
 
   useEffect(() => {
@@ -56,13 +57,24 @@ const PipelineShell = () => {
       <PipelineActionPanel
         currentStep={currentStep}
         currentStepLabel={currentStepLabel}
-        sourceType={run?.sourceType ?? sourceType}
-        sourceLocator={run?.sourceLocator ?? sourceLocator}
+        formSourceType={sourceType}
+        formSourceLocator={sourceLocator}
+        displaySourceType={run?.sourceType ?? sourceType}
+        displaySourceLocator={run?.sourceLocator ?? sourceLocator}
+        uploadedSource={uploadedSource}
         hasRun={Boolean(run)}
         hasPreview={Boolean(preview)}
         isSubmitting={isSubmitting}
         reviewSession={reviewSession}
         latestExport={latestExport}
+        onSourceTypeChange={(value) => {
+          setSourceType(value);
+          setUploadedSource(null);
+        }}
+        onSourceLocatorChange={setSourceLocator}
+        onUploadFile={(file) => {
+          void uploadSourceFile(file);
+        }}
         onPreview={() => {
           void runPreview();
         }}

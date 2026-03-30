@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-from .pipeline_dependencies import get_pipeline_service
+from .pipeline_dependencies import get_pipeline_service, get_source_upload_service
 from ..pipeline.schemas import (
     CreatePipelineRunRequest,
     PipelineRunResponse,
     PipelineStepPreviewResponse,
+    UploadedSourceFileResponse,
 )
 from ..pipeline.service import PipelineService
 from ..pipeline.models import PipelineStepKey
+from ..pipeline.uploads import SourceUploadService
 
 
 router = APIRouter(prefix="/pipeline", tags=["pipeline"])
@@ -18,6 +20,7 @@ def _serialize_run(run) -> PipelineRunResponse:
         id=run.id,
         source_type=run.source_type,
         source_locator=run.source_locator,
+        source_payload=run.source_payload,
         status=run.status.value,
         current_step=run.current_step.value,
         steps={
@@ -36,6 +39,14 @@ def _serialize_run(run) -> PipelineRunResponse:
     )
 
 
+@router.post("/uploads", response_model=UploadedSourceFileResponse, status_code=status.HTTP_201_CREATED)
+async def upload_pipeline_source_file(
+    file: UploadFile = File(...),
+    upload_service: SourceUploadService = Depends(get_source_upload_service),
+):
+    return await upload_service.save_upload(file)
+
+
 @router.post("/runs", response_model=PipelineRunResponse, status_code=status.HTTP_201_CREATED)
 async def create_pipeline_run(
     payload: CreatePipelineRunRequest,
@@ -44,6 +55,7 @@ async def create_pipeline_run(
     run = await pipeline_service.create_run(
         source_type=payload.source_type,
         source_locator=payload.source_locator,
+        source_payload=payload.source_payload,
     )
     return _serialize_run(run)
 

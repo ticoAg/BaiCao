@@ -1,9 +1,17 @@
 import { create } from "zustand";
-import type { ExportRecord, PipelinePreview, PipelineRun, ReviewSession } from "../types/pipeline";
+import type {
+  ExportRecord,
+  PipelinePreview,
+  PipelineRun,
+  PipelineSourceType,
+  PipelineUploadResponse,
+  ReviewSession,
+} from "../types/pipeline";
 
 interface PipelineState {
-  sourceType: string;
+  sourceType: PipelineSourceType;
   sourceLocator: string;
+  uploadedSource: PipelineUploadResponse | null;
   run: PipelineRun | null;
   recentRuns: PipelineRun[];
   preview: PipelinePreview | null;
@@ -11,8 +19,9 @@ interface PipelineState {
   reviewSession: ReviewSession | null;
   latestExport: ExportRecord | null;
   isSubmitting: boolean;
-  setSourceType: (value: string) => void;
+  setSourceType: (value: PipelineSourceType) => void;
   setSourceLocator: (value: string) => void;
+  setUploadedSource: (value: PipelineUploadResponse | null) => void;
   setRun: (run: PipelineRun | null) => void;
   setRecentRuns: (runs: PipelineRun[]) => void;
   setPreview: (preview: PipelinePreview | null) => void;
@@ -23,8 +32,9 @@ interface PipelineState {
 }
 
 export const usePipelineStore = create<PipelineState>((set) => ({
-  sourceType: "huggingface",
+  sourceType: "huggingface_repo",
   sourceLocator: "ZJUFanLab/TCMChat-dataset-600k",
+  uploadedSource: null,
   run: null,
   recentRuns: [],
   preview: null,
@@ -34,6 +44,7 @@ export const usePipelineStore = create<PipelineState>((set) => ({
   isSubmitting: false,
   setSourceType: (value) => set({ sourceType: value }),
   setSourceLocator: (value) => set({ sourceLocator: value }),
+  setUploadedSource: (value) => set({ uploadedSource: value }),
   setRun: (run) => set({ run }),
   setRecentRuns: (runs) => set({ recentRuns: runs }),
   setPreview: (preview) => set({ preview }),

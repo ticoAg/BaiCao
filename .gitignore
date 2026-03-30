@@ -66,3 +66,5 @@ test-results/
 .tmp/neo4j-browser/
 .worktrees/
 .workflow/
+/tmp/data/
+/.cache/huggingface/

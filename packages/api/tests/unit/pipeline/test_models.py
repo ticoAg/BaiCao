@@ -1,4 +1,11 @@
-from app.pipeline.models import PipelineRunStatus, PipelineStepKey, PipelineStepStatus
+import pytest
+
+from app.pipeline.models import (
+    PipelineRunStatus,
+    PipelineSourceDefinition,
+    PipelineStepKey,
+    PipelineStepStatus,
+)
 from app.pipeline.schemas import PipelineStepPreviewResponse
 
 
@@ -32,3 +39,27 @@ def test_preview_response_has_preview_payload_and_next_step_flag():
     assert response.preview_kind == "summary"
     assert response.preview_payload == {"items": 3}
     assert response.next_step_ready is False
+
+
+def test_pipeline_source_definition_accepts_huggingface_repo():
+    source = PipelineSourceDefinition.model_validate(
+        {
+            "source_type": "huggingface_repo",
+            "source_input": {"repo_id": "ZJUFanLab/TCMChat-dataset-600k"},
+        }
+    )
+
+    assert source.source_type == "huggingface_repo"
+    assert source.source_input["repo_id"] == "ZJUFanLab/TCMChat-dataset-600k"
+
+
+def test_pipeline_source_definition_rejects_missing_repo_id():
+    with pytest.raises(Exception) as exc_info:
+        PipelineSourceDefinition.model_validate(
+            {
+                "source_type": "huggingface_repo",
+                "source_input": {},
+            }
+        )
+
+    assert "repo_id" in str(exc_info.value)

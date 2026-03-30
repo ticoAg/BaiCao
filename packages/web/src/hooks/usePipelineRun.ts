@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { message } from "antd";
 import { pipelineApi } from "../services/pipelineApi";
 import { usePipelineStore } from "../stores/pipelineStore";
-import type { PipelineStepKey, UpdateReviewItemRequest } from "../types/pipeline";
+import type { CreatePipelineRunRequest, PipelineSourceType, PipelineStepKey, UpdateReviewItemRequest } from "../types/pipeline";
 
 const FIXED_STEPS: Array<{ key: PipelineStepKey; label: string }> = [
   { key: "source_ingest", label: "接入来源" },
@@ -18,6 +18,7 @@ export const usePipelineRun = () => {
   const {
     sourceType,
     sourceLocator,
+    uploadedSource,
     run,
     recentRuns,
     preview,
@@ -26,12 +27,14 @@ export const usePipelineRun = () => {
     latestExport,
     isSubmitting,
     setRun,
+    setSourceLocator,
     setRecentRuns,
     setPreview,
     setPreviewHistory,
     setReviewSession,
     setLatestExport,
     setSubmitting,
+    setUploadedSource,
   } = usePipelineStore();
 
   const currentStep = run?.currentStep ?? FIXED_STEPS[0].key;
@@ -73,15 +76,53 @@ export const usePipelineRun = () => {
     [setLatestExport, setReviewSession],
   );
 
+  const buildCreateRunPayload = useCallback((): CreatePipelineRunRequest => {
+    const currentSourceType = sourceType as PipelineSourceType;
+    if (currentSourceType === "huggingface_repo") {
+      return {
+        sourceType: currentSourceType,
+        sourceLocator,
+        sourcePayload: {
+          source_type: currentSourceType,
+          source_input: { repo_id: sourceLocator },
+        },
+      };
+    }
+
+    if (currentSourceType === "remote_url") {
+      return {
+        sourceType: currentSourceType,
+        sourceLocator,
+        sourcePayload: {
+          source_type: currentSourceType,
+          source_input: { url: sourceLocator },
+        },
+      };
+    }
+
+    if (!uploadedSource) {
+      throw new Error("请先上传本地文件");
+    }
+
+    return {
+      sourceType: currentSourceType,
+      sourceLocator: uploadedSource.upload_token,
+      sourcePayload: {
+        source_type: currentSourceType,
+        source_input: {
+          upload_token: uploadedSource.upload_token,
+          stored_path: uploadedSource.stored_path,
+        },
+      },
+    };
+  }, [sourceLocator, sourceType, uploadedSource]);
+
   const runPreview = useCallback(async () => {
     setSubmitting(true);
     try {
       const activeRun =
         run ??
-        (await pipelineApi.createRun({
-          sourceType,
-          sourceLocator,
-        }));
+        (await pipelineApi.createRun(buildCreateRunPayload()));
       if (!run) {
         setRun(activeRun);
       }
@@ -96,7 +137,24 @@ export const usePipelineRun = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [loadStepSidecars, run, setPreview, setPreviewHistory, setRun, setSubmitting, sourceLocator, sourceType]);
+  }, [buildCreateRunPayload, loadStepSidecars, run, setPreview, setPreviewHistory, setRun, setSubmitting]);
+
+  const uploadSourceFile = useCallback(
+    async (file: File) => {
+      setSubmitting(true);
+      try {
+        const uploaded = await pipelineApi.uploadSourceFile(file);
+        setUploadedSource(uploaded);
+        setSourceLocator(uploaded.upload_token);
+        message.success(`已上传 ${uploaded.filename}`);
+      } catch (error) {
+        message.error("上传来源文件失败，请稍后重试");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [setSourceLocator, setSubmitting, setUploadedSource],
+  );
 
   const confirmCurrentStep = useCallback(async () => {
     if (!run) {
@@ -264,5 +322,6 @@ export const usePipelineRun = () => {
     saveReviewItem,
     lockReviewSession,
     executeExport,
+    uploadSourceFile,
   };
 };

@@ -408,5 +408,21 @@ export interface Evidence {
   createdAt: string
 }
 
+// ============ Pipeline Source Ingestion ============
+
+export type PipelineSourceType = 'huggingface_repo' | 'remote_url' | 'local_upload'
+
+export interface PipelineSourceDefinition {
+  source_type: PipelineSourceType
+  source_input: Record<string, unknown>
+}
+
+export interface PipelineUploadResponse {
+  upload_token: string
+  filename: string
+  stored_path: string
+  content_type?: string
+}
+
 export * from './graph-workbench'
 export * from './workbench'

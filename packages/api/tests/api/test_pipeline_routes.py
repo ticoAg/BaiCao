@@ -1,4 +1,6 @@
 import pytest
+import zipfile
+from pathlib import Path
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -6,6 +8,12 @@ from .helpers import assert_json_keys, assert_status
 from app.main import app
 from app.core.database import get_db
 from app.models.pipeline import PipelineRunModel, PipelineStepArtifactModel
+
+
+def build_zip(path: Path, files: dict[str, str]) -> None:
+    with zipfile.ZipFile(path, "w") as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
 
 
 @pytest.fixture
@@ -49,6 +57,21 @@ class TestCreatePipelineRun:
         assert_json_keys(data, {"id", "source_type", "source_locator", "status", "current_step", "steps"})
         assert data["source_type"] == "huggingface"
         assert data["current_step"] == "source_ingest"
+
+
+class TestPipelineUploads:
+    @pytest.mark.asyncio
+    async def test_upload_source_file_returns_upload_token(self, client):
+        resp = await client.post(
+            "/api/v1/pipeline/uploads",
+            files={"file": ("sample.csv", b"node_name,source\n\xe9\x99\x88\xe7\x9a\xae,\xe6\x9c\xac\xe8\x8d\x89\xe7\xba\xb2\xe7\x9b\xae\n", "text/csv")},
+        )
+
+        assert_status(resp, 201)
+        data = resp.json()
+        assert_json_keys(data, {"upload_token", "filename"})
+        assert data["upload_token"]
+        assert data["filename"] == "sample.csv"
 
 
 class TestPipelinePreviewStep:
@@ -102,6 +125,34 @@ class TestPipelinePreviewStep:
         assert extract.json()["preview_kind"] == "extraction_candidates"
         assert extract.json()["preview_payload"]["candidates"][0]["name"] == "陈皮"
         assert mapping.json()["preview_payload"]["nodes"][0]["name"] == "陈皮"
+
+    @pytest.mark.asyncio
+    async def test_source_preview_returns_readme_content(self, client):
+        upload_root = Path(".tmp/pipeline_sources/uploads")
+        upload_root.mkdir(parents=True, exist_ok=True)
+        uploaded = upload_root / "upload-demo.zip"
+        build_zip(uploaded, {"README.md": "# demo\n", "data.jsonl": '{"name":"陈皮"}\n'})
+
+        create_resp = await client.post(
+            "/api/v1/pipeline/runs",
+            json={
+                "source_type": "local_upload",
+                "source_locator": "upload-demo",
+                "source_payload": {
+                    "source_type": "local_upload",
+                    "source_input": {
+                        "upload_token": "upload-demo.zip",
+                        "stored_path": str(uploaded),
+                    },
+                },
+            },
+        )
+        run_id = create_resp.json()["id"]
+
+        resp = await client.post(f"/api/v1/pipeline/runs/{run_id}/steps/source_preview/preview")
+
+        assert_status(resp, 200)
+        assert "# demo" in resp.json()["preview_payload"]["readme_content"]
 
     @pytest.mark.asyncio
     async def test_get_latest_preview_returns_persisted_snapshot(self, client):

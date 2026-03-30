@@ -1,6 +1,7 @@
 from typing import Any, cast
 
 from app.pipeline.adapters import build_source_adapters, get_source_adapter
+from app.pipeline.materialization import SourceMaterializationService
 from app.review.service import ReviewService
 from app.export.service import ExportService
 from app.pipeline.models import (
@@ -22,13 +23,20 @@ class PipelineService:
         storage: PipelineStorage | None = None,
         review_service: ReviewService | None = None,
         export_service: ExportService | None = None,
+        materialization_service: SourceMaterializationService | None = None,
     ) -> None:
         self.storage = storage or InMemoryPipelineStorage()
         self.source_adapters = build_source_adapters()
         self.review_service = review_service
         self.export_service = export_service
+        self.materialization_service = materialization_service
 
-    async def create_run(self, source_type: str, source_locator: str) -> PipelineRun:
+    async def create_run(
+        self,
+        source_type: str,
+        source_locator: str,
+        source_payload: dict[str, Any] | None = None,
+    ) -> PipelineRun:
         steps = {
             key: PipelineStepState(key=key)
             for key in PIPELINE_STEP_ORDER
@@ -36,6 +44,7 @@ class PipelineService:
         run = PipelineRun(
             source_type=source_type,
             source_locator=source_locator,
+            source_payload=source_payload or {},
             status=PipelineRunStatus.PENDING,
             current_step=PipelineStepKey.SOURCE_INGEST,
             steps=steps,
@@ -151,9 +160,18 @@ class PipelineService:
     ) -> PipelineStepPreviewResponse:
         source_adapter = get_source_adapter(run.source_type, self.source_adapters)
         source_descriptor = source_adapter.describe(run.source_locator)
+        materialized_source = None
+        if self.materialization_service is not None and run.source_payload:
+            source_input = cast(dict[str, Any], run.source_payload.get("source_input", {}))
+            materialized_source = await self.materialization_service.materialize(
+                run.id,
+                str(run.source_payload.get("source_type") or run.source_type),
+                source_input,
+            )
         context = PipelineStepContext(
             run=run,
             source_descriptor=source_descriptor,
+            materialized_source=materialized_source,
         )
         if step == PipelineStepKey.HUMAN_REVIEW and self.review_service is not None:
             return await self.review_service.build_preview(run, context)
