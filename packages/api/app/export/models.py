@@ -26,27 +26,27 @@ class GraphWriteStatus(StrEnum):
 
 
 class ExportRecord(BaseModel):
-    id: str = Field(default_factory=lambda: f"export-{uuid4()}")
-    run_id: str
-    review_session_id: str
-    status: ExportRecordStatus = ExportRecordStatus.PENDING
-    graph_write_status: GraphWriteStatus = GraphWriteStatus.PENDING
-    snapshot_bucket: str | None = None
-    snapshot_object_key: str | None = None
-    snapshot_checksum: str | None = None
-    snapshot_size: int | None = None
-    error_message: str | None = None
-    retry_count: int = 0
-    executed_at: datetime | None = None
-    completed_at: datetime | None = None
-    created_at: datetime = Field(default_factory=export_now)
-    updated_at: datetime = Field(default_factory=export_now)
+    id: str = Field(default_factory=lambda: f"export-{uuid4()}", description="导出记录标识")
+    run_id: str = Field(description="所属流水线运行标识")
+    review_session_id: str = Field(description="关联评审会话标识")
+    status: ExportRecordStatus = Field(default=ExportRecordStatus.PENDING, description="导出记录状态")
+    graph_write_status: GraphWriteStatus = Field(default=GraphWriteStatus.PENDING, description="图写入状态")
+    snapshot_bucket: str | None = Field(default=None, description="快照对象存储桶")
+    snapshot_object_key: str | None = Field(default=None, description="快照对象键")
+    snapshot_checksum: str | None = Field(default=None, description="快照校验和")
+    snapshot_size: int | None = Field(default=None, description="快照大小（字节）")
+    error_message: str | None = Field(default=None, description="导出错误信息")
+    retry_count: int = Field(default=0, description="导出重试次数")
+    executed_at: datetime | None = Field(default=None, description="开始执行时间")
+    completed_at: datetime | None = Field(default=None, description="完成执行时间")
+    created_at: datetime = Field(default_factory=export_now, description="创建时间")
+    updated_at: datetime = Field(default_factory=export_now, description="更新时间")
 
     model_config = ConfigDict(use_enum_values=False)
 
 
 class GraphWriteResult(BaseModel):
-    nodes_written: int = 0
-    edges_written: int = 0
+    nodes_written: int = Field(default=0, description="写入图数据库的节点数量")
+    edges_written: int = Field(default=0, description="写入图数据库的边数量")
 
     model_config = ConfigDict(use_enum_values=False)

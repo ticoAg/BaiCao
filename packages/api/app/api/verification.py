@@ -25,48 +25,48 @@ router = APIRouter(prefix="/verifications", tags=["verifications"])
 
 class EvidenceItem(BaseModel):
     """Evidence item schema"""
-    source_id: UUID
-    quote: str
-    page_reference: Optional[str] = None
-    relevance_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    source_id: UUID = Field(description="来源标识")
+    quote: str = Field(description="证据引文")
+    page_reference: Optional[str] = Field(default=None, description="页码或章节引用")
+    relevance_score: float = Field(default=1.0, ge=0.0, le=1.0, description="证据相关度")
 
 
 class CreateVerificationRequest(BaseModel):
     """Request model for creating a verification"""
-    entity_type: str
-    entity_id: str
-    claimed_value: str
-    applicant_id: Optional[UUID] = None
-    source_id: Optional[UUID] = None
-    field_name: Optional[str] = None
-    evidence: Optional[list[dict]] = None
+    entity_type: str = Field(description="待验证实体类型")
+    entity_id: str = Field(description="待验证实体标识")
+    claimed_value: str = Field(description="待验证字段值")
+    applicant_id: Optional[UUID] = Field(default=None, description="申请人标识")
+    source_id: Optional[UUID] = Field(default=None, description="来源标识")
+    field_name: Optional[str] = Field(default=None, description="待验证字段名")
+    evidence: Optional[list[dict]] = Field(default=None, description="附带证据列表")
 
 
 class VerificationResponse(BaseModel):
     """Response model for verification data"""
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
-    entity_type: str
-    entity_id: str
-    field_name: Optional[str] = None
-    claimed_value: str
-    source_id: Optional[UUID] = None
-    status: str
-    applicant_id: UUID
-    verifier_id: Optional[UUID] = None
-    verdict: Optional[str] = None
-    verified_at: Optional[datetime] = None
-    created_at: datetime
+    id: UUID = Field(description="验证记录标识")
+    entity_type: str = Field(description="待验证实体类型")
+    entity_id: str = Field(description="待验证实体标识")
+    field_name: Optional[str] = Field(default=None, description="待验证字段名")
+    claimed_value: str = Field(description="待验证字段值")
+    source_id: Optional[UUID] = Field(default=None, description="来源标识")
+    status: str = Field(description="验证状态")
+    applicant_id: UUID = Field(description="申请人标识")
+    verifier_id: Optional[UUID] = Field(default=None, description="审核人标识")
+    verdict: Optional[str] = Field(default=None, description="裁决说明")
+    verified_at: Optional[datetime] = Field(default=None, description="验证完成时间")
+    created_at: datetime = Field(description="创建时间")
 
 
 class PaginatedVerificationsResponse(BaseModel):
     """Paginated response for list of verifications"""
-    items: list[VerificationResponse]
-    total: int
-    page: int
-    page_size: int
-    has_more: bool
+    items: list[VerificationResponse] = Field(description="当前页验证记录列表")
+    total: int = Field(description="验证记录总数")
+    page: int = Field(description="当前页码")
+    page_size: int = Field(description="每页条目数")
+    has_more: bool = Field(description="是否还有更多数据")
 
 
 # ============ Helper Functions ============

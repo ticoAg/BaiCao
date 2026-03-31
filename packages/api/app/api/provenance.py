@@ -24,31 +24,31 @@ class LinkSourceRequest(BaseModel):
 
 
 class EvidenceResponse(BaseModel):
-    id: str
-    content: str
-    source_name: str
-    page_reference: Optional[str] = None
-    status: str = "pending"
+    id: str = Field(description="证据节点 ID")
+    content: str = Field(description="证据文本内容")
+    source_name: str = Field(description="来源名称")
+    page_reference: Optional[str] = Field(default=None, description="页码/章节引用")
+    status: str = Field(default="pending", description="证据状态")
 
 
 class LineageChainResponse(BaseModel):
-    entity: dict
-    evidence: dict
-    source: dict
+    entity: dict = Field(description="实体节点")
+    evidence: dict = Field(description="证据节点")
+    source: dict = Field(description="来源节点")
 
 
 class LineageCompletenessResponse(BaseModel):
-    entity: dict
-    evidence: Optional[dict] = None
-    source: Optional[dict] = None
-    has_evidence: bool
-    has_source: bool
-    chain_complete: bool
+    entity: dict = Field(description="实体节点")
+    evidence: Optional[dict] = Field(default=None, description="证据节点")
+    source: Optional[dict] = Field(default=None, description="来源节点")
+    has_evidence: bool = Field(description="是否存在证据")
+    has_source: bool = Field(description="是否存在来源")
+    chain_complete: bool = Field(description="溯源链是否完整")
 
 
 class EvidenceCollectionItem(BaseModel):
-    evidence: dict
-    source: Optional[dict] = None
+    evidence: dict = Field(description="证据节点")
+    source: Optional[dict] = Field(default=None, description="来源节点")
 
 
 # ============ Endpoints ============

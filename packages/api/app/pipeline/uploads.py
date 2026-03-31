@@ -2,16 +2,16 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import UploadFile
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .materialization import get_repo_root
 
 
 class UploadedSourceFile(BaseModel):
-    upload_token: str
-    filename: str
-    stored_path: str
-    content_type: str | None = None
+    upload_token: str = Field(description="上传文件令牌")
+    filename: str = Field(description="原始文件名")
+    stored_path: str = Field(description="服务端存储路径")
+    content_type: str | None = Field(default=None, description="上传文件 MIME 类型")
 
     model_config = ConfigDict(use_enum_values=False)
 

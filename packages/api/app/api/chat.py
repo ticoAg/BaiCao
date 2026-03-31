@@ -3,7 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
@@ -13,8 +13,8 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 class AskQuestionRequest(BaseModel):
-    question: str
-    session_id: Optional[str] = None
+    question: str = Field(description="用户问题文本")
+    session_id: Optional[str] = Field(default=None, description="会话标识")
 
 
 @router.post("/question")

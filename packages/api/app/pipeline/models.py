@@ -52,8 +52,8 @@ class PipelineSourceType(StrEnum):
 
 
 class PipelineSourceDefinition(BaseModel):
-    source_type: PipelineSourceType
-    source_input: dict[str, Any] = Field(default_factory=dict)
+    source_type: PipelineSourceType = Field(description="流水线输入来源类型")
+    source_input: dict[str, Any] = Field(default_factory=dict, description="来源输入参数")
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -83,25 +83,25 @@ class PipelineSourceDefinition(BaseModel):
 
 
 class PipelineStepState(BaseModel):
-    key: PipelineStepKey
-    status: PipelineStepStatus = PipelineStepStatus.PENDING
-    summary: str | None = None
-    preview_version: int = 0
-    preview_kind: str | None = None
-    preview_payload: dict[str, Any] = Field(default_factory=dict)
-    warnings: list[str] = Field(default_factory=list)
-    errors: list[str] = Field(default_factory=list)
+    key: PipelineStepKey = Field(description="流水线步骤标识")
+    status: PipelineStepStatus = Field(default=PipelineStepStatus.PENDING, description="流水线步骤状态")
+    summary: str | None = Field(default=None, description="步骤摘要")
+    preview_version: int = Field(default=0, description="预览版本号")
+    preview_kind: str | None = Field(default=None, description="预览载荷类型")
+    preview_payload: dict[str, Any] = Field(default_factory=dict, description="预览载荷内容")
+    warnings: list[str] = Field(default_factory=list, description="步骤警告列表")
+    errors: list[str] = Field(default_factory=list, description="步骤错误列表")
 
     model_config = ConfigDict(use_enum_values=False)
 
 
 class PipelineRun(BaseModel):
-    id: str = Field(default_factory=lambda: f"pipeline-{uuid4()}")
-    source_type: str
-    source_locator: str
-    source_payload: dict[str, Any] = Field(default_factory=dict)
-    status: PipelineRunStatus = PipelineRunStatus.PENDING
-    current_step: PipelineStepKey = PipelineStepKey.SOURCE_INGEST
-    steps: dict[PipelineStepKey, PipelineStepState]
+    id: str = Field(default_factory=lambda: f"pipeline-{uuid4()}", description="流水线运行标识")
+    source_type: str = Field(description="原始来源类型")
+    source_locator: str = Field(description="原始来源定位信息")
+    source_payload: dict[str, Any] = Field(default_factory=dict, description="来源载荷")
+    status: PipelineRunStatus = Field(default=PipelineRunStatus.PENDING, description="流水线运行状态")
+    current_step: PipelineStepKey = Field(default=PipelineStepKey.SOURCE_INGEST, description="当前步骤")
+    steps: dict[PipelineStepKey, PipelineStepState] = Field(description="各步骤执行状态映射")
 
     model_config = ConfigDict(use_enum_values=False)

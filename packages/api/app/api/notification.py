@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -18,13 +18,13 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 class NotificationResponse(BaseModel):
     model_config = {"from_attributes": True}
 
-    id: UUID
-    user_id: str
-    type: str
-    title: str
-    content: Optional[dict] = None
-    read: bool
-    created_at: str
+    id: UUID = Field(description="通知标识")
+    user_id: str = Field(description="用户标识")
+    type: str = Field(description="通知类型")
+    title: str = Field(description="通知标题")
+    content: Optional[dict] = Field(default=None, description="通知内容")
+    read: bool = Field(description="是否已读")
+    created_at: str = Field(description="创建时间")
 
     @classmethod
     def from_model(cls, m: NotificationModel) -> "NotificationResponse":

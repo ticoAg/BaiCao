@@ -16,17 +16,17 @@ def get_repo_root() -> Path:
 
 
 class MaterializedSource(BaseModel):
-    run_workdir: str
-    source_dir: str
-    extracted_dir: str | None = None
-    cache_hit: bool = False
-    is_archive: bool = False
-    archive_format: str | None = None
-    readme_path: str | None = None
-    readme_content: str | None = None
-    candidate_files: list[str] = Field(default_factory=list)
-    repo_url: str | None = None
-    readme_url: str | None = None
+    run_workdir: str = Field(description="当前流水线运行的工作目录")
+    source_dir: str = Field(description="物化后的源文件目录")
+    extracted_dir: str | None = Field(default=None, description="归档文件解压后的目录")
+    cache_hit: bool = Field(default=False, description="是否命中缓存")
+    is_archive: bool = Field(default=False, description="源文件是否为归档格式")
+    archive_format: str | None = Field(default=None, description="归档格式标识")
+    readme_path: str | None = Field(default=None, description="README 文件路径")
+    readme_content: str | None = Field(default=None, description="README 文件内容")
+    candidate_files: list[str] = Field(default_factory=list, description="候选数据文件列表")
+    repo_url: str | None = Field(default=None, description="上游仓库 URL")
+    readme_url: str | None = Field(default=None, description="上游 README URL")
 
     model_config = ConfigDict(use_enum_values=False)
 
