@@ -253,6 +253,11 @@ class PharmacopoeiaLLMExtractionRecord(BaseModel):
     validated_extraction: PharmacopoeiaExtractionResult | None = None
 ```
 
+说明：
+
+- 这里的 `status` 只覆盖 LLM 边界本身
+- dry-run 总表里的 `mapping_invalid` 由 Task 3 的编排层补记，不塞回单条 LLM transport 结果对象
+
 ```python
 # llm_extraction.py
 async def extract_entry_with_llm(
@@ -389,10 +394,13 @@ def run_pharmacopoeia_dry_run(
     local_path: Path,
     output_dir: Path,
     limit: int,
+    entry_offset: int = 0,
     transport: ExtractionTransport,
     provider: str = "huggingface",
     dataset: str = DATASET_NAME,
     file_path: str = PHARMACOPOEIA_2022_FILE_PATH,
+    model_name: str | None = None,
+    git_commit: str | None = None,
 ) -> DryRunResult:
     context = SourceFileContext(
         provider=provider,
@@ -402,22 +410,63 @@ def run_pharmacopoeia_dry_run(
         file_size=local_path.stat().st_size,
         line_count=local_path.read_text(encoding="utf-8").count("\\n") + 1,
     )
-    blocks = segment_pharmacopoeia_entries(context)[:limit]
+    all_blocks = segment_pharmacopoeia_entries(context)
+    blocks = all_blocks[entry_offset : entry_offset + limit]
     parsed_sections = [parse_pharmacopoeia_entry(block) for block in blocks]
     llm_results = [asyncio.run(extract_entry_with_llm(section, transport)) for section in parsed_sections]
-    bundles = [
-        build_pharmacopoeia_bundle(block, section, result.validated_extraction)
-        for block, section, result in zip(blocks, parsed_sections, llm_results, strict=False)
-        if result.validated_extraction is not None
-    ]
+    mapping_records: list[dict[str, object]] = []
+    bundles = []
+    for block, section, result in zip(blocks, parsed_sections, llm_results, strict=False):
+        if result.validated_extraction is None:
+            mapping_records.append(
+                {
+                    "entry_key": f"{block.entry_title}:{block.start_line}-{block.end_line}",
+                    "entry_title": block.entry_title,
+                    "status": result.status,
+                    "error_type": result.status,
+                    "error_message": result.error_message,
+                    "validated_extraction": None,
+                }
+            )
+            continue
+        try:
+            bundle = build_pharmacopoeia_bundle(block, section, result.validated_extraction)
+        except Exception as exc:
+            mapping_records.append(
+                {
+                    "entry_key": f"{block.entry_title}:{block.start_line}-{block.end_line}",
+                    "entry_title": block.entry_title,
+                    "status": "mapping_invalid",
+                    "error_type": "mapping_invalid",
+                    "error_message": str(exc),
+                    "validated_extraction": result.validated_extraction.model_dump(mode="json"),
+                }
+            )
+            continue
+        bundles.append(bundle)
+        mapping_records.append(
+            {
+                "entry_key": f"{block.entry_title}:{block.start_line}-{block.end_line}",
+                "entry_title": block.entry_title,
+                "status": "success",
+                "error_type": None,
+                "error_message": None,
+                "validated_extraction": result.validated_extraction.model_dump(mode="json"),
+            }
+        )
     return write_dry_run_artifacts(
         output_dir=output_dir,
         context=context,
+        all_blocks=all_blocks,
         blocks=blocks,
         parsed_sections=parsed_sections,
         llm_results=llm_results,
+        mapping_records=mapping_records,
         bundles=bundles,
         limit=limit,
+        entry_offset=entry_offset,
+        model_name=model_name,
+        git_commit=git_commit,
     )
 ```
 
@@ -441,6 +490,12 @@ def _write_jsonl(path: Path, records: list[dict[str, object]]) -> None:
 - `graph_bundles.jsonl`
 - `summary.json`
 - `README.md`
+
+额外要求：
+
+- `entry_offset` 必须在切段结果上先切偏移，再应用 `limit`
+- `run_config.json` 必须显式记录 `entry_offset`、`model_name`、`git_commit`
+- `validated_extractions.jsonl` 以 `mapping_records` 为准，确保单条 bundle 映射失败时仍然继续处理剩余条目
 
 - [ ] **Step 4: 回跑 dry-run 测试**
 
@@ -530,7 +585,7 @@ cd packages/data_ingestion
 uv run python -m data_ingestion.cli.pharmacopoeia_dry_run \
   --dataset ZJUFanLab/TCMChat-dataset-600k \
   --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
-  --local-path ../.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
+  --local-path ../../.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
   --limit 10
 ```
 
@@ -556,7 +611,7 @@ cd packages/data_ingestion
 uv run python -m data_ingestion.cli.pharmacopoeia_dry_run \
   --dataset ZJUFanLab/TCMChat-dataset-600k \
   --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
-  --local-path ../.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
+  --local-path ../../.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
   --limit 10
 ```
 

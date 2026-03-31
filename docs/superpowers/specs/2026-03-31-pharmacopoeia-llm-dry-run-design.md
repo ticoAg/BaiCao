@@ -285,6 +285,11 @@ Prompt 必须显式要求：
 - `started_at`
 - `git_commit`
 
+说明：
+
+- `entry_offset` 先于 `limit` 生效，用于控制从第几条切段结果开始抽样
+- `model_name`、`git_commit` 若当前运行环境无法稳定获取，应显式写 `null`，不要省略字段
+
 ### `entries.jsonl`
 
 每行一个 `RawEntryBlock`，用于检查条目切段是否正确。
@@ -321,6 +326,11 @@ Prompt 必须显式要求：
 - `llm_schema_invalid`
 - `mapping_invalid`
 - `success`
+
+补充约束：
+
+- `llm_json_invalid` / `llm_schema_invalid` 由 `llm_extraction.py` 负责产出
+- `mapping_invalid` 由 dry-run 编排阶段在 `validated_extraction -> graph bundle` 映射失败时补记，不能让单条映射异常直接中断整批试跑
 
 ### `graph_bundles.jsonl`
 
