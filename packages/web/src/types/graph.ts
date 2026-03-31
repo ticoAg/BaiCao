@@ -60,16 +60,16 @@ export type GraphQueryPropertyKey =
   | "type";
 
 export type GraphNodeLabel =
-  | "Herb"
-  | "Component"
-  | "Variant"
-  | "Process"
-  | "Trait"
-  | "Efficacy"
-  | "Flavor"
-  | "Meridian"
-  | "Disease"
-  | "TimePoint";
+  | "药材"
+  | "成分"
+  | "品种"
+  | "工艺"
+  | "性状"
+  | "功效"
+  | "性味"
+  | "归经"
+  | "病证"
+  | "时间点";
 
 export type GraphEdgeRelType =
   | "CONTAINS"

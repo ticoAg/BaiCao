@@ -66,16 +66,16 @@ export interface VerificationEvidence {
 // ============ 图谱节点类型 ============
 
 export type NodeType =
-  | 'Herb'
-  | 'Component'
-  | 'Variant'
-  | 'Process'
-  | 'Trait'
-  | 'Efficacy'
-  | 'Flavor'
-  | 'Meridian'
-  | 'Disease'
-  | 'TimePoint'
+  | '药材'
+  | '成分'
+  | '品种'
+  | '工艺'
+  | '性状'
+  | '功效'
+  | '性味'
+  | '归经'
+  | '病证'
+  | '时间点'
 
 export type NodeStatus = 'pending' | 'verified' | 'rejected'
 
@@ -93,27 +93,27 @@ export interface BaseNode {
 
 // 药材节点
 export interface HerbNode extends BaseNode {
-  type: 'Herb'
+  type: '药材'
   herbType: 'base' | 'byproduct'
   category?: string
 }
 
 // 成分节点
 export interface ComponentNode extends BaseNode {
-  type: 'Component'
+  type: '成分'
   chemicalFormula?: string
 }
 
 // 品种变种节点
 export interface VariantNode extends BaseNode {
-  type: 'Variant'
+  type: '品种'
   parentHerb: string
   description?: string
 }
 
 // 加工工艺节点
 export interface ProcessNode extends BaseNode {
-  type: 'Process'
+  type: '工艺'
   description?: string
   minDuration?: string
   conditions?: string
@@ -122,7 +122,7 @@ export interface ProcessNode extends BaseNode {
 
 // 性状特征节点
 export interface TraitNode extends BaseNode {
-  type: 'Trait'
+  type: '性状'
   traitCategory: 'external' | 'internal' | 'chemical'
   description?: string
   observationMethod?: string
@@ -130,7 +130,7 @@ export interface TraitNode extends BaseNode {
 
 // 时间点节点
 export interface TimePointNode extends BaseNode {
-  type: 'TimePoint'
+  type: '时间点'
   years: number
   description?: string
   qualityIndicator?: string
@@ -138,24 +138,24 @@ export interface TimePointNode extends BaseNode {
 
 // 功效节点
 export interface EfficacyNode extends BaseNode {
-  type: 'Efficacy'
+  type: '功效'
   category?: string
 }
 
 // 性味节点
 export interface FlavorNode extends BaseNode {
-  type: 'Flavor'
+  type: '性味'
   nature?: string
 }
 
 // 归经节点
 export interface MeridianNode extends BaseNode {
-  type: 'Meridian'
+  type: '归经'
 }
 
 // 疾病节点
 export interface DiseaseNode extends BaseNode {
-  type: 'Disease'
+  type: '病证'
   tcmType?: string
 }
 
