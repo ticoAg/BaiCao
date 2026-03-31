@@ -1,6 +1,6 @@
 import type { SimulationNodeDatum } from "d3-force"
 import type { GraphNode } from "../../../types/graph"
-import { nodeStyleMap, defaultNodeStyle } from "../../../types/graph"
+import { getGraphNodeStyle } from "../../../types/graph"
 import { NODE_RADIUS } from "../constants"
 
 export interface NodeCaptionLine {
@@ -52,8 +52,7 @@ export class VizNode implements SimulationNodeDatum {
     this.name = data.name
     this.data = data
 
-    const primaryLabel = this.labels[0] || "Unknown"
-    const style = nodeStyleMap[primaryLabel] || defaultNodeStyle
+    const style = getGraphNodeStyle(this.labels[0])
     this.fill = style.fill
     this.stroke = style.stroke
     this.textColor = style.textColor

@@ -29,10 +29,11 @@ describe("GraphMetadataSidebar", () => {
       />,
     );
 
-    expect(screen.getByText("Database information")).toBeInTheDocument();
-    expect(screen.getByText("Nodes · 12")).toBeInTheDocument();
+    expect(screen.getByText("图数据库信息")).toBeInTheDocument();
+    expect(screen.getByText("节点 · 12")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /药材/ })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Herb/ }));
+    await user.click(screen.getByRole("button", { name: /药材/ }));
     expect(onHighlightLabel).toHaveBeenCalledWith("Herb");
   });
 });

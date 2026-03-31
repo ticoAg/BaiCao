@@ -193,7 +193,7 @@ async def test_get_node(graph_service):
     assert result is not None
     assert result["id"] == "node-456"
     assert result["name"] == "SomeNode"
-    assert result["labels"] == ["Herb"]
+    assert result["labels"] == ["药材"]
 
 
 # ---------------------------------------------------------------------------
@@ -376,7 +376,7 @@ async def test_graph_metadata_service_schema_normalizes_indexes_and_constraints(
 
     schema = await svc.get_schema()
 
-    assert schema["indexes"][0]["labels_or_types"] == ["Herb"]
+    assert schema["indexes"][0]["labels_or_types"] == ["药材"]
     assert schema["indexes"][0]["state"] == "ONLINE"
     assert schema["constraints"][0]["properties"] == ["name"]
 
@@ -1158,9 +1158,10 @@ async def test_search_nodes_with_label(graph_service):
     driver.session = MagicMock(return_value=session)
     graph_service.driver = driver
 
-    result = await graph_service.search_nodes("Dang", label="Herb", limit=10)
+    result = await graph_service.search_nodes("Dang", label="药材", limit=10)
     assert len(result) == 1
     assert result[0]["node"]["name"] == "DangGui"
+    assert result[0]["labels"] == ["药材"]
 
 
 @pytest.mark.unit
@@ -1178,6 +1179,7 @@ async def test_search_nodes_without_label(graph_service):
 
     result = await graph_service.search_nodes("Dang")
     assert len(result) == 1
+    assert result[0]["labels"] == ["药材"]
 
 
 @pytest.mark.unit
@@ -1228,9 +1230,10 @@ async def test_get_pending_nodes_with_label(graph_service):
     driver = MagicMock()
     driver.session = MagicMock(return_value=session)
     graph_service.driver = driver
-    result = await graph_service.get_pending_nodes(label="Herb")
+    result = await graph_service.get_pending_nodes(label="药材")
     assert len(result) == 1
     assert result[0]["node"]["status"] == "pending"
+    assert result[0]["labels"] == ["药材"]
 
 
 @pytest.mark.unit

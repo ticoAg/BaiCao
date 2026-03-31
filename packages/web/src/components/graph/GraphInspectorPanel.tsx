@@ -1,5 +1,5 @@
 import { Button, Empty, Space, Tag, Typography } from "antd";
-import type { SelectedItem } from "../../types/graph";
+import { getGraphNodeLabelDisplayName, type SelectedItem } from "../../types/graph";
 import EdgeDetail from "./EdgeDetail";
 import NodeDetail from "./NodeDetail";
 
@@ -45,7 +45,7 @@ const GraphInspectorPanel = ({
       {!selectedItem ? (
         <div data-testid="graph-overview-panel">
           <Text type="secondary" style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Overview
+            概览
           </Text>
           <Text strong style={{ display: "block", marginTop: 6, fontSize: 20, color: "#203127" }}>
             图谱概览
@@ -68,7 +68,7 @@ const GraphInspectorPanel = ({
                     style={{ justifyContent: "space-between" }}
                     onClick={() => onHighlightLabel?.(item.key)}
                   >
-                    <span>{item.key}</span>
+                    <span>{getGraphNodeLabelDisplayName(item.key)}</span>
                     <span>{item.count}</span>
                   </Button>
                 ))

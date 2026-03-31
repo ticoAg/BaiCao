@@ -8,7 +8,7 @@ from typing import Protocol
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knowledge_model.constants import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import EdgeType, NodeStatus, parse_node_type, to_neo4j_label
 from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
 
 from app.export.models import ExportRecord, ExportRecordStatus, GraphWriteResult, GraphWriteStatus, export_now
@@ -152,7 +152,7 @@ class Neo4jGraphWriter:
         for record in records:
             if record.node_type is None:
                 continue
-            label = NodeType(getattr(record.node_type, "value", record.node_type)).value
+            label = to_neo4j_label(getattr(record.node_type, "value", record.node_type))
             node_props = {
                 "name": record.node_name,
                 "source": record.source,
@@ -348,7 +348,7 @@ class ExportService:
             ]
             records.append(
                 GraphImportRecord(
-                    node_type=NodeType(str(node_type_value)),
+                    node_type=parse_node_type(str(node_type_value)),
                     node_name=str(node_name),
                     source=str(payload.get("source") or run.source_locator),
                     status=NodeStatus.PENDING,

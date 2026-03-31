@@ -51,3 +51,15 @@ def test_herb_node_model_uses_english_type_and_chinese_data():
 
     assert node.type == NodeType.HERB
     assert node.name == "陈皮"
+
+
+def test_shared_models_expose_field_descriptions_in_json_schema():
+    herb_schema = HerbNodeModel.model_json_schema()
+    import_record_schema = GraphImportRecord.model_json_schema()
+    import_edge_schema = GraphImportEdge.model_json_schema()
+
+    assert herb_schema["properties"]["source"]["description"] == "数据来源"
+    assert herb_schema["properties"]["status"]["description"] == "节点审核状态"
+    assert herb_schema["properties"]["category"]["description"] == "药材分类"
+    assert import_record_schema["properties"]["edges"]["description"] == "与当前节点关联的边列表"
+    assert import_edge_schema["properties"]["target"]["description"] == "目标节点名称或标识"

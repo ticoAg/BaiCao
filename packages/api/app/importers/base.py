@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from knowledge_model.constants import EdgeType, NodeType
+from knowledge_model.constants import EdgeType, parse_node_type
 from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
 
 
@@ -59,7 +59,7 @@ class AbstractDataImporter(ABC):
         # 验证 node_type 合法性
         if record.node_type is not None:
             try:
-                NodeType(getattr(record.node_type, "value", record.node_type))
+                parse_node_type(getattr(record.node_type, "value", record.node_type))
             except ValueError:
                 errors.append(
                     f"invalid node_type: {getattr(record.node_type, 'value', record.node_type)}"

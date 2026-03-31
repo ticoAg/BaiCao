@@ -4,7 +4,7 @@ import { List, Card, Space, Typography, Spin, Collapse, Tag, Button, Drawer, Div
 import { RobotOutlined, UserOutlined, AuditOutlined, FormOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import type { Message, ChatGraphData, Source, Entity } from "../../types/chat";
-import { labelTagColors } from "../../types/graph";
+import { getGraphNodeLabelDisplayName, getGraphNodeTagColor } from "../../types/graph";
 import ReasoningChain from "./ReasoningChain";
 import EntityHighlighter from "./EntityHighlighter";
 import EvidenceList from "../provenance/EvidenceList";
@@ -102,10 +102,10 @@ const GraphPreview = ({ graphData }: { graphData: ChatGraphData }) => {
             <div>
               <Text strong>{center.name}</Text>
               <Tag
-                color={labelTagColors[center.labels?.[0] ?? ""] || "default"}
+                color={getGraphNodeTagColor(center.labels?.[0])}
                 style={{ marginLeft: 8 }}
               >
-                {center.labels?.[0] || "Unknown"}
+                {getGraphNodeLabelDisplayName(center.labels?.[0])}
               </Tag>
               <div style={{ marginTop: 8 }}>
                 <Text type="secondary" style={{ fontSize: 12 }}>

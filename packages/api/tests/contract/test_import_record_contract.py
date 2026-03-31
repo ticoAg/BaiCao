@@ -49,7 +49,7 @@ def test_jsonl_exporter_accepts_shared_record(tmp_path):
 
     assert stats.success == 1
     payload = json.loads(path.read_text(encoding="utf-8").strip())
-    assert payload["node_type"] == "Herb"
+    assert payload["node_type"] == "药材"
 
 
 def test_importers_init_re_exports_shared_record_types():

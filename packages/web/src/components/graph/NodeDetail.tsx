@@ -3,7 +3,7 @@ import { Button, Descriptions, Space, Tag, Tooltip, Typography, message } from "
 import { CopyOutlined, EyeOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import type { GraphNode } from "../../types/graph";
-import { labelTagColors } from "../../types/graph";
+import { getGraphNodeLabelDisplayName, getGraphNodeTagColor, isHerbGraphLabel } from "../../types/graph";
 import { statusColors, statusLabels } from "../../types/index";
 
 const { Paragraph, Text } = Typography;
@@ -58,7 +58,7 @@ const detailStyles = {
 const NodeDetail = ({ node }: NodeDetailProps) => {
   const navigate = useNavigate();
   const primaryLabel = node.labels?.[0] || "Unknown";
-  const isHerbNode = primaryLabel === "Herb";
+  const isHerbNode = isHerbGraphLabel(primaryLabel);
 
   return (
     <div>
@@ -70,8 +70,8 @@ const NodeDetail = ({ node }: NodeDetailProps) => {
       </Text>
 
       <Space size={[8, 8]} wrap style={{ marginTop: 10 }}>
-        <Tag color={labelTagColors[primaryLabel] || "default"} style={{ borderRadius: 999, marginInlineEnd: 0 }}>
-          {primaryLabel}
+        <Tag color={getGraphNodeTagColor(primaryLabel)} style={{ borderRadius: 999, marginInlineEnd: 0 }}>
+          {getGraphNodeLabelDisplayName(primaryLabel)}
         </Tag>
         <Tag color={statusColors[node.status]} style={{ borderRadius: 999, marginInlineEnd: 0 }}>
           {statusLabels[node.status]}

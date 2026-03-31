@@ -1,6 +1,7 @@
 // 溯源相关共享常量与类型
 import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import type { ReactNode } from "react";
+import { getGraphNodeLabelDisplayName } from "./graph";
 
 /** 证据/溯源状态颜色映射 */
 export const statusColors: Record<string, string> = {
@@ -37,14 +38,14 @@ export function getNodeName(node: Record<string, unknown>): string {
   if (typeof node.name === "string") return node.name;
   if (typeof node.title === "string") return node.title;
   if (typeof node.id === "string") return node.id;
-  return "unknown";
+  return "未知";
 }
 
 /** 从 Record 节点提取类型 */
 export function getNodeType(node: Record<string, unknown>): string {
-  if (typeof node.type === "string") return node.type;
+  if (typeof node.type === "string") return getGraphNodeLabelDisplayName(node.type);
   if (Array.isArray(node.labels) && node.labels.length > 0) {
-    return String(node.labels[0]);
+    return getGraphNodeLabelDisplayName(String(node.labels[0]));
   }
   return "";
 }

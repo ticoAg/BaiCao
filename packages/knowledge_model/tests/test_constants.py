@@ -12,7 +12,7 @@ from knowledge_model.labels import EDGE_TYPE_LABELS, NODE_TYPE_LABELS
 
 
 def test_node_type_has_herb_literal():
-    assert NodeType.HERB == "Herb"
+    assert NodeType.HERB == "药材"
 
 
 def test_edge_type_has_contains_literal():

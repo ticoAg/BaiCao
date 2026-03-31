@@ -84,7 +84,7 @@ async def test_mapping_step_returns_shared_model_preview():
     assert preview.step == PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL
     assert preview.preview_kind == "graph_mapping"
     assert preview.preview_payload["validation"]["is_valid"] is True
-    assert preview.preview_payload["nodes"][0]["type"] == "Herb"
+    assert preview.preview_payload["nodes"][0]["type"] == "药材"
     assert preview.preview_payload["nodes"][0]["name"] == "陈皮"
     assert preview.preview_payload["nodes"][0]["label"] == "药材"
 

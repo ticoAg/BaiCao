@@ -11,6 +11,7 @@ from ..models.enums import (
     HerbType,
     TraitCategory,
 )
+from knowledge_model.constants import parse_node_type, to_neo4j_label
 from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
 from .db import cypher_rows, cypher_single
 from .models import NODE_MODEL_MAP, REL_TYPE_TO_ATTR
@@ -24,7 +25,7 @@ QUERY_LABEL_DISPLAY = {
     NodeType.EFFICACY.value: "功效",
     NodeType.FLAVOR.value: "性味",
     NodeType.MERIDIAN.value: "归经",
-    NodeType.DISEASE.value: "疾病",
+    NodeType.DISEASE.value: "病证",
     NodeType.TIMEPOINT.value: "时间点",
 }
 QUERY_REL_TYPE_DISPLAY = {
@@ -67,7 +68,6 @@ QUERY_PROPERTY_DISPLAY = {
     "tcm_type": "中医类型",
     "type": "类型",
 }
-ALLOWED_QUERY_LABELS = {node_type.value for node_type in NodeType}
 ALLOWED_QUERY_REL_TYPES = {edge_type.value for edge_type in EdgeType}
 ALLOWED_QUERY_PROPERTY_KEYS = set(GRAPH_QUERY_PROPERTY_KEYS)
 
@@ -185,7 +185,9 @@ class GraphService:
         """Map Neo4j node to dictionary with optional labels"""
         result = dict(node)
         if labels is not None:
-            result["labels"] = labels
+            result["labels"] = self._localize_label_list(labels)
+        elif "labels" in result and isinstance(result["labels"], list):
+            result["labels"] = self._localize_label_list(result["labels"])
         return result
 
     def _map_relationship_to_dict(self, rel: Any) -> Dict[str, Any]:
@@ -220,6 +222,41 @@ class GraphService:
         mapped.setdefault("type", rel_type)
         return mapped
 
+    def _localize_label_value(self, label: Any) -> str:
+        try:
+            return parse_node_type(str(label)).value
+        except ValueError:
+            return str(label)
+
+    def _localize_label_list(self, labels: List[Any]) -> List[str]:
+        return [self._localize_label_value(label) for label in labels]
+
+    def _localize_edge_payload(self, edge: Dict[str, Any]) -> Dict[str, Any]:
+        localized = dict(edge)
+        for endpoint in ("source", "target"):
+            node_ref = localized.get(endpoint)
+            if isinstance(node_ref, dict):
+                localized[endpoint] = self._map_node_to_dict(node_ref)
+        return localized
+
+    def _normalize_query_label(self, label: Any) -> str | None:
+        value = self._query_value(label)
+        if value in (None, ""):
+            return None
+        try:
+            return to_neo4j_label(str(value))
+        except ValueError:
+            return None
+
+    def _display_query_label(self, label: Any) -> str | None:
+        value = self._query_value(label)
+        if value in (None, ""):
+            return None
+        try:
+            return parse_node_type(str(value)).value
+        except ValueError:
+            return None
+
     async def get_relationships(
         self,
         node_id: str,
@@ -252,7 +289,9 @@ class GraphService:
         } AS edge
         """
         rows = await self._query_rows(query, {"node_id": node_id, "status": status})
-        return self._dedupe_edges([row["edge"] for row in rows if row.get("edge")])
+        return self._dedupe_edges(
+            [self._localize_edge_payload(row["edge"]) for row in rows if row.get("edge")]
+        )
 
     def _record_value(self, record: Any, key: str) -> Any:
         """Safely read a Neo4j record-like object by key."""
@@ -341,8 +380,8 @@ class GraphService:
         if name_contains:
             active_filters.append(f"名称包含: {name_contains}")
 
-        label = self._query_value(node_filters.get("label"))
-        if label in ALLOWED_QUERY_LABELS:
+        label = self._display_query_label(node_filters.get("label"))
+        if label:
             active_filters.append(f"节点类型: {QUERY_LABEL_DISPLAY.get(label, label)}")
 
         node_status = self._query_value(node_filters.get("status"))
@@ -383,8 +422,8 @@ class GraphService:
         limit: int,
     ) -> tuple[str, Dict[str, Any]]:
         """Build the bounded first-stage seed-node query."""
-        label = self._query_value(node_filters.get("label"))
-        label_clause = f":{label}" if label in ALLOWED_QUERY_LABELS else ""
+        normalized_label = self._normalize_query_label(node_filters.get("label"))
+        label_clause = f":{normalized_label}" if normalized_label else ""
         params: Dict[str, Any] = {"seed_limit": limit + 1}
         where_clauses: List[str] = []
 
@@ -549,6 +588,11 @@ class GraphService:
                 connected_node = row.get("connected_node")
                 if not edge or not self._edge_matches_filters(edge, connected_node, edge_filters):
                     continue
+
+                if isinstance(edge, dict):
+                    edge = self._localize_edge_payload(edge)
+                if isinstance(connected_node, dict):
+                    connected_node = self._map_node_to_dict(connected_node)
 
                 edge_key = self._edge_key(edge)
                 if edge_key not in seen_edge_keys and remaining_edge_budget > 0:
@@ -957,7 +1001,7 @@ class GraphService:
     ) -> Dict[str, Any]:
         """创建疾病节点"""
         return await self.create_node(
-            label=NodeType.DISEASE.value,
+            label=to_neo4j_label(NodeType.DISEASE.value),
             name=name,
             source=source,
             properties={"tcm_type": tcm_type} if tcm_type else {},
@@ -1031,9 +1075,12 @@ class GraphService:
         center = self._record_value(record, "center") if record else None
         if center:
             nodes = self._dedupe_nodes([center, *(self._record_value(record, "nodes") or [])])
-            edges = self._dedupe_edges(self._record_value(record, "edges") or [])
+            nodes = [self._map_node_to_dict(node) for node in nodes]
+            edges = self._dedupe_edges(
+                [self._localize_edge_payload(edge) for edge in (self._record_value(record, "edges") or [])]
+            )
             return {
-                "center": center,
+                "center": self._map_node_to_dict(center),
                 "nodes": nodes,
                 "edges": edges,
                 "scene": self._build_scene_info(),
@@ -1065,7 +1112,9 @@ class GraphService:
         seed_query, seed_params = self._build_seed_query(node_filters, edge_filters, limit)
 
         seed_rows = await self._query_rows(seed_query, seed_params)
-        matched_seed_nodes = [row["node"] for row in seed_rows if isinstance(row.get("node"), dict)]
+        matched_seed_nodes = [
+            self._map_node_to_dict(row["node"]) for row in seed_rows if isinstance(row.get("node"), dict)
+        ]
 
         truncated = len(matched_seed_nodes) > limit
         matched_seed_nodes = matched_seed_nodes[:limit]
@@ -1180,9 +1229,10 @@ class GraphService:
 
     async def search_nodes(self, query_text: str, label: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
         """搜索节点"""
-        if label:
+        normalized_label = self._normalize_query_label(label)
+        if normalized_label:
             cypher = f"""
-            MATCH (n:{label})
+            MATCH (n:{normalized_label})
             WHERE n.name CONTAINS $search_text
             RETURN n, labels(n) as labels
             LIMIT $limit
@@ -1196,7 +1246,13 @@ class GraphService:
             """
 
         records = await self._query_rows(cypher, {"search_text": query_text, "limit": limit})
-        return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
+        return [
+            {
+                "node": self._map_node_to_dict(r["n"]),
+                "labels": self._localize_label_list(r["labels"]),
+            }
+            for r in records
+        ]
 
     async def execute_readonly_cypher(
         self,
@@ -1220,9 +1276,10 @@ class GraphService:
 
     async def get_pending_nodes(self, label: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证节点"""
-        if label:
+        normalized_label = self._normalize_query_label(label)
+        if normalized_label:
             query = f"""
-            MATCH (n:{label}) WHERE n.status = $status
+            MATCH (n:{normalized_label}) WHERE n.status = $status
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
@@ -1236,7 +1293,13 @@ class GraphService:
             params = {"limit": limit, "status": NodeStatus.PENDING.value}
 
         records = await self._query_rows(query, params)
-        return [{"node": dict(r["n"]), "labels": r["labels"]} for r in records]
+        return [
+            {
+                "node": self._map_node_to_dict(r["n"]),
+                "labels": self._localize_label_list(r["labels"]),
+            }
+            for r in records
+        ]
 
     async def get_pending_relationships(self, limit: int = 50) -> List[Dict[str, Any]]:
         """获取所有待验证关系"""

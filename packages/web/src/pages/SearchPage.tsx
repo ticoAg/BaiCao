@@ -3,26 +3,9 @@ import { Input, List, Card, Tag, Spin, Typography, Space, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SearchOutlined } from "@ant-design/icons";
 import { graphApi, SearchResult } from "../services/api";
+import { getGraphNodeLabelDisplayName, getGraphNodeTagColor, isHerbGraphLabel } from "../types/graph";
 
 const { Title, Text, Paragraph } = Typography;
-
-const labelColors: Record<string, string> = {
-  Herb: "blue",
-  Efficacy: "green",
-  Flavor: "orange",
-  Meridian: "purple",
-  Disease: "red",
-  Component: "cyan",
-};
-
-const labelNames: Record<string, string> = {
-  Herb: "药材",
-  Efficacy: "功效",
-  Flavor: "性味",
-  Meridian: "归经",
-  Disease: "病症",
-  Component: "成分",
-};
 
 const hotSearches = ["甘草", "人参", "黄芪", "陈皮", "当归", "枸杞"];
 
@@ -170,7 +153,7 @@ const SearchPage = () => {
               dataSource={results}
               renderItem={(item) => {
                 const primaryLabel = item.labels?.[0] || "Unknown";
-                const isClickable = primaryLabel === "Herb";
+                const isClickable = isHerbGraphLabel(primaryLabel);
                 return (
                   <List.Item
                     style={{
@@ -194,8 +177,8 @@ const SearchPage = () => {
                           <Text strong style={{ fontSize: 15 }}>
                             {item.node.name}
                           </Text>
-                          <Tag color={labelColors[primaryLabel]}>
-                            {labelNames[primaryLabel] || primaryLabel}
+                          <Tag color={getGraphNodeTagColor(primaryLabel)}>
+                            {getGraphNodeLabelDisplayName(primaryLabel)}
                           </Tag>
                           <Tag
                             color={

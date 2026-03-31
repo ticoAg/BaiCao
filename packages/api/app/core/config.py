@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     app_name: str = "BaiCao ShiTan API"
     debug: bool = False
     api_prefix: str = "/api/v1"
+    log_level: str = "INFO"
+    log_format: str = "text"  # "text" | "json"
 
     # Database
     database_url: str = "postgresql+asyncpg://baicao:password@localhost:5432/baicao"

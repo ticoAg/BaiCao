@@ -4,6 +4,7 @@ import { AimOutlined, BorderOutlined, MinusOutlined, PlusOutlined } from "@ant-d
 import type { WorkbenchFrame } from "../../../types/workbench";
 import type { GraphData, GraphEdge, GraphNode, SelectedItem } from "../../../types/graph";
 import {
+  getGraphNodeLabelDisplayName,
   relTypeLabels,
 } from "../../../types/graph";
 import FrameChrome from "./FrameChrome";
@@ -179,7 +180,7 @@ const GraphResultFrame = ({ frame, onDismiss, onRerun }: GraphResultFrameProps) 
             <Space size={[8, 8]} wrap style={{ marginBottom: 14 }}>
               {graphOverview.labelStats.map((item) => (
                 <Tag key={item.key} style={{ borderRadius: 999, marginInlineEnd: 0 }}>
-                  {item.key} · {item.count}
+                  {getGraphNodeLabelDisplayName(item.key)} · {item.count}
                 </Tag>
               ))}
             </Space>

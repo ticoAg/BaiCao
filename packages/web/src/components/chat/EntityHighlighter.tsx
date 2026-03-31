@@ -2,7 +2,7 @@
 import { Tag, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import type { Entity } from "../../types/chat";
-import { labelTagColors } from "../../types/graph";
+import { getGraphNodeTagColor, isHerbGraphLabel } from "../../types/graph";
 
 const { Paragraph } = Typography;
 
@@ -61,7 +61,7 @@ const EntityHighlighter = ({ content, entities }: EntityHighlighterProps) => {
   const navigate = useNavigate();
 
   const handleEntityClick = (entity: Entity) => {
-    if (entity.type === "Herb") {
+    if (isHerbGraphLabel(entity.type)) {
       const target = entity.id
         ? `/herb/${encodeURIComponent(entity.id)}`
         : `/herb/${encodeURIComponent(entity.name)}`;
@@ -85,7 +85,7 @@ const EntityHighlighter = ({ content, entities }: EntityHighlighterProps) => {
     <Paragraph style={{ margin: 0, whiteSpace: "pre-wrap" }}>
       {segments.map((seg, idx) => {
         if (seg.isEntity && seg.entity) {
-          const color = labelTagColors[seg.entity.type] || "default";
+          const color = getGraphNodeTagColor(seg.entity.type);
           return (
             <Tag
               key={idx}

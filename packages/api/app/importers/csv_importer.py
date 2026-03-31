@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .base import AbstractDataImporter, EdgeRecord, GraphRecord, ImportStats
-from knowledge_model.constants import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import EdgeType, NodeStatus, parse_node_type
 
 
 class CSVImporter(AbstractDataImporter):
@@ -15,10 +15,10 @@ class CSVImporter(AbstractDataImporter):
 
     CSV 格式约定：
     node_type,node_name,source,herb_type,category,description,edge_type,target,edge_properties
-    Herb,陈皮,本草纲目,base,理气药,芸香科...,,
-    Component,挥发油,本草纲目,,,,CONTAINS,陈皮,"{""quantity"": ""2-3%""}"
-    Variant,大红皮,本草纲目,,,,HAS_VARIANT,陈皮,
-    Efficacy,理气,本草纲目,,,,HAS_EFFICACY,陈皮,
+    药材,陈皮,本草纲目,base,理气药,芸香科...,,
+    成分,挥发油,本草纲目,,,,CONTAINS,陈皮,"{""quantity"": ""2-3%""}"
+    品种,大红皮,本草纲目,,,,HAS_VARIANT,陈皮,
+    功效,理气,本草纲目,,,,HAS_EFFICACY,陈皮,
 
     edge_properties 为可选的 JSON 字符串
     """
@@ -49,7 +49,7 @@ class CSVImporter(AbstractDataImporter):
         """解析 CSV 行"""
         # 解析 node_type
         node_type_str = row.get("node_type", "").strip()
-        node_type = NodeType(node_type_str) if node_type_str else None
+        node_type = parse_node_type(node_type_str) if node_type_str else None
 
         # 解析边
         edges = []

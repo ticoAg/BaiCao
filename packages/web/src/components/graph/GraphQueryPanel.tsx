@@ -14,6 +14,7 @@ import {
 import { SearchOutlined } from "@ant-design/icons";
 import { statusLabels } from "../../types";
 import {
+  graphPropertyLabels,
   relTypeLabels,
   type GraphEdgeRelType,
   type GraphNodeLabel,
@@ -32,16 +33,16 @@ type GraphQueryPanelProps = {
 };
 
 const nodeLabelOptions: GraphNodeLabel[] = [
-  "Herb",
-  "Component",
-  "Variant",
-  "Process",
-  "Trait",
-  "Efficacy",
-  "Flavor",
-  "Meridian",
-  "Disease",
-  "TimePoint",
+  "药材",
+  "成分",
+  "品种",
+  "工艺",
+  "性状",
+  "功效",
+  "性味",
+  "归经",
+  "病证",
+  "时间点",
 ];
 
 const relationTypeOptions: GraphEdgeRelType[] = [
@@ -195,7 +196,7 @@ const GraphQueryPanel = ({
           <Form.Item label="节点名称包含" name={["node", "name_contains"]}>
             <Input placeholder="例如：参、补气、炙制" allowClear />
           </Form.Item>
-          <Form.Item label="节点类型 label" name={["node", "label"]}>
+          <Form.Item label="节点类型" name={["node", "label"]}>
             <Select
               allowClear
               placeholder="全部节点类型"
@@ -219,7 +220,10 @@ const GraphQueryPanel = ({
             <Select
               allowClear
               placeholder="选择属性键"
-              options={propertyKeyOptions.map((value) => ({ label: value, value }))}
+              options={propertyKeyOptions.map((value) => ({
+                label: graphPropertyLabels[value] || value,
+                value,
+              }))}
             />
           </Form.Item>
           <Form.Item label="属性值包含" name={["node", "property_value_contains"]}>

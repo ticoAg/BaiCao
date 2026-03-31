@@ -118,8 +118,8 @@ class TestGraphMetadataRoutes:
         """Labels endpoint returns paginated metadata list."""
         labels = {
             "items": [
-                {"name": "Herb", "count": 3, "property_keys": ["name", "category"]},
-                {"name": "Efficacy", "count": 2, "property_keys": ["name"]},
+                {"name": "药材", "count": 3, "property_keys": ["name", "category"]},
+                {"name": "功效", "count": 2, "property_keys": ["name"]},
             ],
             "total": 2,
         }
@@ -142,7 +142,7 @@ class TestGraphMetadataRoutes:
                     "name": "idx_herb_name",
                     "type": "RANGE",
                     "entity_type": "NODE",
-                    "labels_or_types": ["Herb"],
+                    "labels_or_types": ["药材"],
                     "properties": ["name"],
                     "state": "ONLINE",
                 }
@@ -152,7 +152,7 @@ class TestGraphMetadataRoutes:
                     "name": "constraint_herb_name",
                     "type": "UNIQUENESS",
                     "entity_type": "NODE",
-                    "labels_or_types": ["Herb"],
+                    "labels_or_types": ["药材"],
                     "properties": ["name"],
                 }
             ],
@@ -166,7 +166,7 @@ class TestGraphMetadataRoutes:
         assert_status(resp, 200)
         data = resp.json()
         assert_json_keys(data, {"indexes", "constraints"})
-        assert data["indexes"][0]["labels_or_types"] == ["Herb"]
+        assert data["indexes"][0]["labels_or_types"] == ["药材"]
         assert data["constraints"][0]["properties"] == ["name"]
 
 
@@ -176,7 +176,7 @@ class TestGetNode:
     @pytest.mark.asyncio
     async def test_get_node_found(self, client):
         """GET existing node returns node data."""
-        node_data = {"id": "node-abc", "name": "ginseng", "labels": ["Herb"]}
+        node_data = {"id": "node-abc", "name": "ginseng", "labels": ["药材"]}
         with patch("app.api.graph.graph_service") as mock_svc:
             mock_svc.get_node = AsyncMock(return_value=node_data)
 
@@ -206,20 +206,20 @@ class TestExpandNodeGraph:
             "center": {
                 "id": "node-abc",
                 "name": "人参",
-                "labels": ["Herb"],
+                "labels": ["药材"],
                 "status": "verified",
             },
             "nodes": [
                 {
                     "id": "node-abc",
                     "name": "人参",
-                    "labels": ["Herb"],
+                    "labels": ["药材"],
                     "status": "verified",
                 },
                 {
                     "id": "eff-1",
                     "name": "补气",
-                    "labels": ["Efficacy"],
+                    "labels": ["功效"],
                     "status": "verified",
                 },
             ],
@@ -236,14 +236,14 @@ class TestExpandNodeGraph:
                         "name": "人参",
                         "source": "中国药典",
                         "status": "verified",
-                        "labels": ["Herb"],
+                        "labels": ["药材"],
                     },
                     "target": {
                         "id": "eff-1",
                         "name": "补气",
                         "source": "中国药典",
                         "status": "verified",
-                        "labels": ["Efficacy"],
+                        "labels": ["功效"],
                     },
                 }
             ],
@@ -292,7 +292,7 @@ class TestGraphQuery:
         payload = {
             "node": {
                 "name_contains": "人参",
-                "label": "Herb",
+                "label": "药材",
                 "status": "verified",
                 "source_contains": "本草纲目",
                 "property_key": "latin_name",
@@ -330,14 +330,14 @@ class TestGraphQuery:
                             "name": "人参",
                             "source": "本草纲目",
                             "status": "verified",
-                            "labels": ["Herb"],
+                            "labels": ["药材"],
                         },
                         "target": {
                             "id": "eff-1",
                             "name": "补气",
                             "source": "本草纲目",
                             "status": "verified",
-                            "labels": ["Efficacy"],
+                            "labels": ["功效"],
                         },
                     }
                 ],

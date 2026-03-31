@@ -17,6 +17,7 @@ describe("NodeDetail", () => {
       />,
     );
 
+    expect(screen.getByText("药材")).toBeInTheDocument();
     expect(screen.getByText("444444...4443")).toBeInTheDocument();
     expect(screen.getByText("aaaaaa...eeee")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "复制验证ID" })).toBeInTheDocument();

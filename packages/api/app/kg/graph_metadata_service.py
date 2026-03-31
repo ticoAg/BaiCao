@@ -1,5 +1,7 @@
 from typing import Any
 
+from knowledge_model.constants import parse_node_type
+
 from .db import cypher_rows, cypher_single
 
 
@@ -167,10 +169,21 @@ class GraphMetadataService:
             "name": item.get("name"),
             "type": item.get("type"),
             "entity_type": item.get("entityType") or item.get("entity_type"),
-            "labels_or_types": item.get("labelsOrTypes") or item.get("labels_or_types") or [],
+            "labels_or_types": self._localize_label_list(
+                item.get("labelsOrTypes") or item.get("labels_or_types") or []
+            ),
             "properties": item.get("properties") or [],
             "state": item.get("state"),
         }
+
+    def _localize_label_value(self, label: Any) -> str:
+        try:
+            return parse_node_type(str(label)).value
+        except ValueError:
+            return str(label)
+
+    def _localize_label_list(self, labels: list[Any]) -> list[str]:
+        return [self._localize_label_value(label) for label in labels]
 
     async def get_summary(self) -> dict[str, Any]:
         rows = await self._query_rows(SUMMARY_QUERY)
@@ -203,12 +216,12 @@ class GraphMetadataService:
 
         normalized_items = [
             {
-                "name": item["name"],
+                "name": self._localize_label_value(item["name"]),
                 "count": item["count"],
                 "property_keys": sorted(set(item.get("property_keys") or [])),
             }
             for item in items
-            if not q or q.lower() in item["name"].lower()
+            if not q or q.lower() in self._localize_label_value(item["name"]).lower()
         ]
         total = total_record["total"] if total_record else len(normalized_items)
         return {"items": normalized_items, "total": total}
@@ -256,7 +269,9 @@ class GraphMetadataService:
             normalized_items.append(
                 {
                     "name": item["name"],
-                    "used_by_labels": sorted(set(item.get("used_by_labels") or [])),
+                    "used_by_labels": sorted(
+                        set(self._localize_label_list(item.get("used_by_labels") or []))
+                    ),
                     "used_by_relationship_types": sorted(
                         set(item.get("used_by_relationship_types") or [])
                     ),

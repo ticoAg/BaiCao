@@ -1,7 +1,7 @@
-// BaiCao ShiTan Shared Types
-// These types are the SSOT for type definitions across packages
+// 白草药坛共享类型
+// 这里是跨包共享类型定义的单一事实来源
 
-// ============ User & Auth ============
+// ============ 用户与权限 ============
 
 export type UserRole = 'user' | 'expert' | 'admin'
 
@@ -16,7 +16,7 @@ export interface User {
   createdAt: string
 }
 
-// ============ Source ============
+// ============ 来源 ============
 
 export type SourceType = 'ancient' | 'modern' | 'patent' | 'database'
 
@@ -34,7 +34,7 @@ export interface Source {
   createdAt: string
 }
 
-// ============ Verification ============
+// ============ 验证 ============
 
 export type VerificationStatus = 'pending' | 'verified' | 'rejected'
 
@@ -63,7 +63,7 @@ export interface VerificationEvidence {
   createdAt: string
 }
 
-// ============ Graph Node Types ============
+// ============ 图谱节点类型 ============
 
 export type NodeType =
   | 'Herb'
@@ -159,7 +159,7 @@ export interface DiseaseNode extends BaseNode {
   tcmType?: string
 }
 
-// 联合类型
+// 联合节点类型
 export type GraphNode =
   | HerbNode
   | ComponentNode
@@ -172,7 +172,7 @@ export type GraphNode =
   | MeridianNode
   | DiseaseNode
 
-// ============ Graph Edge Types ============
+// ============ 图谱边类型 ============
 
 export type EdgeType =
   | 'CONTAINS'

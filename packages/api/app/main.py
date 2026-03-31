@@ -4,6 +4,7 @@ from typing import Any, cast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .core import configure_logging, get_logger
 from .core.config import get_settings
 from .core.database import init_db
 from .kg.db import init_kg_db
@@ -19,12 +20,16 @@ from .api.pipeline_review import router as pipeline_review_router
 from .api.pipeline_export import router as pipeline_export_router
 
 settings = get_settings()
+configure_logging(settings)
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("初始化应用依赖")
     await init_db()
     await init_kg_db()
+    logger.info("应用依赖初始化完成")
     yield
 
 

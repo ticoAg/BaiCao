@@ -122,7 +122,16 @@ INFISICAL_SECRET_PATH=/
 
 ```env
 INFISICAL_TOKEN=your_service_token
+INFISICAL_ENV=dev
 ```
+
+如果你只是想快速得到一份本地同步模板，可以直接：
+
+```bash
+cp .env.example .env
+```
+
+根目录的 `.env.example` 已经包含 Infisical 本地注入所需的最小字段和注释说明；通常只需要补 `INFISICAL_TOKEN`，其余稳定默认项继续由仓库跟踪的 `infisical.defaults.env` 提供。
 
 ```bash
 make stack up

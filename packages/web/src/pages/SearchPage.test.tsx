@@ -28,6 +28,7 @@ describe("SearchPage", () => {
     await user.click(screen.getByRole("button", { name: /搜\s*索/ }));
 
     expect(await screen.findByText("人参")).toBeInTheDocument();
+    expect(screen.getByText("药材")).toBeInTheDocument();
     expect(screen.getByText("来源: 中国药典（2020年版）")).toBeInTheDocument();
     await waitFor(() => expect(graphApi.search).toHaveBeenCalledWith("人参"));
   });

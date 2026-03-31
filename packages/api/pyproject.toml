@@ -7,6 +7,7 @@ dependencies = [
     "bai-cao-knowledge-model",
     "fastapi>=0.115.0",
     "huggingface-hub>=0.34.0",
+    "loguru>=0.7.3",
     "python-multipart>=0.0.20",
     "uvicorn[standard]>=0.34.0",
     "sqlalchemy>=2.0.36",

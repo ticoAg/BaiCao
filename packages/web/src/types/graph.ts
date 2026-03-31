@@ -146,51 +146,112 @@ export interface PathResult {
   paths: PathItem[];
 }
 
+export const graphNodeLabelDisplayMap: Record<string, string> = {
+  Herb: "药材",
+  药材: "药材",
+  Component: "成分",
+  成分: "成分",
+  Variant: "品种",
+  品种: "品种",
+  Process: "工艺",
+  工艺: "工艺",
+  Trait: "性状",
+  性状: "性状",
+  Efficacy: "功效",
+  功效: "功效",
+  Flavor: "性味",
+  性味: "性味",
+  Meridian: "归经",
+  归经: "归经",
+  Disease: "病证",
+  病证: "病证",
+  TimePoint: "时间点",
+  时间点: "时间点",
+  Source: "来源",
+  来源: "来源",
+  Unknown: "未知类型",
+};
+
+export function getGraphNodeLabelDisplayName(label?: string): string {
+  return graphNodeLabelDisplayMap[label ?? ""] || label || graphNodeLabelDisplayMap.Unknown;
+}
+
+export function isHerbGraphLabel(label?: string): boolean {
+  return getGraphNodeLabelDisplayName(label) === "药材";
+}
+
+export const graphPropertyLabels: Record<GraphQueryPropertyKey, string> = {
+  latin_name: "拉丁名",
+  category: "分类",
+  description: "描述",
+  chemical_formula: "化学式",
+  parent_herb: "母本药材",
+  min_duration: "最短时长",
+  conditions: "条件",
+  trait_category: "性状分类",
+  years: "年份",
+  quality_indicator: "质量指标",
+  nature: "药性",
+  tcm_type: "中医类型",
+  type: "类型",
+};
+
 // 节点类型 G6 颜色映射（hex 值）
 export const labelColorMap: Record<string, string> = {
-  Herb: "#1677ff",
-  Efficacy: "#52c41a",
-  Flavor: "#fa8c16",
-  Meridian: "#722ed1",
-  Disease: "#f5222d",
-  Component: "#13c2c2",
-  Variant: "#2f54eb",
-  Process: "#a0d911",
-  Trait: "#fa541c",
-  TimePoint: "#eb2f96",
+  药材: "#1677ff",
+  功效: "#52c41a",
+  性味: "#fa8c16",
+  归经: "#722ed1",
+  病证: "#f5222d",
+  成分: "#13c2c2",
+  品种: "#2f54eb",
+  工艺: "#a0d911",
+  性状: "#fa541c",
+  时间点: "#eb2f96",
+  来源: "#595959",
 };
 
 // 节点类型 Ant Tag 颜色
 export const labelTagColors: Record<string, string> = {
-  Herb: "blue",
-  Efficacy: "green",
-  Flavor: "orange",
-  Meridian: "purple",
-  Disease: "red",
-  Component: "cyan",
-  Variant: "geekblue",
-  Process: "lime",
-  Trait: "volcano",
-  TimePoint: "magenta",
+  药材: "blue",
+  功效: "green",
+  性味: "orange",
+  归经: "purple",
+  病证: "red",
+  成分: "cyan",
+  品种: "geekblue",
+  工艺: "lime",
+  性状: "volcano",
+  时间点: "magenta",
+  来源: "default",
 };
 
 export const defaultNodeColor = "#8c8c8c";
+
+export function getGraphNodeColor(label?: string): string {
+  return labelColorMap[getGraphNodeLabelDisplayName(label)] || defaultNodeColor;
+}
+
+export function getGraphNodeTagColor(label?: string): string {
+  return labelTagColors[getGraphNodeLabelDisplayName(label)] || "default";
+}
 
 // Neo4j 风格三元色组：填充色 + 加深边框色 + 智能文字色
 export const nodeStyleMap: Record<
   string,
   { fill: string; stroke: string; textColor: string }
 > = {
-  Herb: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
-  Efficacy: { fill: "#8DCC93", stroke: "#5db665", textColor: "#2A2C34" },
-  Flavor: { fill: "#F79767", stroke: "#f36924", textColor: "#FFFFFF" },
-  Meridian: { fill: "#C990C0", stroke: "#b261a5", textColor: "#FFFFFF" },
-  Disease: { fill: "#F16667", stroke: "#eb2728", textColor: "#FFFFFF" },
-  Component: { fill: "#57C7E3", stroke: "#23b3d7", textColor: "#2A2C34" },
-  Variant: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
-  Process: { fill: "#D9C8AE", stroke: "#c0a378", textColor: "#2A2C34" },
-  Trait: { fill: "#DA7194", stroke: "#cc3c6c", textColor: "#FFFFFF" },
-  TimePoint: { fill: "#FFC454", stroke: "#d7a013", textColor: "#2A2C34" },
+  药材: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
+  功效: { fill: "#8DCC93", stroke: "#5db665", textColor: "#2A2C34" },
+  性味: { fill: "#F79767", stroke: "#f36924", textColor: "#FFFFFF" },
+  归经: { fill: "#C990C0", stroke: "#b261a5", textColor: "#FFFFFF" },
+  病证: { fill: "#F16667", stroke: "#eb2728", textColor: "#FFFFFF" },
+  成分: { fill: "#57C7E3", stroke: "#23b3d7", textColor: "#2A2C34" },
+  品种: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
+  工艺: { fill: "#D9C8AE", stroke: "#c0a378", textColor: "#2A2C34" },
+  性状: { fill: "#DA7194", stroke: "#cc3c6c", textColor: "#FFFFFF" },
+  时间点: { fill: "#FFC454", stroke: "#d7a013", textColor: "#2A2C34" },
+  来源: { fill: "#A5ABB6", stroke: "#8d95a0", textColor: "#FFFFFF" },
 };
 
 export const defaultNodeStyle = {
@@ -198,6 +259,10 @@ export const defaultNodeStyle = {
   stroke: "#9AA1AC",
   textColor: "#FFFFFF",
 };
+
+export function getGraphNodeStyle(label?: string) {
+  return nodeStyleMap[getGraphNodeLabelDisplayName(label)] || defaultNodeStyle;
+}
 
 // 关系类型中文映射
 export const relTypeLabels: Record<string, string> = {

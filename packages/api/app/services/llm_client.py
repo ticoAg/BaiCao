@@ -1,7 +1,6 @@
 # LLM 客户端 - 基于 LangChain + LangGraph
 # 支持 OpenAI 和 Anthropic 双后端，通过 .env 配置切换
 
-import logging
 from collections.abc import AsyncIterator, Callable
 from typing import Any
 
@@ -9,8 +8,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.language_models import BaseChatModel
 
 from ..core.config import get_settings
+from ..core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 settings = get_settings()
 
 # 知识图谱问答系统提示
@@ -49,7 +49,7 @@ def _try_openai() -> BaseChatModel | None:
     }
     if settings.openai_base_url:
         kwargs["base_url"] = settings.openai_base_url
-    logger.info("Using OpenAI Responses API (model=%s)", settings.openai_model)
+    logger.info("Using OpenAI Responses API (model={model})", model=settings.openai_model)
     return ChatOpenAI(**kwargs)
 
 
@@ -68,7 +68,7 @@ def _try_anthropic() -> BaseChatModel | None:
     }
     if settings.anthropic_base_url:
         kwargs["base_url"] = settings.anthropic_base_url
-    logger.info("Using Anthropic Messages API (model=%s)", settings.anthropic_model)
+    logger.info("Using Anthropic Messages API (model={model})", model=settings.anthropic_model)
     return ChatAnthropic(**kwargs)
 
 
@@ -102,7 +102,7 @@ def get_chat_model() -> BaseChatModel | None:
         model = _PROVIDERS[provider]()
         if model:
             return model
-        logger.warning("LLM_PROVIDER=%s but no valid API key found, trying auto-detect", provider)
+        logger.warning("LLM_PROVIDER={provider} but no valid API key found, trying auto-detect", provider=provider)
 
     # 自动探测：按优先级尝试所有 provider
     for name, builder in _PROVIDERS.items():
@@ -110,7 +110,10 @@ def get_chat_model() -> BaseChatModel | None:
         if model:
             return model
 
-    logger.warning("No LLM provider available (tried: %s), falling back to rule engine", ", ".join(_PROVIDERS))
+    logger.warning(
+        "No LLM provider available (tried: {providers}), falling back to rule engine",
+        providers=", ".join(_PROVIDERS),
+    )
     return None
 
 
