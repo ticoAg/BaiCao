@@ -127,7 +127,7 @@ def make_herb_graph(name: str = "ginseng") -> dict:
     return {
         "center": {"id": "herb-1", "name": name, "status": "pending"},
         "nodes": [{"id": "eff-1", "name": "efficacy-1"}],
-        "edges": [{"type": "HAS_EFFICACY", "source": "herb-1", "target": "eff-1"}],
+        "edges": [{"type": "具有功效", "source": "herb-1", "target": "eff-1"}],
     }
 
 

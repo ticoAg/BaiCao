@@ -226,7 +226,7 @@ class TestExpandNodeGraph:
             "edges": [
                 {
                     "id": "edge-1",
-                    "rel_type": "HAS_EFFICACY",
+                    "rel_type": "具有功效",
                     "status": "verified",
                     "verification_id": None,
                     "verified_by": None,
@@ -299,7 +299,7 @@ class TestGraphQuery:
                 "property_value_contains": "ginseng",
             },
             "edge": {
-                "rel_type": "HAS_EFFICACY",
+                "rel_type": "具有功效",
                 "status": "verified",
                 "connected_name_contains": "补气",
             },
@@ -312,7 +312,7 @@ class TestGraphQuery:
                 "matched_nodes": 3,
                 "matched_edges": 2,
                 "truncated": False,
-                "active_filters": ["名称包含: 人参", "关系类型: HAS_EFFICACY"],
+                "active_filters": ["名称包含: 人参", "关系类型: 具有功效"],
             },
             "graph": {
                 "center": None,
@@ -320,7 +320,7 @@ class TestGraphQuery:
                 "edges": [
                     {
                         "id": "rel-1",
-                        "rel_type": "HAS_EFFICACY",
+                        "rel_type": "具有功效",
                         "status": "verified",
                         "verification_id": None,
                         "verified_by": None,
@@ -358,7 +358,7 @@ class TestGraphQuery:
         assert_status(resp, 200)
         data = resp.json()
         assert_json_keys(data, {"summary", "graph", "scene"})
-        assert data["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+        assert data["graph"]["edges"][0]["rel_type"] == "具有功效"
         assert data["graph"]["edges"][0]["source"]["name"] == "人参"
         assert_json_keys(
             data["scene"],

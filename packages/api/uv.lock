@@ -366,10 +366,14 @@ version = "0.1.0"
 source = { editable = "../data_ingestion" }
 dependencies = [
     { name = "bai-cao-knowledge-model" },
+    { name = "openai" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "bai-cao-knowledge-model", editable = "../knowledge_model" }]
+requires-dist = [
+    { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
+    { name = "openai", specifier = ">=2.29.0" },
+]
 
 [[package]]
 name = "bai-cao-knowledge-model"

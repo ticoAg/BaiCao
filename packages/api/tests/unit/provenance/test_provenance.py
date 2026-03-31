@@ -127,11 +127,11 @@ async def test_get_evidence_not_found(provenance_service, mock_neo4j_driver):
 
 @pytest.mark.asyncio
 async def test_link_evidence_to_source(provenance_service, mock_neo4j_driver):
-    """Test linking evidence to source using DERIVED_FROM relationship"""
+    """Test linking evidence to source using 派生自 relationship"""
     mock_record = MagicMock()
     mock_record.__getitem__ = lambda self, key: {
         "r": {
-            "type": "DERIVED_FROM",
+            "type": "派生自",
             "status": "pending",
             "source_id": "source-123",
             "evidence_id": "evidence-456"
@@ -151,7 +151,7 @@ async def test_link_evidence_to_source(provenance_service, mock_neo4j_driver):
         source_id="source-123"
     )
 
-    assert result["type"] == "DERIVED_FROM"
+    assert result["type"] == "派生自"
     assert result["status"] == "pending"
     mock_session.run.assert_called_once()
 

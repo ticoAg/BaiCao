@@ -7,7 +7,14 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 
-from knowledge_model.constants import EdgeType, NodeStatus, NodeType
+from knowledge_model.constants import (
+    EDGE_TYPE_TO_NEO4J_REL,
+    NEO4J_REL_TO_EDGE_TYPE,
+    EdgeType,
+    NodeStatus,
+    NodeType,
+    parse_edge_type,
+)
 from knowledge_model.labels import EDGE_TYPE_LABELS, NODE_TYPE_LABELS
 
 
@@ -16,7 +23,7 @@ def test_node_type_has_herb_literal():
 
 
 def test_edge_type_has_contains_literal():
-    assert EdgeType.CONTAINS == "CONTAINS"
+    assert EdgeType.CONTAINS == "包含成分"
 
 
 def test_node_status_defaults_include_pending():
@@ -39,3 +46,22 @@ def test_node_type_exposes_prepared_piece_and_evidence():
 def test_edge_type_exposes_chinese_content_relations():
     assert EdgeType.HAS_PREPARED_FORM == "具有饮片"
     assert EdgeType.SUPPORTED_BY == "由证据支持"
+
+
+def test_edge_type_uses_chinese_literals():
+    assert EdgeType.HAS_EFFICACY == "具有功效"
+    assert EdgeType.HAS_FLAVOR == "具有性味"
+    assert EdgeType.ENTERS_MERIDIAN == "归于经脉"
+    assert EdgeType.TREATS == "治疗病证"
+
+
+def test_edge_type_has_neo4j_relation_mapping():
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.CONTAINS] == "包含成分"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.HAS_EFFICACY] == "具有功效"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.TREATS] == "治疗病证"
+    assert NEO4J_REL_TO_EDGE_TYPE["具有性味"] == EdgeType.HAS_FLAVOR
+
+
+def test_parse_edge_type_accepts_chinese_and_neo4j_relation_names():
+    assert parse_edge_type("具有性味") == EdgeType.HAS_FLAVOR
+    assert parse_edge_type("具有功效") == EdgeType.HAS_EFFICACY

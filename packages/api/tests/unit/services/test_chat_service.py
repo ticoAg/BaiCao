@@ -41,12 +41,12 @@ class TestChatService:
                 ],
                 "edges": [
                     {
-                        "type": "HAS_EFFICACY",
+                        "type": "具有功效",
                         "target": {"id": "efficacy-1", "name": "大补元气"},
                         "status": "verified"
                     },
                     {
-                        "type": "HAS_EFFICACY",
+                        "type": "具有功效",
                         "target": {"id": "efficacy-2", "name": "复脉固脱"},
                         "status": "verified"
                     }
@@ -125,7 +125,7 @@ class TestChatService:
             "center": {"name": "人参", "category": "补气药"},
             "nodes": [],
             "edges": [
-                {"type": "HAS_EFFICACY", "target": {"name": "大补元气"}}
+                {"type": "具有功效", "target": {"name": "大补元气"}}
             ]
         }
 
@@ -160,8 +160,8 @@ class TestChatService:
             },
             "nodes": [],
             "edges": [
-                {"type": "HAS_EFFICACY", "target": {"name": "大补元气"}},
-                {"type": "HAS_FLAVOR", "target": {"name": "甘"}}
+                {"type": "具有功效", "target": {"name": "大补元气"}},
+                {"type": "具有性味", "target": {"name": "甘"}}
             ]
         }
         reasoning_chain = [
@@ -244,7 +244,7 @@ class TestChatService:
         graph_data = {
             "center": {"name": "人参"},
             "nodes": [],
-            "edges": [{"type": "HAS_EFFICACY", "target": {"name": "补气"}}]
+            "edges": [{"type": "具有功效", "target": {"name": "补气"}}]
         }
 
         chain = await chat_service._build_reasoning_chain(

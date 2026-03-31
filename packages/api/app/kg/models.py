@@ -64,7 +64,7 @@ class ComponentNode(GraphNodeBase):
     __label__ = "Component"
 
     chemical_formula = StringProperty()
-    extracted_from = AsyncRelationshipFrom("HerbNode", "CONTAINS", model=ContainsRel)
+    extracted_from = AsyncRelationshipFrom("HerbNode", "包含成分", model=ContainsRel)
 
 
 class VariantNode(GraphNodeBase):
@@ -72,7 +72,7 @@ class VariantNode(GraphNodeBase):
 
     parent_herb = StringProperty()
     description = StringProperty()
-    variant_of = AsyncRelationshipTo("HerbNode", "VARIANT_OF", model=BaseRel)
+    variant_of = AsyncRelationshipTo("HerbNode", "属于药材", model=BaseRel)
 
 
 class ProcessNode(GraphNodeBase):
@@ -131,7 +131,7 @@ class EvidenceNode(GraphNodeBase):
     content = StringProperty(required=True)
     source_name = StringProperty()
     page_reference = StringProperty()
-    derived_from = AsyncRelationshipTo("SourceNode", "DERIVED_FROM", model=DerivedFromRel)
+    derived_from = AsyncRelationshipTo("SourceNode", "派生自", model=DerivedFromRel)
 
 
 class HerbNode(GraphNodeBase):
@@ -139,19 +139,19 @@ class HerbNode(GraphNodeBase):
 
     category = StringProperty()
     herb_type = StringProperty(db_property="type")
-    contains = AsyncRelationshipTo("ComponentNode", "CONTAINS", model=ContainsRel)
-    parent_of = AsyncRelationshipTo("HerbNode", "PARENT_OF", model=BaseRel)
-    child_of = AsyncRelationshipTo("HerbNode", "CHILD_OF", model=BaseRel)
-    originated_from = AsyncRelationshipTo("SourceNode", "ORIGINATED_FROM", model=BaseRel)
-    has_variant = AsyncRelationshipTo("VariantNode", "HAS_VARIANT", model=BaseRel)
-    processed_by = AsyncRelationshipTo("ProcessNode", "PROCESSED_BY", model=ProcessedByRel)
-    has_trait = AsyncRelationshipTo("TraitNode", "HAS_TRAIT", model=HasTraitRel)
-    stored_for = AsyncRelationshipTo("TimePointNode", "STORED_FOR", model=StoredForRel)
-    has_efficacy = AsyncRelationshipTo("EfficacyNode", "HAS_EFFICACY", model=BaseRel)
-    has_flavor = AsyncRelationshipTo("FlavorNode", "HAS_FLAVOR", model=BaseRel)
-    enters_meridian = AsyncRelationshipTo("MeridianNode", "ENTERS_MERIDIAN", model=BaseRel)
-    treats = AsyncRelationshipTo("DiseaseNode", "TREATS", model=BaseRel)
-    similar_to = AsyncRelationshipTo("HerbNode", "SIMILAR_TO", model=SimilarToRel)
+    contains = AsyncRelationshipTo("ComponentNode", "包含成分", model=ContainsRel)
+    parent_of = AsyncRelationshipTo("HerbNode", "父类", model=BaseRel)
+    child_of = AsyncRelationshipTo("HerbNode", "子类", model=BaseRel)
+    originated_from = AsyncRelationshipTo("SourceNode", "来源于", model=BaseRel)
+    has_variant = AsyncRelationshipTo("VariantNode", "具有品种", model=BaseRel)
+    processed_by = AsyncRelationshipTo("ProcessNode", "经过工艺", model=ProcessedByRel)
+    has_trait = AsyncRelationshipTo("TraitNode", "具有性状", model=HasTraitRel)
+    stored_for = AsyncRelationshipTo("TimePointNode", "储存时间", model=StoredForRel)
+    has_efficacy = AsyncRelationshipTo("EfficacyNode", "具有功效", model=BaseRel)
+    has_flavor = AsyncRelationshipTo("FlavorNode", "具有性味", model=BaseRel)
+    enters_meridian = AsyncRelationshipTo("MeridianNode", "归于经脉", model=BaseRel)
+    treats = AsyncRelationshipTo("DiseaseNode", "治疗病证", model=BaseRel)
+    similar_to = AsyncRelationshipTo("HerbNode", "相似于", model=SimilarToRel)
 
 
 NODE_MODEL_MAP = {
@@ -171,19 +171,19 @@ NODE_MODEL_MAP = {
 
 
 REL_TYPE_TO_ATTR = {
-    "CONTAINS": "contains",
-    "PARENT_OF": "parent_of",
-    "CHILD_OF": "child_of",
-    "ORIGINATED_FROM": "originated_from",
-    "VARIANT_OF": "variant_of",
-    "HAS_VARIANT": "has_variant",
-    "PROCESSED_BY": "processed_by",
-    "HAS_TRAIT": "has_trait",
-    "STORED_FOR": "stored_for",
-    "HAS_EFFICACY": "has_efficacy",
-    "HAS_FLAVOR": "has_flavor",
-    "ENTERS_MERIDIAN": "enters_meridian",
-    "TREATS": "treats",
-    "SIMILAR_TO": "similar_to",
-    "DERIVED_FROM": "derived_from",
+    "包含成分": "contains",
+    "父类": "parent_of",
+    "子类": "child_of",
+    "来源于": "originated_from",
+    "属于药材": "variant_of",
+    "具有品种": "has_variant",
+    "经过工艺": "processed_by",
+    "具有性状": "has_trait",
+    "储存时间": "stored_for",
+    "具有功效": "has_efficacy",
+    "具有性味": "has_flavor",
+    "归于经脉": "enters_meridian",
+    "治疗病证": "treats",
+    "相似于": "similar_to",
+    "派生自": "derived_from",
 }

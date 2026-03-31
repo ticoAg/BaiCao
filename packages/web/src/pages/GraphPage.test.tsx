@@ -127,7 +127,7 @@ const createHookResult = (
     generatedAt: "2026-03-23T10:00:00Z",
   },
   metaLabels: [{ name: "Herb", count: 3, propertyKeys: ["name", "category"] }],
-  metaRelationshipTypes: [{ name: "HAS_EFFICACY", count: 2, propertyKeys: ["status"] }],
+  metaRelationshipTypes: [{ name: "具有功效", count: 2, propertyKeys: ["status"] }],
   metaPropertyKeys: [{ name: "name", usedByLabels: ["Herb"], usedByRelationshipTypes: [] }],
   metaSchema: {
     indexes: [{ name: "idx_herb_name", labelsOrTypes: ["Herb"], properties: ["name"] }],

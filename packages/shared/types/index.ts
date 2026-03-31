@@ -175,21 +175,22 @@ export type GraphNode =
 // ============ 图谱边类型 ============
 
 export type EdgeType =
-  | 'CONTAINS'
-  | 'EXTRACTED_FROM'
-  | 'HAS_VARIANT'
-  | 'VARIANT_OF'
-  | 'PROCESSED_BY'
-  | 'APPLIES_TO'
-  | 'STORED_FOR'
-  | 'HAS_TRAIT'
-  | 'OBSERVED_IN'
-  | 'HAS_EFFICACY'
-  | 'HAS_FLAVOR'
-  | 'ENTERS_MERIDIAN'
-  | 'TREATS'
-  | 'INTERACTS_WITH'
-  | 'SIMILAR_TO'
+  | '具有饮片'
+  | '包含成分'
+  | '提取自'
+  | '具有品种'
+  | '属于药材'
+  | '经过工艺'
+  | '适用于'
+  | '储存时间'
+  | '具有性状'
+  | '观察于'
+  | '具有功效'
+  | '具有性味'
+  | '归于经脉'
+  | '治疗病证'
+  | '相互作用'
+  | '相似于'
 
 export interface BaseEdge {
   status: NodeStatus
@@ -230,15 +231,15 @@ export interface HasTraitEdge extends BaseEdge {
 
 // 联合类型
 export type GraphEdge =
-  | { type: 'CONTAINS'; source: string; target: string; properties: ContainsEdge }
-  | { type: 'HAS_VARIANT'; source: string; target: string; properties: HasVariantEdge }
-  | { type: 'PROCESSED_BY'; source: string; target: string; properties: ProcessedByEdge }
-  | { type: 'STORED_FOR'; source: string; target: string; properties: StoredForEdge }
-  | { type: 'HAS_TRAIT'; source: string; target: string; properties: HasTraitEdge }
-  | { type: 'HAS_EFFICACY'; source: string; target: string; properties: BaseEdge }
-  | { type: 'HAS_FLAVOR'; source: string; target: string; properties: BaseEdge }
-  | { type: 'ENTERS_MERIDIAN'; source: string; target: string; properties: BaseEdge }
-  | { type: 'TREATS'; source: string; target: string; properties: BaseEdge }
+  | { type: '包含成分'; source: string; target: string; properties: ContainsEdge }
+  | { type: '具有品种'; source: string; target: string; properties: HasVariantEdge }
+  | { type: '经过工艺'; source: string; target: string; properties: ProcessedByEdge }
+  | { type: '储存时间'; source: string; target: string; properties: StoredForEdge }
+  | { type: '具有性状'; source: string; target: string; properties: HasTraitEdge }
+  | { type: '具有功效'; source: string; target: string; properties: BaseEdge }
+  | { type: '具有性味'; source: string; target: string; properties: BaseEdge }
+  | { type: '归于经脉'; source: string; target: string; properties: BaseEdge }
+  | { type: '治疗病证'; source: string; target: string; properties: BaseEdge }
 
 // ============ Graph Response Types ============
 

@@ -175,19 +175,19 @@ async def test_create_relationship(graph_service):
         clear=False,
     ):
         result = await graph_service.create_relationship(
-            "Herb", "RenShen", "Efficacy", "BuQi", "HAS_EFFICACY"
+            "Herb", "RenShen", "Efficacy", "BuQi", "具有功效"
         )
 
     assert result["status"] == "pending"
-    assert result["type"] == "HAS_EFFICACY"
+    assert result["type"] == "具有功效"
     rel_manager.connect.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_link_herb_parent(graph_service):
-    """Test linking herb to parent using PARENT_OF relationship"""
+    """Test linking herb to parent using 父类 relationship"""
     graph_service.create_relationship = AsyncMock(
-        return_value={"type": "PARENT_OF", "status": "pending"}
+        return_value={"type": "父类", "status": "pending"}
     )
 
     result = await graph_service.link_herb_parent(
@@ -195,18 +195,18 @@ async def test_link_herb_parent(graph_service):
         parent_name="Ginseng"
     )
 
-    assert result["type"] == "PARENT_OF"
+    assert result["type"] == "父类"
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "RenShen", "Herb", "Ginseng", "PARENT_OF"
+        "Herb", "RenShen", "Herb", "Ginseng", "父类"
     )
 
 
 @pytest.mark.asyncio
 async def test_link_herb_child(graph_service):
-    """Test linking herb to child using CHILD_OF relationship"""
+    """Test linking herb to child using 子类 relationship"""
     graph_service.create_relationship = AsyncMock(
-        return_value={"type": "CHILD_OF", "status": "pending"}
+        return_value={"type": "子类", "status": "pending"}
     )
 
     result = await graph_service.link_herb_child(
@@ -214,18 +214,18 @@ async def test_link_herb_child(graph_service):
         child_name="RenShen"
     )
 
-    assert result["type"] == "CHILD_OF"
+    assert result["type"] == "子类"
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "Ginseng", "Herb", "RenShen", "CHILD_OF"
+        "Herb", "Ginseng", "Herb", "RenShen", "子类"
     )
 
 
 @pytest.mark.asyncio
 async def test_link_herb_source(graph_service):
-    """Test linking herb to source using ORIGINATED_FROM relationship"""
+    """Test linking herb to source using 来源于 relationship"""
     graph_service.create_relationship = AsyncMock(
-        return_value={"type": "ORIGINATED_FROM", "status": "pending"}
+        return_value={"type": "来源于", "status": "pending"}
     )
 
     result = await graph_service.link_herb_source(
@@ -233,10 +233,10 @@ async def test_link_herb_source(graph_service):
         source_name="Jilin"
     )
 
-    assert result["type"] == "ORIGINATED_FROM"
+    assert result["type"] == "来源于"
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "RenShen", "Source", "Jilin", "ORIGINATED_FROM"
+        "Herb", "RenShen", "Source", "Jilin", "来源于"
     )
 
 
@@ -310,7 +310,7 @@ async def test_verify_relationship(graph_service, mock_neo4j_driver):
     mock_record = MagicMock()
     mock_record.__getitem__ = lambda self, key: {
         "r": {
-            "type": "PARENT_OF",
+            "type": "父类",
             "status": "verified",
             "verification_id": "vid-789",
             "verified_by": "user-456",
@@ -328,7 +328,7 @@ async def test_verify_relationship(graph_service, mock_neo4j_driver):
 
     result = await graph_service.verify_relationship(
         from_name="RenShen",
-        rel_type="PARENT_OF",
+        rel_type="父类",
         to_name="Ginseng",
         verification_id="vid-789",
         verifier_id="user-456",
@@ -337,4 +337,4 @@ async def test_verify_relationship(graph_service, mock_neo4j_driver):
 
     assert result["status"] == "verified"
     assert result["verification_id"] == "vid-789"
-    assert result["type"] == "PARENT_OF"
+    assert result["type"] == "父类"

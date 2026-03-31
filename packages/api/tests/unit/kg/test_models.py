@@ -21,10 +21,10 @@ def test_node_model_map_covers_runtime_labels() -> None:
 
 
 def test_rel_type_mapping_covers_runtime_links() -> None:
-    assert REL_TYPE_TO_ATTR["HAS_EFFICACY"] == "has_efficacy"
-    assert REL_TYPE_TO_ATTR["DERIVED_FROM"] == "derived_from"
+    assert REL_TYPE_TO_ATTR["具有功效"] == "has_efficacy"
+    assert REL_TYPE_TO_ATTR["派生自"] == "derived_from"
 
 
 def test_api_edge_type_keeps_api_only_superset_values() -> None:
-    assert EdgeType.PARENT_OF.value == "PARENT_OF"
-    assert EdgeType.CHILD_OF.value == "CHILD_OF"
+    assert EdgeType.PARENT_OF.value == "父类"
+    assert EdgeType.CHILD_OF.value == "子类"

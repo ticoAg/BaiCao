@@ -65,7 +65,7 @@ def create_mock_graph_response(herb_name="人参"):
         "edges": [
             {
                 "id": str(uuid4()),
-                "type": "CONTAINS",
+                "type": "包含成分",
                 "start": str(uuid4()),
                 "end": str(uuid4()),
                 "status": "verified"
@@ -318,8 +318,8 @@ async def test_get_pending_nodes(client):
 async def test_get_pending_relationships(client):
     """Test GET /api/v1/graph/pending?type=relationships returns pending relationships."""
     mock_relationships = [
-        {"id": str(uuid4()), "type": "CONTAINS", "status": "pending"},
-        {"id": str(uuid4()), "type": "HAS_EFFICACY", "status": "pending"}
+        {"id": str(uuid4()), "type": "包含成分", "status": "pending"},
+        {"id": str(uuid4()), "type": "具有功效", "status": "pending"}
     ]
 
     with patch("app.api.graph.graph_service") as mock_graph_service:

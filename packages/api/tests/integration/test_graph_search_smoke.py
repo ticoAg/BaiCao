@@ -50,7 +50,7 @@ async def test_herb_graph_returns_seeded_neighbors(client, demo_seed_data):
     assert "脾经" in node_names
 
     edge_types = {edge["rel_type"] for edge in payload["edges"]}
-    assert "CONTAINS" in edge_types
-    assert "HAS_EFFICACY" in edge_types
-    assert "HAS_FLAVOR" in edge_types
-    assert "ENTERS_MERIDIAN" in edge_types
+    assert "包含成分" in edge_types
+    assert "具有功效" in edge_types
+    assert "具有性味" in edge_types
+    assert "归于经脉" in edge_types

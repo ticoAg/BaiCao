@@ -13,7 +13,7 @@ class JSONLImporter(AbstractDataImporter):
     JSONL 导入器
 
     JSONL 格式（每行一个 JSON 对象）：
-    {"node_type": "药材", "node_name": "陈皮", "source": "本草纲目", "herb_type": "base", "category": "理气药", "edges": [{"type": "CONTAINS", "target": "挥发油", "properties": {"quantity": "2-3%"}}]}
+    {"node_type": "药材", "node_name": "陈皮", "source": "本草纲目", "herb_type": "base", "category": "理气药", "edges": [{"type": "包含成分", "target": "挥发油", "properties": {"quantity": "2-3%"}}]}
     {"node_type": "成分", "node_name": "挥发油", "source": "本草纲目", "edges": []}
     """
 
