@@ -14,14 +14,14 @@ describe("GraphInspectorPanel", () => {
         nodeCount={2}
         relationshipCount={1}
         labelStats={[{ key: "Herb", count: 1 }]}
-        relTypeStats={[{ key: "HAS_EFFICACY", count: 1, label: "功效" }]}
+        relTypeStats={[{ key: "具有功效", count: 1, label: "具有功效" }]}
         onHighlightRelationshipType={onHighlightRelationshipType}
       />,
     );
 
     expect(screen.getByText("图谱概览")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /功效/ }));
-    expect(onHighlightRelationshipType).toHaveBeenCalledWith("HAS_EFFICACY");
+    await user.click(screen.getByRole("button", { name: /具有功效/ }));
+    expect(onHighlightRelationshipType).toHaveBeenCalledWith("具有功效");
   });
 });

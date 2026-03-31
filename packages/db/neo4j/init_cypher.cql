@@ -159,8 +159,8 @@ FOR (v:Variant) ON (v.parent_herb, v.status);
 
 // 成分-含量索引
 CREATE INDEX contains_quantity_index IF NOT EXISTS
-FOR ()-[r:CONTAINS]->() ON (r.quantity);
+FOR ()-[r:包含成分]->() ON (r.quantity);
 
 // 性状-年份范围索引
 CREATE INDEX has_trait_year_range_index IF NOT EXISTS
-FOR ()-[r:HAS_TRAIT]->() ON (r.year_range);
+FOR ()-[r:具有性状]->() ON (r.year_range);

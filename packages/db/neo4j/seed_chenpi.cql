@@ -214,12 +214,12 @@ MATCH (h:Herb {name: '陈皮'})
 MATCH (v1:Variant {name: '大红皮'})
 MATCH (v2:Variant {name: '二红皮'})
 MATCH (v3:Variant {name: '青柑皮'})
-CREATE (h)-[:HAS_VARIANT {status: 'pending', verification_id: null}]->(v1)
-CREATE (h)-[:HAS_VARIANT {status: 'pending', verification_id: null}]->(v2)
-CREATE (h)-[:HAS_VARIANT {status: 'pending', verification_id: null}]->(v3)
-CREATE (v1)-[:VARIANT_OF {status: 'pending'}]->(h)
-CREATE (v2)-[:VARIANT_OF {status: 'pending'}]->(h)
-CREATE (v3)-[:VARIANT_OF {status: 'pending'}]->(h);
+CREATE (h)-[:具有品种 {status: 'pending', verification_id: null}]->(v1)
+CREATE (h)-[:具有品种 {status: 'pending', verification_id: null}]->(v2)
+CREATE (h)-[:具有品种 {status: 'pending', verification_id: null}]->(v3)
+CREATE (v1)-[:属于药材 {status: 'pending'}]->(h)
+CREATE (v2)-[:属于药材 {status: 'pending'}]->(h)
+CREATE (v3)-[:属于药材 {status: 'pending'}]->(h);
 
 // 品种-性状关系
 MATCH (v1:Variant {name: '大红皮'})
@@ -227,10 +227,10 @@ MATCH (t1:Trait {name: '外皮'})
 MATCH (t2:Trait {name: '内囊'})
 MATCH (t3:Trait {name: '油室'})
 MATCH (t4:Trait {name: '油胞'})
-CREATE (v1)-[:HAS_TRAIT {value: '红棕色', observation: '皮厚质软', status: 'pending'}]->(t1)
-CREATE (v1)-[:HAS_TRAIT {value: '黄白色', observation: '海绵状', status: 'pending'}]->(t2)
-CREATE (v1)-[:HAS_TRAIT {value: '丰富', observation: '肉眼可见', status: 'pending'}]->(t3)
-CREATE (v1)-[:HAS_TRAIT {value: '大', observation: '明显', status: 'pending'}]->(t4);
+CREATE (v1)-[:具有性状 {value: '红棕色', observation: '皮厚质软', status: 'pending'}]->(t1)
+CREATE (v1)-[:具有性状 {value: '黄白色', observation: '海绵状', status: 'pending'}]->(t2)
+CREATE (v1)-[:具有性状 {value: '丰富', observation: '肉眼可见', status: 'pending'}]->(t3)
+CREATE (v1)-[:具有性状 {value: '大', observation: '明显', status: 'pending'}]->(t4);
 
 // 药材-成分关系
 MATCH (h:Herb {name: '陈皮'})
@@ -239,11 +239,11 @@ MATCH (c2:Component {name: '陈皮素'})
 MATCH (c3:Component {name: '橙皮苷'})
 MATCH (c4:Component {name: '川陈皮素'})
 MATCH (c5:Component {name: '柠檬烯'})
-CREATE (h)-[:CONTAINS {quantity: '约1-2%', status: 'pending'}]->(c1)
-CREATE (h)-[:CONTAINS {quantity: '约2-3%', status: 'pending'}]->(c2)
-CREATE (h)-[:CONTAINS {quantity: '约5-10%', status: 'pending'}]->(c3)
-CREATE (h)-[:CONTAINS {quantity: '微量', status: 'pending'}]->(c4)
-CREATE (h)-[:CONTAINS {quantity: '约90%', status: 'pending'}]->(c5);
+CREATE (h)-[:包含成分 {quantity: '约1-2%', status: 'pending'}]->(c1)
+CREATE (h)-[:包含成分 {quantity: '约2-3%', status: 'pending'}]->(c2)
+CREATE (h)-[:包含成分 {quantity: '约5-10%', status: 'pending'}]->(c3)
+CREATE (h)-[:包含成分 {quantity: '微量', status: 'pending'}]->(c4)
+CREATE (h)-[:包含成分 {quantity: '约90%', status: 'pending'}]->(c5);
 
 // 成分-功效关系
 MATCH (c1:Component {name: '挥发油'})
@@ -256,41 +256,41 @@ MATCH (e7:Efficacy {name: '抗炎'})
 MATCH (e8:Efficacy {name: '抗炎抗病毒'})
 MATCH (e9:Efficacy {name: '扩张冠状动脉'})
 MATCH (e10:Efficacy {name: '降血压'})
-CREATE (c1)-[:HAS_EFFICACY {status: 'pending'}]->(e4)
-CREATE (c1)-[:HAS_EFFICACY {status: 'pending'}]->(e5)
-CREATE (c2)-[:HAS_EFFICACY {status: 'pending'}]->(e6)
-CREATE (c2)-[:HAS_EFFICACY {status: 'pending'}]->(e7)
-CREATE (c3)-[:HAS_EFFICACY {status: 'pending'}]->(e8)
-CREATE (c3)-[:HAS_EFFICACY {status: 'pending'}]->(e9)
-CREATE (c3)-[:HAS_EFFICACY {status: 'pending'}]->(e10);
+CREATE (c1)-[:具有功效 {status: 'pending'}]->(e4)
+CREATE (c1)-[:具有功效 {status: 'pending'}]->(e5)
+CREATE (c2)-[:具有功效 {status: 'pending'}]->(e6)
+CREATE (c2)-[:具有功效 {status: 'pending'}]->(e7)
+CREATE (c3)-[:具有功效 {status: 'pending'}]->(e8)
+CREATE (c3)-[:具有功效 {status: 'pending'}]->(e9)
+CREATE (c3)-[:具有功效 {status: 'pending'}]->(e10);
 
 // 药材-功效关系
 MATCH (h:Herb {name: '陈皮'})
 MATCH (e1:Efficacy {name: '理气止痛'})
 MATCH (e2:Efficacy {name: '健脾和胃'})
 MATCH (e3:Efficacy {name: '燥湿化痰'})
-CREATE (h)-[:HAS_EFFICACY {status: 'pending'}]->(e1)
-CREATE (h)-[:HAS_EFFICACY {status: 'pending'}]->(e2)
-CREATE (h)-[:HAS_EFFICACY {status: 'pending'}]->(e3);
+CREATE (h)-[:具有功效 {status: 'pending'}]->(e1)
+CREATE (h)-[:具有功效 {status: 'pending'}]->(e2)
+CREATE (h)-[:具有功效 {status: 'pending'}]->(e3);
 
 // 药材-性味关系
 MATCH (h:Herb {name: '陈皮'})
 MATCH (f1:Flavor {name: '辛'})
 MATCH (f2:Flavor {name: '苦'})
-CREATE (h)-[:HAS_FLAVOR {status: 'pending'}]->(f1)
-CREATE (h)-[:HAS_FLAVOR {status: 'pending'}]->(f2);
+CREATE (h)-[:具有性味 {status: 'pending'}]->(f1)
+CREATE (h)-[:具有性味 {status: 'pending'}]->(f2);
 
 // 药材-归经关系
 MATCH (h:Herb {name: '陈皮'})
 MATCH (m1:Meridian {name: '肺经'})
 MATCH (m2:Meridian {name: '脾经'})
-CREATE (h)-[:ENTERS_MERIDIAN {status: 'pending'}]->(m1)
-CREATE (h)-[:ENTERS_MERIDIAN {status: 'pending'}]->(m2);
+CREATE (h)-[:归于经脉 {status: 'pending'}]->(m1)
+CREATE (h)-[:归于经脉 {status: 'pending'}]->(m2);
 
 // 药材-工艺关系
 MATCH (h:Herb {name: '陈皮'})
 MATCH (pr1:Process {name: '沉化'})
-CREATE (h)-[:PROCESSED_BY {duration: '3年以上', conditions: '干皮晒干储存', status: 'pending'}]->(pr1);
+CREATE (h)-[:经过工艺 {duration: '3年以上', conditions: '干皮晒干储存', status: 'pending'}]->(pr1);
 
 // 药材-时间关系
 MATCH (h:Herb {name: '陈皮'})
@@ -298,10 +298,10 @@ MATCH (tp1:TimePoint {years: 1})
 MATCH (tp2:TimePoint {years: 3})
 MATCH (tp3:TimePoint {years: 5})
 MATCH (tp4:TimePoint {years: 10})
-CREATE (h)-[:STORED_FOR {years: 1, status: 'pending'}]->(tp1)
-CREATE (h)-[:STORED_FOR {years: 3, status: 'pending'}]->(tp2)
-CREATE (h)-[:STORED_FOR {years: 5, status: 'pending'}]->(tp3)
-CREATE (h)-[:STORED_FOR {years: 10, status: 'pending'}]->(tp4);
+CREATE (h)-[:储存时间 {years: 1, status: 'pending'}]->(tp1)
+CREATE (h)-[:储存时间 {years: 3, status: 'pending'}]->(tp2)
+CREATE (h)-[:储存时间 {years: 5, status: 'pending'}]->(tp3)
+CREATE (h)-[:储存时间 {years: 10, status: 'pending'}]->(tp4);
 
 // 药材-性状关系
 MATCH (h:Herb {name: '陈皮'})
@@ -309,9 +309,9 @@ MATCH (t1:Trait {name: '外皮'})
 MATCH (t2:Trait {name: '内囊'})
 MATCH (t3:Trait {name: '油室'})
 MATCH (t4:Trait {name: '油胞'})
-CREATE (h)-[:HAS_TRAIT {value: '棕红色，有细皱纹', observation: '质柔软', year_range: '3年以上', status: 'pending'}]->(t1)
-CREATE (h)-[:HAS_TRAIT {value: '黄白色', observation: '有细筋络', year_range: '3年以上', status: 'pending'}]->(t2)
-CREATE (h)-[:HAS_TRAIT {value: '丰富', observation: '凹入的油点', year_range: '10年以上更明显', status: 'pending'}]->(t3)
-CREATE (h)-[:HAS_TRAIT {value: '大', observation: '油胞明显', year_range: '10年以上更明显', status: 'pending'}]->(t4);
+CREATE (h)-[:具有性状 {value: '棕红色，有细皱纹', observation: '质柔软', year_range: '3年以上', status: 'pending'}]->(t1)
+CREATE (h)-[:具有性状 {value: '黄白色', observation: '有细筋络', year_range: '3年以上', status: 'pending'}]->(t2)
+CREATE (h)-[:具有性状 {value: '丰富', observation: '凹入的油点', year_range: '10年以上更明显', status: 'pending'}]->(t3)
+CREATE (h)-[:具有性状 {value: '大', observation: '油胞明显', year_range: '10年以上更明显', status: 'pending'}]->(t4);
 
 RETURN '陈皮图谱创建完成!'

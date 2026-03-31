@@ -72,24 +72,27 @@ export type GraphNodeLabel =
   | "时间点";
 
 export type GraphEdgeRelType =
-  | "CONTAINS"
-  | "EXTRACTED_FROM"
-  | "HAS_VARIANT"
-  | "VARIANT_OF"
-  | "PROCESSED_BY"
-  | "APPLIES_TO"
-  | "STORED_FOR"
-  | "HAS_TRAIT"
-  | "OBSERVED_IN"
-  | "HAS_EFFICACY"
-  | "HAS_FLAVOR"
-  | "ENTERS_MERIDIAN"
-  | "TREATS"
-  | "INTERACTS_WITH"
-  | "SIMILAR_TO"
-  | "PARENT_OF"
-  | "CHILD_OF"
-  | "ORIGINATED_FROM";
+  | "具有饮片"
+  | "包含成分"
+  | "提取自"
+  | "具有品种"
+  | "属于药材"
+  | "经过工艺"
+  | "适用于"
+  | "储存时间"
+  | "具有性状"
+  | "观察于"
+  | "具有功效"
+  | "具有性味"
+  | "归于经脉"
+  | "治疗病证"
+  | "相互作用"
+  | "相似于"
+  | "父类"
+  | "子类"
+  | "来源于"
+  | "派生自"
+  | "由证据支持";
 
 export interface GraphQueryNodeFilters {
   name_contains?: string;
@@ -266,15 +269,25 @@ export function getGraphNodeStyle(label?: string) {
 
 // 关系类型中文映射
 export const relTypeLabels: Record<string, string> = {
-  CONTAINS: "含有",
-  TREATS: "主治",
-  HAS_FLAVOR: "味",
-  ENTERS_MERIDIAN: "归经",
-  HAS_EFFICACY: "功效",
-  HAS_COMPONENT: "成分",
-  BELONGS_TO: "属于",
-  VARIANT_OF: "变种",
-  PROCESSED_BY: "炮制",
-  HAS_TRAIT: "特征",
-  HARVESTED_AT: "采收",
+  具有饮片: "具有饮片",
+  包含成分: "包含成分",
+  提取自: "提取自",
+  具有品种: "具有品种",
+  属于药材: "属于药材",
+  经过工艺: "经过工艺",
+  适用于: "适用于",
+  储存时间: "储存时间",
+  具有性状: "具有性状",
+  观察于: "观察于",
+  具有功效: "具有功效",
+  具有性味: "具有性味",
+  归于经脉: "归于经脉",
+  治疗病证: "治疗病证",
+  相互作用: "相互作用",
+  相似于: "相似于",
+  父类: "父类",
+  子类: "子类",
+  来源于: "来源于",
+  派生自: "派生自",
+  由证据支持: "由证据支持",
 };

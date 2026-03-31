@@ -252,9 +252,9 @@ async def test_create_herb(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_parent(graph_service):
-    """link_herb_parent should create PARENT_OF relationship."""
+    """link_herb_parent should create 父类 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": NodeStatus.PENDING.value, "type": "PARENT_OF"}
+        return_value={"status": NodeStatus.PENDING.value, "type": "父类"}
     )
 
     result = await graph_service.link_herb_parent(
@@ -264,7 +264,7 @@ async def test_link_herb_parent(graph_service):
 
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "ShengDangGui", "Herb", "DangGui", "PARENT_OF"
+        "Herb", "ShengDangGui", "Herb", "DangGui", "父类"
     )
 
 
@@ -274,9 +274,9 @@ async def test_link_herb_parent(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_child(graph_service):
-    """link_herb_child should create CHILD_OF relationship."""
+    """link_herb_child should create 子类 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": NodeStatus.PENDING.value, "type": "CHILD_OF"}
+        return_value={"status": NodeStatus.PENDING.value, "type": "子类"}
     )
 
     result = await graph_service.link_herb_child(
@@ -286,7 +286,7 @@ async def test_link_herb_child(graph_service):
 
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Herb", "ShengDangGui", "CHILD_OF"
+        "Herb", "DangGui", "Herb", "ShengDangGui", "子类"
     )
 
 
@@ -296,9 +296,9 @@ async def test_link_herb_child(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_source(graph_service):
-    """link_herb_source should create ORIGINATED_FROM relationship."""
+    """link_herb_source should create 来源于 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": NodeStatus.PENDING.value, "type": "ORIGINATED_FROM"}
+        return_value={"status": NodeStatus.PENDING.value, "type": "来源于"}
     )
 
     result = await graph_service.link_herb_source(
@@ -308,7 +308,7 @@ async def test_link_herb_source(graph_service):
 
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Source", "GanSu", "ORIGINATED_FROM"
+        "Herb", "DangGui", "Source", "GanSu", "来源于"
     )
 
 
@@ -323,7 +323,7 @@ async def test_graph_metadata_service_summary_aggregates_database_counts():
             {"result": {"name": "nodes", "data": 12}},
             {"result": {"name": "relationships", "data": 18}},
             {"result": {"name": "labels", "data": ["Herb", "Efficacy"]}},
-            {"result": {"name": "relationshipTypes", "data": ["HAS_EFFICACY"]}},
+            {"result": {"name": "relationshipTypes", "data": ["具有功效"]}},
             {"result": {"name": "propertyKeys", "data": ["name", "category"]}},
             {"result": {"name": "indexes", "data": [{"name": "idx_herb_name"}]}},
             {"result": {"name": "constraints", "data": [{"name": "constraint_herb_name"}]}},
@@ -404,7 +404,7 @@ async def test_get_herb_graph(graph_service):
     }
     edge_dict = {
         "id": "rel-001",
-        "rel_type": "CONTAINS",
+        "rel_type": "包含成分",
         "status": "pending",
         "verification_id": None,
         "verified_by": None,
@@ -437,7 +437,7 @@ async def test_get_herb_graph(graph_service):
     assert result["center"]["name"] == "DangGui"
     assert len(result["nodes"]) >= 1
     assert len(result["edges"]) == 1
-    assert result["edges"][0]["rel_type"] == "CONTAINS"
+    assert result["edges"][0]["rel_type"] == "包含成分"
     assert result["scene"] == {
         "truncated": False,
         "node_limit_hit": False,
@@ -496,7 +496,7 @@ async def test_verify_relationship(graph_service):
 
     result = await graph_service.verify_relationship(
         from_name="DangGui",
-        rel_type="CONTAINS",
+        rel_type="包含成分",
         to_name="LiGusTiLiDe",
         verification_id="ver-002",
         verifier_id="expert-001",
@@ -526,7 +526,7 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     }
     edge_dict = {
         "id": "rel-001",
-        "rel_type": "HAS_EFFICACY",
+        "rel_type": "具有功效",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -563,7 +563,7 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     result = await graph_service.query_graph(
         {
             "node": {"name_contains": "人参", "label": "Herb"},
-            "edge": {"rel_type": "HAS_EFFICACY"},
+            "edge": {"rel_type": "具有功效"},
             "depth": 2,
             "limit": 20,
         }
@@ -572,10 +572,10 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     assert result["summary"]["mode"] == "advanced-query"
     assert result["summary"]["matched_nodes"] == 1
     assert result["summary"]["matched_edges"] == 1
-    assert result["summary"]["active_filters"] == ["名称包含: 人参", "节点类型: 药材", "关系类型: 功效"]
+    assert result["summary"]["active_filters"] == ["名称包含: 人参", "节点类型: 药材", "关系类型: 具有功效"]
     assert result["graph"]["center"] is None
     assert result["graph"]["nodes"][0]["name"] == "人参"
-    assert result["graph"]["edges"][0]["rel_type"] == "HAS_EFFICACY"
+    assert result["graph"]["edges"][0]["rel_type"] == "具有功效"
     assert result["scene"] == {
         "truncated": False,
         "node_limit_hit": False,
@@ -589,7 +589,7 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     second_params = session.run.await_args_list[1].kwargs
     third_params = session.run.await_args_list[2].kwargs
     assert "MATCH (n:Herb)" in first_query
-    assert "HAS_EFFICACY" in first_query
+    assert "具有功效" in first_query
     assert "n.name CONTAINS $name_contains" in first_query
     assert first_params["name_contains"] == "人参"
     assert "[*1.." not in first_query
@@ -652,7 +652,7 @@ async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph
     }
     efficacy_edge = {
         "id": "rel-001",
-        "rel_type": "HAS_EFFICACY",
+        "rel_type": "具有功效",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -674,7 +674,7 @@ async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph
     }
     flavor_edge = {
         "id": "rel-002",
-        "rel_type": "HAS_FLAVOR",
+        "rel_type": "具有性味",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -713,13 +713,13 @@ async def test_query_graph_filters_out_non_matching_edges_during_expansion(graph
     result = await graph_service.query_graph(
         {
             "node": {"name_contains": "人参", "label": "Herb"},
-            "edge": {"rel_type": "HAS_EFFICACY"},
+            "edge": {"rel_type": "具有功效"},
             "depth": 1,
             "limit": 20,
         }
     )
 
-    assert [edge["rel_type"] for edge in result["graph"]["edges"]] == ["HAS_EFFICACY"]
+    assert [edge["rel_type"] for edge in result["graph"]["edges"]] == ["具有功效"]
     assert [node["name"] for node in result["graph"]["nodes"]] == ["人参", "补气"]
     assert result["summary"]["matched_edges"] == 1
     assert result["scene"]["relationship_limit_hit"] is False
@@ -758,7 +758,7 @@ async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
     }
     efficacy_edge = {
         "id": "rel-001",
-        "rel_type": "HAS_EFFICACY",
+        "rel_type": "具有功效",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -768,7 +768,7 @@ async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
     }
     flavor_edge = {
         "id": "rel-002",
-        "rel_type": "HAS_FLAVOR",
+        "rel_type": "具有性味",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -778,7 +778,7 @@ async def test_query_graph_applies_remaining_budget_to_expansion(graph_service):
     }
     treats_edge = {
         "id": "rel-003",
-        "rel_type": "TREATS",
+        "rel_type": "治疗病证",
         "status": NodeStatus.VERIFIED.value,
         "verification_id": None,
         "verified_by": None,
@@ -949,15 +949,15 @@ async def test_create_component(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_contains_component(graph_service):
-    """link_herb_contains_component should create CONTAINS relationship."""
+    """link_herb_contains_component should create 包含成分 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": "pending", "quantity": "5%", "type": "CONTAINS"}
+        return_value={"status": "pending", "quantity": "5%", "type": "包含成分"}
     )
     result = await graph_service.link_herb_contains_component("HuangLian", "Berberine", "5%")
     assert result["status"] == "pending"
     assert result["quantity"] == "5%"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "HuangLian", "Component", "Berberine", "CONTAINS", {"quantity": "5%"}
+        "Herb", "HuangLian", "Component", "Berberine", "包含成分", {"quantity": "5%"}
     )
 
 
@@ -1006,13 +1006,13 @@ async def test_create_process(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_processed_by(graph_service):
-    """link_herb_processed_by should create PROCESSED_BY relationship."""
+    """link_herb_processed_by should create 经过工艺 relationship."""
     graph_service.create_relationship = AsyncMock(
         return_value={
             "status": "pending",
             "duration": "3h",
             "conditions": "medium heat",
-            "type": "PROCESSED_BY",
+            "type": "经过工艺",
         }
     )
     result = await graph_service.link_herb_processed_by("DangGui", "PaoZhi", "3h", "medium heat")
@@ -1023,7 +1023,7 @@ async def test_link_herb_processed_by(graph_service):
         "DangGui",
         "Process",
         "PaoZhi",
-        "PROCESSED_BY",
+        "经过工艺",
         {"duration": "3h", "conditions": "medium heat", "start_date": None, "end_date": None},
     )
 
@@ -1047,9 +1047,9 @@ async def test_create_trait(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_has_trait(graph_service):
-    """link_herb_has_trait should create HAS_TRAIT relationship."""
+    """link_herb_has_trait should create 具有性状 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": "pending", "value": "dark-brown", "type": "HAS_TRAIT"}
+        return_value={"status": "pending", "value": "dark-brown", "type": "具有性状"}
     )
     result = await graph_service.link_herb_has_trait("DangGui", "Color", "dark-brown", "visual", "2020-2025")
     assert result["value"] == "dark-brown"
@@ -1058,7 +1058,7 @@ async def test_link_herb_has_trait(graph_service):
         "DangGui",
         "Trait",
         "Color",
-        "HAS_TRAIT",
+        "具有性状",
         {"value": "dark-brown", "observation": "visual", "year_range": "2020-2025"},
     )
 
@@ -1112,36 +1112,36 @@ async def test_create_meridian(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_has_efficacy(graph_service):
-    """link_herb_has_efficacy should create HAS_EFFICACY relationship."""
-    graph_service.create_relationship = AsyncMock(return_value={"status": "pending", "type": "HAS_EFFICACY"})
+    """link_herb_has_efficacy should create 具有功效 relationship."""
+    graph_service.create_relationship = AsyncMock(return_value={"status": "pending", "type": "具有功效"})
     result = await graph_service.link_herb_has_efficacy("DangGui", "BuXue")
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Efficacy", "BuXue", "HAS_EFFICACY"
+        "Herb", "DangGui", "Efficacy", "BuXue", "具有功效"
     )
 
 
 @pytest.mark.unit
 async def test_link_herb_has_flavor(graph_service):
-    """link_herb_has_flavor should create HAS_FLAVOR relationship."""
-    graph_service.create_relationship = AsyncMock(return_value={"status": "pending", "type": "HAS_FLAVOR"})
+    """link_herb_has_flavor should create 具有性味 relationship."""
+    graph_service.create_relationship = AsyncMock(return_value={"status": "pending", "type": "具有性味"})
     result = await graph_service.link_herb_has_flavor("DangGui", "Gan")
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Flavor", "Gan", "HAS_FLAVOR"
+        "Herb", "DangGui", "Flavor", "Gan", "具有性味"
     )
 
 
 @pytest.mark.unit
 async def test_link_herb_enters_meridian(graph_service):
-    """link_herb_enters_meridian should create ENTERS_MERIDIAN relationship."""
+    """link_herb_enters_meridian should create 归于经脉 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": "pending", "type": "ENTERS_MERIDIAN"}
+        return_value={"status": "pending", "type": "归于经脉"}
     )
     result = await graph_service.link_herb_enters_meridian("DangGui", "Liver")
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Meridian", "Liver", "ENTERS_MERIDIAN"
+        "Herb", "DangGui", "Meridian", "Liver", "归于经脉"
     )
 
 
@@ -1379,14 +1379,14 @@ async def test_get_variant_details_not_found(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_has_variant(graph_service):
-    """link_herb_has_variant should create HAS_VARIANT relationship."""
+    """link_herb_has_variant should create 具有品种 relationship."""
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": "pending", "type": "HAS_VARIANT"}
+        return_value={"status": "pending", "type": "具有品种"}
     )
     result = await graph_service.link_herb_has_variant("DangGui", "ChuanDangGui")
     assert result["status"] == "pending"
     graph_service.create_relationship.assert_awaited_once_with(
-        "Herb", "DangGui", "Variant", "ChuanDangGui", "HAS_VARIANT"
+        "Herb", "DangGui", "Variant", "ChuanDangGui", "具有品种"
     )
 
 
@@ -1408,10 +1408,10 @@ async def test_create_timepoint(graph_service):
 
 @pytest.mark.unit
 async def test_link_herb_stored_for(graph_service):
-    """link_herb_stored_for should create STORED_FOR relationship."""
+    """link_herb_stored_for should create 储存时间 relationship."""
     graph_service.create_timepoint = AsyncMock(return_value={"years": 3})
     graph_service.create_relationship = AsyncMock(
-        return_value={"status": "pending", "years": 3, "type": "STORED_FOR"}
+        return_value={"status": "pending", "years": 3, "type": "储存时间"}
     )
 
     result = await graph_service.link_herb_stored_for("DangGui", 3)
@@ -1423,6 +1423,6 @@ async def test_link_herb_stored_for(graph_service):
         "DangGui",
         "TimePoint",
         "3年",
-        "STORED_FOR",
+        "储存时间",
         {"years": 3, "start_date": None, "end_date": None},
     )

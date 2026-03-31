@@ -16,9 +16,9 @@ class CSVImporter(AbstractDataImporter):
     CSV 格式约定：
     node_type,node_name,source,herb_type,category,description,edge_type,target,edge_properties
     药材,陈皮,本草纲目,base,理气药,芸香科...,,
-    成分,挥发油,本草纲目,,,,CONTAINS,陈皮,"{""quantity"": ""2-3%""}"
-    品种,大红皮,本草纲目,,,,HAS_VARIANT,陈皮,
-    功效,理气,本草纲目,,,,HAS_EFFICACY,陈皮,
+    成分,挥发油,本草纲目,,,,包含成分,陈皮,"{""quantity"": ""2-3%""}"
+    品种,大红皮,本草纲目,,,,具有品种,陈皮,
+    功效,理气,本草纲目,,,,具有功效,陈皮,
 
     edge_properties 为可选的 JSON 字符串
     """

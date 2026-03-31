@@ -47,14 +47,14 @@ def mock_graph_data():
         "edges": [
             {
                 "id": "edge-001",
-                "rel_type": "HAS_EFFICACY",
+                "rel_type": "具有功效",
                 "status": "pending",
                 "source": {"id": "herb-001", "name": "陈皮", "labels": ["Herb"]},
                 "target": {"id": "eff-001", "name": "理气", "labels": ["Efficacy"]},
             },
             {
                 "id": "edge-002",
-                "rel_type": "HAS_FLAVOR",
+                "rel_type": "具有性味",
                 "status": "pending",
                 "source": {"id": "herb-001", "name": "陈皮", "labels": ["Herb"]},
                 "target": {"id": "flv-001", "name": "苦", "labels": ["Flavor"]},

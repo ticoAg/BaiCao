@@ -29,24 +29,27 @@ QUERY_LABEL_DISPLAY = {
     NodeType.TIMEPOINT.value: "时间点",
 }
 QUERY_REL_TYPE_DISPLAY = {
-    EdgeType.CONTAINS.value: "成分",
-    EdgeType.EXTRACTED_FROM.value: "提取自",
-    EdgeType.HAS_VARIANT.value: "品种",
-    EdgeType.VARIANT_OF.value: "隶属于品种",
-    EdgeType.PROCESSED_BY.value: "炮制",
-    EdgeType.APPLIES_TO.value: "适用于",
-    EdgeType.STORED_FOR.value: "储存时间",
-    EdgeType.HAS_TRAIT.value: "性状",
-    EdgeType.OBSERVED_IN.value: "观察于",
-    EdgeType.HAS_EFFICACY.value: "功效",
-    EdgeType.HAS_FLAVOR.value: "性味",
-    EdgeType.ENTERS_MERIDIAN.value: "归经",
-    EdgeType.TREATS.value: "主治",
-    EdgeType.INTERACTS_WITH.value: "相互作用",
-    EdgeType.SIMILAR_TO.value: "相似",
-    EdgeType.PARENT_OF.value: "父类",
-    EdgeType.CHILD_OF.value: "子类",
-    EdgeType.ORIGINATED_FROM.value: "产地",
+    EdgeType.CONTAINS.value: EdgeType.CONTAINS.value,
+    EdgeType.EXTRACTED_FROM.value: EdgeType.EXTRACTED_FROM.value,
+    EdgeType.HAS_VARIANT.value: EdgeType.HAS_VARIANT.value,
+    EdgeType.VARIANT_OF.value: EdgeType.VARIANT_OF.value,
+    EdgeType.PROCESSED_BY.value: EdgeType.PROCESSED_BY.value,
+    EdgeType.APPLIES_TO.value: EdgeType.APPLIES_TO.value,
+    EdgeType.STORED_FOR.value: EdgeType.STORED_FOR.value,
+    EdgeType.HAS_TRAIT.value: EdgeType.HAS_TRAIT.value,
+    EdgeType.OBSERVED_IN.value: EdgeType.OBSERVED_IN.value,
+    EdgeType.HAS_EFFICACY.value: EdgeType.HAS_EFFICACY.value,
+    EdgeType.HAS_FLAVOR.value: EdgeType.HAS_FLAVOR.value,
+    EdgeType.ENTERS_MERIDIAN.value: EdgeType.ENTERS_MERIDIAN.value,
+    EdgeType.TREATS.value: EdgeType.TREATS.value,
+    EdgeType.INTERACTS_WITH.value: EdgeType.INTERACTS_WITH.value,
+    EdgeType.SIMILAR_TO.value: EdgeType.SIMILAR_TO.value,
+    EdgeType.PARENT_OF.value: EdgeType.PARENT_OF.value,
+    EdgeType.CHILD_OF.value: EdgeType.CHILD_OF.value,
+    EdgeType.ORIGINATED_FROM.value: EdgeType.ORIGINATED_FROM.value,
+    EdgeType.DERIVED_FROM.value: EdgeType.DERIVED_FROM.value,
+    EdgeType.HAS_PREPARED_FORM.value: EdgeType.HAS_PREPARED_FORM.value,
+    EdgeType.SUPPORTED_BY.value: EdgeType.SUPPORTED_BY.value,
 }
 QUERY_STATUS_DISPLAY = {
     NodeStatus.PENDING.value: "待验证",
@@ -736,7 +739,7 @@ class GraphService:
         component_name: str,
         quantity: Optional[str] = None
     ) -> Dict[str, Any]:
-        """创建药材-成分关系 (Herb)-[:CONTAINS]->(Component)"""
+        """创建药材-成分关系 (Herb)-[:包含成分]->(Component)"""
         return await self.create_relationship(
             "Herb",
             herb_name,
@@ -751,7 +754,7 @@ class GraphService:
         child_name: str,
         parent_name: str
     ) -> Dict[str, Any]:
-        """创建药材-父子关系 (Child)-[:PARENT_OF]->(Parent)
+        """创建药材-父子关系 (Child)-[:父类]->(Parent)
 
         表示child是parent的子类/衍生物
         """
@@ -768,7 +771,7 @@ class GraphService:
         parent_name: str,
         child_name: str
     ) -> Dict[str, Any]:
-        """创建药材-子关系 (Parent)-[:CHILD_OF]->(Child)
+        """创建药材-子关系 (Parent)-[:子类]->(Child)
 
         表示parent是child的父级/来源
         """
@@ -785,7 +788,7 @@ class GraphService:
         herb_name: str,
         source_name: str
     ) -> Dict[str, Any]:
-        """创建药材-来源关系 (Herb)-[:ORIGINATED_FROM]->(Source)
+        """创建药材-来源关系 (Herb)-[:来源于]->(Source)
 
         表示herb来源于source（产地、供应商等）
         """
@@ -818,7 +821,7 @@ class GraphService:
         return node
 
     async def link_variant_of(self, variant_name: str, herb_name: str) -> Dict[str, Any]:
-        """创建品种-药材关系 (Variant)-[:VARIANT_OF]->(Herb)"""
+        """创建品种-药材关系 (Variant)-[:属于药材]->(Herb)"""
         return await self.create_relationship(
             "Variant",
             variant_name,
@@ -828,7 +831,7 @@ class GraphService:
         )
 
     async def link_herb_has_variant(self, herb_name: str, variant_name: str) -> Dict[str, Any]:
-        """创建药材-品种关系 (Herb)-[:HAS_VARIANT]->(Variant)"""
+        """创建药材-品种关系 (Herb)-[:具有品种]->(Variant)"""
         return await self.create_relationship(
             "Herb",
             herb_name,
@@ -861,7 +864,7 @@ class GraphService:
         duration: Optional[str] = None,
         conditions: Optional[str] = None
     ) -> Dict[str, Any]:
-        """创建药材-工艺关系 (Herb)-[:PROCESSED_BY]->(Process)"""
+        """创建药材-工艺关系 (Herb)-[:经过工艺]->(Process)"""
         return await self.create_relationship(
             "Herb",
             herb_name,
@@ -899,7 +902,7 @@ class GraphService:
         observation: Optional[str] = None,
         year_range: Optional[str] = None
     ) -> Dict[str, Any]:
-        """创建药材-性状关系 (Herb)-[:HAS_TRAIT]->(Trait)"""
+        """创建药材-性状关系 (Herb)-[:具有性状]->(Trait)"""
         return await self.create_relationship(
             "Herb",
             herb_name,
@@ -935,7 +938,7 @@ class GraphService:
         years: int,
         start_date: Optional[str] = None
     ) -> Dict[str, Any]:
-        """创建药材-储存时间关系 (Herb)-[:STORED_FOR]->(TimePoint)"""
+        """创建药材-储存时间关系 (Herb)-[:储存时间]->(TimePoint)"""
         # 查找或创建时间点节点
         await self.create_timepoint(years, "system")
         timepoint_name = f"{years}年"
@@ -1008,7 +1011,7 @@ class GraphService:
         )
 
     async def link_herb_treats(self, herb_name: str, disease_name: str) -> Dict[str, Any]:
-        """创建药材-主治关系 (Herb)-[:TREATS]->(Disease)"""
+        """创建药材-主治关系 (Herb)-[:治疗病证]->(Disease)"""
         return await self.create_relationship(
             "Herb",
             herb_name,
@@ -1020,7 +1023,7 @@ class GraphService:
     async def link_herb_similar(
         self, herb_name_1: str, herb_name_2: str, similarity_score: float = 0.0
     ) -> Dict[str, Any]:
-        """创建药材相似关系 (Herb)-[:SIMILAR_TO]->(Herb)"""
+        """创建药材相似关系 (Herb)-[:相似于]->(Herb)"""
         return await self.create_relationship(
             "Herb",
             herb_name_1,
@@ -1173,7 +1176,7 @@ class GraphService:
     async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有成分"""
         query = """
-        MATCH (h:Herb {name: $name})-[r:CONTAINS]->(c:Component)
+        MATCH (h:Herb {name: $name})-[r:包含成分]->(c:Component)
         RETURN c, r.quantity as quantity, r.status as status
         """
         records = await self._query_rows(query, {"name": herb_name})
@@ -1182,7 +1185,7 @@ class GraphService:
     async def get_herb_variants(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有品种"""
         query = """
-        MATCH (h:Herb {name: $name})-[r:HAS_VARIANT]->(v:Variant)
+        MATCH (h:Herb {name: $name})-[r:具有品种]->(v:Variant)
         RETURN v, r.status as status
         """
         records = await self._query_rows(query, {"name": herb_name})
@@ -1192,14 +1195,14 @@ class GraphService:
         """获取药材的性状特征"""
         if year_range:
             query = """
-            MATCH (h:Herb {name: $name})-[r:HAS_TRAIT]->(t:Trait)
+            MATCH (h:Herb {name: $name})-[r:具有性状]->(t:Trait)
             WHERE r.year_range IS NULL OR r.year_range CONTAINS $year_range
             RETURN t, r.value as value, r.observation as observation, r.year_range as year_range, r.status as status
             """
             params = {"name": herb_name, "year_range": year_range}
         else:
             query = """
-            MATCH (h:Herb {name: $name})-[r:HAS_TRAIT]->(t:Trait)
+            MATCH (h:Herb {name: $name})-[r:具有性状]->(t:Trait)
             RETURN t, r.value as value, r.observation as observation, r.year_range as year_range, r.status as status
             """
             params = {"name": herb_name}
@@ -1210,9 +1213,9 @@ class GraphService:
     async def get_variant_details(self, variant_name: str) -> Dict[str, Any]:
         """获取品种详细信息"""
         query = """
-        MATCH (v:Variant {name: $name})-[:VARIANT_OF]->(h:Herb)
-        OPTIONAL MATCH (v)-[r1:HAS_TRAIT]->(t:Trait)
-        OPTIONAL MATCH (h)-[r2:HAS_EFFICACY]->(e:Efficacy)
+        MATCH (v:Variant {name: $name})-[:属于药材]->(h:Herb)
+        OPTIONAL MATCH (v)-[r1:具有性状]->(t:Trait)
+        OPTIONAL MATCH (h)-[r2:具有功效]->(e:Efficacy)
         RETURN v, h.name as base_herb, collect(DISTINCT {trait: t, value: r1.value}) as traits, collect(DISTINCT e.name) as efficacies
         """
         record = await self._query_single(query, {"name": variant_name})
