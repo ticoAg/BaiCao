@@ -29,3 +29,13 @@ def test_node_type_exposes_chinese_label():
 
 def test_edge_type_exposes_chinese_label():
     assert EDGE_TYPE_LABELS[EdgeType.HAS_EFFICACY] == "具有功效"
+
+
+def test_node_type_exposes_prepared_piece_and_evidence():
+    assert NodeType.PREPARED_HERB == "饮片"
+    assert NodeType.EVIDENCE == "证据"
+
+
+def test_edge_type_exposes_chinese_content_relations():
+    assert EdgeType.HAS_PREPARED_FORM == "具有饮片"
+    assert EdgeType.SUPPORTED_BY == "由证据支持"

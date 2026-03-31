@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
+from data_ingestion.bundles import UnifiedGraphBundle
+
 from app.pipeline.adapters import SourceDescriptor
 from app.pipeline.materialization import MaterializedSource
 from app.pipeline.models import PipelineRun, PipelineStepKey, PipelineStepStatus
@@ -16,6 +18,7 @@ class PipelineStepContext:
     run: PipelineRun
     source_descriptor: SourceDescriptor
     materialized_source: MaterializedSource | None = None
+    processed_bundle: UnifiedGraphBundle | None = None
 
 
 StepHandler = Callable[[PipelineStepContext], PipelineStepPreviewResponse]

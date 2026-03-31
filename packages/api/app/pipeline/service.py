@@ -2,6 +2,7 @@ from typing import Any, cast
 
 from app.pipeline.adapters import build_source_adapters, get_source_adapter
 from app.pipeline.materialization import SourceMaterializationService
+from app.pipeline.processor_runtime import PipelineProcessorRuntime
 from app.review.service import ReviewService
 from app.export.service import ExportService
 from app.pipeline.models import (
@@ -24,12 +25,14 @@ class PipelineService:
         review_service: ReviewService | None = None,
         export_service: ExportService | None = None,
         materialization_service: SourceMaterializationService | None = None,
+        processor_runtime: PipelineProcessorRuntime | None = None,
     ) -> None:
         self.storage = storage or InMemoryPipelineStorage()
         self.source_adapters = build_source_adapters()
         self.review_service = review_service
         self.export_service = export_service
         self.materialization_service = materialization_service
+        self.processor_runtime = processor_runtime
 
     async def create_run(
         self,
@@ -161,6 +164,7 @@ class PipelineService:
         source_adapter = get_source_adapter(run.source_type, self.source_adapters)
         source_descriptor = source_adapter.describe(run.source_locator)
         materialized_source = None
+        processed_bundle = None
         if self.materialization_service is not None and run.source_payload:
             source_input = cast(dict[str, Any], run.source_payload.get("source_input", {}))
             materialized_source = await self.materialization_service.materialize(
@@ -168,10 +172,16 @@ class PipelineService:
                 str(run.source_payload.get("source_type") or run.source_type),
                 source_input,
             )
+        if self.processor_runtime is not None and materialized_source is not None:
+            processed_bundle = await self.processor_runtime.process_materialized_source(
+                run=run,
+                materialized_source=materialized_source,
+            )
         context = PipelineStepContext(
             run=run,
             source_descriptor=source_descriptor,
             materialized_source=materialized_source,
+            processed_bundle=processed_bundle,
         )
         if step == PipelineStepKey.HUMAN_REVIEW and self.review_service is not None:
             return await self.review_service.build_preview(run, context)

@@ -290,6 +290,7 @@ dependencies = [
     { name = "alembic" },
     { name = "anthropic" },
     { name = "asyncpg" },
+    { name = "bai-cao-data-ingestion" },
     { name = "bai-cao-knowledge-model" },
     { name = "datasets" },
     { name = "email-validator" },
@@ -329,6 +330,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.15.0" },
     { name = "anthropic", specifier = ">=0.80.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
+    { name = "bai-cao-data-ingestion", editable = "../data_ingestion" },
     { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
     { name = "datasets", specifier = ">=2.14.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
@@ -357,6 +359,17 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34.0" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "bai-cao-data-ingestion"
+version = "0.1.0"
+source = { editable = "../data_ingestion" }
+dependencies = [
+    { name = "bai-cao-knowledge-model" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "bai-cao-knowledge-model", editable = "../knowledge_model" }]
 
 [[package]]
 name = "bai-cao-knowledge-model"

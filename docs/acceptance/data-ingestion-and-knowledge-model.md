@@ -208,3 +208,46 @@ curl -sS http://127.0.0.1:8000/api/v1/graph/meta/schema
 - 结果：`pass`
 - 结论一句话：共享知识模型已经成为 API schema、导入导出与数据采集边界的单一事实来源，并已补齐样例 round-trip 与本地集成环境复核
 - 后续动作：后续只需在真实导入执行与更广覆盖的 CSV / integration 层补更多样例证据
+
+## 9. 2026-03-31 药典条目图谱化补充证据
+
+### 本轮新增范围
+
+- 共享图模型新增 `饮片`、`证据` 节点及 `具有饮片`、`由证据支持` 关系
+- `packages/data_ingestion/` 新增文件级路由、条目块协议、统一 bundle 输出
+- `2022年中药药典.txt` 新增专属切段、章节解析、条目映射逻辑
+- API pipeline 新增 `processor_runtime`，能把药典条目映射结果接入 `MAP_TO_KNOWLEDGE_MODEL` 预览
+
+### 对应实现
+
+- `packages/knowledge_model/knowledge_model/constants.py`
+- `packages/knowledge_model/knowledge_model/node_models.py`
+- `packages/knowledge_model/knowledge_model/import_records.py`
+- `packages/data_ingestion/data_ingestion/source_models.py`
+- `packages/data_ingestion/data_ingestion/routing.py`
+- `packages/data_ingestion/data_ingestion/bundles.py`
+- `packages/data_ingestion/data_ingestion/processors/huggingface/zjufanlab_tcmchat_dataset_600k/national_standard_2022_pharmacopoeia/segmentation.py`
+- `packages/data_ingestion/data_ingestion/processors/huggingface/zjufanlab_tcmchat_dataset_600k/national_standard_2022_pharmacopoeia/parsing.py`
+- `packages/data_ingestion/data_ingestion/processors/huggingface/zjufanlab_tcmchat_dataset_600k/national_standard_2022_pharmacopoeia/mapping.py`
+- `packages/api/app/pipeline/processor_runtime.py`
+- `packages/api/app/pipeline/service.py`
+- `packages/api/app/pipeline/steps/map_to_knowledge_model.py`
+
+### 补充验证命令
+
+```bash
+cd packages/knowledge_model
+uv run --with pytest pytest tests/test_constants.py tests/test_schema.py -q
+
+cd ../data_ingestion
+uv run --with pytest pytest tests -q
+
+cd ../api
+uv run --extra dev pytest tests/unit/pipeline/test_processor_runtime.py tests/unit/pipeline/test_service.py tests/contract/test_import_record_contract.py -q
+```
+
+### 预期闭环
+
+- `一枝黄花` 这类药典条目能被切成单个 `证据` 节点
+- `饮片` 以独立节点形式进入 bundle，而不是作为 `药材` 附属字段
+- `MAP_TO_KNOWLEDGE_MODEL` 预览可返回 `药材 / 饮片 / 证据 / 性味 / 归经 / 功效` 及中文关系

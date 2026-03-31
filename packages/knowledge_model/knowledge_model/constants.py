@@ -4,6 +4,7 @@ from typing import Literal
 
 class NodeType(StrEnum):
     HERB = "药材"
+    PREPARED_HERB = "饮片"
     COMPONENT = "成分"
     VARIANT = "品种"
     PROCESS = "工艺"
@@ -14,9 +15,11 @@ class NodeType(StrEnum):
     DISEASE = "病证"
     TIMEPOINT = "时间点"
     SOURCE = "来源"
+    EVIDENCE = "证据"
 
 
 class EdgeType(StrEnum):
+    HAS_PREPARED_FORM = "具有饮片"
     CONTAINS = "CONTAINS"
     EXTRACTED_FROM = "EXTRACTED_FROM"
     HAS_VARIANT = "HAS_VARIANT"
@@ -33,6 +36,7 @@ class EdgeType(StrEnum):
     INTERACTS_WITH = "INTERACTS_WITH"
     SIMILAR_TO = "SIMILAR_TO"
     ORIGINATED_FROM = "ORIGINATED_FROM"
+    SUPPORTED_BY = "由证据支持"
 
 
 class NodeStatus(StrEnum):
@@ -54,6 +58,7 @@ class TraitCategory(StrEnum):
 
 NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {
     NodeType.HERB: "Herb",
+    NodeType.PREPARED_HERB: "PreparedHerb",
     NodeType.COMPONENT: "Component",
     NodeType.VARIANT: "Variant",
     NodeType.PROCESS: "Process",
@@ -64,6 +69,7 @@ NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {
     NodeType.DISEASE: "Disease",
     NodeType.TIMEPOINT: "TimePoint",
     NodeType.SOURCE: "Source",
+    NodeType.EVIDENCE: "Evidence",
 }
 
 NEO4J_LABEL_TO_NODE_TYPE: dict[str, NodeType] = {
@@ -92,6 +98,7 @@ def to_neo4j_label(value: NodeType | str) -> str:
 
 NodeTypeLiteral = Literal[
     "药材",
+    "饮片",
     "成分",
     "品种",
     "工艺",
@@ -102,9 +109,11 @@ NodeTypeLiteral = Literal[
     "病证",
     "时间点",
     "来源",
+    "证据",
 ]
 
 EdgeTypeLiteral = Literal[
+    "具有饮片",
     "CONTAINS",
     "EXTRACTED_FROM",
     "HAS_VARIANT",
@@ -121,4 +130,5 @@ EdgeTypeLiteral = Literal[
     "INTERACTS_WITH",
     "SIMILAR_TO",
     "ORIGINATED_FROM",
+    "由证据支持",
 ]

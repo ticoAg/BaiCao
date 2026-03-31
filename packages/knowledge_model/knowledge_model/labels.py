@@ -3,6 +3,7 @@ from .constants import EdgeType, NodeType
 
 NODE_TYPE_LABELS: dict[NodeType, str] = {
     NodeType.HERB: "药材",
+    NodeType.PREPARED_HERB: "饮片",
     NodeType.COMPONENT: "成分",
     NodeType.VARIANT: "品种",
     NodeType.PROCESS: "工艺",
@@ -13,9 +14,11 @@ NODE_TYPE_LABELS: dict[NodeType, str] = {
     NodeType.DISEASE: "病证",
     NodeType.TIMEPOINT: "时间点",
     NodeType.SOURCE: "来源",
+    NodeType.EVIDENCE: "证据",
 }
 
 EDGE_TYPE_LABELS: dict[EdgeType, str] = {
+    EdgeType.HAS_PREPARED_FORM: "具有饮片",
     EdgeType.CONTAINS: "包含成分",
     EdgeType.EXTRACTED_FROM: "提取自",
     EdgeType.HAS_VARIANT: "具有品种",
@@ -32,4 +35,5 @@ EDGE_TYPE_LABELS: dict[EdgeType, str] = {
     EdgeType.INTERACTS_WITH: "相互作用",
     EdgeType.SIMILAR_TO: "相似于",
     EdgeType.ORIGINATED_FROM: "来源于",
+    EdgeType.SUPPORTED_BY: "由证据支持",
 }

@@ -16,6 +16,7 @@ class GraphImportRecord(BaseModel):
     node_name: str = Field(description="导入节点名称")
     source: str = Field(description="导入数据来源")
     status: NodeStatus = Field(default=NodeStatus.PENDING, description="导入节点审核状态")
+    evidence_refs: list[str] = Field(default_factory=list, description="关联证据标识列表")
     properties: dict[str, object] = Field(default_factory=dict, description="节点属性集合")
     edges: list[GraphImportEdge] = Field(default_factory=list, description="与当前节点关联的边列表")
 

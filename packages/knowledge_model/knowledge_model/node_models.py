@@ -26,6 +26,13 @@ class HerbNodeModel(BaseNodeModel):
     description: str | None = Field(default=None, description="药材说明")
 
 
+class PreparedHerbNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.PREPARED_HERB, description="节点类型：饮片")
+    prepared_from_herb: str | None = Field(default=None, description="对应药材名称")
+    processing_method_text: str | None = Field(default=None, description="炮制方法原文")
+    description: str | None = Field(default=None, description="饮片说明")
+
+
 class ComponentNodeModel(BaseNodeModel):
     type: NodeType = Field(default=NodeType.COMPONENT, description="节点类型：成分")
     chemical_formula: str | None = Field(default=None, description="化学式")
@@ -60,3 +67,15 @@ class TimePointNodeModel(BaseNodeModel):
     type: NodeType = Field(default=NodeType.TIMEPOINT, description="节点类型：时间点")
     years: int | None = Field(default=None, description="对应年份数值")
     quality_indicator: str | None = Field(default=None, description="质量指标说明")
+
+
+class EvidenceNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.EVIDENCE, description="节点类型：证据")
+    raw_text: str = Field(description="证据原文")
+    source_provider: str = Field(description="来源提供方")
+    dataset_name: str = Field(description="来源数据集名称")
+    file_path: str = Field(description="来源文件路径")
+    entry_title: str = Field(description="条目标题")
+    line_start: int = Field(description="起始行号")
+    line_end: int = Field(description="结束行号")
+    chunk_hash: str = Field(description="证据块哈希")

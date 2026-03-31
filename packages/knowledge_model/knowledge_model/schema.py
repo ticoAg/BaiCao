@@ -5,10 +5,12 @@ from pydantic import Field
 from .node_models import (
     ComponentNodeModel,
     DiseaseNodeModel,
+    EvidenceNodeModel,
     EfficacyNodeModel,
     FlavorNodeModel,
     HerbNodeModel,
     MeridianNodeModel,
+    PreparedHerbNodeModel,
     TimePointNodeModel,
     VariantNodeModel,
 )
@@ -16,12 +18,14 @@ from .node_models import (
 
 GraphNodeModel = Annotated[
     HerbNodeModel
+    | PreparedHerbNodeModel
     | ComponentNodeModel
     | VariantNodeModel
     | EfficacyNodeModel
     | FlavorNodeModel
     | MeridianNodeModel
     | DiseaseNodeModel
-    | TimePointNodeModel,
+    | TimePointNodeModel
+    | EvidenceNodeModel,
     Field(discriminator="type"),
 ]

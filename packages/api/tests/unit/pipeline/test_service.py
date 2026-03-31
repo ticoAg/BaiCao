@@ -1,6 +1,7 @@
 import pytest
 
-from app.pipeline.materialization import SourceMaterializationService
+from app.pipeline.materialization import MaterializedSource, SourceMaterializationService
+from app.pipeline.processor_runtime import build_processor_runtime
 from app.pipeline.models import PipelineStepKey, PipelineStepStatus
 from app.pipeline.service import PipelineService
 
@@ -242,3 +243,47 @@ async def test_source_ingest_preview_returns_materialized_paths(tmp_path, monkey
     assert preview.preview_payload["repo_url"] == "https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k"
     assert "/runs/" in preview.preview_payload["run_workdir"]
     assert "/source" not in preview.preview_payload["run_workdir"]
+
+
+@pytest.mark.asyncio
+async def test_mapping_step_returns_bundle_nodes_for_pharmacopoeia_entry(tmp_path, monkeypatch):
+    source = tmp_path / "2022年中药药典.txt"
+    source.write_text(
+        "一枝黄花\nYizhihuanghua\nSOLIDAGINISHERBA\n本品为菊科植物一枝黄花SolidagodecurrensLour.的干燥全草。\n饮片\n【炮制】除去杂质，喷淋清水，切段，干燥。\n【性味与归经】辛、苦，凉。归肺、肝经。\n【功能与主治】清热解毒，疏散风热。\n",
+        encoding="utf-8",
+    )
+
+    materialization_service = SourceMaterializationService(str(tmp_path))
+
+    async def fake_materialize(run_id: str, source_type: str, source_input: dict[str, object]):
+        run_workdir = tmp_path / "runs" / run_id
+        source_dir = run_workdir / "source"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        copied = source_dir / source.name
+        copied.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+        return MaterializedSource(
+            run_workdir=str(run_workdir),
+            source_dir=str(source_dir),
+            candidate_files=[str(copied)],
+            cache_hit=True,
+        )
+
+    monkeypatch.setattr(materialization_service, "materialize", fake_materialize)
+    service = PipelineService(
+        materialization_service=materialization_service,
+        processor_runtime=build_processor_runtime(),
+    )
+    run = await service.create_run(
+        source_type="huggingface_repo",
+        source_locator="ZJUFanLab/TCMChat-dataset-600k",
+        source_payload={
+            "source_type": "huggingface_repo",
+            "source_input": {"repo_id": "ZJUFanLab/TCMChat-dataset-600k"},
+        },
+    )
+
+    preview = await service.preview_step(run.id, PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL)
+
+    assert preview.preview_kind == "graph_mapping"
+    assert any(node["type"] == "证据" for node in preview.preview_payload["nodes"])
+    assert any(edge["type"] == "具有饮片" for edge in preview.preview_payload["edges"])

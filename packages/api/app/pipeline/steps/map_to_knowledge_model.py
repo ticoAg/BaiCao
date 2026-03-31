@@ -22,6 +22,27 @@ def _resolve_candidate_name(run: PipelineRun) -> str:
 
 
 def build_map_to_knowledge_model_preview(context: PipelineStepContext):
+    if context.processed_bundle is not None:
+        bundle = context.processed_bundle
+        return build_preview_response(
+            context=context,
+            step=PipelineStepKey.MAP_TO_KNOWLEDGE_MODEL,
+            summary="药典条目图谱映射预览已生成",
+            preview_kind="graph_mapping",
+            preview_payload={
+                "nodes": [node.model_dump(mode="json") for node in bundle.nodes],
+                "edges": [edge.model_dump(mode="json") for edge in bundle.edges],
+                "validation": {
+                    "is_valid": not bundle.errors,
+                    "passed": len(bundle.nodes),
+                    "failed": len(bundle.errors),
+                },
+            },
+            warnings=bundle.warnings,
+            errors=bundle.errors,
+            next_step_ready=not bundle.errors,
+        )
+
     candidate_name = _resolve_candidate_name(context.run)
 
     if not candidate_name:

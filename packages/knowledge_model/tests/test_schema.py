@@ -9,7 +9,7 @@ if str(PACKAGE_ROOT) not in sys.path:
 
 from knowledge_model.constants import EdgeType, NodeType
 from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
-from knowledge_model.node_models import HerbNodeModel
+from knowledge_model.node_models import EvidenceNodeModel, HerbNodeModel, PreparedHerbNodeModel
 
 
 def test_graph_import_record_accepts_known_node_type():
@@ -63,3 +63,34 @@ def test_shared_models_expose_field_descriptions_in_json_schema():
     assert herb_schema["properties"]["category"]["description"] == "药材分类"
     assert import_record_schema["properties"]["edges"]["description"] == "与当前节点关联的边列表"
     assert import_edge_schema["properties"]["target"]["description"] == "目标节点名称或标识"
+
+
+def test_prepared_herb_node_model_accepts_parent_reference():
+    node = PreparedHerbNodeModel(
+        id="饮片:一枝黄花饮片",
+        name="一枝黄花饮片",
+        source="huggingface",
+        prepared_from_herb="一枝黄花",
+    )
+
+    assert node.type == NodeType.PREPARED_HERB
+    assert node.prepared_from_herb == "一枝黄花"
+
+
+def test_evidence_node_model_requires_source_location_fields():
+    node = EvidenceNodeModel(
+        id="证据:test",
+        name="一枝黄花条目证据",
+        source="huggingface",
+        raw_text="一枝黄花\nYizhihuanghua",
+        source_provider="huggingface",
+        dataset_name="ZJUFanLab/TCMChat-dataset-600k",
+        file_path="pretrain/train/books/national_standard/2022年中药药典.txt",
+        entry_title="一枝黄花",
+        line_start=1,
+        line_end=21,
+        chunk_hash="abc123",
+    )
+
+    assert node.type == NodeType.EVIDENCE
+    assert node.file_path.endswith("2022年中药药典.txt")

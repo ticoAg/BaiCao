@@ -4,6 +4,23 @@ from .base import PipelineStepContext, build_preview_response, extract_candidate
 
 
 def build_extract_preview(context: PipelineStepContext):
+    if context.processed_bundle is not None:
+        bundle = context.processed_bundle
+        return build_preview_response(
+            context=context,
+            step=PipelineStepKey.EXTRACT,
+            summary="药典条目结构化抽取预览已生成",
+            preview_kind="extraction_candidates",
+            preview_payload={
+                "bundle_stats": bundle.stats,
+                "entry_count": bundle.stats.get("entries_processed", 0),
+                "entry_titles": bundle.stats.get("entry_titles", []),
+            },
+            warnings=bundle.warnings,
+            errors=bundle.errors,
+            next_step_ready=not bundle.errors,
+        )
+
     normalized_text = get_normalized_text(context)
     candidates = [
         {

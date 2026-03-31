@@ -5,6 +5,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.export.service import ExportService, Neo4jGraphWriter, SQLAlchemyExportStorage
 from app.pipeline.materialization import SourceMaterializationService
+from app.pipeline.processor_runtime import build_processor_runtime
 from app.pipeline.service import PipelineService
 from app.pipeline.storage import SQLAlchemyPipelineStorage
 from app.pipeline.uploads import SourceUploadService
@@ -41,6 +42,7 @@ async def get_pipeline_service(
         review_service=review_service,
         export_service=export_service,
         materialization_service=SourceMaterializationService(settings.pipeline_source_storage_dir),
+        processor_runtime=build_processor_runtime(),
     )
 
 
