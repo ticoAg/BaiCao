@@ -1,23 +1,68 @@
 # 白草药坛 BaiCao ShiTan
 
-可溯源、可解释、可验证的中药材知识图谱智能问答系统。
+面向中医药场景的 Agent 驱动可信知识搜集与利用平台。
 
 ![Status](https://img.shields.io/badge/status-MVP%20early-f59e0b)
 ![Architecture](https://img.shields.io/badge/architecture-Modular%20Monolith-2563eb)
 ![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20Neo4j%20%7C%20PostgreSQL-0f766e)
-![LLM](https://img.shields.io/badge/LLM-LangChain%20%2B%20OpenAI-7c3aed)
+![LLM](https://img.shields.io/badge/LLM-Agent%20Workflow%20%2B%20OpenAI-7c3aed)
 
-> 当前阶段：MVP 早期实现中。仓库内已具备 monorepo 骨架、基础设施编排、多条可复现主链路、前端工作台页面和 Neo4j 样例数据，但距离生产可用仍有较大差距。
+> 白草聚焦的不是“再做一个中医药聊天页面”，而是把中医药领域里高密度、强关联、检索成本高的知识，变成可高效搜集、快速利用、持续沉淀、结果可信的知识资产。
 
-## 一页看懂
+## 白草解决什么问题
 
-- 定位：把中药材问答从“黑盒回答”升级为“图谱支撑 + 推理可见 + 证据可查 + 专家可审”的可信知识系统
-- 架构：以 FastAPI 为应用入口，Neo4j 承担图谱查询，PostgreSQL 承担结构化事务数据，React 提供问答与探索界面
-- 现状：Graph Workbench、智能问答、验证闭环、数据处理工作台、共享知识模型与 review/export 持久化都已有主链路验收；完整溯源、专家权限和事件驱动仍在持续建设
-- 适合谁：中医师、执业药师、研究者，以及关心知识图谱问答和可信 AI 的开发者
+中医药知识天然具有几个难点：
+
+- 信息密度高，同一药材往往牵连功效、性味、归经、配伍、成分、来源、炮制、禁忌等多层信息
+- 来源分散，知识散落在标准、古籍、教材、论文、经验总结与业务资料中
+- 关系复杂，很多问题不是“搜到一条答案”就结束，而是要继续比较、追溯、串联和判断
+- 人工成本高，检索、整理、比对、复核与再利用常常要消耗大量专家和研究人员时间
+
+白草希望解决的，正是这类“知识工作效率低、复用成本高、结果可信度不透明”的问题。
+
+## 白草的核心价值
+
+- 高效：让知识搜集、检索、关联、整理与复用从“人肉翻找”转向结构化工作流
+- 低成本：减少在多来源资料和多页面工具之间来回切换的人力投入
+- 兼顾广度与深度：既能快速定位相关知识，也能沿图谱关系继续深入追查上下文
+- 可信：尽量保留来源、证据、推理上下文与验证状态，而不是只给黑盒结论
+
+## 白草是什么
+
+白草是一个围绕中医药知识场景构建的产品化平台，不只回答问题，也帮助团队完成知识的持续搜集、组织、验证与利用。
+
+它把以下能力组合在一起：
+
+- 用图谱组织药材、功效、成分、来源、关系与路径
+- 用 Agent 执行检索、归纳、串联、比对和知识利用任务
+- 用可追溯、可解释、可验证机制提升结果可信度
+- 用工作台形态承接问答、图谱探索、验证与数据处理
+
+## 为什么是 Agent + 图谱
+
+传统搜索更擅长“找到片段”，但不擅长把片段快速转成可利用结论。白草把 Agent 与图谱结合，是因为它们分别擅长两件互补的事：
+
+- 图谱负责表达实体、关系、路径和上下文，天然适合处理中医药知识的强关联结构
+- Agent 负责把“查、找、串、比、整、用”串成任务流程，减少重复人工操作
+- 二者结合后，更适合支持从一次问题出发，逐步扩展到证据、关联关系和后续利用动作
+- 再叠加验证与溯源机制，能让结果不只更快，也更容易被复核和复用
+
+## 适合谁
+
+- 中医药研究、内容与知识工程团队
+- 需要整理和复用中医药知识资产的机构
+- 关注知识图谱、可信 AI、Agent 工作流的产品与技术团队
+- 需要在中医药场景里做更高效知识检索与探索的专业用户
+
+## 当前阶段
+
+当前仓库处于 `MVP early` 阶段，已经具备可运行的 monorepo 骨架、基础设施编排、Neo4j 样例数据、问答与图谱相关主链路，以及验证、数据处理、review/export 等工作台能力。
+
+这意味着白草已经不是纯概念草案，但距离生产级产品仍有明显距离。完整溯源闭环、专家治理、事件驱动与更完整监控仍在持续建设中。
 
 ## 快速导航
 
+- 项目与阶段入口：`README.md`
 - 架构入口：`docs/architecture/README.md`
 - 系统总览：`docs/architecture/system-overview.md`
 - 数据模型：`docs/architecture/data-model.md`
@@ -25,193 +70,8 @@
 - 数据处理工作台：`docs/architecture/data-pipeline-workbench.md`
 - 共享知识模型 / 数据采集：`docs/architecture/knowledge-model-and-ingestion.md`
 - 验收入口：`docs/acceptance/README.md`
-- brainstorm：`docs/_dev/brainstorm/README.md`
+- brainstorm 入口：`docs/_dev/brainstorm/README.md`
 - 实施计划入口：`docs/superpowers/README.md`
-
-## 项目定位
-
-白草药坛希望解决的不是“再做一个中药材问答页面”，而是把中药材知识从黑盒答案，升级为一套可追踪、可审查、可探索的知识系统。
-
-传统问答产品通常只能给出结论，用户难以继续追问：
-
-- 这条结论来自哪里？
-- 模型为什么这样回答？
-- 这条知识是否经过专家审查？
-- 药材、功效、成分、归经之间还能看到哪些关联？
-
-白草药坛的目标，是把这些问题放到产品主路径里，而不是当成附加信息。
-
-## 核心价值
-
-- 可溯源：答案尽量关联到来源、证据和引用链路
-- 可解释：回答不仅给结果，还展示推理链和图谱上下文
-- 可验证：知识默认未验证，支持专家审查与状态透明化
-- 可探索：用户不仅能问答，还能浏览图谱、查看路径和关系
-
-## 愿景与目标用户
-
-面向的不是单一“聊天用户”，而是多类对知识可信度要求很高的角色：
-
-- 中医师：需要高可信度的临床参考
-- 执业药师：需要明确的用药依据和风险提示
-- 研究者：需要证据链、关系网络和可追踪来源
-- 普通用户：需要更容易理解、但不过度神化的中药材知识解释
-
-从产品视角，本项目的长期形态是：
-
-1. 用 Neo4j 组织中药材知识图谱
-2. 用 PostgreSQL 保存结构化实体、验证记录、会话与用户数据
-3. 用 FastAPI 提供图谱、问答、验证、溯源接口
-4. 用 React 提供问答、图谱探索、验证工作台等前端视图
-5. 用 LLM 结合图谱上下文生成更可信、更可解释的回答
-
-## 当前项目状态
-
-截至目前，仓库中的事实状态大致如下：
-
-| 模块 | 当前状态 | 说明 |
-| --- | --- | --- |
-| Monorepo 骨架 | 已有 | `packages/`、`infra/`、`docs/` 与 `docs/superpowers/` 已建立 |
-| 基础设施编排 | 已有 | Docker Compose 管理 PostgreSQL、Neo4j、Redis、MinIO，本地 `make` + `tmux` 管理 API 与 Web |
-| 后端 API | 多条主链路可验证 | 已有 `health`、`herbs`、`graph`、`verifications`、`chat`、`pipeline`、`review/export` 路由 |
-| 前端页面 | 核心工作台可用 | 已有首页、搜索、图谱、Graph Workbench、验证、问答、数据处理页面 |
-| 图谱数据 | 样例可用 | 已有 Neo4j 约束脚本和“陈皮”样例图谱种子数据 |
-| 共享知识模型 / 数据采集 | 主链路可验证 | `packages/knowledge_model/` 与 `packages/data_ingestion/` 已落地并有验收证据 |
-| 数据导入 / 导出 | 主路径可用 | 已有 CSV / JSONL 导入器、共享导入记录、显式 export execute 与 JSONL snapshot |
-| SSE 问答 | 初版可用 | `POST /api/v1/chat/stream` 与前端流式消费已落地 |
-| 溯源链路 | 进行中 | 更完整证据链与来源联动仍在继续实现 |
-| 专家审查治理 | 进行中 | 验证申请与审核主链已通过，完整角色/权限 / 审计流未完成 |
-| 事件驱动 / 缓存 / 监控 | 规划中 | 已写入架构草案，尚未在仓库内完整落地 |
-
-换句话说：这是一个“方向明确、主干已立、能力还在持续生长”的仓库，而不是一个已经封版的成品。
-
-## 目标架构
-
-```mermaid
-flowchart LR
-    U[用户 / 研究者 / 专家] --> W[React Web]
-    W --> A[FastAPI API]
-
-    subgraph App[Application Modules]
-        KG[kg 图谱查询]
-        QA[qa 智能问答]
-        RV[review 专家审查]
-        PV[provenance 溯源]
-    end
-
-    A --> KG
-    A --> QA
-    A --> RV
-    A --> PV
-
-    KG <--> N[(Neo4j)]
-    QA <--> P[(PostgreSQL)]
-    RV <--> P
-    PV <--> P
-    A <--> R[(Redis)]
-    QA --> O[OpenAI / LangChain]
-```
-
-这套设计遵循当前 brainstorm 文档中确定的几个原则：
-
-- 架构形态优先采用 Modular Monolith，先保证开发效率和认知清晰
-- 知识图谱与结构化事务数据分库存储，职责边界明确
-- 溯源、审查、问答不是孤立功能，而是围绕同一知识事实协同工作
-- 后续演进上，为事件驱动、缓存和异步任务预留接口
-
-## 一条回答是如何形成的
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User as 用户
-    participant Web as Web 前端
-    participant API as FastAPI
-    participant Graph as Graph Service
-    participant Neo4j as Neo4j
-    participant Chat as Chat Service
-
-    User->>Web: 输入问题
-    Web->>API: 提交问题
-    API->>Chat: 解析问题
-    Chat->>Graph: 请求相关图谱
-    Graph->>Neo4j: 查询实体/关系
-    Neo4j-->>Graph: 返回子图
-    Graph-->>Chat: 返回图谱上下文
-    Chat-->>API: 生成回答 + 推理链 + 来源
-    API-->>Web: 返回结构化响应
-    Web-->>User: 展示答案、推理链、图谱预览
-```
-
-在最终目标里，系统返回的不只是自然语言答案，还应尽量同时返回：
-
-- 相关实体
-- 推理链步骤
-- 来源列表
-- 图谱预览
-- 验证状态
-
-## 仓库结构
-
-```text
-BaiCao/
-├── packages/
-│   ├── api/              # FastAPI 后端
-│   ├── web/              # React 前端
-│   ├── shared/           # 跨端共享类型与工具
-│   ├── knowledge_model/  # 共享知识模型 Python 包
-│   ├── data_ingestion/   # 数据采集边界包
-│   └── db/               # 数据脚本、Cypher、导入数据
-├── infra/            # Docker Compose 与基础设施配置
-├── docs/             # 架构、验收、研发草案与 superpowers 文档
-│   ├── architecture/ # 稳定架构文档
-│   ├── acceptance/   # 验收文档
-│   ├── _dev/         # 草案与 brainstorm
-│   └── superpowers/  # spec / plan 与仓库级实施任务系统
-└── AGENTS.md         # 仓库级 AI Agent 研发规范
-```
-
-## 已有能力一览
-
-### 后端
-
-当前后端已经有一批可继续演进的主链路接口：
-
-- `GET /health`：健康检查
-- `GET /api/v1/herbs/`：药材列表
-- `GET /api/v1/herbs/search/{name}`：按名称查询药材
-- `GET /api/v1/graph/herb/{name}`：按药材获取图谱
-- `GET /api/v1/graph/search`：图谱节点搜索
-- `GET /api/v1/graph/path`：查询两个节点之间的路径
-- `GET /api/v1/graph/pending`：获取待验证节点或关系
-- `GET /api/v1/graph/meta/*`：图谱 metadata / schema 摘要
-- `GET/POST /api/v1/verifications/...`：验证申请与审核
-- `POST /api/v1/chat/question`：原型版智能问答接口
-- `POST /api/v1/chat/stream`：SSE 流式问答接口
-- `POST /api/v1/pipeline/runs`：数据处理 run 创建
-- `POST /api/v1/pipeline/runs/{run_id}/steps/{step}/preview`：七步预览
-- `POST /api/v1/pipeline/runs/{run_id}/review-session`：人工确认会话
-- `POST /api/v1/pipeline/runs/{run_id}/export-executions`：显式导出执行
-
-### 前端
-
-当前前端已具备基础导航和一批可实际验证的页面：
-
-- 首页
-- 知识搜索页
-- 图谱浏览页
-- Graph Workbench
-- 验证管理页
-- 智能问答页
-- 数据处理工作台
-
-### 数据与脚本
-
-- Neo4j 初始化约束脚本
-- “陈皮”样例图谱种子数据
-- `herbs.csv` / `herbs.jsonl` 样例导入文件
-- CSV / JSONL 导入 CLI（支持 dry-run）
-- 共享知识模型包与数据采集边界包
 
 ## 快速开始
 
@@ -411,6 +271,39 @@ uv run python -m app.importers.cli ../db/import/herbs.csv --dry-run
 uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 ```
 
+## 技术概览
+
+当前实现采用以 FastAPI 为应用入口、React 为前端工作台、Neo4j 为图谱查询底座、PostgreSQL 为结构化事务与业务数据底座的组合。
+
+```mermaid
+flowchart LR
+    U[用户 / 研究者 / 专家] --> W[React Web]
+    W --> A[FastAPI API]
+    A --> KG[图谱查询 / 问答 / 验证 / 溯源服务]
+    KG <--> N[(Neo4j)]
+    A <--> P[(PostgreSQL)]
+    A <--> R[(Redis)]
+    A --> O[OpenAI]
+```
+
+在产品路径上，白草追求的是“知识搜集与利用效率”与“结果可信度”同时成立，而不是只追求更像聊天机器人的交互体验。
+
+## 仓库结构
+
+```text
+BaiCao/
+├── packages/
+│   ├── api/              # FastAPI 后端
+│   ├── web/              # React 前端
+│   ├── shared/           # 跨端共享类型与工具
+│   ├── knowledge_model/  # 共享知识模型 Python 包
+│   ├── data_ingestion/   # 数据采集边界包
+│   └── db/               # 数据脚本、Cypher、导入数据
+├── infra/                # Docker Compose 与基础设施配置
+├── docs/                 # 架构、验收、草案与 superpowers 文档
+└── AGENTS.md             # 仓库级 AI Agent 协作规范
+```
+
 ## 知识可信度模型
 
 白草药坛不是把“模型输出”直接当成事实，而是希望让知识经历一个显式生命周期：
@@ -431,38 +324,6 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 
 它们服务的是同一个问题：如何让一条知识“可信地被使用”。
 
-## 近期路线图
-
-结合 `README.md`、`docs/superpowers/plans/` 实施计划和 `docs/_dev/brainstorm`，当前比较清晰的研发路线是：
-
-### Phase 1：基础骨架
-
-- monorepo 结构
-- FastAPI / React 初始化
-- Docker Compose 基础依赖
-- Neo4j 初始 schema 与样例数据
-
-### Phase 2：核心能力
-
-- 药材、来源、证据、验证数据模型
-- 图谱查询服务
-- 基础问答接口
-- 基础图谱可视化
-
-### Phase 3：可信问答闭环
-
-- 推理链展示
-- 溯源链路查询
-- 专家审查工作台
-- 验证状态反哺图谱与回答
-
-### Phase 4：增强能力
-
-- Redis 缓存
-- 事件驱动模块集成
-- 多轮会话持久化与更强来源选择
-- 更完整的监控、追踪和性能优化
-
 ## 文档入口
 
 - 项目总入口：`README.md`
@@ -474,17 +335,6 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 - 验收文档：`docs/acceptance/README.md`
 - brainstorm 总索引：`docs/_dev/brainstorm/README.md`
 
-## 适合谁关注这个仓库
-
-如果你关心以下任一方向，这个仓库都值得继续跟进：
-
-- 图谱驱动问答
-- AI + 知识库 + 溯源的可信系统设计
-- 中药材知识数字化
-- Neo4j 与应用层联动
-- 数据工作台 / review / export 持久化
-- 专家审查与 AI 生成内容协同
-
 ## 当前限制
 
 请把当前仓库视为“持续建设中的研发仓库”，而不是开箱即用的生产系统。
@@ -495,12 +345,4 @@ uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 - 完整鉴权、权限模型和专家工作流尚未闭环
 - 完整溯源链路、跨模块审计与更多集成回归仍需继续补强
 - 问答质量依赖后续图谱质量、提示词工程和审查机制
-- 部分能力已经在 brainstorm / architecture 文档中设计，但尚未全部代码化
-
-如果你希望参与推进，推荐先从以下入口阅读：
-
-1. `README.md`
-2. `docs/superpowers/README.md`
-3. `docs/_dev/brainstorm/README.md`
-4. `docs/architecture/system-overview.md`
-5. `docs/superpowers/plans/` 下的实施计划文件
+- 部分能力已经在 architecture / brainstorm 文档中设计，但尚未全部代码化
