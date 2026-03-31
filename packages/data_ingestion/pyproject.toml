@@ -5,6 +5,7 @@ description = "Data ingestion boundary for BaiCao"
 requires-python = ">=3.12"
 dependencies = [
     "bai-cao-knowledge-model",
+    "openai>=2.29.0",
 ]
 
 [build-system]

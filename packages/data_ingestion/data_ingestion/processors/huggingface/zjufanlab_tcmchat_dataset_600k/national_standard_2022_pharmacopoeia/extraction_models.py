@@ -16,6 +16,11 @@ class PharmacopoeiaHerbExtraction(BaseModel):
     herb_name: str = Field(description="药材名称")
     pinyin_name: str | None = Field(default=None, description="拼音名")
     latin_name: str | None = Field(default=None, description="拉丁名或规范名")
+    base_description: str | None = Field(default=None, description="基础描述文本")
+    indications: list[str] = Field(default_factory=list, description="病证或适应症列表")
+    usage_text: str | None = Field(default=None, description="用法与用量")
+    storage_text: str | None = Field(default=None, description="贮藏")
+    caution_text: str | None = Field(default=None, description="注意事项")
 
     model_config = ConfigDict(use_enum_values=False)
 
@@ -28,6 +33,10 @@ class PharmacopoeiaPreparedPieceExtraction(BaseModel):
     nature: str | None = Field(default=None, description="药性")
     meridians: list[str] = Field(default_factory=list, description="归经列表")
     efficacies: list[str] = Field(default_factory=list, description="功效列表")
+    indications: list[str] = Field(default_factory=list, description="病证或适应症列表")
+    usage_text: str | None = Field(default=None, description="用法与用量")
+    storage_text: str | None = Field(default=None, description="贮藏")
+    caution_text: str | None = Field(default=None, description="注意事项")
 
     model_config = ConfigDict(use_enum_values=False)
 
@@ -35,5 +44,7 @@ class PharmacopoeiaPreparedPieceExtraction(BaseModel):
 class PharmacopoeiaExtractionResult(BaseModel):
     herb: PharmacopoeiaHerbExtraction = Field(description="药材抽取结果")
     prepared_piece: PharmacopoeiaPreparedPieceExtraction | None = Field(default=None, description="饮片抽取结果")
+    warnings: list[str] = Field(default_factory=list, description="抽取警告")
+    confidence_notes: str | None = Field(default=None, description="抽取置信说明")
 
     model_config = ConfigDict(use_enum_values=False)
