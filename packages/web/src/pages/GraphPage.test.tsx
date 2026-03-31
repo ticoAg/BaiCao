@@ -178,7 +178,7 @@ describe("GraphPage", () => {
       "/graph/人参",
     );
 
-    expect(screen.getByText("Database information")).toBeInTheDocument();
+    expect(screen.getByText("图数据库信息")).toBeInTheDocument();
     expect(screen.getByTestId("graph-canvas-workspace")).toBeInTheDocument();
     expect(screen.getByText("图谱概览")).toBeInTheDocument();
   });

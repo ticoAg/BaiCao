@@ -8,6 +8,7 @@ from .helpers import assert_json_keys, assert_status
 from app.main import app
 from app.core.database import get_db
 from app.models.pipeline import PipelineRunModel, PipelineStepArtifactModel
+from app.pipeline.materialization import get_repo_root
 
 
 def build_zip(path: Path, files: dict[str, str]) -> None:
@@ -128,7 +129,7 @@ class TestPipelinePreviewStep:
 
     @pytest.mark.asyncio
     async def test_source_preview_returns_readme_content(self, client):
-        upload_root = Path(".tmp/pipeline_sources/uploads")
+        upload_root = get_repo_root() / "tmp/data/uploads"
         upload_root.mkdir(parents=True, exist_ok=True)
         uploaded = upload_root / "upload-demo.zip"
         build_zip(uploaded, {"README.md": "# demo\n", "data.jsonl": '{"name":"陈皮"}\n'})
@@ -305,7 +306,7 @@ class TestPipelineKnowledgeModelMapping:
         data = resp.json()
         assert data["preview_kind"] == "graph_mapping"
         assert data["preview_payload"]["validation"]["is_valid"] is True
-        assert data["preview_payload"]["nodes"][0]["type"] == "Herb"
+        assert data["preview_payload"]["nodes"][0]["type"] == "药材"
         assert data["preview_payload"]["nodes"][0]["label"] == "药材"
 
     @pytest.mark.asyncio

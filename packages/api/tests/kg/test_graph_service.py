@@ -915,7 +915,7 @@ async def test_get_node_by_name(graph_service):
     result = await graph_service.get_node_by_name("DangGui", "Herb")
     assert result is not None
     assert result["name"] == "DangGui"
-    assert result["labels"] == ["Herb"]
+    assert result["labels"] == ["药材"]
 
 
 @pytest.mark.unit

@@ -43,7 +43,7 @@ audience: developer
 - 后端依赖：`packages/api`
 - 样例数据：`packages/db/import/herbs.csv`、`packages/db/import/herbs.jsonl`
 - 共享模型：`packages/knowledge_model/knowledge_model/`
-- 来源存储目录：`packages/api/.tmp/pipeline_sources`
+- 来源存储目录：`tmp/data`
 
 ### 最小验证命令
 

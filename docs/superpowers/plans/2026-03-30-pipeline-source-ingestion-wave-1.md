@@ -266,7 +266,7 @@ Expected:
 
 ```python
 # packages/api/app/core/config.py
-pipeline_source_storage_dir: str = ".tmp/pipeline_sources"
+pipeline_source_storage_dir: str = "tmp/data"
 ```
 
 ```python
