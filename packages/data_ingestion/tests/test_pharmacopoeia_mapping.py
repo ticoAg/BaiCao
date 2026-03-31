@@ -49,11 +49,51 @@ def test_mapping_builds_herb_piece_evidence_bundle():
             nature="凉",
             meridians=["肺经", "肝经"],
             efficacies=["清热解毒", "疏散风热"],
+            indications=["喉痹", "风热感冒"],
         ),
     )
 
     bundle = build_pharmacopoeia_bundle(block, parsed, extraction)
 
-    assert {node.name for node in bundle.nodes} >= {"一枝黄花", "一枝黄花饮片", "辛", "苦", "肺经", "肝经"}
+    assert {node.name for node in bundle.nodes} >= {"一枝黄花", "一枝黄花饮片", "辛", "苦", "肺经", "肝经", "喉痹", "风热感冒"}
     assert any(getattr(edge, "type", None) == EdgeType.HAS_PREPARED_FORM for edge in bundle.edges)
+    assert any(getattr(edge, "type", None) == EdgeType.TREATS for edge in bundle.edges)
     assert any(getattr(node, "type", None) == NodeType.EVIDENCE for node in bundle.nodes)
+
+
+def test_mapping_falls_back_to_herb_indications_when_piece_absent():
+    parsed = PharmacopoeiaEntrySections(
+        title_zh="八角茴香",
+        header_lines=[],
+        base_description="本品为木兰科植物八角茴香的干燥成熟果实。",
+        sections={},
+        piece_sections={},
+        raw_text="八角茴香\n本品为木兰科植物八角茴香的干燥成熟果实。",
+    )
+    block = RawEntryBlock(
+        entry_id="entry-2",
+        entry_title="八角茴香",
+        raw_text=parsed.raw_text,
+        start_line=1,
+        end_line=2,
+        context=SourceFileContext(
+            provider="huggingface",
+            dataset="ZJUFanLab/TCMChat-dataset-600k",
+            file_path="pretrain/train/books/national_standard/2022年中药药典.txt",
+            local_abspath="/tmp/2022.txt",
+            file_size=128,
+            line_count=2,
+        ),
+    )
+    extraction = PharmacopoeiaExtractionResult(
+        herb=PharmacopoeiaHerbExtraction(
+            herb_name="八角茴香",
+            indications=["寒疝腹痛", "胃寒呕吐"],
+        ),
+        prepared_piece=None,
+    )
+
+    bundle = build_pharmacopoeia_bundle(block, parsed, extraction)
+
+    assert {node.name for node in bundle.nodes} >= {"八角茴香", "寒疝腹痛", "胃寒呕吐"}
+    assert any(edge.type == EdgeType.TREATS and edge.source == "药材:八角茴香" for edge in bundle.edges)

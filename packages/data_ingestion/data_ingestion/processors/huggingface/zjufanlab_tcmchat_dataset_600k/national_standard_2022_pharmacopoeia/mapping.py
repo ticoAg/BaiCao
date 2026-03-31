@@ -4,7 +4,9 @@ import hashlib
 
 from knowledge_model.constants import EdgeType, NodeType
 from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from knowledge_model.labels import EDGE_TYPE_LABELS
 from knowledge_model.node_models import (
+    DiseaseNodeModel,
     EfficacyNodeModel,
     EvidenceNodeModel,
     FlavorNodeModel,
@@ -31,24 +33,23 @@ def build_evidence_id(block: RawEntryBlock) -> str:
 
 
 def build_flavor_nodes(extraction: PharmacopoeiaExtractionResult) -> list[FlavorNodeModel]:
-    piece = extraction.prepared_piece
-    if piece is None:
-        return []
-    return [FlavorNodeModel(id=f"性味:{name}", name=name, source="huggingface") for name in piece.flavors]
+    names = extraction.prepared_piece.flavors if extraction.prepared_piece is not None else []
+    return [FlavorNodeModel(id=f"性味:{name}", name=name, source="huggingface") for name in names]
 
 
 def build_meridian_nodes(extraction: PharmacopoeiaExtractionResult) -> list[MeridianNodeModel]:
-    piece = extraction.prepared_piece
-    if piece is None:
-        return []
-    return [MeridianNodeModel(id=f"归经:{name}", name=name, source="huggingface") for name in piece.meridians]
+    names = extraction.prepared_piece.meridians if extraction.prepared_piece is not None else []
+    return [MeridianNodeModel(id=f"归经:{name}", name=name, source="huggingface") for name in names]
 
 
 def build_efficacy_nodes(extraction: PharmacopoeiaExtractionResult) -> list[EfficacyNodeModel]:
-    piece = extraction.prepared_piece
-    if piece is None:
-        return []
-    return [EfficacyNodeModel(id=f"功效:{name}", name=name, source="huggingface") for name in piece.efficacies]
+    names = extraction.prepared_piece.efficacies if extraction.prepared_piece is not None else []
+    return [EfficacyNodeModel(id=f"功效:{name}", name=name, source="huggingface") for name in names]
+
+
+def build_disease_nodes(extraction: PharmacopoeiaExtractionResult) -> list[DiseaseNodeModel]:
+    indications = extraction.prepared_piece.indications if extraction.prepared_piece is not None else extraction.herb.indications
+    return [DiseaseNodeModel(id=f"病证:{name}", name=name, source="huggingface") for name in indications]
 
 
 def build_relation_edges(
@@ -61,7 +62,15 @@ def build_relation_edges(
     edges: list[BundleEdge] = [
         BundleEdge(source=herb.id, target=evidence.id, type=EdgeType.SUPPORTED_BY),
     ]
+    target_entity_id = piece.id if piece is not None else herb.id
+    flavor_names = extraction.prepared_piece.flavors if extraction.prepared_piece is not None else []
+    meridian_names = extraction.prepared_piece.meridians if extraction.prepared_piece is not None else []
+    efficacy_names = extraction.prepared_piece.efficacies if extraction.prepared_piece is not None else []
+    indication_names = extraction.prepared_piece.indications if extraction.prepared_piece is not None else extraction.herb.indications
+
     if piece is None:
+        for name in indication_names:
+            edges.append(BundleEdge(source=target_entity_id, target=f"病证:{name}", type=EdgeType.TREATS))
         return edges
 
     edges.extend(
@@ -70,12 +79,14 @@ def build_relation_edges(
             BundleEdge(source=piece.id, target=evidence.id, type=EdgeType.SUPPORTED_BY),
         ]
     )
-    for name in extraction.prepared_piece.flavors:
-        edges.append(BundleEdge(source=piece.id, target=f"性味:{name}", type=EdgeType.HAS_FLAVOR))
-    for name in extraction.prepared_piece.meridians:
-        edges.append(BundleEdge(source=piece.id, target=f"归经:{name}", type=EdgeType.ENTERS_MERIDIAN))
-    for name in extraction.prepared_piece.efficacies:
-        edges.append(BundleEdge(source=piece.id, target=f"功效:{name}", type=EdgeType.HAS_EFFICACY))
+    for name in flavor_names:
+        edges.append(BundleEdge(source=target_entity_id, target=f"性味:{name}", type=EdgeType.HAS_FLAVOR))
+    for name in meridian_names:
+        edges.append(BundleEdge(source=target_entity_id, target=f"归经:{name}", type=EdgeType.ENTERS_MERIDIAN))
+    for name in efficacy_names:
+        edges.append(BundleEdge(source=target_entity_id, target=f"功效:{name}", type=EdgeType.HAS_EFFICACY))
+    for name in indication_names:
+        edges.append(BundleEdge(source=target_entity_id, target=f"病证:{name}", type=EdgeType.TREATS))
     return edges
 
 
@@ -92,6 +103,15 @@ def build_import_records(
             node_name=herb.name,
             source=herb.source or "huggingface",
             evidence_refs=[evidence.id],
+            properties={
+                "pinyin_name": extraction.herb.pinyin_name,
+                "latin_name": extraction.herb.latin_name,
+                "base_description": extraction.herb.base_description,
+                "indications": extraction.herb.indications,
+                "usage_text": extraction.herb.usage_text,
+                "storage_text": extraction.herb.storage_text,
+                "caution_text": extraction.herb.caution_text,
+            },
             edges=[GraphImportEdge(type=EdgeType.SUPPORTED_BY, target=evidence.name)],
         ),
         GraphImportRecord(
@@ -113,6 +133,14 @@ def build_import_records(
                 node_name=piece.name,
                 source=piece.source or "huggingface",
                 evidence_refs=[evidence.id],
+                properties={
+                    "prepared_from_herb": piece.prepared_from_herb,
+                    "processing_method_text": extraction.prepared_piece.processing_text,
+                    "usage_text": extraction.prepared_piece.usage_text,
+                    "storage_text": extraction.prepared_piece.storage_text,
+                    "caution_text": extraction.prepared_piece.caution_text,
+                    "indications": extraction.prepared_piece.indications,
+                },
                 edges=[GraphImportEdge(type=EdgeType.HAS_PREPARED_FORM, target=piece.name)],
             )
         )
@@ -156,12 +184,25 @@ def build_pharmacopoeia_bundle(
     flavor_nodes = build_flavor_nodes(extraction)
     meridian_nodes = build_meridian_nodes(extraction)
     efficacy_nodes = build_efficacy_nodes(extraction)
+    disease_nodes = build_disease_nodes(extraction)
 
     return UnifiedGraphBundle(
-        nodes=[evidence, herb, *([piece] if piece is not None else []), *flavor_nodes, *meridian_nodes, *efficacy_nodes],
+        nodes=[
+            evidence,
+            herb,
+            *([piece] if piece is not None else []),
+            *flavor_nodes,
+            *meridian_nodes,
+            *efficacy_nodes,
+            *disease_nodes,
+        ],
         edges=build_relation_edges(herb=herb, piece=piece, evidence=evidence, extraction=extraction),
         records=build_import_records(herb=herb, piece=piece, evidence=evidence, extraction=extraction),
         warnings=[],
         errors=[],
         stats={"entries_processed": 1, "entry_titles": [block.entry_title]},
     )
+
+
+def edge_type_to_label(edge_type: EdgeType) -> str:
+    return EDGE_TYPE_LABELS.get(edge_type, getattr(edge_type, "value", str(edge_type)))

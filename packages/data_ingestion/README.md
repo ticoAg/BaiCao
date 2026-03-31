@@ -19,3 +19,44 @@
 
 - `ExtractionCandidate`：候选抽取结果，携带目标 `NodeType`、名称、来源和可选属性
 - `SourceDocument`：来源适配后得到的最小文本单元
+
+## 药典条目 LLM dry-run
+
+可以对 `2022年中药药典.txt` 先做小范围 dry-run，观察条目切段、section 解析、LLM 输出和图谱 bundle 摘要：
+
+```bash
+cd packages/data_ingestion
+uv run python -m data_ingestion.cli.pharmacopoeia_dry_run \
+  --dataset ZJUFanLab/TCMChat-dataset-600k \
+  --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
+  --local-path /abs/path/to/BaiCao/.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
+  --limit 10 \
+  --concurrency 10
+```
+
+当前 prompt 会要求模型返回完整 JSON 字段集合；若证据块里没有对应内容，字段也必须保留并返回 `null` 或空数组。
+
+CLI 会把每条条目的 LLM 耗时和原始响应摘要打印到终端，并在 `summary.json` 中落盘聚合统计。若要专门调试真实上游链路，建议先跑一条并显式设置硬超时：
+
+```bash
+cd packages/data_ingestion
+uv run python -m data_ingestion.cli.pharmacopoeia_dry_run \
+  --dataset ZJUFanLab/TCMChat-dataset-600k \
+  --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
+  --local-path /abs/path/to/BaiCao/.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
+  --limit 1 \
+  --timeout-seconds 45 \
+  --output-dir tmp/pharmacopoeia-dry-run/real-run-1
+```
+
+如果当前环境没有 `OPENAI_API_KEY`，可以先用假响应检查各环节落盘是否正常：
+
+```bash
+cd packages/data_ingestion
+uv run python -m data_ingestion.cli.pharmacopoeia_dry_run \
+  --dataset ZJUFanLab/TCMChat-dataset-600k \
+  --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
+  --local-path /abs/path/to/BaiCao/.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt \
+  --limit 10 \
+  --use-fake-response
+```
