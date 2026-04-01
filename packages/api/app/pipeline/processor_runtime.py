@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from data_ingestion.bundles import UnifiedGraphBundle
-from data_ingestion.routing import FileRouteKey, ProcessorRegistry
+from data_ingestion.routing import ProcessorRegistry
 from data_ingestion.source_models import RawEntryBlock, SourceFileContext
 from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.shared import (
     DATASET_NAME,
