@@ -1,7 +1,11 @@
+"""定义来源文件和条目块的统一中间模型。"""
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class SourceFileContext(BaseModel):
+    """描述单个来源文件在本地处理时所需的上下文信息。"""
+
     provider: str = Field(description="来源提供方")
     dataset: str = Field(description="来源数据集")
     file_path: str = Field(description="来源文件路径")
@@ -13,6 +17,8 @@ class SourceFileContext(BaseModel):
 
 
 class RawEntryBlock(BaseModel):
+    """表示从来源文件中切出的一个原始条目块。"""
+
     entry_id: str = Field(description="条目标识")
     entry_title: str = Field(description="条目标题")
     raw_text: str = Field(description="条目原文")

@@ -1,3 +1,5 @@
+"""覆盖药典 dry-run 产物落盘和并发行为。"""
+
 import asyncio
 import json
 import time
@@ -11,6 +13,8 @@ from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.nation
 
 
 def test_dry_run_writes_expected_artifacts(tmp_path):
+    """验证 dry-run 会生成调试所需的阶段性落盘文件。"""
+
     source = tmp_path / "sample.txt"
     source.write_text(
         (
@@ -43,6 +47,8 @@ def test_dry_run_writes_expected_artifacts(tmp_path):
 
 
 def test_dry_run_honors_entry_offset_and_persists_llm_debug_fields(tmp_path):
+    """验证 dry-run 支持 entry offset，并保留 LLM 调试字段。"""
+
     source = tmp_path / "sample.txt"
     source.write_text(
         (
@@ -83,8 +89,14 @@ def test_dry_run_honors_entry_offset_and_persists_llm_debug_fields(tmp_path):
 
 
 def test_dry_run_uses_chinese_edge_labels_and_supports_concurrency(tmp_path):
+    """验证 dry-run 并发执行时仍会输出中文边标签。"""
+
     class SlowTransport:
+        """用固定延迟模拟真实模型调用，验证并发调度是否生效。"""
+
         async def extract_json_text(self, *, system_prompt: str, user_payload: dict[str, object]) -> str:
+            """返回一份稳定的饮片抽取 JSON，便于断言映射结果。"""
+
             await asyncio.sleep(0.05)
             return (
                 '{"herb":{"herb_name":"一枝黄花"},"prepared_piece":{"piece_name":"一枝黄花饮片",'

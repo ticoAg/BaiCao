@@ -1,3 +1,5 @@
+"""覆盖药典条目章节解析逻辑。"""
+
 from data_ingestion.source_models import RawEntryBlock, SourceFileContext
 from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.national_standard_2022_pharmacopoeia.parsing import (
     parse_pharmacopoeia_entry,
@@ -5,6 +7,8 @@ from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.nation
 
 
 def test_parser_extracts_piece_sections():
+    """验证解析器能够正确拆出饮片章节内容。"""
+
     block = RawEntryBlock(
         entry_id="entry-1",
         entry_title="一枝黄花",

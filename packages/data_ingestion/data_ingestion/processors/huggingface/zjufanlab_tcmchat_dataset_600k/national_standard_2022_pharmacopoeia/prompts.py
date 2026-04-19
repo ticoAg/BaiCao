@@ -1,3 +1,5 @@
+"""维护药典条目抽取用的系统提示词和用户侧 payload 构造。"""
+
 PHARMACOPOEIA_EXTRACTION_SYSTEM_PROMPT = """
 你是白草药坛的数据抽取助手。
 输入是一条药材条目的完整证据原文块。
@@ -44,6 +46,8 @@ You must return strict json only.
 
 
 def build_pharmacopoeia_user_payload(sections) -> dict[str, object]:
+    """把条目章节对象压缩为当前 LLM 抽取阶段需要的最小输入。"""
+
     return {
         "entry_title": sections.title_zh,
         "evidence_text": sections.raw_text,

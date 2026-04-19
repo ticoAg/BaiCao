@@ -1,3 +1,5 @@
+"""定义图谱前处理阶段输出的统一 bundle 结构。"""
+
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -5,6 +7,8 @@ from knowledge_model.constants import EdgeType
 
 
 class BundleEdge(BaseModel):
+    """表示 bundle 内部的一条标准化边记录。"""
+
     source: str = Field(description="源节点标识")
     target: str = Field(description="目标节点标识")
     type: EdgeType = Field(description="边类型")
@@ -14,6 +18,8 @@ class BundleEdge(BaseModel):
 
 
 class UnifiedGraphBundle(BaseModel):
+    """聚合节点、边、导入记录和处理告警的统一输出对象。"""
+
     nodes: list[Any] = Field(default_factory=list, description="统一节点集合")
     edges: list[BundleEdge] = Field(default_factory=list, description="统一边集合")
     records: list[Any] = Field(default_factory=list, description="统一导入记录集合")

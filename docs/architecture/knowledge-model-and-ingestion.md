@@ -258,6 +258,35 @@ packages/knowledge_model/
 - 新增来源适配器
 - 新增规则抽取器
 - 新增 agent 抽取器
+
+### 9.2 数据集重跑与重置
+
+数据采集任务允许因为 prompt、抽取模型、正则切段或图谱映射优化而重新执行。为避免同一数据集多轮运行后在 Neo4j 中留下无法定位的旧关系，正式导入记录必须携带可清理的来源 scope。
+
+当前药典 ingest 的稳定做法是：
+
+- `GraphImportRecord.properties` 写入 `source_provider`、`dataset_name`、`file_path`、`entry_title`、`evidence_id`、`import_scope_key`
+- `GraphImportEdge.properties` 写入同一组 scope 字段
+- Neo4j 写关系时，若存在 `import_scope_key`，用它参与关系 `MERGE`
+- 重置时先删除该 scope 下的关系，再删除证据节点和无关系的孤立节点
+- 对旧版本不带 scope 的快照，使用快照中的 `source -> type -> target` 精确删除旧关系
+
+这让“优化处理方法后对某个数据集一键重跑”变成可恢复流程：
+
+```mermaid
+flowchart LR
+    A[选择 provider / dataset / file_path] --> B[删除 scope 关系]
+    B --> C[删除证据和孤立节点]
+    C --> D{是否有旧快照}
+    D -->|是| E[按 snapshot 删除旧边和孤立节点]
+    D -->|否| F[进入重跑]
+    E --> F[进入重跑]
+    F --> G[重新 LLM ingest]
+    G --> H[生成 GraphImportRecord JSONL]
+    H --> I[导入 Neo4j]
+```
+
+失败重跑不需要清理已成功条目。它只读取上一轮 `validated_extractions.jsonl` 中 `status != success` 的 `entry_key`，再按这些 key 从源文件重新切段和抽取。
 - 新增导出器
 - 在共享包中显式增加新的实体、关系或字段
 

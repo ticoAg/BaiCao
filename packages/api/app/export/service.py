@@ -177,18 +177,22 @@ class Neo4jGraphWriter:
 
             for edge in record.edges:
                 rel_type = EdgeType(getattr(edge.type, "value", edge.type)).value
+                rel_props = {"status": NodeStatus.PENDING.value, **edge.properties}
+                import_scope_key = rel_props.get("import_scope_key")
+                merge_fragment = " {import_scope_key: $import_scope_key}" if import_scope_key else ""
                 await cypher_query(
                     f"""
                     MATCH (source {{name: $source_name}})
                     MATCH (target {{name: $target_name}})
-                    MERGE (source)-[r:{rel_type}]->(target)
+                    MERGE (source)-[r:{rel_type}{merge_fragment}]->(target)
                     SET r += $props
                     RETURN r
                     """,
                     {
                         "source_name": record.node_name,
                         "target_name": edge.target,
-                        "props": {"status": NodeStatus.PENDING.value, **edge.properties},
+                        "import_scope_key": import_scope_key,
+                        "props": rel_props,
                     },
                 )
                 edges_written += 1

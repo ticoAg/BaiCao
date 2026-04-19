@@ -1,3 +1,5 @@
+"""存放药典文件处理链路共享的常量和路由键。"""
+
 from data_ingestion.routing import FileRouteKey
 
 

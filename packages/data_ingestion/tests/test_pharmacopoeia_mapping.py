@@ -1,3 +1,5 @@
+"""覆盖药典抽取结果到图谱 bundle 的映射行为。"""
+
 from data_ingestion.source_models import RawEntryBlock, SourceFileContext
 from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.national_standard_2022_pharmacopoeia.extraction_models import (
     PharmacopoeiaEntrySections,
@@ -12,6 +14,8 @@ from knowledge_model.constants import EdgeType, NodeType
 
 
 def test_mapping_builds_herb_piece_evidence_bundle():
+    """验证完整抽取结果会映射出药材、饮片、证据及其关系。"""
+
     parsed = PharmacopoeiaEntrySections(
         title_zh="一枝黄花",
         header_lines=["Yizhihuanghua", "SOLIDAGINISHERBA"],
@@ -59,9 +63,32 @@ def test_mapping_builds_herb_piece_evidence_bundle():
     assert any(getattr(edge, "type", None) == EdgeType.HAS_PREPARED_FORM for edge in bundle.edges)
     assert any(getattr(edge, "type", None) == EdgeType.TREATS for edge in bundle.edges)
     assert any(getattr(node, "type", None) == NodeType.EVIDENCE for node in bundle.nodes)
+    assert {record.node_name for record in bundle.records} >= {
+        "一枝黄花",
+        "一枝黄花饮片",
+        "一枝黄花条目证据",
+        "辛",
+        "苦",
+        "肺经",
+        "肝经",
+        "清热解毒",
+        "疏散风热",
+        "喉痹",
+        "风热感冒",
+    }
+
+    herb_record = next(record for record in bundle.records if record.node_name == "一枝黄花")
+    piece_record = next(record for record in bundle.records if record.node_name == "一枝黄花饮片")
+
+    assert any(edge.type == EdgeType.HAS_PREPARED_FORM and edge.target == "一枝黄花饮片" for edge in herb_record.edges)
+    assert any(edge.type == EdgeType.SUPPORTED_BY and edge.target == "一枝黄花条目证据" for edge in piece_record.edges)
+    assert any(edge.type == EdgeType.HAS_FLAVOR and edge.target == "辛" for edge in piece_record.edges)
+    assert any(edge.type == EdgeType.TREATS and edge.target == "喉痹" for edge in piece_record.edges)
 
 
 def test_mapping_falls_back_to_herb_indications_when_piece_absent():
+    """验证缺少饮片时仍会回退使用药材层的适应症生成病证关系。"""
+
     parsed = PharmacopoeiaEntrySections(
         title_zh="八角茴香",
         header_lines=[],

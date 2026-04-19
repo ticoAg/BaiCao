@@ -8,6 +8,7 @@
 """
 
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from app.importers import CSVImporter, JSONLImporter
+from app.importers.neo4j_import import write_records_to_neo4j
 
 
 def detect_importer(path: str) -> tuple[str, CSVImporter | JSONLImporter]:
@@ -45,6 +47,14 @@ def print_stats(name: str, stats, dry_run: bool):
     print(f"  成功率: {stats.success_rate:.1%}")
 
 
+def print_neo4j_stats(nodes_written: int, edges_written: int) -> None:
+    """打印 Neo4j 写入统计。"""
+
+    print("\n[Neo4j] 写入结果:")
+    print(f"  节点写入数: {nodes_written}")
+    print(f"  边写入数: {edges_written}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="BaiCao 数据导入工具")
     parser.add_argument("file", help="导入文件路径 (CSV 或 JSONL)")
@@ -65,7 +75,8 @@ def main():
                 print(f"  {i+1}. {record.model_dump(mode='json')}")
 
         if args.neo4j and not args.dry_run:
-            print("\n[Neo4j] 导入功能待实现，需要 GraphService 集成")
+            graph_result = asyncio.run(write_records_to_neo4j(result.records))
+            print_neo4j_stats(graph_result.nodes_written, graph_result.edges_written)
 
         sys.exit(0 if result.stats.failed == 0 else 1)
 

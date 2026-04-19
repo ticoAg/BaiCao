@@ -1,3 +1,5 @@
+"""覆盖药典条目切段主路径。"""
+
 from data_ingestion.source_models import SourceFileContext
 from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.national_standard_2022_pharmacopoeia.segmentation import (
     segment_pharmacopoeia_entries,
@@ -5,6 +7,8 @@ from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.nation
 
 
 def test_segmenter_extracts_first_herb_entry_from_sample(tmp_path):
+    """验证切段器能正确截出样例中的第一条药材条目。"""
+
     source = tmp_path / "sample.txt"
     source.write_text(
         "一枝黄花\nYizhihuanghua\nSOLIDAGINISHERBA\n本品为菊科植物一枝黄花SolidagodecurrensLour.的干燥全草。\n饮片\n【炮制】除去杂质\n【性味与归经】辛、苦，凉。归肺、肝经。\n丁香\nDingxiang\n",

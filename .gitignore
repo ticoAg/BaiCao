@@ -68,3 +68,4 @@ test-results/
 .workflow/
 /tmp/data/
 /.cache/huggingface/
+/packages/data_ingestion/tmp/

@@ -218,6 +218,83 @@ curl -sS http://127.0.0.1:8000/api/v1/graph/meta/schema
 - `2022年中药药典.txt` 新增专属切段、章节解析、条目映射逻辑
 - API pipeline 新增 `processor_runtime`，能把药典条目映射结果接入 `MAP_TO_KNOWLEDGE_MODEL` 预览
 
+## 10. 2026-04-19 药典大批量导入与重置补充证据
+
+### 本轮新增范围
+
+- `packages/data_ingestion/` 新增通用异步批量执行器
+- 药典 ingest 支持真实 LLM 大批量执行、失败条目筛选重跑、`GraphImportRecord` 快照落盘
+- `packages/api/` 的导入 CLI 支持把 JSONL 快照真实写入 Neo4j
+- 新增数据集级重置能力，支持按 scope 清理新版导入关系，也支持按历史快照精确清理旧关系
+
+### 运行证据
+
+```bash
+cd packages/data_ingestion
+uv run --with pytest pytest \
+  tests/test_async_batch.py \
+  tests/test_record_snapshots.py \
+  tests/test_pharmacopoeia_ingestion.py \
+  tests/test_pharmacopoeia_dry_run.py \
+  tests/test_pharmacopoeia_llm_extraction.py \
+  tests/test_pharmacopoeia_mapping.py -q
+```
+
+- 当前结果：相关数据采集测试通过
+
+```bash
+cd packages/api
+uv run --extra dev pytest \
+  tests/unit/importers/test_neo4j_import.py \
+  tests/unit/importers/test_dataset_reset.py \
+  tests/unit/export/test_neo4j_graph_writer.py \
+  tests/contract/test_import_record_contract.py -q
+```
+
+- 当前结果：导入、重置、Neo4j 关系 scope 与导入记录契约测试通过
+
+### 真实运行证据
+
+- Infisical 注入确认：`OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`、`NEO4J_URI`、`NEO4J_USER`、`NEO4J_PASSWORD` 均已注入
+- `2022年中药药典.txt` 切分条目数：`605`
+- 第一次真实全量尝试：
+  - `entries_attempted=605`
+  - `entries_succeeded=287`
+  - `entries_failed=318`
+  - 主要失败原因：上游 `429 rate limit`
+  - `records_generated=3225`
+- 切换新版 provider 后的失败重跑：
+  - `10` 条窗口：`10 / 10` 成功
+  - `50` 条窗口：`50 / 50` 成功
+  - `100` 条窗口 A：`99 / 100` 成功
+  - `100` 条窗口 B：`97 / 100` 成功
+  - `62` 条最终窗口：`62 / 62` 成功
+  - 总计重跑成功：`318 / 318`
+- 当前完成状态：
+  - 全文件 `605 / 605` 条目已成功完成结构化抽取与映射
+  - 重跑阶段残留的 `4` 次失败已在后续窗口中全部清空
+- 累计导入快照：
+  - 首次成功批次：`3225` 记录
+  - 重跑 `10` 条样本：`159` 记录
+  - 重跑 `50` 条窗口：`726` 记录
+  - 重跑 `100` 条窗口 A：`1346` 记录
+  - 重跑 `100` 条窗口 B：`1320` 记录
+  - 重跑最终 `62` 条窗口：`867` 记录
+- 当前图内按数据集属性统计：
+  - `Herb=309`
+  - `PreparedHerb=250`
+  - `Evidence=314`
+  - `Disease=860`
+  - `Efficacy=409`
+  - `Meridian=11`
+  - `Flavor=11`
+
+### 风险与未覆盖项
+
+- 初版 provider `openrouter/elephant-alpha` 在运行时触发上游限流，已通过切换 provider 完成剩余失败条目回填
+- 新 provider `https://ark.cn-beijing.volces.com/api/v3` 需要保持原始版本路径，且不支持 `enable_thinking` 扩展字段；当前代码已兼容自动降级
+- 历史已导入但不带 `import_scope_key` 的关系，需要通过 `--snapshot-jsonl` 做一次精确清理
+
 ### 对应实现
 
 - `packages/knowledge_model/knowledge_model/constants.py`
