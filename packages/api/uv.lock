@@ -291,6 +291,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "asyncpg" },
     { name = "bai-cao-data-ingestion" },
+    { name = "bai-cao-graph-runtime" },
     { name = "bai-cao-knowledge-model" },
     { name = "datasets" },
     { name = "email-validator" },
@@ -331,6 +332,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.80.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "bai-cao-data-ingestion", editable = "../data_ingestion" },
+    { name = "bai-cao-graph-runtime", editable = "../graph_runtime" },
     { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
     { name = "datasets", specifier = ">=2.14.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
@@ -374,6 +376,17 @@ requires-dist = [
     { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
     { name = "openai", specifier = ">=2.29.0" },
 ]
+
+[[package]]
+name = "bai-cao-graph-runtime"
+version = "0.1.0"
+source = { editable = "../graph_runtime" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.10.0" }]
 
 [[package]]
 name = "bai-cao-knowledge-model"

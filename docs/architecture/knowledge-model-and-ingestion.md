@@ -32,6 +32,7 @@ audience: developer
 - 导入器 / 导出器
 - API schema 与服务层
 - 图谱查询、问答、溯源与验证工作流
+- `packages/graph_runtime/` 中面向 agent 的图谱 primitives、planner、agent 与 CLI 薄壳
 - 后续新增的多级子项目
 
 ## 3. 术语口径
@@ -138,6 +139,23 @@ flowchart LR
     API --> QA
     API --> Web
     Graph --> QA
+```
+
+### 5.1 Graph Runtime / Agent 运行边界
+
+`packages/graph_runtime/` 是 agent-first 图谱 runtime 的当前稳定入口。它不拥有 Neo4j 连接、不直接访问 FastAPI 应用状态，也不重新定义仓库级图模型；它只定义面向 agent 的输入输出契约、只读 backend 协议、图谱 primitives、schema-aware planner、默认探索 agent 与 CLI 薄壳。
+
+`packages/api/` 仍是 runtime 的 HTTP 接线层：API 侧通过 adapter 把既有 `graph_service` / `graph_metadata_service` 归一化成 runtime backend 协议，并暴露 `/api/v1/graph-agent/ask` 最小入口。CLI 只负责渐进式发现、help 分层与友好错误提示，不承载核心图谱逻辑。
+
+```mermaid
+flowchart LR
+    User[用户 / Agent] --> CLI[graph CLI 薄壳]
+    User --> API[packages/api<br/>HTTP 接线层]
+    CLI --> Runtime[packages/graph_runtime<br/>contracts / primitives / planner / agent]
+    API --> Runtime
+    Runtime --> Backend[GraphRuntimeBackend 协议]
+    Backend --> GraphService[graph_service / graph_metadata_service]
+    GraphService --> Neo4j[(Neo4j 图谱)]
 ```
 
 ## 6. 数据采集二级子项目的角色
@@ -302,7 +320,9 @@ flowchart LR
 当前仓库内已经完成这条主线收敛：
 
 - `packages/knowledge_model/` 已成为共享图模型与导入记录的代码真源
+- `packages/graph_runtime/` 已成为 agent-first 图谱 runtime 的代码真源
 - API graph schema 直接复用共享 `NodeType` / `NodeStatus`
+- API graph agent route 仅负责把 HTTP payload 接到 runtime agent，不承载核心探索逻辑
 - importer / exporter 统一消费共享 `GraphImportRecord`
 - `packages/data_ingestion/` 已作为共享模型消费者落地，不再重复定义图谱枚举
 

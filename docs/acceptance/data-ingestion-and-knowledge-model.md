@@ -328,3 +328,45 @@ uv run --extra dev pytest tests/unit/pipeline/test_processor_runtime.py tests/un
 - `一枝黄花` 这类药典条目能被切成单个 `证据` 节点
 - `饮片` 以独立节点形式进入 bundle，而不是作为 `药材` 附属字段
 - `MAP_TO_KNOWLEDGE_MODEL` 预览可返回 `药材 / 饮片 / 证据 / 性味 / 归经 / 功效` 及中文关系
+
+## 11. 2026-04-20 Graph Runtime / Agent Wave 1 补充证据
+
+### 本轮新增范围
+
+- 新增 `packages/graph_runtime/`，提供 contracts、backend 协议、facade、traversal primitives、schema-aware planner、默认 graph exploration agent 与 CLI 薄壳
+- `packages/api/` 新增 runtime backend adapter、`GraphAgentService` 与 `/api/v1/graph-agent/ask` 最小 HTTP 入口
+- API adapter 负责把既有 `graph_service.search_nodes()` 的嵌套结果归一化为 runtime 可消费的扁平节点
+- CLI 保持 terminal tool 薄壳定位，只提供渐进式发现、help 与友好错误提示
+
+### 运行证据
+
+```bash
+cd packages/graph_runtime
+uv run --with pytest pytest tests -q
+
+cd ../api
+uv run --extra dev pytest tests/services/test_graph_agent_service.py tests/api/test_graph_agent_routes.py -q
+```
+
+- 当前结果：graph runtime 包内 contracts / service / primitives / planner / agent / CLI 测试通过；API service 与 route 接线测试通过
+
+### 对应实现
+
+- `packages/graph_runtime/graph_runtime/contracts/inputs.py`
+- `packages/graph_runtime/graph_runtime/contracts/outputs.py`
+- `packages/graph_runtime/graph_runtime/service/graph_facade.py`
+- `packages/graph_runtime/graph_runtime/primitives/bfs.py`
+- `packages/graph_runtime/graph_runtime/primitives/dfs.py`
+- `packages/graph_runtime/graph_runtime/planner/plan_builder.py`
+- `packages/graph_runtime/graph_runtime/agent/graph_agent.py`
+- `packages/graph_runtime/graph_runtime/cli/main.py`
+- `packages/api/app/graph_runtime_backend.py`
+- `packages/api/app/services/graph_agent_service.py`
+- `packages/api/app/api/graph_agent.py`
+- `packages/api/app/main.py`
+
+### 风险与未覆盖项
+
+- 本轮只覆盖 runtime 与 API 接线的最小主路径，未执行真实 Neo4j 数据库上的端到端 graph agent 问答
+- 默认 agent 目前采用规则化 schema-aware planning 与图谱邻接探索，LLM synthesis / LangChain adapter 不在本轮范围
+- 只读 Cypher fallback 已在 runtime facade 中保留校验入口，但默认 agent 尚未主动触发 fallback

@@ -81,6 +81,7 @@ Recommended order:
 Typical BaiCao examples:
 
 - new graph query capability, provenance feature, review flow, or chat behavior
+- new graph runtime primitive, schema-aware planner, graph exploration agent, or runtime-backed API route
 - knowledge payload, verification status, or contract-first work spanning `shared` + `api` + `web`
 - a new page, endpoint, importer, or expert workflow
 
@@ -123,6 +124,7 @@ Recommended order:
 Additional rules:
 
 - For payload changes, follow `workflow.md` and update contract sources before consumers.
+- For graph runtime work, keep `packages/graph_runtime/` as the agent-first runtime source and keep `packages/api/` as the backend adapter / HTTP wiring layer.
 - For OpenAI / LangChain usage questions, prefer `openai-docs` over memory.
 
 ### 3.5 Docs, Architecture Notes, Process Documents

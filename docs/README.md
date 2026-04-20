@@ -13,6 +13,7 @@
 - `acceptance/`：验收标准与验证方式，回答“如何证明它真的完成了”
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
+- `packages/graph_runtime/`：agent-first 图谱 runtime 真源；`packages/api/` 仅作为 HTTP 接线层，CLI 仅作为 terminal 薄壳
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
 ## 推荐阅读路径
@@ -173,7 +174,7 @@ flowchart TB
 | [architecture/system-overview.md](architecture/system-overview.md) | 系统整体架构、模块边界、关键数据流 |
 | [architecture/data-model.md](architecture/data-model.md) | 图模型与关系模型设计 |
 | [architecture/graph-workbench.md](architecture/graph-workbench.md) | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
-| [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md) | 图模型唯一真源、中文知识结构定义与数据采集架构 |
+| [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md) | 图模型唯一真源、中文知识结构定义、数据采集架构与 graph runtime / agent 边界 |
 | [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md) | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [acceptance/README.md](acceptance/README.md) | 验收文档目录与基本原则 |
 | [acceptance/graph-workbench-mainline.md](acceptance/graph-workbench-mainline.md) | Graph Workbench `/graph` 主链路验收 |
@@ -244,4 +245,5 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
+- Agent-first 图谱 runtime 真源：`../packages/graph_runtime/`
 - 运行编排事实：`../infra/docker-compose.yml`
