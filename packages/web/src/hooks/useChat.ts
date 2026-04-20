@@ -1,21 +1,147 @@
-// Chat hook - SSE stream 消费
+// Chat hook - graph runtime agent 消费
 import { useCallback, useRef } from "react";
 import { message } from "antd";
-import { chatApi } from "../services/api";
+import { graphAgentApi } from "../services/api";
 import { useChatStore } from "../stores/chatStore";
-import type { Message, ChatResponse } from "../types/chat";
+import type {
+  ChatGraphData,
+  Entity,
+  GraphAgentResponse,
+  Message,
+} from "../types/chat";
+import type { GraphEdge, GraphNode } from "../types/graph";
 
-/** 从 ChatResponse 构建 assistant Message */
-function buildAssistantMessage(response: ChatResponse): Message {
+type RawGraphAgentEdge = GraphAgentResponse["related_edges"][number];
+
+const validStatuses = new Set(["pending", "verified", "rejected"]);
+
+function normalizeStatus(status: unknown): GraphNode["status"] {
+  return typeof status === "string" && validStatuses.has(status)
+    ? (status as GraphNode["status"])
+    : "pending";
+}
+
+function normalizeLabels(labels: unknown): string[] {
+  return Array.isArray(labels) ? labels.map(String) : [];
+}
+
+function normalizeNode(node: Partial<GraphNode> & { id?: string; name?: string }): GraphNode | null {
+  const id = node.id ?? node.name;
+  const name = node.name ?? node.id;
+  if (!id || !name) return null;
+
+  return {
+    ...node,
+    id: String(id),
+    name: String(name),
+    status: normalizeStatus(node.status),
+    labels: normalizeLabels(node.labels),
+  };
+}
+
+function getEndpointRef(value: RawGraphAgentEdge["source"] | RawGraphAgentEdge["target"]) {
+  if (typeof value === "string") {
+    return { id: value, name: value, labels: [] };
+  }
+  if (value && typeof value === "object") {
+    const id = value.id ?? value.name;
+    const name = value.name ?? value.id;
+    return {
+      id: id ? String(id) : "",
+      name: name ? String(name) : "",
+      labels: normalizeLabels(value.labels),
+      status: normalizeStatus(value.status),
+    };
+  }
+  return { id: "", name: "", labels: [] };
+}
+
+function normalizeGraphData(response: GraphAgentResponse): ChatGraphData {
+  const nodeMap = new Map<string, GraphNode>();
+
+  response.related_nodes
+    .map(normalizeNode)
+    .filter((node): node is GraphNode => Boolean(node))
+    .forEach((node) => nodeMap.set(node.id, node));
+
+  const edges: GraphEdge[] = response.related_edges.map((edge, index) => {
+    const sourceRef = getEndpointRef(edge.source);
+    const targetRef = getEndpointRef(edge.target);
+
+    [sourceRef, targetRef].forEach((ref) => {
+      if (ref.id && !nodeMap.has(ref.id)) {
+        nodeMap.set(ref.id, {
+          id: ref.id,
+          name: ref.name || ref.id,
+          labels: ref.labels,
+          status: ref.status ?? "pending",
+        });
+      }
+    });
+
+    return {
+      ...edge,
+      id: edge.id ? String(edge.id) : `graph-agent-edge-${index}`,
+      status: normalizeStatus(edge.status),
+      rel_type: edge.rel_type || edge.type || "相关",
+      source: sourceRef.id
+        ? {
+            id: sourceRef.id,
+            name: nodeMap.get(sourceRef.id)?.name ?? sourceRef.name,
+            labels: nodeMap.get(sourceRef.id)?.labels,
+            status: nodeMap.get(sourceRef.id)?.status,
+          }
+        : undefined,
+      target: targetRef.id
+        ? {
+            id: targetRef.id,
+            name: nodeMap.get(targetRef.id)?.name ?? targetRef.name,
+            labels: nodeMap.get(targetRef.id)?.labels,
+            status: nodeMap.get(targetRef.id)?.status,
+          }
+        : undefined,
+    };
+  });
+
+  const nodes = Array.from(nodeMap.values());
+  const center =
+    nodes.find((node) => node.id === response.subgraph_meta.center_node_id) ??
+    nodes[0] ??
+    null;
+
+  return {
+    center,
+    nodes,
+    edges,
+  };
+}
+
+function extractEntities(graphData: ChatGraphData): Entity[] {
+  return graphData.nodes.slice(0, 8).map((node) => ({
+    id: node.id,
+    name: node.name ?? node.id ?? "",
+    type: node.labels?.[0] ?? "GraphNode",
+  }));
+}
+
+function createLocalSessionId() {
+  return globalThis.crypto?.randomUUID?.() ?? `graph-agent-${Date.now()}`;
+}
+
+/** 从 GraphAgentResponse 构建 assistant Message */
+function buildAssistantMessage(response: GraphAgentResponse): Message {
+  const graphData = normalizeGraphData(response);
+
   return {
     id: (Date.now() + 1).toString(),
     role: "assistant",
     content: response.answer,
-    reasoningChain: response.reasoning_chain,
-    sources: response.sources,
-    graphData: response.graph_data,
-    entities: response.entities,
-    workbenchFrames: response.workbench_frames,
+    graphData,
+    entities: extractEntities(graphData),
+    evidence: response.evidence,
+    subgraphMeta: response.subgraph_meta,
+    reasoningTrace: response.reasoning_trace,
+    toolCalls: response.tool_calls,
   };
 }
 
@@ -41,8 +167,6 @@ export function useChat() {
     setSessionId,
     setStreaming,
     addMessage,
-    appendToLastMessage,
-    updateLastMessageContent,
     clearMessages,
     startNewTopic,
   } = useChatStore();
@@ -62,44 +186,15 @@ export function useChat() {
       setInput("");
       setStreaming(true);
 
-      // 首次提问时自动创建 session
-      let currentSessionId = sessionId;
-      if (!currentSessionId) {
-        try {
-          const session = await chatApi.createSession();
-          currentSessionId = session.id;
-          setSessionId(currentSessionId);
-        } catch {
-          // 创建 session 失败则不携带 sessionId 继续
-        }
+      if (!sessionId) {
+        setSessionId(createLocalSessionId());
       }
 
-      /** 重建 session 后重试一次 */
-      const retryWithNewSession = async (): Promise<ChatResponse> => {
-        const session = await chatApi.createSession();
-        currentSessionId = session.id;
-        setSessionId(currentSessionId);
-        return chatApi.ask(question.trim(), currentSessionId);
-      };
-
       try {
-        const response = await chatApi.ask(question.trim(), currentSessionId || undefined);
+        const response = await graphAgentApi.ask(question.trim());
         addMessage(buildAssistantMessage(response));
-        if (response.session_id) setSessionId(response.session_id);
       } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 404) {
-          // session 过期 → 重建并重试一次
-          try {
-            const retryResponse = await retryWithNewSession();
-            addMessage(buildAssistantMessage(retryResponse));
-            if (retryResponse.session_id) setSessionId(retryResponse.session_id);
-          } catch (retryErr) {
-            showErrorMessage(retryErr, addMessage);
-          }
-        } else {
-          showErrorMessage(err, addMessage);
-        }
+        showErrorMessage(err, addMessage);
       } finally {
         setStreaming(false);
       }
@@ -111,8 +206,6 @@ export function useChat() {
       setInput,
       setStreaming,
       setSessionId,
-      updateLastMessageContent,
-      appendToLastMessage,
     ],
   );
 

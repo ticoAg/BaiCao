@@ -2,57 +2,69 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ChatPage from "./ChatPage";
 import { renderWithProviders } from "../test/render-with-providers";
-import { chatApi } from "../services/api";
+import { graphAgentApi } from "../services/api";
+
+vi.mock("../components/graph/MiniGraphCanvas", () => ({
+  default: ({ graphData }: { graphData: { nodes: unknown[] } }) => (
+    <div data-testid="mini-graph-canvas">{graphData.nodes.length} nodes</div>
+  ),
+}));
 
 describe("ChatPage", () => {
-  it("submits a question and renders answer context", async () => {
+  it("submits a question and renders graph agent answer basis", async () => {
     const user = userEvent.setup();
-    vi.spyOn(chatApi, "ask").mockResolvedValue({
-      answer: "关于「人参」的信息：\n- 分类：补气药\n- 主要功效：大补元气",
-      reasoning_chain: [
+    vi.spyOn(graphAgentApi, "ask").mockResolvedValue({
+      answer: "依据图谱找到人参：人参具有大补元气的功效。",
+      evidence: [
         {
-          step: 1,
-          description: "识别问题类型：功效查询",
-          entities: ["人参"],
-          confidence: 0.95,
+          node_id: "eff-1",
+          snippet: "《中国药典》记载人参大补元气。",
         },
       ],
-      sources: [
+      related_nodes: [
         {
-          id: "source-1",
-          name: "中国药典（2020年版）",
-          citation: "来源：中国药典（2020年版）",
-        },
-      ],
-      graph_data: {
-        center: {
           id: "herb-1",
           name: "人参",
           status: "verified",
           labels: ["Herb"],
         },
-        nodes: [],
-        edges: [],
-      },
-      workbench_frames: [
         {
-          id: "frame-graph-1",
-          type: "graph",
-          title: "人参图谱",
-          status: "ok",
-          command: "查人参图谱",
-          payload: {
-            graph: {
-              center: null,
-              nodes: [],
-              edges: [],
-            },
-            summary: "graph",
-            mode: "exact",
-          },
+          id: "eff-1",
+          name: "大补元气",
+          status: "verified",
+          labels: ["Efficacy"],
         },
       ],
-      session_id: "session-1",
+      related_edges: [
+        {
+          id: "edge-1",
+          type: "具有功效",
+          status: "verified",
+          source: { id: "herb-1", name: "人参", labels: ["Herb"], status: "verified" },
+          target: { id: "eff-1", name: "大补元气", labels: ["Efficacy"], status: "verified" },
+        },
+      ],
+      subgraph_meta: {
+        center_node_id: "herb-1",
+        actual_depth: 1,
+        fallback_used: false,
+        node_count: 2,
+        edge_count: 1,
+      },
+      reasoning_trace: [
+        {
+          kind: "planner",
+          summary: "schema targets: ['功效'] / ['具有功效']",
+        },
+      ],
+      tool_calls: [
+        {
+          tool_name: "search_nodes",
+          arguments: { query: "人参", limit: 5 },
+          summary: "召回 1 个候选",
+          result_summary: "命中 1 个候选",
+        },
+      ],
     });
 
     renderWithProviders(<ChatPage />);
@@ -63,10 +75,14 @@ describe("ChatPage", () => {
     );
     await user.click(screen.getByRole("button", { name: /发送/ }));
 
-    expect(await screen.findByText(/关于「人参」的信息/)).toBeInTheDocument();
-    expect(screen.getByText("推理链")).toBeInTheDocument();
-    expect(screen.getByText("中国药典（2020年版）")).toBeInTheDocument();
-    expect(screen.getByText("Workbench 结果")).toBeInTheDocument();
-    expect(screen.getByText("人参图谱")).toBeInTheDocument();
+    expect(graphAgentApi.ask).toHaveBeenCalledWith("人参有什么功效？");
+    expect((await screen.findAllByText("大补元气")).length).toBeGreaterThan(0);
+    expect(screen.getByText("依据子图")).toBeInTheDocument();
+    expect(screen.getByTestId("mini-graph-canvas")).toHaveTextContent("2 nodes");
+    expect(screen.getByText(/《中国药典》记载人参大补元气/)).toBeInTheDocument();
+    expect(screen.getByText("reasoning_trace")).toBeInTheDocument();
+    expect(screen.getByText("search_nodes")).toBeInTheDocument();
+    expect(screen.getByText(/"query": "人参"/)).toBeInTheDocument();
+    expect(screen.getByText("命中 1 个候选")).toBeInTheDocument();
   });
 });

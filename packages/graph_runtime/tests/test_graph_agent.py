@@ -5,7 +5,12 @@ from graph_runtime.contracts.inputs import GraphAskRequest
 
 
 class StubFacade:
+    def __init__(self) -> None:
+        self.search_queries: list[str] = []
+        self.cypher_queries: list[str] = []
+
     async def search_nodes(self, query: str, label: str | None = None, limit: int = 20):
+        self.search_queries.append(query)
         return [{"id": "药材:黄芩", "name": "黄芩", "labels": ["药材"]}]
 
     async def expand_neighbors(self, node_id: str, depth: int = 1, limit: int = 20):
@@ -16,7 +21,16 @@ class StubFacade:
         }
 
     async def read_cypher(self, query: str):
+        self.cypher_queries.append(query)
         return [{"name": "黄芩"}]
+
+
+class LoopingFacade(StubFacade):
+    async def search_nodes(self, query: str, label: str | None = None, limit: int = 20):
+        self.search_queries.append(query)
+        if query == "黄芩":
+            return [{"id": "药材:黄芩", "name": "黄芩", "labels": ["药材"]}]
+        return []
 
 
 async def _run_graph_agent_returns_dual_track_output():
@@ -34,12 +48,49 @@ def test_graph_agent_returns_dual_track_output():
 
 
 async def _run_graph_agent_records_tool_calls():
-    agent = GraphExplorationAgent(graph_facade=StubFacade())
+    facade = StubFacade()
+    agent = GraphExplorationAgent(graph_facade=facade)
 
     result = await agent.ask(GraphAskRequest(question="黄芩归什么经？"))
 
-    assert result.tool_calls[0]["tool_name"] == "search_nodes"
+    assert result.tool_calls[0].tool_name == "search_nodes"
+    assert result.tool_calls[0].arguments["query"] == "黄芩"
+    assert result.tool_calls[1].tool_name == "expand_neighbors"
+    assert result.tool_calls[1].arguments["node_id"] == "药材:黄芩"
 
 
 def test_graph_agent_records_tool_calls():
     asyncio.run(_run_graph_agent_records_tool_calls())
+
+
+async def _run_graph_agent_loops_until_graph_tool_succeeds():
+    facade = LoopingFacade()
+    agent = GraphExplorationAgent(graph_facade=facade)
+
+    result = await agent.ask(GraphAskRequest(question="请告诉我黄芩归什么经？", tool_call_budget=6))
+
+    assert facade.search_queries[0] == "黄芩"
+    assert result.tool_calls[0].arguments["query"] == "黄芩"
+    assert result.tool_calls[0].result_summary.startswith("命中 1 个候选")
+    assert result.subgraph_meta.center_node_id == "药材:黄芩"
+
+
+def test_graph_agent_loops_until_graph_tool_succeeds():
+    asyncio.run(_run_graph_agent_loops_until_graph_tool_succeeds())
+
+
+async def _run_graph_agent_uses_readonly_cypher_as_fallback():
+    facade = LoopingFacade()
+    agent = GraphExplorationAgent(graph_facade=facade)
+
+    result = await agent.ask(GraphAskRequest(question="完全未知问题", tool_call_budget=6))
+
+    assert facade.cypher_queries
+    assert any(call.tool_name == "read_cypher" for call in result.tool_calls)
+    assert result.tool_calls[-2].tool_name == "search_nodes"
+    assert result.tool_calls[-1].tool_name == "expand_neighbors"
+    assert result.subgraph_meta.center_node_id == "药材:黄芩"
+
+
+def test_graph_agent_uses_readonly_cypher_as_fallback():
+    asyncio.run(_run_graph_agent_uses_readonly_cypher_as_fallback())

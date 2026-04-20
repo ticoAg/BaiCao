@@ -11,6 +11,7 @@ import EvidenceList from "../provenance/EvidenceList";
 import LineageChain from "../provenance/LineageChain";
 import { useProvenance } from "../../hooks/useProvenance";
 import ReviewRequestModal from "./ReviewRequestModal";
+import GraphAgentBasisPanel from "./GraphAgentBasisPanel";
 
 const { Text } = Typography;
 
@@ -35,6 +36,15 @@ function extractEntitiesFromSources(sources?: Source[]): Entity[] {
     name: s.name,
     type: "Herb",
   }));
+}
+
+function hasGraphAgentBasis(msg: Message): boolean {
+  return Boolean(
+    msg.subgraphMeta ||
+      msg.evidence?.length ||
+      msg.reasoningTrace?.length ||
+      msg.toolCalls?.length,
+  );
 }
 
 interface ProvenanceDrawerProps {
@@ -300,7 +310,17 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
                         msg.reasoningChain &&
                         <ReasoningChain chain={msg.reasoningChain} />}
                       {msg.role === "assistant" &&
+                        hasGraphAgentBasis(msg) &&
+                        <GraphAgentBasisPanel
+                          graphData={msg.graphData}
+                          evidence={msg.evidence}
+                          subgraphMeta={msg.subgraphMeta}
+                          reasoningTrace={msg.reasoningTrace}
+                          toolCalls={msg.toolCalls}
+                        />}
+                      {msg.role === "assistant" &&
                         msg.graphData &&
+                        !hasGraphAgentBasis(msg) &&
                         <GraphPreview graphData={msg.graphData} />}
                       {msg.role === "assistant" &&
                         msg.workbenchFrames &&

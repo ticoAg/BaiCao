@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
+from .tool_calls import GraphToolCall
+
 
 class GraphSubgraphMeta(BaseModel):
     center_node_id: str | None = Field(default=None, description="中心节点 ID")
@@ -18,6 +20,6 @@ class GraphAgentAnswer(BaseModel):
     related_edges: list[dict] = Field(default_factory=list, description="相关边")
     subgraph_meta: GraphSubgraphMeta = Field(description="子图元信息")
     reasoning_trace: list[dict] = Field(default_factory=list, description="推理轨迹摘要")
-    tool_calls: list[dict] = Field(default_factory=list, description="工具调用记录")
+    tool_calls: list[GraphToolCall] = Field(default_factory=list, description="工具调用记录")
 
     model_config = ConfigDict(use_enum_values=False)

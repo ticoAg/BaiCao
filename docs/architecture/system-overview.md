@@ -133,18 +133,21 @@ sequenceDiagram
     participant User as 用户
     participant Web as Web
     participant API as FastAPI
-    participant Chat as ChatService
+    participant Agent as GraphAgentService
+    participant Runtime as graph_runtime
     participant Graph as GraphService
     participant Neo4j as Neo4j
 
     User->>Web: 输入问题
-    Web->>API: POST /api/v1/chat/question
-    API->>Chat: 解析问题
-    Chat->>Graph: 获取相关子图
+    Web->>API: POST /api/v1/graph-agent/ask
+    API->>Agent: 调用 graph runtime agent
+    Agent->>Runtime: 规划探索目标与工具调用
+    Runtime->>Graph: 获取相关子图
     Graph->>Neo4j: 查询节点与关系
     Neo4j-->>Graph: 返回子图
-    Graph-->>Chat: 返回图谱上下文
-    Chat-->>API: 回答 + 推理链 + 来源 + graph_data
+    Graph-->>Runtime: 返回图谱上下文
+    Runtime-->>Agent: 回答 + 依据子图 + 证据 + 推理轨迹
+    Agent-->>API: GraphAgentAnswer
     API-->>Web: 结构化响应
 ```
 

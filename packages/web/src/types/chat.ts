@@ -33,6 +33,48 @@ export interface ChatResponse {
   workbench_frames?: WorkbenchFrame[];
 }
 
+export interface GraphAgentEvidence {
+  node_id?: string;
+  snippet: string;
+}
+
+export interface GraphAgentSubgraphMeta {
+  center_node_id: string | null;
+  actual_depth: number;
+  fallback_used: boolean;
+  node_count: number;
+  edge_count: number;
+}
+
+export interface GraphAgentReasoningTraceItem {
+  kind?: string;
+  summary: string;
+}
+
+export interface GraphAgentToolCall {
+  tool_name: string;
+  arguments?: Record<string, unknown>;
+  summary: string;
+  result_summary?: string | null;
+  status?: string;
+}
+
+export interface GraphAgentResponse {
+  answer: string;
+  evidence: GraphAgentEvidence[];
+  related_nodes: Array<Partial<GraphNode> & { id?: string; name?: string }>;
+  related_edges: Array<
+    Partial<GraphEdge> & {
+      type?: string;
+      source?: string | { id?: string; name?: string; labels?: string[]; status?: string };
+      target?: string | { id?: string; name?: string; labels?: string[]; status?: string };
+    }
+  >;
+  subgraph_meta: GraphAgentSubgraphMeta;
+  reasoning_trace: GraphAgentReasoningTraceItem[];
+  tool_calls: GraphAgentToolCall[];
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -42,6 +84,10 @@ export interface Message {
   graphData?: ChatGraphData;
   entities?: Entity[];
   workbenchFrames?: WorkbenchFrame[];
+  evidence?: GraphAgentEvidence[];
+  subgraphMeta?: GraphAgentSubgraphMeta;
+  reasoningTrace?: GraphAgentReasoningTraceItem[];
+  toolCalls?: GraphAgentToolCall[];
 }
 
 // chat 上下文中的 graph 数据（后端返回字段可能不完整，用 Partial）

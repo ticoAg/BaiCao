@@ -1,6 +1,12 @@
 // API Service - 与后端通信
 import axios from "axios";
-import type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
+import type {
+  ReasoningStep,
+  Source,
+  ChatResponse,
+  GraphAgentResponse,
+  SSECallbacks,
+} from "../types/chat";
 import type {
   GraphData,
   GraphNode,
@@ -23,7 +29,13 @@ export type {
   GraphQueryResponse,
   PathResult,
 } from "../types/graph";
-export type { ReasoningStep, Source, ChatResponse, SSECallbacks } from "../types/chat";
+export type {
+  ReasoningStep,
+  Source,
+  ChatResponse,
+  GraphAgentResponse,
+  SSECallbacks,
+} from "../types/chat";
 export type { VerificationStatus } from "../types/index";
 
 const API_BASE = "/api/v1";
@@ -301,6 +313,17 @@ export const chatApi = {
   // 获取会话
   getSession: async (sessionId: string): Promise<{ id: string; messages: unknown[]; created_at?: string }> => {
     const { data } = await api.get(`/chat/session/${sessionId}`);
+    return data;
+  },
+};
+
+// ============ Graph Agent API ============
+
+export const graphAgentApi = {
+  ask: async (question: string): Promise<GraphAgentResponse> => {
+    const { data } = await api.post("/graph-agent/ask", {
+      question,
+    });
     return data;
   },
 };

@@ -13,24 +13,25 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：智能问答主链路
-- 验收目标：验证问答页面、问答接口、推理链和来源展示形成完整闭环
+- 验收目标：验证问答页面、graph runtime agent 接口、自然语言回答和可展开依据子图形成完整闭环
 - 对应需求：图谱增强智能问答
 - 对应计划：历史能力，迁移前未沉淀独立 `plans/*.md`；后续续改时请补对应计划文档
-- 当前版本 / 日期：MVP / 2026-03-20
+- 当前版本 / 日期：Graph Agent Chat / 2026-04-20
 
 ## 2. 验收范围
 
 ### 包含
 
 - 问答页面提问
-- 后端问答接口响应
-- 推理链展示
-- 来源标签展示
+- 后端 graph agent 接口响应
+- 每轮回答自然语言展示
+- 每轮回答可展开依据子图
+- 证据、推理轨迹和工具调用展示
 - 图谱预览跳转
 
 ### 不包含
 
-- 多轮会话持久化
+- 多轮会话持久化（当前页面仅保留前端会话状态和“新话题”重置）
 
 ## 3. 前置条件
 
@@ -67,7 +68,7 @@ pnpm run test:web
 - 命令 / 页面入口：
 
 ```bash
-curl -sS -X POST http://localhost:8000/api/v1/chat/question \
+curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask \
   -H 'Content-Type: application/json' \
   -d '{"question":"人参有什么功效？"}' | python3 -m json.tool
 ```
@@ -81,58 +82,46 @@ curl -sS -X POST http://localhost:8000/api/v1/chat/question \
 ### Step 2 预期
 
 - 页面出现关于”人参”的回答
-- 页面能看到”推理链”和来源标签
+- 页面能看到”依据子图”、”证据摘要”和”推理与工具”
+- 展开依据子图后能看到节点、关系、中心节点和图谱预览
 
 ### Step 3 预期
 
-- 响应内有 `answer`、`reasoning_chain`、`sources`、`graph_data`、`session_id`
-- `answer` 提到”补气药”或”主要功效”
-
-### Step 4: SSE 流式验收
-
-- 操作：验证 SSE 流式端点
-
-```bash
-curl -N -X POST http://localhost:8000/api/v1/chat/stream \
-  -H 'Content-Type: application/json' \
-  -d '{“question”:”陈皮有什么功效？”}'
-```
-
-- 预期：
-  - 返回 `text/event-stream` MIME 类型
-  - 依次收到 `event: session`、`event: reasoning`、`event: sources`、`event: token`（多次）、`event: done`
-  - 每个 event 的 data 为合法 JSON
-  - 当配置了 LLM API key 时，token 事件逐字流出；未配置时一次性返回规则引擎结果
+- 响应内有 `answer`、`related_nodes`、`related_edges`、`subgraph_meta`、`evidence`、`reasoning_trace`、`tool_calls`
+- `subgraph_meta.node_count` 和 `subgraph_meta.edge_count` 与返回子图规模一致
+- `answer` 基于相关节点和关系生成自然语言说明
 
 ## 6. 证据记录
 
 ### 实现证据
 
-- `packages/api/app/api/chat.py` — 同步 + SSE 流式端点
-- `packages/api/app/services/chat_service.py` — answer_question + answer_question_stream
-- `packages/api/app/services/llm_client.py` — LangChain 双后端 LLM 抽象
-- `packages/web/src/pages/ChatPage.tsx` — useChat hook 消费
-- `packages/web/src/hooks/useChat.ts` — SSE 流式调用逻辑
-- `packages/web/src/services/api.ts` — chatApi.stream() SSE 客户端
+- `packages/api/app/api/graph_agent.py` — `/api/v1/graph-agent/ask` 入口
+- `packages/api/app/services/graph_agent_service.py` — graph runtime agent 服务门面
+- `packages/graph_runtime/graph_runtime/agent/graph_agent.py` — 默认图谱探索 agent
+- `packages/web/src/pages/ChatPage.tsx` — 页面入口
+- `packages/web/src/hooks/useChat.ts` — graph agent 调用与消息归一化
+- `packages/web/src/components/chat/GraphAgentBasisPanel.tsx` — 每轮回答的依据子图、证据、推理和工具调用展示
+- `packages/web/src/services/api.ts` — `graphAgentApi.ask()` 客户端
 
 ### 运行证据
 
 ```bash
 pnpm run test:web
-curl -sS -X POST http://localhost:8000/api/v1/chat/question -H 'Content-Type: application/json' -d '{"question":"人参有什么功效？"}'
+curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask -H 'Content-Type: application/json' -d '{"question":"人参有什么功效？"}'
 ```
 
 ### 结果证据
 
-- 页面可见结果：回答、推理链、来源同时出现
-- 接口返回摘要：`session_id` 存在，`reasoning_chain` 为列表
+- 页面可见结果：回答、依据子图、证据摘要、推理与工具同时出现
+- 接口返回摘要：`related_nodes` / `related_edges` 为列表，`subgraph_meta` 含中心节点和规模信息
 
 ## 7. 风险与未覆盖项
 
 - 当前回答生成仍偏规则化，不代表最终 LLM 质量
+- 当前 graph agent 路由是同步请求，页面未实现 SSE token 流式输出
 
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：智能问答主链路在当前 demo 形态下已具备可执行验收能力
-- 后续动作：多轮会话持久化和更强来源选择策略
+- 结论一句话：智能问答主链路已切到 graph runtime agent，并具备每轮回答展开依据子图的验收能力
+- 后续动作：多轮会话持久化、流式输出和更强来源选择策略

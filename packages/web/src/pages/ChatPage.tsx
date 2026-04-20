@@ -71,7 +71,7 @@ const ChatPage = () => {
               </>
             )}
             <Text type="secondary" style={{ fontSize: 12 }}>
-              基于知识图谱的中药材问答
+              基于 graph runtime agent 的中药材问答
             </Text>
           </div>
         </div>
@@ -131,7 +131,7 @@ const WelcomeView = ({ onQuestionClick }: { onQuestionClick: (q: string) => void
       type="secondary"
       style={{ marginBottom: 32, fontSize: 14, textAlign: "center" }}
     >
-      我可以回答关于中药材的功效、成分、归经等问题，试试下面的问题：
+      我可以回答关于中药材的功效、成分、归经等问题，并展开每轮回答的依据子图：
     </Text>
     <div
       style={{

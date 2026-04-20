@@ -1,10 +1,12 @@
-from .entity_fuzzy_recall import recall_entity_keywords
+from .entity_fuzzy_recall import normalize_question, recall_entity_keywords
 from .schema_semantic_mapping import SCHEMA_SEMANTIC_RULES
 
 
 def build_graph_plan(question: str) -> dict:
+    normalized_question = normalize_question(question)
     plan = {
         "question": question,
+        "normalized_question": normalized_question,
         "entity_hints": recall_entity_keywords(question),
         "target_node_types": [],
         "target_edge_types": [],
