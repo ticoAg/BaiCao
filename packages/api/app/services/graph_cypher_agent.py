@@ -39,12 +39,12 @@ class GraphCypherAgentService:
         restore_top_k = hasattr(self.chain, "top_k")
         previous_top_k = getattr(self.chain, "top_k", None)
         if restore_top_k:
-            self.chain.top_k = top_k
+            setattr(self.chain, "top_k", top_k)
         try:
             result = await to_thread.run_sync(self.chain.invoke, {"query": question})
         finally:
             if restore_top_k:
-                self.chain.top_k = previous_top_k
+                setattr(self.chain, "top_k", previous_top_k)
         steps = result.get("intermediate_steps", [])
         generated_cypher = None
         context_rows: list[dict[str, Any]] = []

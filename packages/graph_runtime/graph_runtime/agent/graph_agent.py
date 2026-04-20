@@ -1,26 +1,21 @@
 from collections import deque
-from dataclasses import dataclass
 from typing import Any
 
 from graph_runtime.contracts.outputs import GraphAgentAnswer, GraphSubgraphMeta
 from graph_runtime.contracts.tool_calls import GraphToolCall
-from graph_runtime.planner.plan_builder import build_graph_plan
+from graph_runtime.planner import build_graph_plan, build_initial_tool_plan
+from graph_runtime.planner.tool_plan_builder import PlannedToolCall
 from graph_runtime.primitives.evidence import collect_evidence_snippets
+from graph_runtime.service.cypher_agent import GraphCypherAgent
 
 from .answer_synthesis import synthesize_answer
 from .exploration_policy import choose_exploration_depth
 
 
-@dataclass
-class PlannedToolCall:
-    tool_name: str
-    arguments: dict[str, Any]
-    summary: str
-
-
 class GraphExplorationAgent:
-    def __init__(self, graph_facade) -> None:
+    def __init__(self, graph_facade, cypher_agent: GraphCypherAgent | None = None) -> None:
         self.graph_facade = graph_facade
+        self.cypher_agent = cypher_agent
 
     async def ask(self, request) -> GraphAgentAnswer:
         plan = build_graph_plan(request.question)
@@ -41,13 +36,27 @@ class GraphExplorationAgent:
         center: dict | None = None
         subgraph: dict[str, Any] = {"center": None, "nodes": [], "edges": []}
         fallback_name: str | None = None
+        draft_answer: str | None = None
 
         while pending_calls and len(tool_calls) < request.tool_call_budget:
             planned_call = pending_calls.popleft()
             tool_call, result = await self._execute_tool_call(planned_call)
             tool_calls.append(tool_call)
 
-            if planned_call.tool_name == "search_nodes":
+            if planned_call.tool_name == "graph_cypher_qa":
+                draft_answer = result.get("answer") or draft_answer
+                for node_name in result.get("node_names", []):
+                    if node_name in searched_queries:
+                        continue
+                    pending_calls.append(
+                        PlannedToolCall(
+                            tool_name="search_nodes",
+                            arguments={"query": node_name, "limit": 5},
+                            summary="根据 cypher 结果回查图谱节点",
+                        )
+                    )
+
+            elif planned_call.tool_name == "search_nodes":
                 query = str(planned_call.arguments.get("query", ""))
                 searched_queries.add(query)
                 matches = result if isinstance(result, list) else []
@@ -108,7 +117,7 @@ class GraphExplorationAgent:
 
         related_nodes = subgraph.get("nodes", [])
         related_edges = subgraph.get("edges", [])
-        answer = synthesize_answer(request.question, center, related_nodes, related_edges, plan)
+        answer = draft_answer or synthesize_answer(request.question, center, related_nodes, related_edges, plan)
         evidence = collect_evidence_snippets(related_nodes)
         reasoning_trace.append(
             {
@@ -141,23 +150,38 @@ class GraphExplorationAgent:
         )
 
     def _build_initial_tool_calls(self, plan: dict) -> list[PlannedToolCall]:
-        queries = [
-            candidate
-            for candidate in plan.get("entity_hints", [])
-            if isinstance(candidate, str) and candidate.strip()
-        ]
-        if not queries:
-            queries = [plan["normalized_question"]]
         return [
             PlannedToolCall(
-                tool_name="search_nodes",
-                arguments={"query": query, "limit": 5},
-                summary="根据问题解析候选实体并搜索图谱节点",
+                tool_name=planned_call.tool_name,
+                arguments=dict(planned_call.arguments),
+                summary=planned_call.summary,
             )
-            for query in queries
+            for planned_call in build_initial_tool_plan(plan)
         ]
 
     async def _execute_tool_call(self, planned_call: PlannedToolCall) -> tuple[GraphToolCall, Any]:
+        if planned_call.tool_name == "graph_cypher_qa":
+            if self.cypher_agent is None:
+                raise RuntimeError("graph_cypher_qa requested but no cypher agent configured")
+            result = await self.cypher_agent.answer(
+                str(planned_call.arguments.get("question", "")),
+                top_k=int(planned_call.arguments.get("top_k", 8)),
+            )
+            node_names = result.get("node_names", [])
+            node_count = len(node_names) if isinstance(node_names, list) else 0
+            return (
+                GraphToolCall(
+                    tool_name="graph_cypher_qa",
+                    arguments={
+                        **planned_call.arguments,
+                        "generated_cypher": result.get("generated_cypher"),
+                    },
+                    summary=planned_call.summary,
+                    result_summary=f"返回 {node_count} 个候选节点",
+                ),
+                result,
+            )
+
         if planned_call.tool_name == "search_nodes":
             result = await self.graph_facade.search_nodes(
                 planned_call.arguments["query"],

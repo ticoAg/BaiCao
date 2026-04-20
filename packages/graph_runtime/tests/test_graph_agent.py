@@ -33,6 +33,31 @@ class LoopingFacade(StubFacade):
         return []
 
 
+class ComplexFacade:
+    async def search_nodes(self, query: str, label: str | None = None, limit: int = 20):
+        return [{"id": f"药材:{query}", "name": query, "labels": ["药材"]}] if query in {"桂枝", "荆芥"} else []
+
+    async def expand_neighbors(self, node_id: str, depth: int = 1, limit: int = 20):
+        return {
+            "center": {"id": node_id, "name": node_id.split(":", 1)[1], "labels": ["药材"]},
+            "nodes": [{"id": node_id, "name": node_id.split(":", 1)[1], "labels": ["药材"]}],
+            "edges": [],
+        }
+
+    async def read_cypher(self, query: str):
+        return []
+
+
+class FakeCypherAgent:
+    async def answer(self, question: str, top_k: int = 8):
+        return {
+            "answer": "可考虑桂枝、荆芥，并结合发汗解表思路处理。",
+            "generated_cypher": "MATCH (h)-[:TREATS]->(d {name:'感冒'}) RETURN h.name LIMIT 8",
+            "node_names": ["桂枝", "荆芥"],
+            "intermediate_steps": [],
+        }
+
+
 async def _run_graph_agent_returns_dual_track_output():
     agent = GraphExplorationAgent(graph_facade=StubFacade())
 
@@ -94,3 +119,18 @@ async def _run_graph_agent_uses_readonly_cypher_as_fallback():
 
 def test_graph_agent_uses_readonly_cypher_as_fallback():
     asyncio.run(_run_graph_agent_uses_readonly_cypher_as_fallback())
+
+
+async def _run_graph_agent_uses_graph_cypher_qa_for_abstract_query():
+    agent = GraphExplorationAgent(graph_facade=ComplexFacade(), cypher_agent=FakeCypherAgent())
+
+    result = await agent.ask(GraphAskRequest(question="治感冒的中药都有哪些，怎么做", tool_call_budget=8))
+
+    assert result.tool_calls[0].tool_name == "graph_cypher_qa"
+    assert "generated_cypher" in result.tool_calls[0].arguments
+    assert result.related_nodes[0]["name"] == "桂枝"
+    assert "桂枝" in result.answer
+
+
+def test_graph_agent_uses_graph_cypher_qa_for_abstract_query():
+    asyncio.run(_run_graph_agent_uses_graph_cypher_qa_for_abstract_query())
