@@ -13,7 +13,8 @@
 - `acceptance/`：验收标准与验证方式，回答“如何证明它真的完成了”
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
-- `packages/graph_runtime/`：agent-first 图谱 runtime 真源；`packages/api/` 仅作为 HTTP 接线层，CLI 仅作为 terminal 薄壳
+- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 deepagents 执行流、进程内 memory checkpointer 与 SSE 事件适配
+- `packages/graph_runtime/`：早期 graph runtime 研发产物与参考实现，不再作为 chat 主链真源
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
 ## 推荐阅读路径
@@ -245,5 +246,6 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
-- Agent-first 图谱 runtime 真源：`../packages/graph_runtime/`
+- Chat 主链 runtime 真源：`../packages/api/app/services/chat_agent_runtime/`
+- 早期 graph runtime 研发产物：`../packages/graph_runtime/`
 - 运行编排事实：`../infra/docker-compose.yml`

@@ -8,7 +8,30 @@
 
 **Tech Stack:** Python 3.12, FastAPI, Pydantic v2, LangChain, `deepagents`, LangGraph, Neo4j, React 18, Vite, Vitest
 
+**Status Snapshot (2026-04-20):** 当前主链已落地为 `/api/v1/chat/stream -> chat_agent_runtime -> deepagents`。会话上下文真源已收敛到 LangGraph `thread_id` + 进程内 `InMemorySaver`，并补了 30 分钟 TTL 回收与同 `session_id` 串行锁；原计划中的 `thread_store.py` 已被 `session_memory.py` 替代。
+
+**Implementation Evidence:**
+
+- `packages/api/app/services/chat_agent_runtime/runtime.py`
+- `packages/api/app/services/chat_agent_runtime/event_adapter.py`
+- `packages/api/app/services/chat_agent_runtime/session_memory.py`
+- `packages/api/app/services/graph_tools/registry.py`
+- `packages/api/tests/services/test_chat_agent_runtime.py`
+- `packages/api/tests/services/test_session_memory.py`
+- `docs/architecture/system-overview.md`
+- `docs/acceptance/chat-mainline.md`
+
+**Verification Evidence:**
+
+- `cd packages/api && uv run ruff check app tests`
+- `cd packages/api && uv run ty check`
+- `cd packages/api && uv run pytest -m "not integration"`
+- `corepack pnpm --dir packages/web test --run`
+- `corepack pnpm --dir packages/web exec vp build`
+
 ---
+
+> Historical note: 下方 task-by-task 拆解保留了当时的实施顺序，用于回溯过程；若与顶部 `Status Snapshot` 冲突，以顶部现状和稳定文档为准。与 `thread_store.py` 相关的步骤已由 `session_memory.py` + LangGraph `thread_id` / `InMemorySaver` 方案替代。
 
 ## File Map
 
@@ -16,7 +39,7 @@
 
 - Create: `packages/api/app/services/chat_agent_runtime/__init__.py` — 导出 runtime 入口
 - Create: `packages/api/app/services/chat_agent_runtime/runtime.py` — 创建和执行 deepagents graph specialist agent，暴露 `stream_turn(...)`
-- Create: `packages/api/app/services/chat_agent_runtime/thread_store.py` — 运行期 thread store，仅按 `session_id` 保存完整 thread 历史
+- Create: `packages/api/app/services/chat_agent_runtime/session_memory.py` — 进程内 memory checkpointer、30 分钟 TTL 回收与同 session 串行锁
 - Create: `packages/api/app/services/chat_agent_runtime/system_prompt.py` — graph specialist 的 system prompt 与工具使用约束
 - Create: `packages/api/app/services/chat_agent_runtime/event_adapter.py` — deepagents/langgraph 事件转 SSE 事件
 - Create: `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — 只提取 provider 原生 reasoning，不生成替代文本
@@ -35,7 +58,7 @@
 ### API Tests (`packages/api/tests/`)
 
 - Create: `packages/api/tests/services/test_provider_reasoning.py` — provider reasoning 提取测试
-- Create: `packages/api/tests/services/test_thread_store.py` — thread store 行为测试
+- Create: `packages/api/tests/services/test_session_memory.py` — session memory TTL 与同 session 串行锁测试
 - Create: `packages/api/tests/services/test_graph_tools.py` — 基础图工具单测
 - Create: `packages/api/tests/services/test_chat_agent_runtime.py` — runtime 装配、事件适配、thread 绑定测试
 - Modify: `packages/api/tests/api/test_chat_routes.py` — `/chat/stream` 新 SSE 事件 contract 测试
@@ -1062,6 +1085,6 @@ git commit -m "docs(chat): document deepagents graph chat flow"
 
 ## Self-Review
 
-- **Spec coverage:** 已覆盖单入口 `/chat/stream`、`deepagents` runtime、完整 thread 历史交给 deepagents、基础图工具注册、provider 原生 reasoning 透传、前端流式展示、旧 `graph-agent` 路径退役和文档更新。
+- **Spec coverage:** 已覆盖单入口 `/chat/stream`、`deepagents` runtime、LangGraph `thread_id` + 进程内 `InMemorySaver` 会话续接、30 分钟 TTL 回收、同 session 串行锁、基础图工具注册、provider 原生 reasoning 透传、前端流式展示、旧 `graph-agent` 路径退役和文档更新。
 - **Placeholder scan:** 计划中没有 `TODO`、`TBD`、"类似 Task N" 或“自行处理”类占位项；每个任务都包含明确文件、测试和命令。
 - **Type consistency:** 统一使用 `provider_reasoning`、`tool_start`、`tool_result`、`subgraph_patch`、`answer_chunk`、`final` 这套事件名；统一使用 `search_nodes`、`search_edges`、`expand_neighbors`、`lookup_nodes`、`read_cypher` 作为基础图工具名；不再在后续任务中引入 `graph_cypher_qa`。

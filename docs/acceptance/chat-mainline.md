@@ -33,7 +33,7 @@ audience: developer
 
 ### 不包含
 
-- 多轮会话持久化（当前页面仅保留前端会话状态和“新话题”重置）
+- 跨进程 / 跨重启的持久化会话恢复（当前仅支持单进程内存态会话）
 
 ## 3. 前置条件
 
@@ -42,7 +42,7 @@ audience: developer
 - 运行方式：本地 `make` + tmux 单 session
 - 依赖服务：FastAPI、Neo4j、PostgreSQL、Vite
 - 样例数据：demo 用户、来源和”人参”图谱
-- LLM 配置（可选）：.env 中设置 `LLM_PROVIDER` + API key 启用 LLM；未配置时自动降级为规则引擎
+- LLM 配置（必需）：需要提供可用的 `LLM_PROVIDER` 与对应 API key；当前 chat 主链不再降级到旧规则问答链
 
 ### 启动命令
 
@@ -97,6 +97,7 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream \
 - SSE 事件流中至少可见 `session`、`answer_chunk`、`final`
 - 若 agent 调用了图工具，可见 `tool_start` 和 `tool_result`
 - 若 provider 返回原生 reasoning，可见 `provider_reasoning`
+- 同一 `session_id` 的并发请求会被串行化，30 分钟未访问的会话会被回收
 
 ### Step 4 预期
 
@@ -111,6 +112,7 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream \
 
 - `packages/api/app/api/chat.py` — `/api/v1/chat/stream` 唯一入口
 - `packages/api/app/services/chat_agent_runtime/runtime.py` — deepagents runtime 真源
+- `packages/api/app/services/chat_agent_runtime/session_memory.py` — 进程内 memory checkpointer、TTL 与同 session 串行锁
 - `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — provider 原生 reasoning 透传
 - `packages/api/app/services/graph_tools/registry.py` — 基础图工具注册
 - `packages/web/src/pages/ChatPage.tsx` — 页面入口
@@ -131,14 +133,16 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: appli
 - 页面可见结果：回答、依据子图、工具时间线出现；provider reasoning 仅在有原生返回时出现
 - 接口返回摘要：SSE 事件顺序可见 `session -> tool_start/tool_result -> answer_chunk -> final`
 - `final` 事件中包含 `answer`、`related_nodes`、`related_edges`、`subgraph_meta`、`tool_calls`
+- 运行时策略摘要：上下文由 LangGraph `thread_id` + 进程内 memory checkpointer 续接；单进程内 30 分钟未访问会话自动回收
 
 ## 7. 风险与未覆盖项
 
 - 当前 runtime 依赖 LLM + Neo4j 环境；若本地未配置对应依赖，只能验证单测与页面 mock 场景
 - provider 原生 reasoning 是否可见取决于当前 provider 是否返回该字段，页面不会伪造
+- 当前会话策略仅适用于单进程部署；多 worker 或服务重启后不会保留会话状态
 
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：智能问答主链路已收敛到 `/api/v1/chat/stream`，并具备 agent 工具过程流、可选 provider reasoning 与依据子图展示能力
-- 后续动作：把 deepagents runtime 从骨架补成完整执行主链，并继续增强基础图工具
+- 结论一句话：智能问答主链路已收敛到 `/api/v1/chat/stream`，并具备 deepagents 执行流、进程内会话续接、同 session 串行锁、可选 provider reasoning 与依据子图展示能力
+- 后续动作：若进入多 worker / 多实例部署阶段，把进程内 memory checkpointer 升级为持久化 checkpointer

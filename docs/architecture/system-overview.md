@@ -142,8 +142,9 @@ sequenceDiagram
 
     User->>Web: 输入问题
     Web->>API: POST /api/v1/chat/stream
-    API->>Runtime: 建立/续接 session thread
-    Runtime->>Agent: 注入完整 thread 历史、system prompt、基础图工具
+    API->>Runtime: 以 session_id 触发 thread_id 续接
+    Runtime->>Runtime: 进程内 memory checkpointer + 30 分钟 TTL 回收 + 同 session 串行锁
+    Runtime->>Agent: 注入当前用户消息、system prompt、基础图工具
     Agent->>Tools: 自主选择 search / expand / lookup / readonly cypher
     Tools->>Graph: 查询节点、关系、子图
     Graph->>Neo4j: 执行图查询
@@ -157,7 +158,8 @@ sequenceDiagram
 ```
 
 - 图谱问答主入口已经收敛到 `/api/v1/chat/stream`，不再保留独立 `graph-agent` 主路径。
-- `deepagents` graph specialist 在运行期拿到完整 thread 历史和基础图工具，自主决定工具顺序与参数。
+- `deepagents` graph specialist 的上下文真源已经收敛到 LangGraph `thread_id` + `InMemorySaver`；应用层不再手动回放完整 thread 历史。
+- 当前进程内会话策略为：30 分钟未访问即回收 checkpoint，且同一 `session_id` 的并发请求串行执行，不同 session 可并发。
 - provider 原生 reasoning 仅在模型提供时透传到页面；若 provider 不返回 reasoning，页面不会伪造该内容。
 
 ### 6.2 知识可信度闭环

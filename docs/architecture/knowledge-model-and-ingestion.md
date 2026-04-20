@@ -143,16 +143,16 @@ flowchart LR
 
 ### 5.1 Graph Runtime / Agent 运行边界
 
-`packages/graph_runtime/` 是 agent-first 图谱 runtime 的当前稳定入口。它不拥有 Neo4j 连接、不直接访问 FastAPI 应用状态，也不重新定义仓库级图模型；它只定义面向 agent 的输入输出契约、只读 backend 协议、图谱 primitives、schema-aware planner、默认探索 agent 与 CLI 薄壳。
+当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。它通过 `deepagents`、LangGraph `thread_id` 和进程内 memory checkpointer 续接会话，并直接复用 API 侧图工具与 backend adapter。
 
-`packages/api/` 仍是 runtime 的 HTTP 接线层：API 侧通过 adapter 把既有 `graph_service` / `graph_metadata_service` 归一化成 runtime backend 协议，并暴露 `/api/v1/graph-agent/ask` 最小入口。CLI 只负责渐进式发现、help 分层与友好错误提示，不承载核心图谱逻辑。
+`packages/graph_runtime/` 仍保留为早期 graph runtime 研发产物与参考实现，但不再是当前 chat 主链的稳定入口。`packages/api/` 现在既承担 HTTP 接线，也承载当前稳定的 chat agent runtime 与图工具注册层。
 
 ```mermaid
 flowchart LR
-    User[用户 / Agent] --> CLI[graph CLI 薄壳]
-    User --> API[packages/api<br/>HTTP 接线层]
-    CLI --> Runtime[packages/graph_runtime<br/>contracts / primitives / planner / agent]
-    API --> Runtime
+    User[用户 / Agent] --> CLI[graph CLI / 早期 runtime 参考]
+    User --> API[packages/api<br/>HTTP 接线层 + chat runtime]
+    CLI --> LegacyRuntime[packages/graph_runtime<br/>研发产物 / 参考实现]
+    API --> Runtime[chat_agent_runtime<br/>deepagents + graph tools]
     Runtime --> Backend[GraphRuntimeBackend 协议]
     Backend --> GraphService[graph_service / graph_metadata_service]
     GraphService --> Neo4j[(Neo4j 图谱)]
@@ -320,9 +320,9 @@ flowchart LR
 当前仓库内已经完成这条主线收敛：
 
 - `packages/knowledge_model/` 已成为共享图模型与导入记录的代码真源
-- `packages/graph_runtime/` 已成为 agent-first 图谱 runtime 的代码真源
+- `packages/api/app/services/chat_agent_runtime/` 已成为 chat 主链 agent runtime 的代码真源
 - API graph schema 直接复用共享 `NodeType` / `NodeStatus`
-- API graph agent route 仅负责把 HTTP payload 接到 runtime agent，不承载核心探索逻辑
+- chat 主链已经收敛到 `/api/v1/chat/stream`，上下文通过 LangGraph `thread_id` + 进程内 memory checkpointer 续接
 - importer / exporter 统一消费共享 `GraphImportRecord`
 - `packages/data_ingestion/` 已作为共享模型消费者落地，不再重复定义图谱枚举
 

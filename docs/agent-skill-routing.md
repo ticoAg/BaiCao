@@ -124,7 +124,7 @@ Recommended order:
 Additional rules:
 
 - For payload changes, follow `workflow.md` and update contract sources before consumers.
-- For graph runtime work, keep `packages/graph_runtime/` as the agent-first runtime source and keep `packages/api/` as the backend adapter / HTTP wiring layer.
+- For the current chat mainline runtime, keep `packages/api/app/services/chat_agent_runtime/` as the execution source of truth; treat `packages/graph_runtime/` as earlier graph-runtime exploration code unless the task explicitly targets that package.
 - For OpenAI / LangChain usage questions, prefer `openai-docs` over memory.
 
 ### 3.5 Docs, Architecture Notes, Process Documents
