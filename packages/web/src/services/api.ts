@@ -5,7 +5,7 @@ import type {
   Source,
   ChatResponse,
   GraphAgentResponse,
-  SSECallbacks,
+  ChatAgentSSECallbacks,
 } from "../types/chat";
 import type {
   GraphData,
@@ -34,7 +34,7 @@ export type {
   Source,
   ChatResponse,
   GraphAgentResponse,
-  SSECallbacks,
+  ChatAgentSSECallbacks,
 } from "../types/chat";
 export type { VerificationStatus } from "../types/index";
 
@@ -228,7 +228,7 @@ export const chatApi = {
   stream: (
     question: string,
     sessionId?: string,
-    callbacks?: SSECallbacks,
+    callbacks?: ChatAgentSSECallbacks,
   ): AbortController => {
     const controller = new AbortController();
 
@@ -265,19 +265,25 @@ export const chatApi = {
                 const data = JSON.parse(line.slice(6));
                 switch (currentEvent) {
                   case "session":
-                    callbacks?.onSession?.(data.session_id);
+                    callbacks?.onSession?.(data.session_id, data.turn_id);
                     break;
-                  case "reasoning":
-                    callbacks?.onReasoning?.(data.reasoning_chain);
+                  case "provider_reasoning":
+                    callbacks?.onProviderReasoning?.(data);
                     break;
-                  case "sources":
-                    callbacks?.onSources?.(data.sources);
+                  case "tool_start":
+                    callbacks?.onToolStart?.(data);
                     break;
-                  case "token":
-                    callbacks?.onToken?.(data.token);
+                  case "tool_result":
+                    callbacks?.onToolResult?.(data);
                     break;
-                  case "done":
-                    callbacks?.onDone?.();
+                  case "subgraph_patch":
+                    callbacks?.onSubgraphPatch?.(data);
+                    break;
+                  case "answer_chunk":
+                    callbacks?.onAnswerChunk?.(data.text);
+                    break;
+                  case "final":
+                    callbacks?.onFinal?.(data);
                     break;
                   case "error":
                     callbacks?.onError?.(data.message);
@@ -290,8 +296,6 @@ export const chatApi = {
             }
           }
         }
-
-        callbacks?.onDone?.();
       })
       .catch((err) => {
         if (err.name !== "AbortError") {
@@ -313,17 +317,6 @@ export const chatApi = {
   // 获取会话
   getSession: async (sessionId: string): Promise<{ id: string; messages: unknown[]; created_at?: string }> => {
     const { data } = await api.get(`/chat/session/${sessionId}`);
-    return data;
-  },
-};
-
-// ============ Graph Agent API ============
-
-export const graphAgentApi = {
-  ask: async (question: string): Promise<GraphAgentResponse> => {
-    const { data } = await api.post("/graph-agent/ask", {
-      question,
-    });
     return data;
   },
 };

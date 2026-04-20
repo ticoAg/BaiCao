@@ -41,6 +41,7 @@ function extractEntitiesFromSources(sources?: Source[]): Entity[] {
 function hasGraphAgentBasis(msg: Message): boolean {
   return Boolean(
     msg.subgraphMeta ||
+      msg.providerReasoning?.length ||
       msg.evidence?.length ||
       msg.reasoningTrace?.length ||
       msg.toolCalls?.length,
@@ -315,6 +316,7 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
                           graphData={msg.graphData}
                           evidence={msg.evidence}
                           subgraphMeta={msg.subgraphMeta}
+                          providerReasoning={msg.providerReasoning}
                           reasoningTrace={msg.reasoningTrace}
                           toolCalls={msg.toolCalls}
                         />}

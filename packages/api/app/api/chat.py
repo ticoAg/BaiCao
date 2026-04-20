@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.database import get_db
 from ..services.chat_service import ChatService
+from ..services.chat_agent_runtime import stream_turn as stream_chat_turn
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -51,12 +52,8 @@ async def stream_answer(
     - done: {}
     - error: {message}
     """
-    chat_service = ChatService(db)
-
     async def event_generator():
-        async for event in chat_service.answer_question_stream(
-            payload.question, payload.session_id
-        ):
+        async for event in stream_chat_turn(payload.question, payload.session_id):
             event_type = event["type"]
             event_data = json.dumps(event["data"], ensure_ascii=False)
             yield f"event: {event_type}\ndata: {event_data}\n\n"

@@ -8,6 +8,7 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import type {
+  ChatAgentProviderReasoningChunk,
   ChatGraphData,
   GraphAgentEvidence,
   GraphAgentReasoningTraceItem,
@@ -34,6 +35,7 @@ interface GraphAgentBasisPanelProps {
   graphData?: ChatGraphData;
   evidence?: GraphAgentEvidence[];
   subgraphMeta?: GraphAgentSubgraphMeta;
+  providerReasoning?: ChatAgentProviderReasoningChunk[];
   reasoningTrace?: GraphAgentReasoningTraceItem[];
   toolCalls?: GraphAgentToolCall[];
 }
@@ -73,6 +75,7 @@ const GraphAgentBasisPanel = ({
   graphData,
   evidence = [],
   subgraphMeta,
+  providerReasoning = [],
   reasoningTrace = [],
   toolCalls = [],
 }: GraphAgentBasisPanelProps) => {
@@ -87,7 +90,7 @@ const GraphAgentBasisPanel = ({
   const inspectorItem = hoveredItem ?? selected;
   const hasGraph = renderableGraph.nodes.length > 0;
   const hasEvidence = evidence.length > 0;
-  const hasTraceOrTools = reasoningTrace.length > 0 || toolCalls.length > 0;
+  const hasTraceOrTools = providerReasoning.length > 0 || reasoningTrace.length > 0 || toolCalls.length > 0;
 
   const handleNodeClick = useCallback((vizNode: VizNode) => {
     setHoveredItem(null);
@@ -287,6 +290,18 @@ const GraphAgentBasisPanel = ({
                         <Tag color="blue">{item.kind ?? `step-${index + 1}`}</Tag>
                         <Text>{item.summary}</Text>
                       </Space>
+                    </List.Item>
+                  )}
+                />
+              ) : null}
+              {providerReasoning.length ? (
+                <List
+                  size="small"
+                  header={<Text strong>provider_reasoning</Text>}
+                  dataSource={providerReasoning}
+                  renderItem={(item) => (
+                    <List.Item style={{ padding: "4px 0" }}>
+                      <Text>{item.text}</Text>
                     </List.Item>
                   )}
                 />

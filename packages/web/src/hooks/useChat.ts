@@ -1,9 +1,10 @@
 // Chat hook - graph runtime agent 消费
 import { useCallback, useRef } from "react";
 import { message } from "antd";
-import { graphAgentApi } from "../services/api";
+import { chatApi } from "../services/api";
 import { useChatStore } from "../stores/chatStore";
 import type {
+  ChatAgentFinalPayload,
   ChatGraphData,
   Entity,
   GraphAgentResponse,
@@ -145,16 +146,53 @@ function buildAssistantMessage(response: GraphAgentResponse): Message {
   };
 }
 
-/** 展示错误并添加错误消息 */
-function showErrorMessage(err: unknown, addMessage: (msg: Message) => void) {
+function buildAssistantMessageFromFinal(payload: ChatAgentFinalPayload, previous?: Message): Message {
+  const messageFromFinal = buildAssistantMessage(payload);
+  return {
+    ...messageFromFinal,
+    providerReasoning:
+      payload.provider_reasoning.length > 0
+        ? payload.provider_reasoning
+        : (previous?.providerReasoning ?? []),
+    toolCalls:
+      payload.tool_calls.length > 0
+        ? payload.tool_calls
+        : (previous?.toolCalls ?? []),
+  };
+}
+
+function applySubgraphPatch(messageValue: Message, patch: { nodes?: GraphAgentResponse["related_nodes"]; edges?: GraphAgentResponse["related_edges"]; center_node_id?: string | null; }): Message {
+  const graphData = messageValue.graphData ?? { center: null, nodes: [], edges: [] };
+  const nextNodes = [...graphData.nodes, ...(patch.nodes ?? [])];
+  const nextEdges = [...graphData.edges, ...(patch.edges ?? [])];
+  const center =
+    patch.center_node_id
+      ? nextNodes.find((node) => (node.id ?? node.name) === patch.center_node_id) ?? graphData.center
+      : graphData.center;
+
+  return {
+    ...messageValue,
+    graphData: {
+      center: center ?? null,
+      nodes: nextNodes,
+      edges: nextEdges,
+    },
+  };
+}
+
+/** 展示错误并更新最后一条 assistant 消息 */
+function showErrorMessage(
+  err: unknown,
+  updateLastMessageContent: (updater: (msg: Message) => Partial<Message>) => void,
+) {
   const detail =
-    (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "提问失败";
+    typeof err === "string"
+      ? err
+      : (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "提问失败";
   message.error(detail);
-  addMessage({
-    id: (Date.now() + 1).toString(),
-    role: "assistant",
+  updateLastMessageContent(() => ({
     content: "抱歉，我遇到了一些问题，请稍后再试。",
-  });
+  }));
 }
 
 export function useChat() {
@@ -167,6 +205,7 @@ export function useChat() {
     setSessionId,
     setStreaming,
     addMessage,
+    updateLastMessageContent,
     clearMessages,
     startNewTopic,
   } = useChatStore();
@@ -185,24 +224,69 @@ export function useChat() {
       addMessage(userMsg);
       setInput("");
       setStreaming(true);
+      const nextSessionId = sessionId || createLocalSessionId();
 
-      if (!sessionId) {
-        setSessionId(createLocalSessionId());
-      }
+      setSessionId(nextSessionId);
 
-      try {
-        const response = await graphAgentApi.ask(question.trim());
-        addMessage(buildAssistantMessage(response));
-      } catch (err: unknown) {
-        showErrorMessage(err, addMessage);
-      } finally {
-        setStreaming(false);
-      }
+      const assistantMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "",
+        providerReasoning: [],
+        toolCalls: [],
+      };
+      addMessage(assistantMsg);
+
+      abortRef.current = chatApi.stream(question.trim(), nextSessionId, {
+        onSession: (sid) => setSessionId(sid),
+        onProviderReasoning: (chunk) =>
+          updateLastMessageContent((msg) => ({
+            providerReasoning: [...(msg.providerReasoning ?? []), chunk],
+          })),
+        onToolStart: (event) =>
+          updateLastMessageContent((msg) => ({
+            toolCalls: [
+              ...(msg.toolCalls ?? []),
+              {
+                call_id: event.call_id,
+                tool_name: event.tool_name,
+                arguments: event.arguments,
+                summary: "工具调用开始",
+                status: "running",
+              },
+            ],
+          })),
+        onToolResult: (event) =>
+          updateLastMessageContent((msg) => ({
+            toolCalls: (msg.toolCalls ?? []).map((tool) =>
+              tool.call_id === event.call_id
+                ? { ...tool, result_summary: event.result_summary, status: "completed" }
+                : tool,
+            ),
+          })),
+        onSubgraphPatch: (patch) =>
+          updateLastMessageContent((msg) => applySubgraphPatch(msg, patch)),
+        onAnswerChunk: (text) =>
+          updateLastMessageContent((msg) => ({
+            content: `${msg.content}${text}`,
+          })),
+        onFinal: (payload) => {
+          updateLastMessageContent((msg) => buildAssistantMessageFromFinal(payload, msg));
+          setStreaming(false);
+          abortRef.current = null;
+        },
+        onError: (detail) => {
+          showErrorMessage(detail, updateLastMessageContent);
+          setStreaming(false);
+          abortRef.current = null;
+        },
+      });
     },
     [
       isStreaming,
       sessionId,
       addMessage,
+      updateLastMessageContent,
       setInput,
       setStreaming,
       setSessionId,

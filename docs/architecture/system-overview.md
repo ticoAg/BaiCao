@@ -133,44 +133,32 @@ sequenceDiagram
     participant User as 用户
     participant Web as Web
     participant API as FastAPI
-    participant Agent as GraphAgentService
-    participant Runtime as graph_runtime
-    participant Planner as Intent / Tool Planner
-    participant Cypher as GraphCypherAgent
+    participant Runtime as ChatAgentRuntime
+    participant Agent as DeepAgents Graph Specialist
+    participant Tools as Graph Tools
     participant Graph as GraphService
     participant Neo4j as Neo4j
     participant LLM as LLM
 
     User->>Web: 输入问题
-    Web->>API: POST /api/v1/graph-agent/ask
-    API->>Agent: 调用 graph runtime agent
-    Agent->>Runtime: 规划探索目标与工具调用
-    Runtime->>Planner: 判定 entity_lookup / abstract_graph_query
-    alt 实体问题
-        Planner-->>Runtime: search_nodes → expand_neighbors
-        Runtime->>Graph: 获取相关子图
-        Graph->>Neo4j: 查询节点与关系
-        Neo4j-->>Graph: 返回子图
-        Graph-->>Runtime: 返回图谱上下文
-    else 抽象问题
-        Planner-->>Runtime: graph_cypher_qa → 回填 search_nodes
-        Runtime->>Cypher: 调用 LangChain Neo4j cypher agent
-        Cypher->>LLM: 结合 schema 生成 Cypher
-        Cypher->>Neo4j: 执行只读图查询
-        Neo4j-->>Cypher: 返回候选实体 / 上下文
-        Cypher-->>Runtime: 自然语言答案 + generated_cypher + node_names
-        Runtime->>Graph: 用 node_names 回填依据子图
-        Graph->>Neo4j: 查询节点与关系
-        Neo4j-->>Graph: 返回子图
-        Graph-->>Runtime: 返回图谱上下文
-    end
-    Runtime-->>Agent: 回答 + 依据子图 + 证据 + 推理轨迹
-    Agent-->>API: GraphAgentAnswer
-    API-->>Web: 结构化响应
+    Web->>API: POST /api/v1/chat/stream
+    API->>Runtime: 建立/续接 session thread
+    Runtime->>Agent: 注入完整 thread 历史、system prompt、基础图工具
+    Agent->>Tools: 自主选择 search / expand / lookup / readonly cypher
+    Tools->>Graph: 查询节点、关系、子图
+    Graph->>Neo4j: 执行图查询
+    Neo4j-->>Graph: 返回图数据
+    Graph-->>Tools: 结构化图结果
+    Tools-->>Agent: 工具结果
+    Agent->>LLM: 组织最终回答
+    Agent-->>Runtime: provider reasoning + tool timeline + final answer
+    Runtime-->>API: SSE 事件流
+    API-->>Web: session / provider_reasoning / tool_start / tool_result / subgraph_patch / answer_chunk / final
 ```
 
-- graph runtime 现在先做问题意图分类，再决定走实体搜索路径还是 `graph_cypher_qa` 路径。
-- 对复杂自然语言问题，cypher agent 会产出 `generated_cypher`、候选实体和自然语言草答，随后 runtime 再把候选实体回填为可展示的依据子图。
+- 图谱问答主入口已经收敛到 `/api/v1/chat/stream`，不再保留独立 `graph-agent` 主路径。
+- `deepagents` graph specialist 在运行期拿到完整 thread 历史和基础图工具，自主决定工具顺序与参数。
+- provider 原生 reasoning 仅在模型提供时透传到页面；若 provider 不返回 reasoning，页面不会伪造该内容。
 
 ### 6.2 知识可信度闭环
 

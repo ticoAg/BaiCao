@@ -52,6 +52,7 @@ export interface GraphAgentReasoningTraceItem {
 }
 
 export interface GraphAgentToolCall {
+  call_id?: string;
   tool_name: string;
   arguments?: Record<string, unknown>;
   summary: string;
@@ -88,6 +89,7 @@ export interface Message {
   subgraphMeta?: GraphAgentSubgraphMeta;
   reasoningTrace?: GraphAgentReasoningTraceItem[];
   toolCalls?: GraphAgentToolCall[];
+  providerReasoning?: ChatAgentProviderReasoningChunk[];
 }
 
 // chat 上下文中的 graph 数据（后端返回字段可能不完整，用 Partial）
@@ -103,11 +105,44 @@ export interface ChatGraphData {
   edges: Partial<GraphEdge>[];
 }
 
-export interface SSECallbacks {
-  onSession?: (sessionId: string) => void;
-  onReasoning?: (chain: ReasoningStep[]) => void;
-  onSources?: (sources: Source[]) => void;
-  onToken?: (token: string) => void;
-  onDone?: () => void;
+export interface ChatAgentProviderReasoningChunk {
+  id?: string;
+  text: string;
+}
+
+export interface ChatAgentToolStartEvent {
+  call_id: string;
+  tool_name: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface ChatAgentToolResultEvent {
+  call_id: string;
+  tool_name: string;
+  result_summary: string;
+  payload_preview?: Record<string, unknown> | null;
+}
+
+export interface ChatAgentSubgraphPatchEvent {
+  nodes?: Array<Partial<GraphNode> & { id?: string; name?: string }>;
+  edges?: Partial<GraphEdge>[];
+  center_node_id?: string | null;
+}
+
+export interface ChatAgentFinalPayload extends GraphAgentResponse {
+  provider_reasoning: ChatAgentProviderReasoningChunk[];
+  session_id: string;
+}
+
+export interface ChatAgentSSECallbacks {
+  onSession?: (sessionId: string, turnId?: string) => void;
+  onProviderReasoning?: (chunk: ChatAgentProviderReasoningChunk) => void;
+  onToolStart?: (event: ChatAgentToolStartEvent) => void;
+  onToolResult?: (event: ChatAgentToolResultEvent) => void;
+  onSubgraphPatch?: (patch: ChatAgentSubgraphPatchEvent) => void;
+  onAnswerChunk?: (text: string) => void;
+  onFinal?: (payload: ChatAgentFinalPayload) => void;
   onError?: (message: string) => void;
 }
+
+export type SSECallbacks = ChatAgentSSECallbacks;

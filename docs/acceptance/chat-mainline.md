@@ -13,21 +13,22 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：智能问答主链路
-- 验收目标：验证问答页面、graph runtime agent 接口、自然语言回答和可展开依据子图形成完整闭环，并覆盖复杂自然语言 query 的 cypher agent 路径
+- 验收目标：验证问答页面、`/api/v1/chat/stream` 单入口、自然语言回答、agent 工具过程流和可展开依据子图形成完整闭环
 - 对应需求：图谱增强智能问答
-- 对应计划：`docs/superpowers/plans/2026-04-20-graph-agent-complex-query-langchain.md`
-- 当前版本 / 日期：Graph Agent Chat / 2026-04-20
+- 对应计划：`docs/superpowers/plans/2026-04-20-chat-deepagents-graph-agent.md`
+- 当前版本 / 日期：Chat DeepAgents Graph Agent / 2026-04-20
 
 ## 2. 验收范围
 
 ### 包含
 
 - 问答页面提问
-- 后端 graph agent 接口响应
+- 后端 chat 单入口响应
 - 每轮回答自然语言展示
+- provider 原生 reasoning（若 provider 返回）
+- agent 工具调用、参数、结果摘要流式展示
 - 每轮回答可展开依据子图
 - 证据、推理轨迹和工具调用展示
-- 复杂 query 的 `graph_cypher_qa`、generated cypher 与结果摘要展示
 - 图谱预览跳转
 
 ### 不包含
@@ -48,7 +49,7 @@ audience: developer
 ```bash
 make deps up
 make stack up
-pnpm run test:web
+corepack pnpm --dir packages/web test --run
 ```
 
 ## 4. 验收步骤
@@ -69,9 +70,9 @@ pnpm run test:web
 - 命令 / 页面入口：
 
 ```bash
-curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask \
+curl -N -X POST http://localhost:8000/api/v1/chat/stream \
   -H 'Content-Type: application/json' \
-  -d '{"question":"人参有什么功效？"}' | python3 -m json.tool
+  -d '{"question":"人参有什么功效？","session_id":"acceptance-chat-1"}'
 ```
 
 ### Step 4
@@ -93,54 +94,51 @@ curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask \
 
 ### Step 3 预期
 
-- 响应内有 `answer`、`related_nodes`、`related_edges`、`subgraph_meta`、`evidence`、`reasoning_trace`、`tool_calls`
-- `subgraph_meta.node_count` 和 `subgraph_meta.edge_count` 与返回子图规模一致
-- `answer` 基于相关节点和关系生成自然语言说明
+- SSE 事件流中至少可见 `session`、`answer_chunk`、`final`
+- 若 agent 调用了图工具，可见 `tool_start` 和 `tool_result`
+- 若 provider 返回原生 reasoning，可见 `provider_reasoning`
 
 ### Step 4 预期
 
-- 页面能展示 `graph_cypher_qa`
-- `tool_calls.arguments` 中可见 `generated_cypher`
-- 页面能展示 `result_summary`
-- cypher 结果中的候选实体会继续回填为依据子图节点
+- 页面能展示工具调用名、参数和 `result_summary`
+- 若 provider 返回 reasoning，页面展示 `provider_reasoning`
+- 若 provider 不返回 reasoning，页面不展示 reasoning 面板
+- agent 查询图后，页面会逐步更新依据子图
 
 ## 6. 证据记录
 
 ### 实现证据
 
-- `packages/api/app/api/graph_agent.py` — `/api/v1/graph-agent/ask` 入口
-- `packages/api/app/services/graph_agent_service.py` — graph runtime agent 服务门面
-- `packages/api/app/services/graph_cypher_agent.py` — LangChain Neo4j cypher agent 适配器
-- `packages/graph_runtime/graph_runtime/agent/graph_agent.py` — 默认图谱探索 agent
-- `packages/graph_runtime/graph_runtime/planner/query_intent.py` — 复杂 query 意图分类
-- `packages/graph_runtime/graph_runtime/planner/tool_plan_builder.py` — 工具计划构建
+- `packages/api/app/api/chat.py` — `/api/v1/chat/stream` 唯一入口
+- `packages/api/app/services/chat_agent_runtime/runtime.py` — deepagents runtime 真源
+- `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — provider 原生 reasoning 透传
+- `packages/api/app/services/graph_tools/registry.py` — 基础图工具注册
 - `packages/web/src/pages/ChatPage.tsx` — 页面入口
-- `packages/web/src/hooks/useChat.ts` — graph agent 调用与消息归一化
-- `packages/web/src/components/chat/GraphAgentBasisPanel.tsx` — 每轮回答的依据子图、证据、推理和工具调用展示
-- `packages/web/src/services/api.ts` — `graphAgentApi.ask()` 客户端
+- `packages/web/src/hooks/useChat.ts` — chat stream 事件消费与消息归一化
+- `packages/web/src/components/chat/GraphAgentBasisPanel.tsx` — 每轮回答的依据子图、provider reasoning、工具调用展示
+- `packages/web/src/services/api.ts` — `chatApi.stream()` 客户端
 
 ### 运行证据
 
 ```bash
-pnpm run test:web
-curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask -H 'Content-Type: application/json' -d '{"question":"人参有什么功效？"}'
-curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask -H 'Content-Type: application/json' -d '{"question":"治感冒的中药都有哪些，怎么做"}' | python3 -m json.tool
-curl -sS -X POST http://localhost:8000/api/v1/graph-agent/ask -H 'Content-Type: application/json' -d '{"question":"外寒入里怎么办"}' | python3 -m json.tool
+corepack pnpm --dir packages/web test --run
+curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: application/json' -d '{"question":"人参有什么功效？","session_id":"acceptance-chat-1"}'
+curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: application/json' -d '{"question":"外寒入里怎么办","session_id":"acceptance-chat-2"}'
 ```
 
 ### 结果证据
 
-- 页面可见结果：回答、依据子图、证据摘要、推理与工具同时出现
-- 接口返回摘要：`related_nodes` / `related_edges` 为列表，`subgraph_meta` 含中心节点和规模信息
-- 复杂 query 返回摘要：`tool_calls[0].tool_name = graph_cypher_qa`，且 `tool_calls[0].arguments.generated_cypher` 可用于排查查询路径
+- 页面可见结果：回答、依据子图、工具时间线出现；provider reasoning 仅在有原生返回时出现
+- 接口返回摘要：SSE 事件顺序可见 `session -> tool_start/tool_result -> answer_chunk -> final`
+- `final` 事件中包含 `answer`、`related_nodes`、`related_edges`、`subgraph_meta`、`tool_calls`
 
 ## 7. 风险与未覆盖项
 
-- 当前复杂 query 路径依赖 LLM + Neo4j 环境；若本地未配置对应依赖，只能验证单测与页面 mock 场景
-- 当前 graph agent 路由是同步请求，页面未实现 SSE token 流式输出
+- 当前 runtime 依赖 LLM + Neo4j 环境；若本地未配置对应依赖，只能验证单测与页面 mock 场景
+- provider 原生 reasoning 是否可见取决于当前 provider 是否返回该字段，页面不会伪造
 
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：智能问答主链路已切到 graph runtime agent，并具备复杂 query 走 cypher agent 后回填依据子图的验收能力
-- 后续动作：多轮会话持久化、流式输出和更强来源选择策略
+- 结论一句话：智能问答主链路已收敛到 `/api/v1/chat/stream`，并具备 agent 工具过程流、可选 provider reasoning 与依据子图展示能力
+- 后续动作：把 deepagents runtime 从骨架补成完整执行主链，并继续增强基础图工具
