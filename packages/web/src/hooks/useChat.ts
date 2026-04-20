@@ -165,10 +165,11 @@ function applySubgraphPatch(messageValue: Message, patch: { nodes?: GraphAgentRe
   const graphData = messageValue.graphData ?? { center: null, nodes: [], edges: [] };
   const nextNodes = [...graphData.nodes, ...(patch.nodes ?? [])];
   const nextEdges = [...graphData.edges, ...(patch.edges ?? [])];
-  const center =
+  const centerCandidate =
     patch.center_node_id
       ? nextNodes.find((node) => (node.id ?? node.name) === patch.center_node_id) ?? graphData.center
       : graphData.center;
+  const center = centerCandidate ? normalizeNode(centerCandidate) : null;
 
   return {
     ...messageValue,
