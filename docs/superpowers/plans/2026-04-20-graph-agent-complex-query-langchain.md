@@ -331,7 +331,6 @@ git commit -m "feat(graph-runtime): classify complex graph queries"
 ### Task 3: 增加 LangChain Neo4j cypher agent 适配器
 
 **Files:**
-- Modify: `packages/graph_runtime/pyproject.toml`
 - Modify: `packages/api/pyproject.toml`
 - Create: `packages/graph_runtime/graph_runtime/service/cypher_agent.py`
 - Create: `packages/api/app/services/graph_cypher_agent.py`
@@ -366,6 +365,41 @@ async def test_graph_cypher_agent_returns_generated_cypher_and_candidates():
     assert result["answer"].startswith("可考虑桂枝")
     assert "MATCH (h:Herb)" in result["generated_cypher"]
     assert result["node_names"] == ["桂枝", "荆芥"]
+
+
+@pytest.mark.asyncio
+async def test_graph_cypher_agent_handles_empty_intermediate_steps():
+    from app.services.graph_cypher_agent import GraphCypherAgentService
+
+    class EmptyStepsChain:
+        def __init__(self):
+            self.top_k = 8
+
+        def invoke(self, payload):
+            return {"result": "暂无结果", "intermediate_steps": []}
+
+    service = GraphCypherAgentService(chain=EmptyStepsChain())
+    result = await service.answer("外寒入里怎么办")
+
+    assert result["generated_cypher"] is None
+    assert result["node_names"] == []
+
+
+@pytest.mark.asyncio
+async def test_graph_cypher_agent_updates_chain_top_k_before_invoke():
+    from app.services.graph_cypher_agent import GraphCypherAgentService
+
+    class TopKChain:
+        def __init__(self):
+            self.top_k = 8
+
+        def invoke(self, payload):
+            assert payload == {"query": "治感冒的中药都有哪些，怎么做"}
+            assert self.top_k == 3
+            return {"result": "可考虑桂枝。", "intermediate_steps": []}
+
+    service = GraphCypherAgentService(chain=TopKChain())
+    await service.answer("治感冒的中药都有哪些，怎么做", top_k=3)
 ```
 
 - [ ] **Step 2: 运行测试确认 adapter 尚不存在**
@@ -382,15 +416,6 @@ Expected:
 - 失败，提示 `GraphCypherAgentService` 不存在
 
 - [ ] **Step 3: 定义 runtime 侧 cypher agent 协议**
-
-```toml
-# packages/graph_runtime/pyproject.toml
-dependencies = [
-    "pydantic>=2.10.0",
-    "langchain>=0.3.0",
-    "langchain-core>=0.3.0",
-]
-```
 
 ```toml
 # packages/api/pyproject.toml
@@ -441,7 +466,7 @@ class GraphCypherAgentService:
             llm=llm,
             graph=graph,
             verbose=False,
-            allow_dangerous_requests=False,
+            allow_dangerous_requests=True,
             return_intermediate_steps=True,
             validate_cypher=True,
             top_k=8,
@@ -449,10 +474,18 @@ class GraphCypherAgentService:
         )
 
     async def answer(self, question: str, top_k: int = 8) -> dict:
-        result = await to_thread.run_sync(self.chain.invoke, {"query": question, "top_k": top_k})
+        if hasattr(self.chain, "top_k"):
+            self.chain.top_k = top_k
+        result = await to_thread.run_sync(self.chain.invoke, {"query": question})
         steps = result.get("intermediate_steps", [])
-        generated_cypher = steps[0].get("query") if steps else None
-        context_rows = steps[1].get("context", []) if len(steps) > 1 else []
+        generated_cypher = next(
+            (step.get("query") for step in steps if isinstance(step, dict) and step.get("query")),
+            None,
+        )
+        context_rows = next(
+            (step.get("context", []) for step in steps if isinstance(step, dict) and "context" in step),
+            [],
+        )
         node_names = [row["name"] for row in context_rows if isinstance(row, dict) and row.get("name")]
         return {
             "answer": result.get("result", ""),
@@ -478,7 +511,7 @@ Expected:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/graph_runtime/pyproject.toml packages/api/pyproject.toml packages/graph_runtime/graph_runtime/service/cypher_agent.py packages/api/app/services/graph_cypher_agent.py packages/api/tests/services/test_graph_cypher_agent.py
+git add packages/api/pyproject.toml packages/graph_runtime/graph_runtime/service/cypher_agent.py packages/api/app/services/graph_cypher_agent.py packages/api/tests/services/test_graph_cypher_agent.py
 git commit -m "feat(api): add langchain neo4j cypher agent adapter"
 ```
 
