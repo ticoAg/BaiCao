@@ -1,10 +1,10 @@
 import { memo } from "react"
-import { Button, Space, Tooltip } from "antd"
+import { Button, Space, Tooltip } from "../ui/index"
 import {
   ZoomInOutlined,
   ZoomOutOutlined,
   CompressOutlined,
-} from "@ant-design/icons"
+} from "../ui/icons"
 
 interface GraphToolbarProps {
   onZoomIn: () => void

@@ -1,5 +1,5 @@
-import { Button, Card, Space, Tag, Typography } from "antd";
-import { CloseOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Card, Space, Tag, Typography } from "../../ui/index";
+import { CloseOutlined, ReloadOutlined } from "../../ui/icons";
 import type { ReactNode } from "react";
 import type { WorkbenchFrame } from "../../../types/workbench";
 

@@ -1,4 +1,4 @@
-import { Card, Typography, Space, Tag, Row, Col } from "antd";
+import { Card, Typography, Space, Tag, Row, Col } from "../components/ui/index";
 import { useNavigate } from "react-router-dom";
 import {
   SearchOutlined,
@@ -9,7 +9,7 @@ import {
   SafetyCertificateOutlined,
   ApartmentOutlined,
   FileSearchOutlined,
-} from "@ant-design/icons";
+} from "../components/ui/icons";
 
 const { Title, Paragraph, Text } = Typography;
 

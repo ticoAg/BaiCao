@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Button, Empty, Space, Tag, Typography } from "antd";
-import { AimOutlined, BorderOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Empty, Space, Tag, Typography } from "../../ui/index";
+import { AimOutlined, BorderOutlined, MinusOutlined, PlusOutlined } from "../../ui/icons";
 import type { WorkbenchFrame } from "../../../types/workbench";
 import type { GraphData, GraphEdge, GraphNode, SelectedItem } from "../../../types/graph";
 import {

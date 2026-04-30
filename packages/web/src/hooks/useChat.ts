@@ -1,6 +1,6 @@
 // Chat hook - graph runtime agent 消费
 import { useCallback, useRef } from "react";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { chatApi } from "../services/api";
 import { useChatStore } from "../stores/chatStore";
 import type {

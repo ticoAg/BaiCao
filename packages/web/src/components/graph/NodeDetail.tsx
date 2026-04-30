@@ -1,6 +1,6 @@
 // 节点详情面板
-import { Button, Descriptions, Space, Tag, Tooltip, Typography, message } from "antd";
-import { CopyOutlined, EyeOutlined } from "@ant-design/icons";
+import { Button, Descriptions, Space, Tag, Tooltip, Typography, message } from "../ui/index";
+import { CopyOutlined, EyeOutlined } from "../ui/icons";
 import { useNavigate } from "react-router-dom";
 import type { GraphNode } from "../../types/graph";
 import { getGraphNodeLabelDisplayName, getGraphNodeTagColor, isHerbGraphLabel } from "../../types/graph";

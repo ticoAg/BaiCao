@@ -1,7 +1,7 @@
 // Graph hook - react-query + zustand
 import { useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { graphApi } from "../services/api";
 import { useGraphStore } from "../stores/graphStore";
 

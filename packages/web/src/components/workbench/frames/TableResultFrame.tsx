@@ -1,5 +1,5 @@
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Table } from "../../ui/index";
+import type { ColumnsType } from "../../ui/index";
 import type { WorkbenchFrame } from "../../../types/workbench";
 import FrameChrome from "./FrameChrome";
 

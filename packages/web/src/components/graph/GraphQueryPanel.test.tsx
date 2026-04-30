@@ -43,8 +43,8 @@ describe("GraphQueryPanel", () => {
     await user.click(screen.getByRole("button", { name: "重置条件" }));
 
     expect(screen.getByLabelText("节点名称包含")).toHaveValue("");
-    expect(screen.getByRole("spinbutton", { name: "查询深度" })).toHaveValue("2");
-    expect(screen.getByRole("spinbutton", { name: "limit" })).toHaveValue("");
+    expect(screen.getByRole("spinbutton", { name: "查询深度" })).toHaveValue(2);
+    expect(screen.getByRole("spinbutton", { name: "limit" })).toHaveValue(null);
   });
 
   it("hides developer payload preview by default and expands it on demand", async () => {

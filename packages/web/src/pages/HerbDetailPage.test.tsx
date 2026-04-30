@@ -81,7 +81,7 @@ describe("HerbDetailPage", () => {
     const { container } = renderPage();
 
     // Skeleton should be rendered
-    const skeletons = container.querySelectorAll(".ant-skeleton");
+    const skeletons = container.querySelectorAll(".bc-skeleton");
     expect(skeletons.length).toBeGreaterThan(0);
   });
 

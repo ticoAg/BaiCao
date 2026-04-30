@@ -1,6 +1,6 @@
 // Verification hook - react-query
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { verificationApi } from "../services/api";
 import type { Verification } from "../services/api";
 

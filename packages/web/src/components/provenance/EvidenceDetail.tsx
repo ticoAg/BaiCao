@@ -1,10 +1,10 @@
 // EvidenceDetail - evidence detail drawer with source navigation
-import { Drawer, Descriptions, Tag, Typography, Button, Space, Divider } from "antd";
+import { Drawer, Descriptions, Tag, Typography, Button, Space, Divider } from "../ui/index";
 import {
   LinkOutlined,
   BookOutlined,
   FileTextOutlined,
-} from "@ant-design/icons";
+} from "../ui/icons";
 import { useNavigate } from "react-router-dom";
 import { statusColors, statusLabels } from "../../types/provenance";
 

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Space } from "antd";
+import { Space } from "../ui/index";
 import { useGraphWorkbench } from "../../hooks/useGraphWorkbench";
 import WorkbenchSidebarRail from "./WorkbenchSidebarRail";
 import WorkbenchDrawer from "./WorkbenchDrawer";

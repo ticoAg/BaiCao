@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { Layout, Menu } from "antd";
+import { Layout } from "./ui/index";
+import { NavigationMenu } from "radix-ui";
 import {
   HomeOutlined,
   SearchOutlined,
@@ -7,62 +8,56 @@ import {
   CheckCircleOutlined,
   MessageOutlined,
   DatabaseOutlined,
-} from "@ant-design/icons";
+} from "./ui/icons";
 import NotificationBell from "./NotificationBell";
 
 const { Header: AntHeader } = Layout;
 
-const menuKeyMap: Record<string, string> = {
-  "/": "home",
-  "/search": "search",
-  "/verification": "verification",
-  "/chat": "chat",
-  "/data/pipeline": "pipeline",
-};
+const navItems = [
+  {
+    key: "home",
+    path: "/",
+    icon: <HomeOutlined />,
+    label: "首页",
+  },
+  {
+    key: "search",
+    path: "/search",
+    icon: <SearchOutlined />,
+    label: "知识搜索",
+  },
+  {
+    key: "graph",
+    path: "/graph/人参",
+    icon: <NodeIndexOutlined />,
+    label: "图谱浏览",
+  },
+  {
+    key: "verification",
+    path: "/verification",
+    icon: <CheckCircleOutlined />,
+    label: "验证管理",
+  },
+  {
+    key: "chat",
+    path: "/chat",
+    icon: <MessageOutlined />,
+    label: "智能问答",
+  },
+  {
+    key: "pipeline",
+    path: "/data/pipeline",
+    icon: <DatabaseOutlined />,
+    label: "数据处理",
+  },
+];
 
 const HeaderComponent = () => {
   const location = useLocation();
 
-  // 根据路径匹配当前菜单项
-  let selectedKey = "home";
-  if (location.pathname.startsWith("/graph")) {
-    selectedKey = "graph";
-  } else {
-    selectedKey = menuKeyMap[location.pathname] || "home";
-  }
-
-  const menuItems = [
-    {
-      key: "home",
-      icon: <HomeOutlined />,
-      label: <Link to="/">首页</Link>,
-    },
-    {
-      key: "search",
-      icon: <SearchOutlined />,
-      label: <Link to="/search">知识搜索</Link>,
-    },
-    {
-      key: "graph",
-      icon: <NodeIndexOutlined />,
-      label: <Link to="/graph/人参">图谱浏览</Link>,
-    },
-    {
-      key: "verification",
-      icon: <CheckCircleOutlined />,
-      label: <Link to="/verification">验证管理</Link>,
-    },
-    {
-      key: "chat",
-      icon: <MessageOutlined />,
-      label: <Link to="/chat">智能问答</Link>,
-    },
-    {
-      key: "pipeline",
-      icon: <DatabaseOutlined />,
-      label: <Link to="/data/pipeline">数据处理</Link>,
-    },
-  ];
+  const selectedKey = location.pathname.startsWith("/graph")
+    ? "graph"
+    : navItems.find((item) => item.path === location.pathname)?.key ?? "home";
 
   return (
     <AntHeader
@@ -78,31 +73,33 @@ const HeaderComponent = () => {
         padding: "0 24px",
       }}
     >
-      <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none", marginRight: 40 }}>
-        <span style={{ fontSize: 24, marginRight: 8 }}>🌿</span>
-        <span
-          style={{
-            color: "#fff",
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: 1,
-          }}
-        >
-          白草药坛
-        </span>
+      <Link to="/" className="site-brand">
+        <span className="site-brand-mark">🌿</span>
+        <span className="site-brand-text">白草药坛</span>
       </Link>
-      <Menu
-        theme="dark"
-        mode="horizontal"
-        selectedKeys={[selectedKey]}
-        items={menuItems}
-        style={{
-          flex: 1,
-          background: "transparent",
-          borderBottom: "none",
-          fontSize: 14,
-        }}
-      />
+      <NavigationMenu.Root className="site-header-nav" value={selectedKey}>
+        <NavigationMenu.List className="site-header-nav-list">
+          {navItems.map((item) => {
+            const active = selectedKey === item.key;
+
+            return (
+              <NavigationMenu.Item key={item.key} value={item.key}>
+                <NavigationMenu.Link asChild active={active}>
+                  <Link
+                    to={item.path}
+                    className="site-header-nav-link"
+                    data-active={active}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <span aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                </NavigationMenu.Link>
+              </NavigationMenu.Item>
+            );
+          })}
+        </NavigationMenu.List>
+      </NavigationMenu.Root>
       <NotificationBell />
     </AntHeader>
   );

@@ -1,5 +1,5 @@
 import type { ExportRecord, PipelineStepKey, ReviewSession } from "../../types/pipeline";
-import { Button, Card, Space, Typography } from "antd";
+import { Button, Card, Space, Typography } from "../ui/index";
 import SourceIngestionForm from "./SourceIngestionForm";
 import type { PipelineSourceType, PipelineUploadResponse } from "../../types/pipeline";
 

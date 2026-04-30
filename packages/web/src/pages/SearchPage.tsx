@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Input, List, Card, Tag, Spin, Typography, Space, message } from "antd";
+import { Input, List, Card, Tag, Spin, Typography, Space, message } from "../components/ui/index";
 import { useNavigate } from "react-router-dom";
-import { SearchOutlined } from "@ant-design/icons";
+import { SearchOutlined } from "../components/ui/icons";
 import { graphApi, SearchResult } from "../services/api";
 import { getGraphNodeLabelDisplayName, getGraphNodeTagColor, isHerbGraphLabel } from "../types/graph";
 

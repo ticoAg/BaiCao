@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { workbenchApi } from "../services/workbenchApi";
 import { useGraphWorkbenchStore } from "../stores/workbenchStore";
 import type {

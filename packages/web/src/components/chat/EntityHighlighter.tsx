@@ -1,5 +1,5 @@
 // EntityHighlighter - 将纯文本中的实体名高亮为可点击 Tag
-import { Tag, Typography } from "antd";
+import { Tag, Typography } from "../ui/index";
 import { useNavigate } from "react-router-dom";
 import type { Entity } from "../../types/chat";
 import { getGraphNodeTagColor, isHerbGraphLabel } from "../../types/graph";

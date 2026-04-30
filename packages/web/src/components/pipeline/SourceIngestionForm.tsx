@@ -1,4 +1,4 @@
-import { Radio, Space, Typography } from "antd";
+import { Radio, Space, Typography } from "../ui/index";
 import type { PipelineSourceType, PipelineUploadResponse } from "../../types/pipeline";
 
 const { Text } = Typography;

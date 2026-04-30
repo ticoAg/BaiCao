@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { Layout, Skeleton, Space, Typography } from "antd";
+import { Layout, Skeleton, Space, Typography } from "./components/ui/index";
 import Header from "./components/Header";
 const HomePage = lazy(() => import("./pages/HomePage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));

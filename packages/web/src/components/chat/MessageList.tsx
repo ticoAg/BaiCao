@@ -1,7 +1,7 @@
 // 消息列表组件
 import { useState } from "react";
-import { List, Card, Space, Typography, Spin, Collapse, Tag, Button, Drawer, Divider } from "antd";
-import { RobotOutlined, UserOutlined, AuditOutlined, FormOutlined } from "@ant-design/icons";
+import { List, Card, Space, Typography, Spin, Collapse, Tag, Button, Drawer, Divider } from "../ui/index";
+import { RobotOutlined, UserOutlined, AuditOutlined, FormOutlined } from "../ui/icons";
 import { useNavigate } from "react-router-dom";
 import type { Message, ChatGraphData, Source, Entity } from "../../types/chat";
 import { getGraphNodeLabelDisplayName, getGraphNodeTagColor } from "../../types/graph";

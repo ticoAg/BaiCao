@@ -1,10 +1,10 @@
 // LineageChain - entity->evidence->source lineage visualization
-import { Timeline, Tag, Typography, Empty, Space, Card } from "antd";
+import { Timeline, Tag, Typography, Empty, Space, Card } from "../ui/index";
 import {
   DatabaseOutlined,
   FileSearchOutlined,
   BookOutlined,
-} from "@ant-design/icons";
+} from "../ui/icons";
 import type { LineageChain as LineageChainType } from "../../services/api";
 import { statusIcon, getNodeName, getNodeType, getNodeStatus } from "../../types/provenance";
 

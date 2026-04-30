@@ -1,10 +1,10 @@
 // EvidenceList - provenance evidence list component
-import { List, Tag, Typography, Empty, Button, Space } from "antd";
+import { List, Tag, Typography, Empty, Button, Space } from "../ui/index";
 import {
   FileTextOutlined,
   EyeOutlined,
   BookOutlined,
-} from "@ant-design/icons";
+} from "../ui/icons";
 import { statusColors, statusLabels, type EvidenceItemBase } from "../../types/provenance";
 
 const { Text, Paragraph } = Typography;

@@ -10,8 +10,8 @@ import {
   Space,
   Typography,
   message,
-} from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+} from "../ui/index";
+import { SearchOutlined } from "../ui/icons";
 import { statusLabels } from "../../types";
 import {
   graphPropertyLabels,

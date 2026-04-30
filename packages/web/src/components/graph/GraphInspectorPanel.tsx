@@ -1,4 +1,4 @@
-import { Button, Empty, Space, Tag, Typography } from "antd";
+import { Button, Empty, Space, Tag, Typography } from "../ui/index";
 import { getGraphNodeLabelDisplayName, type SelectedItem } from "../../types/graph";
 import EdgeDetail from "./EdgeDetail";
 import NodeDetail from "./NodeDetail";

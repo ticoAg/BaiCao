@@ -1,5 +1,7 @@
-import { Button, Empty, List, Space, Switch, Tag, Typography } from "antd";
+import { Empty, List, Space, Tag, Typography } from "../ui/index";
 import type { WorkbenchHistoryItem } from "../../types/workbench";
+import AppSwitch from "../ui/Switch";
+import AppButton from "../ui/Button";
 
 type DrawerName = "guides" | "history" | "favorites" | "settings" | null;
 
@@ -55,9 +57,9 @@ const WorkbenchDrawer = ({
         <Text strong style={{ fontSize: 16, color: "#203127" }}>
           {drawerTitles[selectedDrawer]}
         </Text>
-        <Button type="text" size="small" onClick={onClose} aria-label="关闭抽屉">
+        <AppButton variant="ghost" size="sm" onClick={onClose} aria-label="关闭抽屉">
           关闭
-        </Button>
+        </AppButton>
       </div>
 
       <Text type="secondary" style={{ display: "block", marginTop: 12 }}>
@@ -77,8 +79,8 @@ const WorkbenchDrawer = ({
             dataSource={history}
             renderItem={(item) => (
               <List.Item style={{ paddingInline: 0 }}>
-                <Button
-                  block
+                <AppButton
+                  full
                   onClick={() => onPickCommand(item.command)}
                   aria-label={`回填命令 ${item.command}`}
                   style={{ height: "auto", padding: "10px 12px", textAlign: "left" }}
@@ -93,7 +95,7 @@ const WorkbenchDrawer = ({
                         : "刚刚执行"}
                     </Text>
                   </Space>
-                </Button>
+                </AppButton>
               </List.Item>
             )}
           />
@@ -117,8 +119,8 @@ const WorkbenchDrawer = ({
               从一条命令开始，让工作台返回图谱、文本或错误结果帧。
             </Paragraph>
             <Space direction="vertical" size={10} style={{ width: "100%" }}>
-              <Button
-                block
+              <AppButton
+                full
                 onClick={() => onPickCommand("查人参的功效")}
                 aria-label="插入命令 查人参的功效"
                 style={{ height: "auto", padding: "12px", textAlign: "left" }}
@@ -131,7 +133,7 @@ const WorkbenchDrawer = ({
                     先用自然语言试一条真实查询，再逐步切到 Cypher。
                   </Text>
                 </Space>
-              </Button>
+              </AppButton>
             </Space>
           </div>
 
@@ -144,8 +146,8 @@ const WorkbenchDrawer = ({
               dataSource={guideItems}
               renderItem={(item) => (
                 <List.Item style={{ paddingInline: 0 }}>
-                  <Button
-                    block
+                  <AppButton
+                    full
                     onClick={() => onPickCommand(item.command)}
                     aria-label={`插入命令 ${item.command}`}
                     style={{ height: "auto", padding: "12px", textAlign: "left" }}
@@ -161,7 +163,7 @@ const WorkbenchDrawer = ({
                         {item.note}
                       </Paragraph>
                     </Space>
-                  </Button>
+                  </AppButton>
                 </List.Item>
               )}
             />
@@ -176,8 +178,8 @@ const WorkbenchDrawer = ({
             dataSource={favorites}
             renderItem={(item) => (
               <List.Item style={{ paddingInline: 0 }}>
-                <Button
-                  block
+                <AppButton
+                  full
                   onClick={() => onPickCommand(item.command)}
                   aria-label={`回填收藏命令 ${item.command}`}
                   style={{ height: "auto", padding: "10px 12px", textAlign: "left" }}
@@ -192,7 +194,7 @@ const WorkbenchDrawer = ({
                         : "刚刚收藏"}
                     </Text>
                   </Space>
-                </Button>
+                </AppButton>
               </List.Item>
             )}
           />
@@ -225,10 +227,10 @@ const WorkbenchDrawer = ({
                   在编辑器顶部显示 `:help`、`:clear` 和自然语言起手查询。
                 </Paragraph>
               </div>
-              <Switch
+              <AppSwitch
                 aria-label="显示起手命令"
                 checked={showStarterCommands}
-                onChange={onToggleStarterCommands}
+                onCheckedChange={onToggleStarterCommands}
               />
             </Space>
           </div>

@@ -1,4 +1,4 @@
-import { Button, Input, Space, Typography } from "antd";
+import { Button, Input, Space, Typography } from "../ui/index";
 import type { KeyboardEvent } from "react";
 
 type CommandEditorProps = {

@@ -12,7 +12,7 @@ import {
   Space,
   Empty,
   Divider,
-} from "antd";
+} from "../components/ui/index";
 import {
   ArrowLeftOutlined,
   ExperimentOutlined,
@@ -21,7 +21,7 @@ import {
   WarningOutlined,
   ApartmentOutlined,
   InfoCircleOutlined,
-} from "@ant-design/icons";
+} from "../components/ui/icons";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useHerbDetail } from "../hooks/useHerbDetail";
 

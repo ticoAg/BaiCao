@@ -1,6 +1,6 @@
 // 消息输入组件
-import { Input, Button, Space, Typography } from "antd";
-import { SendOutlined } from "@ant-design/icons";
+import { Input, Button, Space, Typography } from "../ui/index";
+import { SendOutlined } from "../ui/icons";
 
 const { Text } = Typography;
 const { TextArea } = Input;

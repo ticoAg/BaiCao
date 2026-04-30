@@ -5,24 +5,24 @@ import {
   Table,
   Tag,
   Space,
-  Button,
-  Modal,
   Form,
-  Input,
-  Select,
   message,
   Row,
   Col,
   Statistic,
-} from "antd";
+} from "../components/ui/index";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
   PlusOutlined,
-} from "@ant-design/icons";
+} from "../components/ui/icons";
 import { useSearchParams } from "react-router-dom";
 import { verificationApi, Verification } from "../services/api";
+import ModalDialog from "../components/ui/Dialog";
+import AppButton from "../components/ui/Button";
+import AppSelect from "../components/ui/Select";
+import { TextArea, TextInput } from "../components/ui/Field";
 
 const { Title, Text } = Typography;
 
@@ -46,6 +46,11 @@ const entityTypeLabels: Record<string, string> = {
   meridian: "归经",
   component: "成分",
 };
+
+const entityTypeOptions = Object.entries(entityTypeLabels).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const VerificationPage = () => {
   const [searchParams] = useSearchParams();
@@ -76,9 +81,14 @@ const VerificationPage = () => {
 
   useEffect(() => {
     if (prefilledEntityType && prefilledEntityId && prefilledValue) {
+      form.setFieldsValue({
+        entity_type: prefilledEntityType,
+        entity_id: prefilledEntityId,
+        claimed_value: prefilledValue,
+      });
       setModalVisible(true);
     }
-  }, [prefilledEntityType, prefilledEntityId, prefilledValue]);
+  }, [form, prefilledEntityType, prefilledEntityId, prefilledValue]);
 
   const handleVerify = async (id: string, status: "verified" | "rejected", verdict: string) => {
     try {
@@ -149,24 +159,22 @@ const VerificationPage = () => {
       render: (_: any, record: Verification) =>
         record.status === "pending" && (
           <Space size={4}>
-            <Button
-              type="primary"
-              size="small"
-              style={{ borderRadius: 6 }}
+            <AppButton
+              variant="primary"
+              size="sm"
               icon={<CheckCircleOutlined />}
               onClick={() => handleVerify(record.id, "verified", "验证通过")}
             >
               通过
-            </Button>
-            <Button
-              size="small"
-              danger
-              style={{ borderRadius: 6 }}
+            </AppButton>
+            <AppButton
+              size="sm"
+              variant="danger"
               icon={<CloseCircleOutlined />}
               onClick={() => handleVerify(record.id, "rejected", "证据不足")}
             >
               拒绝
-            </Button>
+            </AppButton>
           </Space>
         ),
     },
@@ -248,14 +256,13 @@ const VerificationPage = () => {
           </Space>
         }
         extra={
-          <Button
-            type="primary"
+          <AppButton
+            variant="primary"
             icon={<PlusOutlined />}
             onClick={() => setModalVisible(true)}
-            style={{ borderRadius: 8 }}
           >
             申请验证
-          </Button>
+          </AppButton>
         }
         style={{
           borderRadius: 12,
@@ -273,15 +280,15 @@ const VerificationPage = () => {
         />
       </Card>
 
-      <Modal
+      <ModalDialog
         title="验证申请"
         open={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          form.resetFields();
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setModalVisible(false);
+            form.resetFields();
+          }
         }}
-        footer={null}
-        styles={{ body: { paddingTop: 16 } }}
       >
         <Form form={form} layout="vertical" onFinish={handleApply}>
           <Form.Item
@@ -290,14 +297,7 @@ const VerificationPage = () => {
             rules={[{ required: true }]}
             initialValue={prefilledEntityType}
           >
-            <Select>
-              <Select.Option value="herb">药材</Select.Option>
-              <Select.Option value="efficacy">功效</Select.Option>
-              <Select.Option value="relation">关系</Select.Option>
-              <Select.Option value="flavor">性味</Select.Option>
-              <Select.Option value="meridian">归经</Select.Option>
-              <Select.Option value="component">成分</Select.Option>
-            </Select>
+            <AppSelect aria-label="实体类型" options={entityTypeOptions} />
           </Form.Item>
 
           <Form.Item
@@ -306,7 +306,7 @@ const VerificationPage = () => {
             rules={[{ required: true }]}
             initialValue={prefilledEntityId}
           >
-            <Input />
+            <TextInput />
           </Form.Item>
 
           <Form.Item
@@ -315,29 +315,34 @@ const VerificationPage = () => {
             rules={[{ required: true }]}
             initialValue={prefilledValue}
           >
-            <Input.TextArea rows={3} />
+            <TextArea rows={3} />
           </Form.Item>
 
           <Form.Item name="source_id" label="来源">
-            <Input placeholder="来源 ID（可选）" />
+            <TextInput placeholder="来源 ID（可选）" />
           </Form.Item>
 
           <Form.Item name="field_name" label="验证字段">
-            <Input placeholder="具体字段名（可选）" />
+            <TextInput placeholder="具体字段名（可选）" />
           </Form.Item>
 
           <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" style={{ borderRadius: 8 }}>
+            <div className="bc-dialog-actions">
+              <AppButton variant="primary" type="submit">
                 提交申请
-              </Button>
-              <Button onClick={() => setModalVisible(false)} style={{ borderRadius: 8 }}>
+              </AppButton>
+              <AppButton
+                onClick={() => {
+                  setModalVisible(false);
+                  form.resetFields();
+                }}
+              >
                 取消
-              </Button>
-            </Space>
+              </AppButton>
+            </div>
           </Form.Item>
         </Form>
-      </Modal>
+      </ModalDialog>
     </div>
   );
 };

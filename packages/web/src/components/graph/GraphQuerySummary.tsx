@@ -1,4 +1,4 @@
-import { Space, Statistic, Tag, Typography } from "antd";
+import { Space, Statistic, Tag, Typography } from "../ui/index";
 import type { GraphQuerySummary as GraphQuerySummaryType } from "../../types/graph";
 
 const { Text } = Typography;

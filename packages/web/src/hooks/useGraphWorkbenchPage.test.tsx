@@ -1,8 +1,6 @@
 import { ReactNode } from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConfigProvider } from "antd";
-import zhCN from "antd/locale/zh_CN";
 import { graphWorkbenchApi } from "../services/graphWorkbenchApi";
 import { useGraphWorkbenchStore } from "../stores/graphWorkbenchStore";
 import { useGraphWorkspace } from "./useGraphWorkspace";
@@ -48,8 +46,7 @@ function createWrapper() {
 
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <ConfigProvider locale={zhCN}>{children}</ConfigProvider>
+      <QueryClientProvider client={queryClient}>{children}
       </QueryClientProvider>
     );
   };

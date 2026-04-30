@@ -1,4 +1,4 @@
-import { Typography } from "antd";
+import { Typography } from "../../ui/index";
 import type { WorkbenchFrame } from "../../../types/workbench";
 import FrameChrome from "./FrameChrome";
 

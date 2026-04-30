@@ -1,6 +1,6 @@
 // 推理链展示组件
-import { Collapse, List, Space, Tag, Typography } from "antd";
-import { InfoCircleOutlined } from "@ant-design/icons";
+import { Collapse, List, Space, Tag, Typography } from "../ui/index";
+import { InfoCircleOutlined } from "../ui/icons";
 import { useNavigate } from "react-router-dom";
 import type { ReasoningStep } from "../../types/chat";
 

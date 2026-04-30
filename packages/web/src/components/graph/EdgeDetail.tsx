@@ -1,6 +1,6 @@
 // 关系详情面板
-import { Button, Descriptions, Space, Tag, Tooltip, Typography, message } from "antd";
-import { CopyOutlined } from "@ant-design/icons";
+import { Button, Descriptions, Space, Tag, Tooltip, Typography, message } from "../ui/index";
+import { CopyOutlined } from "../ui/icons";
 import type { GraphEdge } from "../../types/graph";
 import { relTypeLabels } from "../../types/graph";
 import { statusColors, statusLabels } from "../../types/index";

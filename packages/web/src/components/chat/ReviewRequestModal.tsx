@@ -1,7 +1,11 @@
 // 审查申请弹窗组件
 import { useEffect } from "react";
-import { Modal, Form, Select, Input, Button, Space, message } from "antd";
+import { Form, message } from "../ui/index";
 import { verificationApi } from "../../services/api";
+import ModalDialog from "../ui/Dialog";
+import AppButton from "../ui/Button";
+import AppSelect from "../ui/Select";
+import { TextArea, TextInput } from "../ui/Field";
 
 interface ReviewRequestModalProps {
   open: boolean;
@@ -13,6 +17,15 @@ interface ReviewRequestModalProps {
     sourceId?: string;
   };
 }
+
+const entityTypeOptions = [
+  { value: "herb", label: "药材" },
+  { value: "efficacy", label: "功效" },
+  { value: "relation", label: "关系" },
+  { value: "flavor", label: "性味" },
+  { value: "meridian", label: "归经" },
+  { value: "component", label: "成分" },
+];
 
 const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps) => {
   const [form] = Form.useForm();
@@ -53,12 +66,12 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
   };
 
   return (
-    <Modal
+    <ModalDialog
       title="申请审查"
       open={open}
-      onCancel={onClose}
-      footer={null}
-      styles={{ body: { paddingTop: 16 } }}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
@@ -66,14 +79,11 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
           label="实体类型"
           rules={[{ required: true, message: "请选择实体类型" }]}
         >
-          <Select placeholder="请选择实体类型">
-            <Select.Option value="herb">药材</Select.Option>
-            <Select.Option value="efficacy">功效</Select.Option>
-            <Select.Option value="relation">关系</Select.Option>
-            <Select.Option value="flavor">性味</Select.Option>
-            <Select.Option value="meridian">归经</Select.Option>
-            <Select.Option value="component">成分</Select.Option>
-          </Select>
+          <AppSelect
+            aria-label="实体类型"
+            placeholder="请选择实体类型"
+            options={entityTypeOptions}
+          />
         </Form.Item>
 
         <Form.Item
@@ -81,7 +91,7 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
           label="实体ID"
           rules={[{ required: true, message: "请填写实体ID" }]}
         >
-          <Input placeholder="实体ID" />
+          <TextInput placeholder="实体ID" />
         </Form.Item>
 
         <Form.Item
@@ -89,25 +99,25 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
           label="审查内容"
           rules={[{ required: true, message: "请填写审查内容" }]}
         >
-          <Input.TextArea rows={4} placeholder="待审查的内容" />
+          <TextArea rows={4} placeholder="待审查的内容" />
         </Form.Item>
 
         <Form.Item name="source_id" label="来源ID">
-          <Input placeholder="来源ID（可选）" />
+          <TextInput placeholder="来源ID（可选）" />
         </Form.Item>
 
         <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" style={{ borderRadius: 8 }}>
+          <div className="bc-dialog-actions">
+            <AppButton variant="primary" type="submit">
               提交申请
-            </Button>
-            <Button onClick={onClose} style={{ borderRadius: 8 }}>
+            </AppButton>
+            <AppButton onClick={onClose}>
               取消
-            </Button>
-          </Space>
+            </AppButton>
+          </div>
         </Form.Item>
       </Form>
-    </Modal>
+    </ModalDialog>
   );
 };
 

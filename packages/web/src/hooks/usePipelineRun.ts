@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { pipelineApi } from "../services/pipelineApi";
 import { usePipelineStore } from "../stores/pipelineStore";
 import type { CreatePipelineRunRequest, PipelineSourceType, PipelineStepKey, UpdateReviewItemRequest } from "../types/pipeline";

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react"
-import { Button, Drawer, Space, Tag, Typography } from "antd"
-import { ReloadOutlined } from "@ant-design/icons"
+import { Button, Drawer, Space, Tag, Typography } from "../components/ui/index"
+import { ReloadOutlined } from "../components/ui/icons"
 import { useParams } from "react-router-dom"
 import { graphApi } from "../services/api"
 import { useGraphWorkbenchPage } from "../hooks/useGraphWorkbenchPage"

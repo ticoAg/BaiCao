@@ -1,5 +1,5 @@
 // 溯源相关共享常量与类型
-import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from "../components/ui/icons";
 import type { ReactNode } from "react";
 import { getGraphNodeLabelDisplayName } from "./graph";
 

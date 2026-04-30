@@ -1,4 +1,4 @@
-import { Alert, Button, Divider, Empty, Space, Tag, Typography } from "antd";
+import { Alert, Button, Divider, Empty, Space, Tag, Typography } from "../ui/index";
 import type {
   GraphWorkbenchLabelMetaItem,
   GraphWorkbenchMetaSummary,

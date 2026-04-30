@@ -1,4 +1,4 @@
-import { Button, Space } from "antd";
+import { Button, Space } from "../ui/index";
 
 type WorkbenchSidebarRailProps = {
   selectedDrawer: "guides" | "history" | "favorites" | "settings" | null;

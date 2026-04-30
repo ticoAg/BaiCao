@@ -1,4 +1,4 @@
-import { Tag, Typography } from "antd";
+import { Tag, Typography } from "../ui/index";
 import type { PipelineRun, PipelineStepKey } from "../../types/pipeline";
 
 const { Text } = Typography;

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Card, Empty, Skeleton, Space, Typography } from "antd";
+import { Card, Empty, Skeleton, Space, Typography } from "../ui/index";
 import type { WorkbenchFrame } from "../../types/workbench";
 import ErrorResultFrame from "./frames/ErrorResultFrame";
 import TableResultFrame from "./frames/TableResultFrame";

@@ -1,5 +1,5 @@
 import { memo, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react"
-import { Empty, Button, Space, Typography } from "antd"
+import { Empty, Button, Space, Typography } from "../ui/index"
 import type { GraphData } from "../../types/graph"
 import { Visualization, VizGraph, GraphEventHandler } from "../../lib/graph-viz"
 import type { GraphEventCallbacks } from "../../lib/graph-viz"

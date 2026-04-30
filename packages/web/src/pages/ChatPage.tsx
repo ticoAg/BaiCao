@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import { Typography, Tag, Button, Tooltip } from "antd";
-import { MessageOutlined, PlusOutlined } from "@ant-design/icons";
+import { Typography, Tag, Button, Tooltip } from "../components/ui/index";
+import { MessageOutlined, PlusOutlined } from "../components/ui/icons";
 import { useChat } from "../hooks/useChat";
 import MessageList from "../components/chat/MessageList";
 import MessageInput from "../components/chat/MessageInput";

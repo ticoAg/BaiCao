@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
-import { Button, Card, Collapse, Empty, List, Space, Tag, Typography } from "antd";
+import { Button, Card, Collapse, Empty, List, Space, Tag, Typography } from "../ui/index";
 import {
   BranchesOutlined,
   DatabaseOutlined,
   ExperimentOutlined,
   FunctionOutlined,
-} from "@ant-design/icons";
+} from "../ui/icons";
 import { useNavigate } from "react-router-dom";
 import type {
   ChatAgentProviderReasoningChunk,

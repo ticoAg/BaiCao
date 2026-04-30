@@ -1,4 +1,4 @@
-import { Alert } from "antd";
+import { Alert } from "../../ui/index";
 import type { WorkbenchFrame } from "../../../types/workbench";
 import FrameChrome from "./FrameChrome";
 

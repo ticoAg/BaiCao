@@ -9,8 +9,8 @@ import {
   Tag,
   Typography,
   message,
-} from "antd";
-import { BranchesOutlined } from "@ant-design/icons";
+} from "../ui/index";
+import { BranchesOutlined } from "../ui/icons";
 import { graphApi } from "../../services/api";
 import { relTypeLabels } from "../../types/graph";
 import type { PathItem, SearchResult } from "../../types/graph";

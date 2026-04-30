@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { message } from "antd";
+import { message } from "../components/ui/index";
 import { graphApi } from "../services/api";
 import { useGraphStore } from "../stores/graphStore";
 import type {
