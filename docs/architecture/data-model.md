@@ -45,9 +45,15 @@ audience: developer
 (:Flavor)       # 性味（如：辛、苦）
 (:Meridian)     # 归经（如：肺经、脾经）
 (:Disease)       # 疾病（如：咳嗽、消化不良）
+(:Formula)       # 方剂（如：止嗽散）
+(:MedicalCase)   # 医案（叙事诊疗事件）
+(:Acupoint)      # 穴位
+(:TreatmentMethod) # 治法（针刺补泻、祝由、导引等；炮制仍用 Process）
 (:Source)        # 文献来源
 (:TimePoint)    # 时间点（如：3年、5年、10年）
 ```
+
+医案/方剂扩展的可执行真源是 `packages/knowledge_model/`。HF 数据集任务见 [knowledge-dataset.md](knowledge-dataset.md)。
 
 ### 2.2 节点属性
 

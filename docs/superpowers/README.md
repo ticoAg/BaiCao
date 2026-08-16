@@ -79,6 +79,16 @@
 - 稳定文档的状态字段
 - 验收文档和计划文档中的引用路径
 
+## 当前入口
+
+- 任务索引：`plans/README.md`（先看状态再打开 plan）
+- 规格索引：`specs/README.md`
+- **当前 active：** `plans/2026-08-16-baicao-knowledge-dataset.md`
+- 对应 spec：`specs/2026-08-16-baicao-knowledge-dataset-design.md`
+- 数据台账：`../../datasets/baicao-knowledge/`
+
+已完成 plan / spec 保留回溯，不要再执行。`packages/graph_runtime/` 不是 chat 主链。
+
 ## 当前关系
 
 - 仓库级工作流：`../workflow.md`

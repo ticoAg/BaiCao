@@ -75,5 +75,5 @@
 
 ---
 
-**状态**: 已沉淀至项目文档库
+**状态**: 已归档。2026-03 产品/架构分析，稳定口径已毕业到 `docs/architecture/` 与根 `README.md`。不要当当前任务真源。当前任务看 `docs/superpowers/plans/README.md`。
 **工作流会话**: WFS-2026-03-19-001

@@ -1,5 +1,7 @@
 # 药典条目图谱化 Wave 1 Implementation Plan
 
+> **Status:** done（2026-04）。处理器与模型扩展已落地。全量收口走 `2026-08-16-baicao-knowledge-dataset.md`。下方 checkbox 是历史拆解，不要再执行。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 为 `ZJUFanLab/TCMChat-dataset-600k/pretrain/train/books/national_standard/2022年中药药典.txt` 落地一条 protocol-first、模块化、边界单次校验的图谱化处理链，稳定产出 `药材 / 饮片 / 证据 / 性味 / 归经 / 功效` 及其中文关系。

@@ -10,7 +10,7 @@
 - `Owner:`（可空，但建议写）
 - `Expires:` YYYY-MM-DD（到期后要么毕业到稳定文档，要么归档/删除）
 - `Graduation:` 目标稳定文档路径
-- `Req:` `IMPL_PLAN.md#section-*`（若关联需求约束）
+- `Req:` 关联的 `docs/superpowers/plans/*.md`（若有）
 
 ## 示例
 
@@ -20,7 +20,7 @@ Status: WIP
 Owner: @username
 Expires: 2026-04-01
 Graduation: docs/architecture/llm-integration.md
-Req: IMPL_PLAN.md#section-5
+Req: docs/superpowers/plans/YYYY-MM-DD-<topic>.md
 -->
 
 # LLM 集成设计（草案）

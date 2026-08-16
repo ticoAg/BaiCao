@@ -1,5 +1,7 @@
 # BaiCao 全阶段补齐实施计划
 
+> **Status:** done。早期主骨架补齐。后续任务看 `plans/README.md`，不要再执行本文件。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 补齐 IMPL_PLAN.md Phase 2-5 所有未实现目标，从"骨架 + TDD 测试"升级为功能完整系统。

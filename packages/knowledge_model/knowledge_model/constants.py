@@ -13,6 +13,10 @@ class NodeType(StrEnum):
     FLAVOR = "性味"
     MERIDIAN = "归经"
     DISEASE = "病证"
+    FORMULA = "方剂"
+    MEDICAL_CASE = "医案"
+    ACUPOINT = "穴位"
+    TREATMENT_METHOD = "治法"
     TIMEPOINT = "时间点"
     SOURCE = "来源"
     EVIDENCE = "证据"
@@ -40,6 +44,11 @@ class EdgeType(StrEnum):
     ORIGINATED_FROM = "来源于"
     DERIVED_FROM = "派生自"
     SUPPORTED_BY = "由证据支持"
+    CONTAINS_HERB = "组成药材"
+    USES_FORMULA = "使用方剂"
+    USES_ACUPOINT = "取用穴位"
+    USES_METHOD = "采用治法"
+    RECORDED_IN_CASE = "记载于医案"
 
 
 class NodeStatus(StrEnum):
@@ -70,6 +79,10 @@ NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {
     NodeType.FLAVOR: "Flavor",
     NodeType.MERIDIAN: "Meridian",
     NodeType.DISEASE: "Disease",
+    NodeType.FORMULA: "Formula",
+    NodeType.MEDICAL_CASE: "MedicalCase",
+    NodeType.ACUPOINT: "Acupoint",
+    NodeType.TREATMENT_METHOD: "TreatmentMethod",
     NodeType.TIMEPOINT: "TimePoint",
     NodeType.SOURCE: "Source",
     NodeType.EVIDENCE: "Evidence",
@@ -106,6 +119,11 @@ EDGE_TYPE_TO_NEO4J_REL: dict[EdgeType, str] = {
     EdgeType.ORIGINATED_FROM: "来源于",
     EdgeType.DERIVED_FROM: "派生自",
     EdgeType.SUPPORTED_BY: "由证据支持",
+    EdgeType.CONTAINS_HERB: "组成药材",
+    EdgeType.USES_FORMULA: "使用方剂",
+    EdgeType.USES_ACUPOINT: "取用穴位",
+    EdgeType.USES_METHOD: "采用治法",
+    EdgeType.RECORDED_IN_CASE: "记载于医案",
 }
 
 NEO4J_REL_TO_EDGE_TYPE: dict[str, EdgeType] = {
@@ -157,6 +175,10 @@ NodeTypeLiteral = Literal[
     "性味",
     "归经",
     "病证",
+    "方剂",
+    "医案",
+    "穴位",
+    "治法",
     "时间点",
     "来源",
     "证据",
@@ -184,4 +206,9 @@ EdgeTypeLiteral = Literal[
     "来源于",
     "派生自",
     "由证据支持",
+    "组成药材",
+    "使用方剂",
+    "取用穴位",
+    "采用治法",
+    "记载于医案",
 ]

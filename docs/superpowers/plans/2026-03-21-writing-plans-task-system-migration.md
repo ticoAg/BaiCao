@@ -1,5 +1,7 @@
 # BaiCao Writing-Plans Task System Migration Implementation Plan
 
+> **Status:** done。`IMPL_PLAN.md` / `.task/` 已删除；任务真源是 `docs/superpowers/plans/`。不要再执行。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Remove BaiCao's custom `.task/` and `TODO_LIST.md` task system and make `writing-plans` output under `docs/superpowers/plans/` the only repo-level implementation task system.

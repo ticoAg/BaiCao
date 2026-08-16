@@ -2,6 +2,8 @@
 
 `packages/data_ingestion/` 是 BaiCao 的数据采集边界包，负责把来源适配、原始材料整理、候选抽取这类“进入知识图谱之前”的工作收敛到一个最小可复用边界。
 
+处理后的源、结构化快照和产量台账进 `datasets/baicao-knowledge/`（HF 发布面，private）。当前源与计划量见该目录 `catalog.json` / `tasks/ledger.json`。实施计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
+
 ## 边界规则
 
 - 这里只放来源适配、抽取候选、统一中间格式相关模型
@@ -115,6 +117,21 @@ infisical run --project-config-dir="$PWD" -- \
 产物目录会继续保留每个阶段的中间文件，并新增：
 
 - `graph_import_records.jsonl`：后续可直接交给 `packages/api` 导入 Neo4j 的统一快照
+
+## 将数据集快照合并导入 Neo4j
+
+苏子阳等自有数据集不要走 `SET n += props` 的 `app.importers.cli --neo4j`，以免盖掉药典同名节点。用启发式合并：
+
+```bash
+cd packages/data_ingestion
+uv run python -m data_ingestion.cli.stamp_dataset_records \
+  --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl \
+  --out ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
+uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
+  --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
+```
+
+同类型且名称/别名命中已有节点时复用实体，只补空属性并追加 `import_source_ids` / `prompt_hashes`。
 
 ## 将快照导入 Neo4j
 

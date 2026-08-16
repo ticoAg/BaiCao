@@ -1,5 +1,7 @@
 # Chinese Graph Relations Breaking Migration Implementation Plan
 
+> **Status:** done（2026-04-01，已 merge）。`EdgeType` 中文真源已落地。下方 checkbox 是历史拆解，不要再执行。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 将全仓图谱关系枚举、共享类型、API/Web 合同与 Neo4j 底层关系类型一次性迁移为中文真源。

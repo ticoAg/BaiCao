@@ -1,5 +1,7 @@
 # 药典条目大批量入图 Wave 1 Implementation Plan
 
+> **Status:** done（代码，2026-04-19）。ingest CLI + Neo4j 写入已落地；605 条尚未全部核销。剩余产量收口走 `2026-08-16-baicao-knowledge-dataset.md`。下方 checkbox 不要再当新任务执行。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 为 `2022年中药药典.txt` 建立一条可复用的“LLM 初始化 → 异步批量抽取 → 统一记录快照 → Neo4j 写入”主链路，并能在注入真实 Infisical 环境后执行大批量或全量入图。

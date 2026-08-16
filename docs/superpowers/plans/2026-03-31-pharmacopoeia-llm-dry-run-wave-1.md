@@ -1,5 +1,7 @@
 # 药典条目 LLM dry-run Wave 1 Implementation Plan
 
+> **Status:** done（2026-04）。dry-run CLI 已落地。下方 checkbox 是历史拆解，不要再执行。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 为 `2022年中药药典.txt` 实现一个独立的 `CLI dry-run`，抽样 `10` 条条目执行规则切段、section 解析、LLM 抽取、Pydantic 校验与图谱映射，并把每个环节的中间结果完整落盘。

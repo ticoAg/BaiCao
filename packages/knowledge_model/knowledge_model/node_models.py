@@ -63,6 +63,28 @@ class DiseaseNodeModel(BaseNodeModel):
     tcm_type: str | None = Field(default=None, description="中医病证分类")
 
 
+class FormulaNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.FORMULA, description="节点类型：方剂")
+    composition_text: str | None = Field(default=None, description="组成原文")
+    source_book: str | None = Field(default=None, description="出处书名")
+
+
+class MedicalCaseNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.MEDICAL_CASE, description="节点类型：医案")
+    chief_complaint: str | None = Field(default=None, description="主诉")
+    unit_id: str | None = Field(default=None, description="来源单元，如章节")
+
+
+class AcupointNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.ACUPOINT, description="节点类型：穴位")
+    meridian: str | None = Field(default=None, description="所属经脉")
+
+
+class TreatmentMethodNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.TREATMENT_METHOD, description="节点类型：治法")
+    category: str | None = Field(default=None, description="针刺/推拿/祝由/导引等")
+
+
 class TimePointNodeModel(BaseNodeModel):
     type: NodeType = Field(default=NodeType.TIMEPOINT, description="节点类型：时间点")
     years: int | None = Field(default=None, description="对应年份数值")

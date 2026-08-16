@@ -25,9 +25,9 @@ BaiCao ShiTan（白草药坛）是一个面向中药材知识场景的可信问�
 
 当前仓库处于 **MVP 早期实现中**，需要把“代码里已经存在的骨架”和“架构上已确认的目标形态”分开理解：
 
-- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI / React 主骨架、Graph Workbench `/graph`、数据处理工作台 `/data/pipeline`、共享知识模型 / 数据采集边界、CSV/JSONL 导入器、review/export 持久化、SSE 问答流与 MinIO 本地对象存储
-- 进行中：更完整的溯源链路、专家审查治理、问答质量提升、图谱可视化增强
-- 规划中：事件驱动集成、缓存策略、监控与追踪完善
+- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI / React 主骨架、Graph Workbench `/graph`、数据处理工作台 `/data/pipeline`、共享知识模型 / 数据采集边界、CSV/JSONL 导入器、review/export 持久化、SSE 问答流（deepagents）与 MinIO 本地对象存储
+- 进行中：自有知识数据集 `datasets/baicao-knowledge/`（药典收口 + 道医苏子阳收源）、更完整的溯源链路、问答质量
+- 规划中：苏子阳抽取、事件驱动、鉴权治理、多 worker 会话持久化、监控
 
 ## 3. 架构模式
 

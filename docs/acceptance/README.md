@@ -194,9 +194,9 @@ rg -n "前置条件|验收步骤|期望结果|证据|结论" docs/acceptance --t
 
 ## 下一步建议
 
-随着核心功能推进，优先补这几类验收文档：
+六条主链路验收已是 `pass`。下一波优先补：
 
-1. 健康检查与基础设施联通验收
-2. 图谱查询主链路验收
-3. 智能问答主链路验收
-4. 验证申请与审核闭环验收
+1. 自有知识数据集验收（药典 `import_scope_key` 筛选 + latest 快照可导入）
+2. 道医苏子阳收源 / 抽样抽取验收（private dataset，不公开原文）
+
+对应计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`

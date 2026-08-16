@@ -67,6 +67,7 @@ export interface VerificationEvidence {
 
 export type NodeType =
   | '药材'
+  | '饮片'
   | '成分'
   | '品种'
   | '工艺'
@@ -75,7 +76,13 @@ export type NodeType =
   | '性味'
   | '归经'
   | '病证'
+  | '方剂'
+  | '医案'
+  | '穴位'
+  | '治法'
   | '时间点'
+  | '来源'
+  | '证据'
 
 export type NodeStatus = 'pending' | 'verified' | 'rejected'
 
@@ -159,6 +166,28 @@ export interface DiseaseNode extends BaseNode {
   tcmType?: string
 }
 
+export interface FormulaNode extends BaseNode {
+  type: '方剂'
+  compositionText?: string
+  sourceBook?: string
+}
+
+export interface MedicalCaseNode extends BaseNode {
+  type: '医案'
+  chiefComplaint?: string
+  unitId?: string
+}
+
+export interface AcupointNode extends BaseNode {
+  type: '穴位'
+  meridian?: string
+}
+
+export interface TreatmentMethodNode extends BaseNode {
+  type: '治法'
+  category?: string
+}
+
 // 联合节点类型
 export type GraphNode =
   | HerbNode
@@ -171,6 +200,10 @@ export type GraphNode =
   | FlavorNode
   | MeridianNode
   | DiseaseNode
+  | FormulaNode
+  | MedicalCaseNode
+  | AcupointNode
+  | TreatmentMethodNode
 
 // ============ 图谱边类型 ============
 
@@ -191,6 +224,16 @@ export type EdgeType =
   | '治疗病证'
   | '相互作用'
   | '相似于'
+  | '父类'
+  | '子类'
+  | '来源于'
+  | '派生自'
+  | '由证据支持'
+  | '组成药材'
+  | '使用方剂'
+  | '取用穴位'
+  | '采用治法'
+  | '记载于医案'
 
 export interface BaseEdge {
   status: NodeStatus
@@ -240,6 +283,13 @@ export type GraphEdge =
   | { type: '具有性味'; source: string; target: string; properties: BaseEdge }
   | { type: '归于经脉'; source: string; target: string; properties: BaseEdge }
   | { type: '治疗病证'; source: string; target: string; properties: BaseEdge }
+  | { type: '来源于'; source: string; target: string; properties: BaseEdge }
+  | { type: '由证据支持'; source: string; target: string; properties: BaseEdge }
+  | { type: '组成药材'; source: string; target: string; properties: BaseEdge }
+  | { type: '使用方剂'; source: string; target: string; properties: BaseEdge }
+  | { type: '取用穴位'; source: string; target: string; properties: BaseEdge }
+  | { type: '采用治法'; source: string; target: string; properties: BaseEdge }
+  | { type: '记载于医案'; source: string; target: string; properties: BaseEdge }
 
 // ============ Graph Response Types ============
 

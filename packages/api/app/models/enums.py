@@ -73,6 +73,11 @@ class EdgeType(StrEnum):
     ORIGINATED_FROM = "来源于"
     DERIVED_FROM = "派生自"
     SUPPORTED_BY = "由证据支持"
+    CONTAINS_HERB = "组成药材"
+    USES_FORMULA = "使用方剂"
+    USES_ACUPOINT = "取用穴位"
+    USES_METHOD = "采用治法"
+    RECORDED_IN_CASE = "记载于医案"
 
 
 # ============ Chat ============

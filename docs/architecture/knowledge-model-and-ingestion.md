@@ -101,9 +101,10 @@ packages/knowledge_model/
 ```mermaid
 flowchart LR
     subgraph Sources[外部来源]
-        HF[Hugging Face 数据集]
+        HF[外部 Hugging Face 语料]
         Pharm[药典 / 教材 / 文献]
-        Manual[人工整理表]
+        Manual[人工整理 / 叙事文本]
+        Own[baicao-knowledge 自有 dataset]
     end
 
     subgraph Ingestion[数据采集二级子项目]
@@ -128,6 +129,8 @@ flowchart LR
     HF --> Collect
     Pharm --> Collect
     Manual --> Collect
+    Collect --> Own
+    Normalize --> Own
     Collect --> Rule
     Collect --> Agent
     Rule --> Normalize
@@ -140,6 +143,8 @@ flowchart LR
     API --> Web
     Graph --> QA
 ```
+
+自有数据集 `datasets/baicao-knowledge/` 只存源、结构化快照、VIEW 和产量台账，**不是第二套图模型**。节点/关系类型仍只以 `packages/knowledge_model/` 为准。
 
 ### 5.1 Graph Runtime / Agent 运行边界
 

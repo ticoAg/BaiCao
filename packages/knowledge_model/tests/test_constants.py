@@ -41,6 +41,7 @@ def test_edge_type_exposes_chinese_label():
 def test_node_type_exposes_prepared_piece_and_evidence():
     assert NodeType.PREPARED_HERB == "饮片"
     assert NodeType.EVIDENCE == "证据"
+    assert NodeType.FORMULA == "方剂"
 
 
 def test_edge_type_exposes_chinese_content_relations():
@@ -65,3 +66,17 @@ def test_edge_type_has_neo4j_relation_mapping():
 def test_parse_edge_type_accepts_chinese_and_neo4j_relation_names():
     assert parse_edge_type("具有性味") == EdgeType.HAS_FLAVOR
     assert parse_edge_type("具有功效") == EdgeType.HAS_EFFICACY
+
+
+def test_case_formula_acupoint_types_exist():
+    assert NodeType.FORMULA == "方剂"
+    assert NodeType.MEDICAL_CASE == "医案"
+    assert NodeType.ACUPOINT == "穴位"
+    assert NodeType.TREATMENT_METHOD == "治法"
+    assert EdgeType.CONTAINS_HERB == "组成药材"
+    assert EdgeType.USES_FORMULA == "使用方剂"
+    assert EdgeType.USES_ACUPOINT == "取用穴位"
+    assert EdgeType.USES_METHOD == "采用治法"
+    assert EdgeType.RECORDED_IN_CASE == "记载于医案"
+    assert NODE_TYPE_LABELS[NodeType.FORMULA] == "方剂"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.CONTAINS_HERB] == "组成药材"

@@ -94,9 +94,10 @@ flowchart TB
 |------|------|------|
 | 根级协作文档 | 已补齐入口 | 现在由 `AGENTS.md`、`workflow.md`、`agent-skill-routing.md`、`verification-matrix.md` 共同承担 agent 入口、工作流、skill 路由与验证口径 |
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
-| `docs/acceptance/` | 已形成首批实例 | 已有模板和 3 条主链路验收文档，可直接执行 |
-| `docs/_dev/brainstorm/` | 内容最完整 | 已沉淀产品和架构 brainstorm 结果，适合回溯思路 |
-| `docs/superpowers/` | 已开始使用 | 已有 spec / plan，可作为后续 agent 协作沉淀路径 |
+| `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
+| `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
+| `docs/superpowers/` | 任务系统在用 | 索引见 `superpowers/plans/README.md`；当前 active 为知识数据集 plan |
+| `datasets/baicao-knowledge/` | 数据台账 staging | 源注册、VIEW、计划/完成量；载荷不进 git |
 
 ## 如何放置信息
 
@@ -135,6 +136,12 @@ flowchart TB
 - agent 编写的设计 spec
 - agent 编写的实现计划、拆解和执行中间产物
 - 仅服务于某轮任务，但对回溯实现过程有价值的文档
+
+### 放进 `datasets/baicao-knowledge/`
+
+- 自有数据源注册、`SOURCE.md` / `VIEW.md`
+- 计划处理量与已完成量（`catalog.json`、`tasks/ledger.json`）
+- 不把原文和大 JSONL 提交进 git；HF private dataset 才是载荷发布面
 
 ### `superpowers` 完成后的毕业 / 归档
 
@@ -181,14 +188,21 @@ flowchart TB
 | [acceptance/graph-workbench-mainline.md](acceptance/graph-workbench-mainline.md) | Graph Workbench `/graph` 主链路验收 |
 | [acceptance/chat-mainline.md](acceptance/chat-mainline.md) | 智能问答主链路验收 |
 | [acceptance/verification-workflow.md](acceptance/verification-workflow.md) | 验证申请与审核闭环验收 |
+| [acceptance/data-ingestion-and-knowledge-model.md](acceptance/data-ingestion-and-knowledge-model.md) | 共享图模型与数据采集边界验收 |
+| [acceptance/data-pipeline-workbench-mainline.md](acceptance/data-pipeline-workbench-mainline.md) | 数据处理工作台主链路验收 |
+| [acceptance/review-export-persistence-wave-2.md](acceptance/review-export-persistence-wave-2.md) | review/export 持久化验收 |
+| [architecture/data-sources.md](architecture/data-sources.md) | 外部候选源 + 自有 dataset 规划 |
+| [architecture/knowledge-dataset.md](architecture/knowledge-dataset.md) | 自有 HF dataset 任务定义与 Parquet 发布 |
+| [superpowers/plans/README.md](superpowers/plans/README.md) | 实施计划状态索引 |
+| [../datasets/baicao-knowledge/README.md](../datasets/baicao-knowledge/README.md) | 自有知识数据集 staging 与产量台账 |
 
 ### 草案与分析
 
 | 文档 | 摘要 |
 |------|------|
 | [_dev/README.md](_dev/README.md) | 草案文档规则与毕业路径 |
-| [_dev/brainstorm/README.md](_dev/brainstorm/README.md) | brainstorm 总索引，连接产品与架构分析产物 |
-| [superpowers/README.md](superpowers/README.md) | spec / plan 等 agent 过程产物与任务系统入口 |
+| [_dev/brainstorm/README.md](_dev/brainstorm/README.md) | 早期 brainstorm 归档，不再当任务真源 |
+| [superpowers/README.md](superpowers/README.md) | spec / plan 入口；当前 active 见 plans/README |
 
 ## 文档维护规则
 

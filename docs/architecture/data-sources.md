@@ -153,15 +153,32 @@ audience: developer, data-team
 
 ---
 
-## 6. 相关文档
+## 6. 白草自有数据集（进行中）
+
+外部 HF 源只是输入。白草自己的发布面是 private dataset `ticoag/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`。
+
+每份源固定三件套：`source/`、`processed/`、`VIEW.md`。任务计划量和完成量在 `tasks/ledger.json`。
+
+| source_id | 状态 | 计划 | 完成（2026-08-16） |
+|-----------|------|------|---------------------|
+| `national-standard-2022-pharmacopoeia` | partial | 605 条 | ~595 条抽取（estimate，待 merge） |
+| `daoyi-suyang` | collected | 389 章收源 | 原文已定位，未进 staging / 未抽取 |
+
+苏子阳是叙事医案，不是药典字段；原文未授权公开转载，只进 private dataset。筛选入图数据用各源 `SOURCE.md` 的 `import_scope_key`。
+
+任务定义与 Parquet 发布口径：`knowledge-dataset.md`。当前实施：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
+
+## 7. 相关文档
 
 - [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) — 仓库级图模型与数据采集边界
 - [data-model.md](data-model.md) — Neo4j 节点与关系模型
+- `datasets/baicao-knowledge/README.md` — 自有数据集台账
+- `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md` — 数据集设计
 - `docs/superpowers/specs/2026-03-23-knowledge-model-and-data-ingestion-design.md` — 原始调研设计文档
 
 ---
 
-## 7. TCM 训练语料构建（ TCMChat 数据体系）
+## 8. TCM 训练语料构建（TCMChat 数据体系，背景归档）
 
 本章节整理中医药大语言模型训练语料的完整构建流程，涵盖数据来源、预处理方式及七类场景数据构造策略。
 
