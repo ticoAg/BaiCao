@@ -14,6 +14,8 @@ from knowledge_model.constants import (
     NodeStatus,
     NodeType,
     parse_edge_type,
+    parse_node_type,
+    to_neo4j_label,
 )
 from knowledge_model.labels import EDGE_TYPE_LABELS, NODE_TYPE_LABELS
 
@@ -66,6 +68,13 @@ def test_edge_type_has_neo4j_relation_mapping():
 def test_parse_edge_type_accepts_chinese_and_neo4j_relation_names():
     assert parse_edge_type("具有性味") == EdgeType.HAS_FLAVOR
     assert parse_edge_type("具有功效") == EdgeType.HAS_EFFICACY
+
+
+def test_neo4j_labels_are_chinese():
+    assert to_neo4j_label(NodeType.HERB) == "药材"
+    assert to_neo4j_label("Herb") == "药材"
+    assert parse_node_type("PreparedHerb") == NodeType.PREPARED_HERB
+    assert parse_node_type("方剂") == NodeType.FORMULA
 
 
 def test_case_formula_acupoint_types_exist():

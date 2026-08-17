@@ -75,11 +75,11 @@ Viewer 主表是仓库根下 `data/*.parquet`，把各源 latest 拼在一起。
 | `evidence_refs` | **证据节点名**，不是章号 |
 | `edges` | 指向本批已存在的 `node_name` |
 
-入图溯源（节点与边统一）：
+入图溯源（节点、边、属性键一律中文）：
 
-- 新节点：`import_source_id` / `import_batch_id` / `import_scope_key` / `prompt_hash`
-- 合并到已有节点：只 **追加** `import_source_ids` / `import_batch_ids` / `import_scope_keys` / `prompt_hashes`，不覆盖 `source`、`latin_name` 等已有字段
-- 边：标量 `import_source_id`、`import_batch_id`、`import_scope_key`、`prompt_hash`、`import_unit_id`
+- 标签用 `药材`/`方剂`/`医案` 等，不用 `Herb`
+- 属性键用 `名称`/`来源`/`导入源`/`抽取契约哈希` 等
+- 状态值用 `待验证`/`已验证`/`已拒绝`
 
 同类型且 `name` / `alias` / `aliases` / `pinyin_name` / `latin_name` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。
 
@@ -87,12 +87,12 @@ Cypher 筛选：
 
 ```cypher
 MATCH (n)
-WHERE n.import_source_id = 'daoyi-suyang'
-   OR 'daoyi-suyang' IN coalesce(n.import_source_ids, [])
+WHERE n.导入源 = '道医苏子阳'
+   OR '道医苏子阳' IN coalesce(n.导入源列表, [])
 RETURN n
 
 MATCH ()-[r]->()
-WHERE r.import_scope_key = 'manual:baicao-knowledge:daoyi-suyang'
+WHERE r.导入范围键 = '人工:白草知识:道医苏子阳'
 RETURN type(r), count(*)
 ```
 

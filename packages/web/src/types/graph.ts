@@ -152,6 +152,8 @@ export interface PathResult {
 export const graphNodeLabelDisplayMap: Record<string, string> = {
   Herb: "药材",
   药材: "药材",
+  PreparedHerb: "饮片",
+  饮片: "饮片",
   Component: "成分",
   成分: "成分",
   Variant: "品种",
@@ -168,10 +170,20 @@ export const graphNodeLabelDisplayMap: Record<string, string> = {
   归经: "归经",
   Disease: "病证",
   病证: "病证",
+  Formula: "方剂",
+  方剂: "方剂",
+  MedicalCase: "医案",
+  医案: "医案",
+  Acupoint: "穴位",
+  穴位: "穴位",
+  TreatmentMethod: "治法",
+  治法: "治法",
   TimePoint: "时间点",
   时间点: "时间点",
   Source: "来源",
   来源: "来源",
+  Evidence: "证据",
+  证据: "证据",
   Unknown: "未知类型",
 };
 
@@ -202,6 +214,7 @@ export const graphPropertyLabels: Record<GraphQueryPropertyKey, string> = {
 // 节点类型 G6 颜色映射（hex 值）
 export const labelColorMap: Record<string, string> = {
   药材: "#1677ff",
+  饮片: "#69b1ff",
   功效: "#52c41a",
   性味: "#fa8c16",
   归经: "#722ed1",
@@ -210,8 +223,13 @@ export const labelColorMap: Record<string, string> = {
   品种: "#2f54eb",
   工艺: "#a0d911",
   性状: "#fa541c",
+  方剂: "#2f54eb",
+  医案: "#13c2c2",
+  穴位: "#eb2f96",
+  治法: "#fa541c",
   时间点: "#eb2f96",
   来源: "#595959",
+  证据: "#8c8c8c",
 };
 
 // 节点类型 Ant Tag 颜色

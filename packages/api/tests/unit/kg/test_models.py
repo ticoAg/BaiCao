@@ -4,18 +4,19 @@ from app.models.enums import EdgeType
 
 def test_node_model_map_covers_runtime_labels() -> None:
     for label in [
+        "药材",
+        "成分",
+        "品种",
+        "工艺",
+        "性状",
+        "时间点",
+        "功效",
+        "性味",
+        "归经",
+        "病证",
+        "来源",
+        "证据",
         "Herb",
-        "Component",
-        "Variant",
-        "Process",
-        "Trait",
-        "TimePoint",
-        "Efficacy",
-        "Flavor",
-        "Meridian",
-        "Disease",
-        "Source",
-        "Evidence",
     ]:
         assert label in NODE_MODEL_MAP
 

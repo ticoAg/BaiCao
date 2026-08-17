@@ -12,6 +12,7 @@ from ..models.enums import (
     TraitCategory,
 )
 from knowledge_model.constants import parse_node_type, to_neo4j_label
+from knowledge_model.graph_i18n import PROPERTY_ZH_TO_EN, localize_status, to_graph_properties, zh_property
 from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
 from .db import cypher_rows, cypher_single
 from .models import NODE_MODEL_MAP, REL_TYPE_TO_ATTR
@@ -82,18 +83,18 @@ CREATE (n:{label} $props) RETURN n
 """
 
 QUERY_GET_NODE_BY_ID = """
-MATCH (n) WHERE n.id = $node_id
+MATCH (n) WHERE n.标识 = $node_id
 RETURN n, labels(n) as labels
 """
 
 QUERY_GET_NODE_BY_NAME = """
-MATCH (n:{label} {{name: $name}})
+MATCH (n:{label} {{名称: $name}})
 RETURN n, labels(n) as labels
 """
 
 QUERY_CREATE_RELATIONSHIP = """
-MATCH (a {{name: $from_name}})
-MATCH (b {{name: $to_name}})
+MATCH (a {{名称: $from_name}})
+MATCH (b {{名称: $to_name}})
 CREATE (a)-[r:{rel_type}]->(b)
 SET r = $props
 RETURN r
@@ -101,21 +102,21 @@ RETURN r
 
 QUERY_VERIFY_NODE = """
 MATCH (n)
-WHERE n.id = $node_id
-SET n.status = $status,
-    n.verification_id = $verification_id,
-    n.verified_by = $verifier_id,
-    n.verified_at = datetime()
+WHERE n.标识 = $node_id
+SET n.状态 = $status,
+    n.验证标识 = $verification_id,
+    n.验证人 = $verifier_id,
+    n.验证时间 = datetime()
 RETURN n
 """
 
 QUERY_VERIFY_RELATIONSHIP = """
 MATCH (from)-[r:{rel_type}]->(to)
-WHERE from.name = $from_name AND to.name = $to_name
-SET r.status = $status,
-    r.verification_id = $verification_id,
-    r.verified_by = $verifier_id,
-    r.verified_at = datetime()
+WHERE from.名称 = $from_name AND to.名称 = $to_name
+SET r.状态 = $status,
+    r.验证标识 = $verification_id,
+    r.验证人 = $verifier_id,
+    r.验证时间 = datetime()
 RETURN r
 """
 
@@ -187,6 +188,9 @@ class GraphService:
     def _map_node_to_dict(self, node: Any, labels: Optional[List[str]] = None) -> Dict[str, Any]:
         """Map Neo4j node to dictionary with optional labels"""
         result = dict(node)
+        for zh_key, en_key in PROPERTY_ZH_TO_EN.items():
+            if zh_key in result and en_key not in result:
+                result[en_key] = result[zh_key]
         if labels is not None:
             result["labels"] = self._localize_label_list(labels)
         elif "labels" in result and isinstance(result["labels"], list):
@@ -211,7 +215,7 @@ class GraphService:
         }
         if extra_props:
             props.update(extra_props)
-        return props
+        return to_graph_properties(props)
 
     def _clean_properties(self, props: Dict[str, Any]) -> Dict[str, Any]:
         return {key: value for key, value in props.items() if value is not None}
@@ -266,27 +270,27 @@ class GraphService:
         status: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         query = """
-        MATCH (n {id: $node_id})-[r]-(connected)
-        WHERE $status IS NULL OR r.status = $status
+        MATCH (n {标识: $node_id})-[r]-(connected)
+        WHERE $status IS NULL OR r.状态 = $status
         RETURN {
-            id: coalesce(r.id, elementId(r)),
+            id: coalesce(r.标识, elementId(r)),
             rel_type: type(r),
-            status: coalesce(r.status, 'pending'),
-            verification_id: r.verification_id,
-            verified_by: r.verified_by,
-            verified_at: toString(r.verified_at),
+            status: coalesce(r.状态, '待验证'),
+            verification_id: r.验证标识,
+            verified_by: r.验证人,
+            verified_at: toString(r.验证时间),
             source: {
-                id: startNode(r).id,
-                name: startNode(r).name,
-                source: startNode(r).source,
-                status: startNode(r).status,
+                id: startNode(r).标识,
+                name: startNode(r).名称,
+                source: startNode(r).来源,
+                status: startNode(r).状态,
                 labels: labels(startNode(r))
             },
             target: {
-                id: endNode(r).id,
-                name: endNode(r).name,
-                source: endNode(r).source,
-                status: endNode(r).status,
+                id: endNode(r).标识,
+                name: endNode(r).名称,
+                source: endNode(r).来源,
+                status: endNode(r).状态,
                 labels: labels(endNode(r))
             }
         } AS edge
@@ -432,25 +436,26 @@ class GraphService:
 
         name_contains = node_filters.get("name_contains")
         if name_contains:
-            where_clauses.append("n.name CONTAINS $name_contains")
+            where_clauses.append("n.名称 CONTAINS $name_contains")
             params["name_contains"] = name_contains
 
         node_status = self._query_value(node_filters.get("status"))
         if node_status in QUERY_STATUS_DISPLAY:
-            where_clauses.append("n.status = $node_status")
-            params["node_status"] = node_status
+            where_clauses.append("n.状态 = $node_status")
+            params["node_status"] = localize_status(node_status)
 
         source_contains = node_filters.get("source_contains")
         if source_contains:
-            where_clauses.append("coalesce(n.source, '') CONTAINS $node_source_contains")
+            where_clauses.append("coalesce(n.来源, '') CONTAINS $node_source_contains")
             params["node_source_contains"] = source_contains
 
         property_key = self._query_value(node_filters.get("property_key"))
         property_value = node_filters.get("property_value_contains")
         if property_key in ALLOWED_QUERY_PROPERTY_KEYS:
-            where_clauses.append(f"n.{property_key} IS NOT NULL")
+            stored_key = zh_property(property_key)
+            where_clauses.append(f"n.`{stored_key}` IS NOT NULL")
             if property_value:
-                where_clauses.append(f"toString(n.{property_key}) CONTAINS $property_value_contains")
+                where_clauses.append(f"toString(n.`{stored_key}`) CONTAINS $property_value_contains")
                 params["property_value_contains"] = property_value
 
         rel_type = self._query_value(edge_filters.get("rel_type"))
@@ -459,12 +464,12 @@ class GraphService:
 
         edge_status = self._query_value(edge_filters.get("status"))
         if edge_status in QUERY_STATUS_DISPLAY:
-            edge_where_clauses.append("r.status = $edge_status")
-            params["edge_status"] = edge_status
+            edge_where_clauses.append("r.状态 = $edge_status")
+            params["edge_status"] = localize_status(edge_status)
 
         connected_name = edge_filters.get("connected_name_contains")
         if connected_name:
-            edge_where_clauses.append("connected.name CONTAINS $connected_name_contains")
+            edge_where_clauses.append("connected.名称 CONTAINS $connected_name_contains")
             params["connected_name_contains"] = connected_name
 
         if rel_clause or edge_where_clauses:
@@ -484,7 +489,7 @@ class GraphService:
         query = f"""
         MATCH (n{label_clause}){where_sql}
         RETURN n {{.*, labels: labels(n)}} AS node
-        ORDER BY n.name
+        ORDER BY n.名称
         LIMIT $seed_limit
         """
         return query, params
@@ -625,7 +630,7 @@ class GraphService:
     ) -> Dict[str, Any]:
         """创建任意类型节点（默认 status=pending）"""
         node_id = str(uuid_module_uuid4())
-        props: Dict[str, Any] = properties or {}
+        props: Dict[str, Any] = dict(properties or {})
         props.setdefault("id", node_id)
         props.setdefault("name", name)
         props.setdefault("source", source)
@@ -633,10 +638,13 @@ class GraphService:
         props.setdefault("verification_id", None)
         props.setdefault("verified_by", None)
         props.setdefault("verified_at", None)
+        stored = to_graph_properties(props)
 
-        query = QUERY_CREATE_NODE.format(label=label)
-        record = await self._query_single(query, {"props": props})
-        return dict(record["n"]) if record else {}
+        query = QUERY_CREATE_NODE.format(label=to_neo4j_label(label))
+        record = await self._query_single(query, {"props": stored})
+        if not record:
+            return {}
+        return self._map_node_to_dict(record["n"], [to_neo4j_label(label)])
 
     async def get_node(self, node_id: str) -> Optional[Dict[str, Any]]:
         """根据 ID 获取节点"""
@@ -676,7 +684,7 @@ class GraphService:
 
     async def get_node_by_name(self, name: str, label: str) -> Optional[Dict[str, Any]]:
         """根据名称和类型获取节点"""
-        query = QUERY_GET_NODE_BY_NAME.format(label=label)
+        query = QUERY_GET_NODE_BY_NAME.format(label=to_neo4j_label(label))
         record = await self._query_single(query, {"name": name})
         if record:
             return self._map_node_to_dict(record["n"], record["labels"])
@@ -1038,7 +1046,7 @@ class GraphService:
     async def get_herb_graph(self, herb_name: str, depth: int = 1) -> Dict[str, Any]:
         """获取以药材为中心的完整图谱"""
         query = f"""
-        MATCH (h:Herb {{name: $name}})
+        MATCH (h:药材 {{名称: $name}})
         OPTIONAL MATCH path = (h)-[*1..{depth}]-(connected)
         WITH h, [p IN collect(path) WHERE p IS NOT NULL] AS paths
         RETURN
@@ -1176,8 +1184,8 @@ class GraphService:
     async def get_herb_components(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有成分"""
         query = """
-        MATCH (h:Herb {name: $name})-[r:包含成分]->(c:Component)
-        RETURN c, r.quantity as quantity, r.status as status
+        MATCH (h:药材 {名称: $name})-[r:包含成分]->(c:成分)
+        RETURN c, r.用量 as quantity, r.状态 as status
         """
         records = await self._query_rows(query, {"name": herb_name})
         return [{"component": dict(r["c"]), "quantity": r["quantity"], "status": r["status"]} for r in records]
@@ -1185,8 +1193,8 @@ class GraphService:
     async def get_herb_variants(self, herb_name: str) -> List[Dict[str, Any]]:
         """获取药材的所有品种"""
         query = """
-        MATCH (h:Herb {name: $name})-[r:具有品种]->(v:Variant)
-        RETURN v, r.status as status
+        MATCH (h:药材 {名称: $name})-[r:具有品种]->(v:品种)
+        RETURN v, r.状态 as status
         """
         records = await self._query_rows(query, {"name": herb_name})
         return [{"variant": dict(r["v"]), "status": r["status"]} for r in records]
@@ -1195,15 +1203,15 @@ class GraphService:
         """获取药材的性状特征"""
         if year_range:
             query = """
-            MATCH (h:Herb {name: $name})-[r:具有性状]->(t:Trait)
-            WHERE r.year_range IS NULL OR r.year_range CONTAINS $year_range
-            RETURN t, r.value as value, r.observation as observation, r.year_range as year_range, r.status as status
+            MATCH (h:药材 {名称: $name})-[r:具有性状]->(t:性状)
+            WHERE r.年份范围 IS NULL OR r.年份范围 CONTAINS $year_range
+            RETURN t, r.取值 as value, r.观察 as observation, r.年份范围 as year_range, r.状态 as status
             """
             params = {"name": herb_name, "year_range": year_range}
         else:
             query = """
-            MATCH (h:Herb {name: $name})-[r:具有性状]->(t:Trait)
-            RETURN t, r.value as value, r.observation as observation, r.year_range as year_range, r.status as status
+            MATCH (h:药材 {名称: $name})-[r:具有性状]->(t:性状)
+            RETURN t, r.取值 as value, r.观察 as observation, r.年份范围 as year_range, r.状态 as status
             """
             params = {"name": herb_name}
 
@@ -1213,10 +1221,10 @@ class GraphService:
     async def get_variant_details(self, variant_name: str) -> Dict[str, Any]:
         """获取品种详细信息"""
         query = """
-        MATCH (v:Variant {name: $name})-[:属于药材]->(h:Herb)
-        OPTIONAL MATCH (v)-[r1:具有性状]->(t:Trait)
-        OPTIONAL MATCH (h)-[r2:具有功效]->(e:Efficacy)
-        RETURN v, h.name as base_herb, collect(DISTINCT {trait: t, value: r1.value}) as traits, collect(DISTINCT e.name) as efficacies
+        MATCH (v:品种 {名称: $name})-[:属于药材]->(h:药材)
+        OPTIONAL MATCH (v)-[r1:具有性状]->(t:性状)
+        OPTIONAL MATCH (h)-[r2:具有功效]->(e:功效)
+        RETURN v, h.名称 as base_herb, collect(DISTINCT {trait: t, value: r1.取值}) as traits, collect(DISTINCT e.名称) as efficacies
         """
         record = await self._query_single(query, {"name": variant_name})
         if record:
@@ -1236,14 +1244,14 @@ class GraphService:
         if normalized_label:
             cypher = f"""
             MATCH (n:{normalized_label})
-            WHERE n.name CONTAINS $search_text
+            WHERE n.名称 CONTAINS $search_text
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
         else:
             cypher = """
             MATCH (n)
-            WHERE n.name CONTAINS $search_text
+            WHERE n.名称 CONTAINS $search_text
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
@@ -1268,7 +1276,7 @@ class GraphService:
     async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> List[Dict[str, Any]]:
         """查找两个节点之间的路径"""
         query = """
-        MATCH path = (from {name: $from_name})-[*1..%d]-(to {name: $to_name})
+        MATCH path = (from {名称: $from_name})-[*1..%d]-(to {名称: $to_name})
         RETURN path
         """ % max_depth
 
@@ -1282,18 +1290,18 @@ class GraphService:
         normalized_label = self._normalize_query_label(label)
         if normalized_label:
             query = f"""
-            MATCH (n:{normalized_label}) WHERE n.status = $status
+            MATCH (n:{normalized_label}) WHERE n.状态 = $status
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
-            params = {"limit": limit, "status": NodeStatus.PENDING.value}
+            params = {"limit": limit, "status": localize_status(NodeStatus.PENDING.value)}
         else:
             query = """
-            MATCH (n) WHERE n.status = $status
+            MATCH (n) WHERE n.状态 = $status
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
-            params = {"limit": limit, "status": NodeStatus.PENDING.value}
+            params = {"limit": limit, "status": localize_status(NodeStatus.PENDING.value)}
 
         records = await self._query_rows(query, params)
         return [
@@ -1329,7 +1337,7 @@ class GraphService:
                 "node_id": node_id,
                 "verification_id": verification_id,
                 "verifier_id": verifier_id,
-                "status": status,
+                "status": localize_status(status),
             },
         )
         if record:

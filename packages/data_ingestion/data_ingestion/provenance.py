@@ -46,11 +46,8 @@ PROTECTED_EXISTING_PROPS = {
     "imported_at",
 }
 DEFAULT_SCOPE_KEYS = {
-    "daoyi-suyang": "manual:baicao-knowledge:daoyi-suyang",
-    "national-standard-2022-pharmacopoeia": (
-        "huggingface|ZJUFanLab/TCMChat-dataset-600k|"
-        "pretrain/train/books/national_standard/2022年中药药典.txt"
-    ),
+    "daoyi-suyang": "人工:白草知识:道医苏子阳",
+    "national-standard-2022-pharmacopoeia": "抱抱脸:中药药典2022",
 }
 DEFAULT_PROMPT_FILES = {
     "daoyi-suyang": Path(__file__).with_name("EXTRACT_SUYANG.md"),

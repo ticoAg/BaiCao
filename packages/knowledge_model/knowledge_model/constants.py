@@ -68,7 +68,9 @@ class TraitCategory(StrEnum):
     CHEMICAL = "chemical"
 
 
-NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {
+NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {node_type: node_type.value for node_type in NodeType}
+
+LEGACY_ENGLISH_NEO4J_LABELS: dict[NodeType, str] = {
     NodeType.HERB: "Herb",
     NodeType.PREPARED_HERB: "PreparedHerb",
     NodeType.COMPONENT: "Component",
@@ -89,13 +91,11 @@ NODE_TYPE_TO_NEO4J_LABEL: dict[NodeType, str] = {
 }
 
 NEO4J_LABEL_TO_NODE_TYPE: dict[str, NodeType] = {
-    neo4j_label: node_type for node_type, neo4j_label in NODE_TYPE_TO_NEO4J_LABEL.items()
+    **{node_type.value: node_type for node_type in NodeType},
+    **{legacy: node_type for node_type, legacy in LEGACY_ENGLISH_NEO4J_LABELS.items()},
 }
 
-NODE_TYPE_ALIASES: dict[str, NodeType] = {
-    **{node_type.value: node_type for node_type in NodeType},
-    **NEO4J_LABEL_TO_NODE_TYPE,
-}
+NODE_TYPE_ALIASES: dict[str, NodeType] = dict(NEO4J_LABEL_TO_NODE_TYPE)
 
 EDGE_TYPE_TO_NEO4J_REL: dict[EdgeType, str] = {
     EdgeType.HAS_PREPARED_FORM: "具有饮片",

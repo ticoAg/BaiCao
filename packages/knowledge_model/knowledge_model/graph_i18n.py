@@ -1,0 +1,146 @@
+"""图谱存储用中文：标签、属性键、状态值、来源值。"""
+
+from __future__ import annotations
+
+from .constants import NodeType
+
+LEGACY_NEO4J_LABELS: dict[NodeType, str] = {
+    NodeType.HERB: "Herb",
+    NodeType.PREPARED_HERB: "PreparedHerb",
+    NodeType.COMPONENT: "Component",
+    NodeType.VARIANT: "Variant",
+    NodeType.PROCESS: "Process",
+    NodeType.TRAIT: "Trait",
+    NodeType.EFFICACY: "Efficacy",
+    NodeType.FLAVOR: "Flavor",
+    NodeType.MERIDIAN: "Meridian",
+    NodeType.DISEASE: "Disease",
+    NodeType.FORMULA: "Formula",
+    NodeType.MEDICAL_CASE: "MedicalCase",
+    NodeType.ACUPOINT: "Acupoint",
+    NodeType.TREATMENT_METHOD: "TreatmentMethod",
+    NodeType.TIMEPOINT: "TimePoint",
+    NodeType.SOURCE: "Source",
+    NodeType.EVIDENCE: "Evidence",
+}
+
+PROPERTY_EN_TO_ZH: dict[str, str] = {
+    "name": "名称",
+    "id": "标识",
+    "source": "来源",
+    "status": "状态",
+    "type": "类型",
+    "category": "分类",
+    "description": "说明",
+    "latin_name": "拉丁名",
+    "pinyin_name": "拼音",
+    "base_description": "基原",
+    "indications": "主治",
+    "usage_text": "用法",
+    "storage_text": "贮藏",
+    "caution_text": "注意",
+    "prepared_from_herb": "来自药材",
+    "processing_method_text": "炮制方法",
+    "raw_text": "原文",
+    "evidence_text": "证据原文",
+    "composition_text": "组成原文",
+    "source_book": "出处书名",
+    "chunk_hash": "文本块哈希",
+    "dataset": "数据集",
+    "dataset_name": "数据集名称",
+    "source_provider": "来源提供方",
+    "file_path": "文件路径",
+    "entry_title": "条目标题",
+    "evidence_id": "证据标识",
+    "line_start": "起始行",
+    "line_end": "结束行",
+    "imported_at": "导入时间",
+    "import_source_id": "导入源",
+    "import_batch_id": "导入批次",
+    "import_unit_id": "导入单元",
+    "import_scope_key": "导入范围键",
+    "import_source_ids": "导入源列表",
+    "import_batch_ids": "导入批次列表",
+    "import_scope_keys": "导入范围键列表",
+    "prompt_hash": "抽取契约哈希",
+    "prompt_hashes": "抽取契约哈希列表",
+    "verification_id": "验证标识",
+    "verified_by": "验证人",
+    "verified_at": "验证时间",
+    "chemical_formula": "化学式",
+    "parent_herb": "所属药材",
+    "min_duration": "最短时长",
+    "conditions": "条件",
+    "trait_category": "性状分类",
+    "years": "年份",
+    "quality_indicator": "质量指标",
+    "nature": "药性",
+    "tcm_type": "中医类型",
+    "quantity": "用量",
+    "dosage": "剂量",
+    "observation": "观察",
+    "value": "取值",
+    "duration": "时长",
+    "alias": "别名",
+    "skip_reason": "跳过原因",
+}
+
+PROPERTY_ZH_TO_EN: dict[str, str] = {zh: en for en, zh in PROPERTY_EN_TO_ZH.items()}
+
+STATUS_EN_TO_ZH: dict[str, str] = {
+    "pending": "待验证",
+    "verified": "已验证",
+    "rejected": "已拒绝",
+}
+
+SOURCE_VALUE_EN_TO_ZH: dict[str, str] = {
+    "huggingface": "2022年中药药典",
+    "daoyi-suyang": "道医苏子阳",
+    "national-standard-2022-pharmacopoeia": "2022年中药药典",
+}
+
+SCOPE_VALUE_EN_TO_ZH: dict[str, str] = {
+    "manual:baicao-knowledge:daoyi-suyang": "人工:白草知识:道医苏子阳",
+    "huggingface|ZJUFanLab/TCMChat-dataset-600k|pretrain/train/books/national_standard/2022年中药药典.txt": "抱抱脸:中药药典2022",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/national_standard/2022年中药药典.txt": "抱抱脸:中药药典2022",
+}
+
+PROVIDER_VALUE_EN_TO_ZH: dict[str, str] = {
+    "huggingface": "抱抱脸",
+    "manual": "人工",
+}
+
+
+def zh_property(key: str) -> str:
+    return PROPERTY_EN_TO_ZH.get(key, key)
+
+
+def localize_status(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return STATUS_EN_TO_ZH.get(value, value)
+
+
+def localize_value(key: str, value: object) -> object:
+    if not isinstance(value, str):
+        if isinstance(value, list):
+            return [localize_value(key, item) for item in value]
+        return value
+    if key in {"status", "状态"}:
+        return STATUS_EN_TO_ZH.get(value, value)
+    if key in {"source", "来源", "import_source_id", "导入源"}:
+        return SOURCE_VALUE_EN_TO_ZH.get(value, value)
+    if key in {"import_scope_key", "导入范围键"}:
+        return SCOPE_VALUE_EN_TO_ZH.get(value, value)
+    if key in {"source_provider", "来源提供方"}:
+        return PROVIDER_VALUE_EN_TO_ZH.get(value, value)
+    return value
+
+
+def to_graph_properties(props: dict[str, object]) -> dict[str, object]:
+    localized: dict[str, object] = {}
+    for key, value in props.items():
+        if value is None:
+            continue
+        localized[zh_property(key)] = localize_value(key, value)
+    return localized

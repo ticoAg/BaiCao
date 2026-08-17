@@ -588,7 +588,7 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     second_query = session.run.await_args_list[1].args[0]
     second_params = session.run.await_args_list[1].kwargs
     third_params = session.run.await_args_list[2].kwargs
-    assert "MATCH (n:Herb)" in first_query
+    assert "MATCH (n:药材)" in first_query
     assert "具有功效" in first_query
     assert "n.name CONTAINS $name_contains" in first_query
     assert first_params["name_contains"] == "人参"

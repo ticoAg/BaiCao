@@ -7,8 +7,8 @@
 
 ```cypher
 MATCH (n)
-WHERE n.import_scope_key = 'huggingface|ZJUFanLab/TCMChat-dataset-600k|pretrain/train/books/national_standard/2022年中药药典.txt'
-   OR 'huggingface|ZJUFanLab/TCMChat-dataset-600k|pretrain/train/books/national_standard/2022年中药药典.txt' IN coalesce(n.import_scope_keys, [])
+WHERE n.导入范围键 = '抱抱脸:中药药典2022'
+   OR '抱抱脸:中药药典2022' IN coalesce(n.导入范围键列表, [])
 RETURN count(n)
 ```
 
@@ -18,8 +18,8 @@ RETURN count(n)
 
 ```cypher
 MATCH (n)
-WHERE n.import_source_id = 'daoyi-suyang'
-   OR 'daoyi-suyang' IN coalesce(n.import_source_ids, [])
+WHERE n.导入源 = '道医苏子阳'
+   OR '道医苏子阳' IN coalesce(n.导入源列表, [])
 RETURN count(n)
 ```
 
@@ -27,7 +27,7 @@ RETURN count(n)
 
 ```cypher
 MATCH ()-[r]->()
-WHERE r.import_scope_key = 'manual:baicao-knowledge:daoyi-suyang'
+WHERE r.导入范围键 = '人工:白草知识:道医苏子阳'
 RETURN count(r)
 ```
 
