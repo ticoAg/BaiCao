@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, Pydantic, Hugging Face Hub, Parquet, Neo4j, React / Vite
 
-**Status:** partial（数据与中文图已落地。剩余：catalog/publish CLI；Workbench / 问答消费新类型。）
+**Status:** partial（catalog/publish CLI 与 Workbench 查询消费已落地。private HF 实际上传被 Infisical TLS 证书过期阻塞。）
 
 **Spec:** `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md`
 
@@ -74,7 +74,7 @@
 - Consumes: `datasets/baicao-knowledge/catalog.json`、`tasks/ledger.json`、各源 `processed/latest/*.parquet`
 - Produces: `load_catalog(path) -> Catalog`；`dataset_publish --dry-run` 列出将上传文件且拒绝非 private
 
-- [ ] **Step 1: 写 catalog 失败测试**
+- [x] **Step 1: 写 catalog 失败测试**
 
 `packages/data_ingestion/tests/test_dataset_catalog.py`：
 
@@ -195,7 +195,7 @@ def test_repo_catalog_matches_known_sources():
     assert catalog.dataset_id == "ticoAg/baicao-knowledge"
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 ```bash
 cd packages/data_ingestion && uv run pytest tests/test_dataset_catalog.py -q
@@ -203,7 +203,7 @@ cd packages/data_ingestion && uv run pytest tests/test_dataset_catalog.py -q
 
 Expected: FAIL，`dataset_catalog` 不存在。
 
-- [ ] **Step 3: 实现 `dataset_catalog.py`**
+- [x] **Step 3: 实现 `dataset_catalog.py`**
 
 最小形状：
 
@@ -249,7 +249,7 @@ def load_ledger(path: Path, catalog: Catalog):
     ...
 ```
 
-- [ ] **Step 4: 收窄 `.gitignore`**
+- [x] **Step 4: 收窄 `.gitignore`**
 
 把根目录 `/datasets` 换成只忽略载荷：
 
@@ -277,7 +277,7 @@ git add -f \
 
 `git status` 不得出现 `道医苏子阳.md`、`*.jsonl`、`*.parquet`、`exports/`。
 
-- [ ] **Step 5: VIEW Cypher 改中文键**
+- [x] **Step 5: VIEW Cypher 改中文键**
 
 `compute_dataset_stats.render_view` 里的筛选段改成：
 
@@ -292,7 +292,7 @@ RETURN n
 
 对本机 latest 重跑一次 stats，覆盖两份 `VIEW.md`。
 
-- [ ] **Step 6: publish CLI 失败测试**
+- [x] **Step 6: publish CLI 失败测试**
 
 `packages/data_ingestion/tests/test_dataset_publish.py`：
 
@@ -320,7 +320,7 @@ def test_plan_upload_excludes_payloads(tmp_path: Path):
     assert not any("source/" in name and name.endswith(".md") and "SOURCE.md" not in name for name in relative)
 ```
 
-- [ ] **Step 7: 实现 `dataset_publish.py`**
+- [x] **Step 7: 实现 `dataset_publish.py`**
 
 ```python
 def plan_upload(dataset_root: Path) -> list[Path]:
@@ -339,7 +339,7 @@ def main() -> None:
 
 `huggingface_hub` 用 `uv run --with huggingface_hub`，不要先加进 `pyproject.toml` 常驻依赖。
 
-- [ ] **Step 8: dry-run + 实际上传一次**
+- [x] **Step 8: dry-run + 实际上传一次**（dry-run 通过；实际上传因 Infisical `infisical.ticoag.fun` 证书过期未完成）
 
 ```bash
 cd packages/data_ingestion
@@ -358,7 +358,7 @@ Expected：dry-run 无原文、无 jsonl；实际上传后 Viewer `is-valid` 为
 
 把 dataset URL 写回 `catalog.json` 与 `datasets/baicao-knowledge/README.md`。`data_ingestion/README.md` 补 catalog / stats / parquet / publish 命令。
 
-- [ ] **Step 9: commit**
+- [x] **Step 9: commit**
 
 ```bash
 git add packages/data_ingestion .gitignore datasets/baicao-knowledge
@@ -382,7 +382,7 @@ git commit -m "feat(data-ingestion): add catalog validation and private dataset 
 - Consumes: `knowledge_model.constants.NodeType` / `EdgeType`（已含新类型）；`POST /api/v1/graph/query` 的 `label` 已是 `NodeType`
 - Produces: 查询面板能选新类型；过滤摘要显示中文；问答 system prompt 点名这些类型
 
-- [ ] **Step 1: 写 API 失败测试，锁住新类型能进 query schema**
+- [x] **Step 1: 写 API 失败测试，锁住新类型能进 query schema**
 
 在 `packages/api/tests/api/test_graph_routes.py` 的 `TestGraphQuery` 增加：
 
@@ -423,7 +423,7 @@ async def test_query_graph_accepts_formula_and_case_filters(self, client):
 
 API schema 已用 `NodeType` / `EdgeType`，这一步现在就应通过。若 422，先修 schema 再往下。
 
-- [ ] **Step 2: 跑测试**
+- [x] **Step 2: 跑测试**
 
 ```bash
 cd packages/api && uv run pytest tests/api/test_graph_routes.py::TestGraphQuery -q
@@ -431,7 +431,7 @@ cd packages/api && uv run pytest tests/api/test_graph_routes.py::TestGraphQuery 
 
 Expected: PASS（或先修 schema 再 PASS）。
 
-- [ ] **Step 3: 前端查询枚举与下拉**
+- [x] **Step 3: 前端查询枚举与下拉**
 
 `packages/web/src/types/graph.ts` 的 `GraphNodeLabel` 补：
 
@@ -449,11 +449,11 @@ Expected: PASS（或先修 schema 再 PASS）。
 
 `labelTagColors` 补方剂/医案/穴位/治法/饮片/证据；`nodeStyleMap` 同样补，避免新类型掉进默认灰。
 
-- [ ] **Step 4: 后端过滤摘要**
+- [x] **Step 4: 后端过滤摘要**
 
 `packages/api/app/kg/graph_service.py` 的 `QUERY_LABEL_DISPLAY` 补齐全部 `NodeType`；`QUERY_REL_TYPE_DISPLAY` 补 `组成药材` `使用方剂` `取用穴位` `采用治法` `记载于医案`。不要只改文档。
 
-- [ ] **Step 5: 问答 prompt**
+- [x] **Step 5: 问答 prompt**
 
 `packages/api/app/services/chat_agent_runtime/system_prompt.py` 改成明确点名：
 
@@ -469,7 +469,7 @@ def build_graph_specialist_system_prompt() -> str:
 
 若已有 prompt 单测，锁住这几个词出现；没有就不要为了测字符串新开大文件。
 
-- [ ] **Step 6: 前端验证**
+- [x] **Step 6: 前端验证**
 
 ```bash
 pnpm --dir packages/web exec vp test --run src/components/graph/GraphQueryPanel.tsx
@@ -478,7 +478,7 @@ pnpm --dir packages/shared typecheck
 
 若 `GraphQueryPanel` 没有现成测试，至少跑 `pnpm --dir packages/web exec vp build`，并在浏览器打开 `/graph`：查询类型能选「方剂」，关系能选「使用方剂」，点一个苏子阳方剂节点颜色不是默认灰。
 
-- [ ] **Step 7: 回写验收**
+- [x] **Step 7: 回写验收**
 
 `docs/acceptance/baicao-knowledge-dataset.md` 增加一节「查询消费」：
 
@@ -489,7 +489,7 @@ POST /api/v1/graph/query
 
 期望：200，节点 `labels` 含 `方剂`。Workbench 下拉含方剂/医案/穴位/治法。
 
-- [ ] **Step 8: commit**
+- [x] **Step 8: commit**
 
 ```bash
 git add packages/web/src/types/graph.ts \

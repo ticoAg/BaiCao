@@ -47,6 +47,18 @@ describe("GraphQueryPanel", () => {
     expect(screen.getByRole("spinbutton", { name: "limit" })).toHaveValue(null);
   });
 
+  it("offers formula and medical-case query options", () => {
+    renderWithProviders(<GraphQueryPanel depth={1} onSubmit={vi.fn()} />);
+
+    const optionTexts = screen.getAllByRole("option", { hidden: true }).map((item) => item.textContent);
+    expect(optionTexts).toContain("方剂");
+    expect(optionTexts).toContain("医案");
+    expect(optionTexts).toContain("穴位");
+    expect(optionTexts).toContain("治法");
+    expect(optionTexts).toContain("使用方剂 (使用方剂)");
+    expect(optionTexts).toContain("组成药材 (组成药材)");
+  });
+
   it("hides developer payload preview by default and expands it on demand", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);

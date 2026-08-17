@@ -34,6 +34,7 @@ type GraphQueryPanelProps = {
 
 const nodeLabelOptions: GraphNodeLabel[] = [
   "药材",
+  "饮片",
   "成分",
   "品种",
   "工艺",
@@ -42,7 +43,13 @@ const nodeLabelOptions: GraphNodeLabel[] = [
   "性味",
   "归经",
   "病证",
+  "方剂",
+  "医案",
+  "穴位",
+  "治法",
   "时间点",
+  "来源",
+  "证据",
 ];
 
 const relationTypeOptions: GraphEdgeRelType[] = [
@@ -60,11 +67,18 @@ const relationTypeOptions: GraphEdgeRelType[] = [
   "具有性味",
   "归于经脉",
   "治疗病证",
+  "组成药材",
+  "使用方剂",
+  "取用穴位",
+  "采用治法",
+  "记载于医案",
   "相互作用",
   "相似于",
   "父类",
   "子类",
   "来源于",
+  "派生自",
+  "由证据支持",
 ];
 
 const propertyKeyOptions: GraphQueryPropertyKey[] = [

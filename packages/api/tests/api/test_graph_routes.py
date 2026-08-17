@@ -376,6 +376,39 @@ class TestGraphQuery:
         assert forwarded_payload.edge.connected_name_contains == "补气"
 
     @pytest.mark.asyncio
+    async def test_query_graph_accepts_formula_and_case_filters(self, client):
+        payload = {
+            "node": {"label": "方剂", "name_contains": "止嗽散"},
+            "edge": {"rel_type": "使用方剂"},
+            "depth": 1,
+            "limit": 10,
+        }
+        with patch("app.api.graph.graph_service") as mock_svc:
+            mock_svc.query_graph = AsyncMock(
+                return_value={
+                    "summary": {
+                        "mode": "advanced-query",
+                        "matched_nodes": 0,
+                        "matched_edges": 0,
+                        "truncated": False,
+                        "active_filters": [],
+                    },
+                    "graph": {"center": None, "nodes": [], "edges": []},
+                    "scene": {
+                        "truncated": False,
+                        "node_limit_hit": False,
+                        "relationship_limit_hit": False,
+                        "info_message": None,
+                    },
+                }
+            )
+            resp = await client.post("/api/v1/graph/query", json=payload)
+        assert resp.status_code == 200
+        forwarded = mock_svc.query_graph.await_args.args[0]
+        assert forwarded.node.label == NodeType.FORMULA
+        assert forwarded.edge.rel_type == EdgeType.USES_FORMULA
+
+    @pytest.mark.asyncio
     async def test_query_graph_rejects_invalid_filter_enum(self, client):
         """Invalid enum or property_key values should be rejected by request schema."""
         payload = {
