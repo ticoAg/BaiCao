@@ -14,6 +14,7 @@ This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packag
 | ------------------------------------------- | ----------------------------- |
 | 项目定位与现状                              | `README.md`                   |
 | 需求与阶段目标                              | `README.md` + `docs/superpowers/plans/` |
+| 本地开发栈 / 环境变量 / 验证命令            | `docs/local-development.md`   |
 | 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md`                 |
 | Skill 选择与多代理路由                      | `docs/agent-skill-routing.md` |
 | 各类改动的最低验证标准                      | `docs/verification-matrix.md` |

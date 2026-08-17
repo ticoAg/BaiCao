@@ -203,7 +203,7 @@ flowchart LR
 
 ## 10. 相关文档
 
-- [../../README.md](../../README.md) - 项目总入口
 - [../../README.md](../../README.md) - 项目总入口与阶段说明
+- [../local-development.md](../local-development.md) - 本地开发栈
 - [data-model.md](data-model.md) - 数据模型详细设计
 - [../_dev/brainstorm/README.md](../_dev/brainstorm/README.md) - 早期 brainstorm 索引

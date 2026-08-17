@@ -93,23 +93,19 @@ REPO_ENV_FILES: Final[tuple[str, ...]] = (
     ".env",
     ".env.local",
 )
-INFISICAL_CONFIG_FILES: Final[tuple[str, ...]] = ("infisical.json", ".infisical.json")
-INFISICAL_OPTION_ENV_KEYS: Final[tuple[tuple[str, str], ...]] = (
-    ("INFISICAL_ENV", "--env"),
-    ("INFISICAL_SECRET_PATH", "--path"),
-    ("INFISICAL_PATH", "--path"),
-    ("INFISICAL_PROJECT_ID", "--projectId"),
-)
 INFISICAL_TRIGGER_ENV_KEYS: Final[tuple[str, ...]] = (
     "INFISICAL_TOKEN",
+    "INFISICAL_ACCESS_TOKEN",
+    "INFISICAL_CLIENT_ID",
+    "INFISICAL_CLIENT_SECRET",
     "INFISICAL_API_URL",
     "INFISICAL_ENV",
     "INFISICAL_SECRET_PATH",
     "INFISICAL_PATH",
     "INFISICAL_PROJECT_ID",
-    "INFISICAL_DISABLE_UPDATE_CHECK",
 )
 ROOT_DIR: Final[Path] = Path(__file__).resolve().parents[1]
+INFISICAL_ENV_SCRIPT: Final[Path] = Path(__file__).resolve().parent / "infisical_env.py"
 API_DIR: Final[Path] = ROOT_DIR / "packages" / "api"
 WEB_DIR: Final[Path] = ROOT_DIR / "packages" / "web"
 
@@ -368,36 +364,14 @@ def _run_external(
         )
 
 
-def _find_infisical_config_dir() -> Path | None:
-    for name in INFISICAL_CONFIG_FILES:
-        candidate = ROOT_DIR / name
-        if candidate.exists():
-            return candidate.parent
-    return None
-
-
 def _infisical_triggered(env: dict[str, str]) -> bool:
-    has_env_trigger = any(env.get(key) for key in INFISICAL_TRIGGER_ENV_KEYS)
-    return has_env_trigger or _find_infisical_config_dir() is not None
+    return any(env.get(key) for key in INFISICAL_TRIGGER_ENV_KEYS)
 
 
 def _infisical_command_prefix(ctx: RuntimeContext) -> list[str] | None:
     if not _infisical_triggered(ctx.env):
         return None
-
-    prefix = ["infisical", "run"]
-    config_dir = _find_infisical_config_dir()
-    if config_dir is not None:
-        prefix.append(f"--project-config-dir={config_dir}")
-
-    appended_flags: set[str] = set()
-    for env_key, flag in INFISICAL_OPTION_ENV_KEYS:
-        value = ctx.env.get(env_key)
-        if value and flag not in appended_flags:
-            prefix.append(f"{flag}={value}")
-            appended_flags.add(flag)
-
-    return prefix
+    return [sys.executable, str(INFISICAL_ENV_SCRIPT), "run"]
 
 
 def _wrap_external_command_with_infisical(
@@ -407,7 +381,7 @@ def _wrap_external_command_with_infisical(
     prefix = _infisical_command_prefix(ctx)
     if prefix is None:
         return cmd, None
-    return [*prefix, "--", *cmd], "infisical"
+    return [*prefix, "--", *cmd], None
 
 
 def _wrap_shell_command_with_infisical(ctx: RuntimeContext, command: str) -> str:
@@ -415,7 +389,7 @@ def _wrap_shell_command_with_infisical(ctx: RuntimeContext, command: str) -> str
     if prefix is None:
         return command
     quoted_prefix = " ".join(shlex.quote(part) for part in prefix)
-    return f"{quoted_prefix} --command={shlex.quote(command)}"
+    return f"{quoted_prefix} -- bash -lc {shlex.quote(command)}"
 
 
 def _run_tmux(ctx: RuntimeContext, *parts: str) -> CommandResult:
