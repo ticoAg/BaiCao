@@ -130,10 +130,14 @@ async def adapt_openai_stream(
                 },
             }
             patch = _patch_from_tool_payload(tool_name, parsed)
+            raw_arguments = record.get("arguments")
+            tool_arguments: dict[str, Any] | None = (
+                raw_arguments if isinstance(raw_arguments, dict) else None
+            )
             _merge_graph_patch(
                 graph_state,
                 patch,
-                tool_arguments=record.get("arguments") if isinstance(record.get("arguments"), dict) else None,
+                tool_arguments=tool_arguments,
             )
             if patch:
                 yield {"type": "subgraph_patch", "data": patch}

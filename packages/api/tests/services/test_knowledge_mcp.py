@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -41,5 +42,6 @@ async def test_knowledge_mcp_lists_graph_tools():
 @pytest.mark.asyncio
 async def test_read_cypher_tool_uses_mcp_write_guard():
     tool = build_read_cypher_tool()
-    result = await tool.ainvoke({"query": "CREATE (n:药材 {名称:'x'})"})
+    payload: Any = {"query": "CREATE (n:药材 {名称:'x'})"}
+    result = await tool.ainvoke(payload)
     assert "只允许只读" in result["error"]

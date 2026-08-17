@@ -404,6 +404,7 @@ class TestGraphQuery:
             )
             resp = await client.post("/api/v1/graph/query", json=payload)
         assert resp.status_code == 200
+        assert mock_svc.query_graph.await_args is not None
         forwarded = mock_svc.query_graph.await_args.args[0]
         assert forwarded.node.label == NodeType.FORMULA
         assert forwarded.edge.rel_type == EdgeType.USES_FORMULA
