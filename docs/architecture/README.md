@@ -76,6 +76,7 @@ flowchart LR
 
 - 长期架构口径：`docs/architecture/*.md`
 - 项目入口与阶段任务：`../../README.md`、`../superpowers/plans/`
+- 本地开发：`../local-development.md`
 - 共享类型真源：`../../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../../packages/knowledge_model/`
 - 运行与编排事实：`../../infra/docker-compose.yml`

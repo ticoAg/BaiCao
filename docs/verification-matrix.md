@@ -25,11 +25,21 @@
 
 ## 统一命令入口
 
-- API：`./scripts/test_api.sh`
+本地怎么起栈见 [local-development.md](local-development.md)。仓库根目录入口：
+
+- API：`pnpm run test:api`（`uv + ruff + ty + pytest -m "not integration"`）
 - Web：`pnpm run test:web`
-- 集成：`./scripts/test_integration.sh`
-- E2E：`CI=true pnpm run test:e2e`
+- 集成：`pnpm run test:integration`
+- E2E：`pnpm run test:e2e`（CI 路径等价于 `CI=true pnpm run test:e2e`）
+- 快速回归：`pnpm run verify`（API + Web）
 - 全量：`pnpm run verify:full`
+
+底层脚本仍可用：`./scripts/test_api.sh`、`./scripts/test_integration.sh`。
+
+GitHub Actions：
+
+- `ci-fast`：主门禁，`api-tests` + `web-tests`
+- `ci-e2e`：慢门禁，最小主链路浏览器 smoke
 
 补充口径：
 

@@ -11,6 +11,7 @@
 
 - `architecture/`：长期维护文档，描述系统边界、架构和数据模型
 - `acceptance/`：验收标准与验证方式，回答“如何证明它真的完成了”
+- `local-development.md`：本地起栈、Infisical、手动启动、样例数据与验证命令
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
 - `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 deepagents 执行流、进程内 memory checkpointer 与 SSE 事件适配
@@ -22,12 +23,13 @@
 ### 路径 A：第一次接触项目
 
 1. [../README.md](../README.md)
-2. [architecture/README.md](architecture/README.md)
-3. [architecture/system-overview.md](architecture/system-overview.md)
-4. [architecture/data-model.md](architecture/data-model.md)
-5. [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md)
-6. [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md)
-7. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
+2. [local-development.md](local-development.md)
+3. [architecture/README.md](architecture/README.md)
+4. [architecture/system-overview.md](architecture/system-overview.md)
+5. [architecture/data-model.md](architecture/data-model.md)
+6. [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md)
+7. [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md)
+8. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
 
 ### 路径 B：要开始实现功能
 
@@ -61,12 +63,14 @@
 flowchart TB
     Root[README / docs/superpowers/plans]
     Root --> Guide[AGENTS / workflow / routing / verification]
+    Root --> Local[docs/local-development]
     Root --> Arch[docs/architecture]
     Root --> Acc[docs/acceptance]
     Root --> Dev[docs/_dev]
     Root --> Sup[docs/superpowers]
 
     Guide --> Ops[协作与执行规则]
+    Local --> DevEnv[本地起栈 / 环境变量]
     Arch --> Stable[稳定口径<br/>架构 / 数据模型]
     Acc --> Verify[验收标准<br/>验证步骤 / 证据]
     Dev --> Draft[草案与脑暴<br/>分析 / 方案收敛]
@@ -79,6 +83,7 @@ flowchart TB
 |------|------|----------|----------|
 | [../AGENTS.md](../AGENTS.md) | 仓库级 agent 入口 | 高层规则、导航、交付口径 | 进入仓库、准备开始任务时 |
 | [../workflow.md](../workflow.md) | 任务分流与 contract-first 工作流 | 作用域判断、跨模块顺序、交付约定 | 非 trivial 任务开始前 |
+| [local-development.md](local-development.md) | 本地开发 | make 栈、Infisical、手动启动、样例数据、验证命令 | 第一次把仓库跑起来时 |
 | [agent-skill-routing.md](agent-skill-routing.md) | skill 选择入口 | 流程 skill、领域 skill、协作 skill 路由 | 需要判断先用哪类 skill 时 |
 | [verification-matrix.md](verification-matrix.md) | 验证标准入口 | 各类改动的最低验证要求 | 准备宣称完成、补验收证据时 |
 | [architecture/](architecture/README.md) | 长期维护 | 稳定、可引用、面向长期演进 | 建立全局视图、统一术语、核对边界 |
@@ -93,6 +98,7 @@ flowchart TB
 | 区域 | 当前状态 | 说明 |
 |------|------|------|
 | 根级协作文档 | 已补齐入口 | 现在由 `AGENTS.md`、`workflow.md`、`agent-skill-routing.md`、`verification-matrix.md` 共同承担 agent 入口、工作流、skill 路由与验证口径 |
+| `docs/local-development.md` | 已从根 README 拆出 | 本地起栈、Infisical、手动启动、样例数据与验证命令 |
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
 | `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
 | `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
@@ -103,12 +109,24 @@ flowchart TB
 
 为了避免文档漂移，信息放置遵循下面的规则：
 
+### 放进根级 `README.md`
+
+- 产品定位、受众、当前阶段
+- 最短可运行入口（几条命令 + 链接）
+- 不要放 Infisical 细节、端口表、验证命令释义、架构图、样例数据路径
+
 ### 放进根级协作文档
 
 - 仓库级 agent 行为规范与交付格式
 - 任务分流规则、contract-first 顺序、多模块执行约束
 - skill 选择、协作路由、验证矩阵
 - 会影响默认研发动作的规则
+
+### 放进 `local-development.md`
+
+- 本地起栈、端口、Infisical / 手动 `.env`
+- 样例图谱导入
+- 验证命令怎么跑（命令含义仍以 `verification-matrix.md` 为准）
 
 ### 放进 `architecture/`
 
@@ -176,6 +194,7 @@ flowchart TB
 |------|------|
 | [../AGENTS.md](../AGENTS.md) | 仓库级 agent 入口、导航、交付口径 |
 | [../workflow.md](../workflow.md) | 仓库级任务分流、contract-first 顺序、跨模块工作流 |
+| [local-development.md](local-development.md) | 本地开发栈、环境变量、样例数据、验证命令 |
 | [agent-skill-routing.md](agent-skill-routing.md) | skill 选择顺序、多代理协作路由 |
 | [verification-matrix.md](verification-matrix.md) | 各类改动的最低验证标准 |
 | [architecture/README.md](architecture/README.md) | 架构入口页，统一架构口径与阅读顺序 |
@@ -256,6 +275,7 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 ## 与仓库其他真源的关系
 
 - 项目总入口：[../README.md](../README.md)
+- 本地开发：[local-development.md](local-development.md)
 - 项目入口与阶段信息：[../README.md](../README.md)、[superpowers/README.md](superpowers/README.md)
 - 任务真源：`superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`

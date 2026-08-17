@@ -50,6 +50,7 @@ flowchart TD
 - 图谱 Schema / Cypher / 导入样例真源：`packages/db/neo4j/**`、`packages/db/import/**`
 - 前端请求封装与展示态适配真源：`packages/web/src/services/**`
 - 运行编排与联调事实真源：`infra/docker-compose.yml`、`infra/.env.example`
+- 本地开发操作入口：`docs/local-development.md`
 - 长期维护文档真源：`docs/architecture/**`、`docs/acceptance/**`
 
 ## 2. 任务分流规则
@@ -122,7 +123,7 @@ flowchart TD
 
 1. 先确认是运行时编排变化还是仅本地开发便利性变化
 2. 完成后至少执行 `docker compose -f infra/docker-compose.yml config`
-3. 若影响主链路访问方式或环境要求，补 README / acceptance / task 文档
+3. 若影响主链路访问方式或环境要求，补 `docs/local-development.md` / acceptance / task 文档
 
 ### 2.6 文档与规范治理任务
 
