@@ -11,7 +11,6 @@ API_BASE_URL="http://localhost:8000"
 WEB_BASE_URL="http://localhost:3000"
 LOCAL_API_PORT="${API_PORT:-8001}"
 LOCAL_WEB_PORT="${WEB_PORT:-3001}"
-INFISICAL_CONFIG_DIR=""
 
 load_repo_env() {
   local env_file
@@ -27,55 +26,14 @@ load_repo_env() {
 
 load_repo_env
 
-if [[ -f "$ROOT/infisical.json" || -f "$ROOT/.infisical.json" ]]; then
-  INFISICAL_CONFIG_DIR="$ROOT"
-fi
-
 export DATABASE_URL="${DATABASE_URL:-postgresql+asyncpg://baicao:baicao_password@localhost:15433/baicao}"
 export NEO4J_URI="${NEO4J_URI:-bolt://localhost:17687}"
 export NEO4J_USER="${NEO4J_USER:-neo4j}"
 export NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j_password}"
 export REDIS_URL="${REDIS_URL:-redis://localhost:16380}"
 
-infisical_requested() {
-  [[ -n "$INFISICAL_CONFIG_DIR" \
-    || -n "${INFISICAL_TOKEN:-}" \
-    || -n "${INFISICAL_API_URL:-}" \
-    || -n "${INFISICAL_ENV:-}" \
-    || -n "${INFISICAL_SECRET_PATH:-}" \
-    || -n "${INFISICAL_PATH:-}" \
-    || -n "${INFISICAL_PROJECT_ID:-}" \
-    || -n "${INFISICAL_DISABLE_UPDATE_CHECK:-}" ]]
-}
-
 run_with_infisical() {
-  if ! infisical_requested; then
-    "$@"
-    return
-  fi
-
-  if ! command -v infisical >/dev/null 2>&1; then
-    echo "`infisical` is required when Infisical env injection is enabled." >&2
-    return 1
-  fi
-
-  local cmd=(infisical run)
-  if [[ -n "$INFISICAL_CONFIG_DIR" ]]; then
-    cmd+=("--project-config-dir=$INFISICAL_CONFIG_DIR")
-  fi
-  if [[ -n "${INFISICAL_ENV:-}" ]]; then
-    cmd+=("--env=$INFISICAL_ENV")
-  fi
-  if [[ -n "${INFISICAL_SECRET_PATH:-}" ]]; then
-    cmd+=("--path=$INFISICAL_SECRET_PATH")
-  elif [[ -n "${INFISICAL_PATH:-}" ]]; then
-    cmd+=("--path=$INFISICAL_PATH")
-  fi
-  if [[ -n "${INFISICAL_PROJECT_ID:-}" ]]; then
-    cmd+=("--projectId=$INFISICAL_PROJECT_ID")
-  fi
-  cmd+=(-- "$@")
-  "${cmd[@]}"
+  python3 "$ROOT/scripts/infisical_env.py" run -- "$@"
 }
 
 wait_for_url() {

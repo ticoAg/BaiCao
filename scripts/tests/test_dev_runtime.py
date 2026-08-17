@@ -193,11 +193,9 @@ class DepsCommandTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn(
             [
-                "infisical",
+                self.runtime.sys.executable,
+                str(self.runtime.INFISICAL_ENV_SCRIPT),
                 "run",
-                "--env=dev",
-                "--path=/",
-                "--projectId=project-123",
                 "--",
                 "docker",
                 "compose",
@@ -211,21 +209,6 @@ class DepsCommandTests(unittest.TestCase):
             ],
             calls,
         )
-
-    def test_deps_status_reports_missing_infisical_binary_cleanly(self):
-        def fake_run(cmd, **kwargs):
-            del cmd, kwargs
-            raise FileNotFoundError("infisical")
-
-        exit_code, output = self.runtime.run_cli(
-            ["deps", "status"],
-            env={"INFISICAL_TOKEN": "token"},
-            run_command=fake_run,
-        )
-
-        self.assertEqual(exit_code, 1)
-        self.assertIn("infisical", output)
-        self.assertIn("install", output.lower())
 
     def test_deps_up_loads_infisical_token_from_repo_env_file(self):
         calls: list[list[str]] = []
@@ -257,11 +240,9 @@ class DepsCommandTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn(
             [
-                "infisical",
+                self.runtime.sys.executable,
+                str(self.runtime.INFISICAL_ENV_SCRIPT),
                 "run",
-                "--env=dev",
-                "--path=/",
-                "--projectId=project-from-env-file",
                 "--",
                 "docker",
                 "compose",
@@ -400,10 +381,8 @@ class TmuxRuntimeTests(unittest.TestCase):
         ]
         self.assertEqual(len(send_keys_calls), 1)
         command = send_keys_calls[0][4]
-        self.assertIn("infisical run", command)
-        self.assertIn("--projectId=project-123", command)
-        self.assertIn("--env=dev", command)
-        self.assertIn("--path=/backend", command)
+        self.assertIn("infisical_env.py", command)
+        self.assertIn(" run -- bash -lc ", command)
 
     def test_stack_status_summarizes_deps_api_and_web(self):
         summary = self.runtime.render_status_table(
