@@ -65,7 +65,7 @@ async def test_create_node(graph_service, mock_neo4j_driver):
     mock_neo4j_driver.session = MagicMock(return_value=mock_session)
 
     result = await graph_service.create_node(
-        label="TestLabel",
+        label="药材",
         name="TestNode",
         source="test_source"
     )
