@@ -58,7 +58,7 @@
 
 当前仓库处于 `MVP early` 阶段，已经具备可运行的 monorepo 骨架、基础设施编排、Neo4j 样例数据、问答与图谱相关主链路，以及验证、数据处理、review/export 等工作台能力。
 
-下一波任务是把采集到的源和结构化结果收成自有 Hugging Face 数据集（`datasets/baicao-knowledge/`），并接入新源「道医苏子阳」。实施入口：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
+药典 605 与苏子阳 v3 已入库。下一波是 catalog/publish CLI（private HF `ticoAg/baicao-knowledge`），以及 Graph Workbench / 问答消费方剂、医案、穴位、治法。实施入口：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
 
 完整溯源闭环、专家治理、事件驱动与监控仍未做，不要当成当前事实。
 
@@ -357,4 +357,4 @@ BaiCao/
 - 完整溯源链路、跨模块审计与更多集成回归仍需继续补强
 - 问答质量依赖后续图谱质量、提示词工程和审查机制
 - 部分能力已经在 architecture / brainstorm 文档中设计，但尚未全部代码化
-- 自有知识数据集刚建 staging：药典约 595/605 已抽（待 merge），道医苏子阳只定位了原文，未抽取；HF 尚未发布
+- 自有知识数据集已入库（药典 605 + 苏子阳 v3），但 catalog/publish CLI 与 Workbench / 问答对新类型的消费尚未收口；HF private 发布也还没有可重复入口

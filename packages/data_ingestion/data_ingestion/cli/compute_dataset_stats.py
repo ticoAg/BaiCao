@@ -6,6 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
+from knowledge_model.graph_i18n import SCOPE_VALUE_EN_TO_ZH, SOURCE_VALUE_EN_TO_ZH
+
 from data_ingestion.dataset_records import DatasetRecord, compute_stats
 
 
@@ -27,6 +29,14 @@ def load_jsonl(path: Path) -> list[DatasetRecord]:
     return records
 
 
+def localized_source_name(source_id: str) -> str:
+    return SOURCE_VALUE_EN_TO_ZH.get(source_id, source_id)
+
+
+def localized_scope_key(filter_key: str) -> str:
+    return SCOPE_VALUE_EN_TO_ZH.get(filter_key, filter_key)
+
+
 def render_view(source_id: str, stats: dict[object, object], filter_key: str) -> str:
     node_rows = "\n".join(
         f"| {name} | {count} |"
@@ -40,6 +50,8 @@ def render_view(source_id: str, stats: dict[object, object], filter_key: str) ->
         f"| `{batch_id}` | {body['unit_count']} | {body['record_count']} |"
         for batch_id, body in (stats.get("by_batch") or {}).items()
     )
+    source_name = localized_source_name(source_id)
+    scope_key = localized_scope_key(filter_key)
     return f"""# VIEW · {source_id}
 
 本页数量由 `compute_dataset_stats` 生成，不要手改数字。
@@ -75,7 +87,8 @@ def render_view(source_id: str, stats: dict[object, object], filter_key: str) ->
 
 ```cypher
 MATCH (n)
-WHERE n.import_source_id = '{source_id}'
+WHERE n.导入源 = '{source_name}'
+   OR '{source_name}' IN coalesce(n.导入源列表, [])
 RETURN n
 ```
 
@@ -83,11 +96,12 @@ RETURN n
 
 ```cypher
 MATCH (n)
-WHERE n.import_batch_id = '<batch_id>'
+WHERE n.导入批次 = '<batch_id>'
+   OR '<batch_id>' IN coalesce(n.导入批次列表, [])
 RETURN n
 ```
 
-scope key: `{filter_key}`
+scope key: `{scope_key}`
 """
 
 

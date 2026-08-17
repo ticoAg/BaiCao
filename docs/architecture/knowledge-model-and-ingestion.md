@@ -211,6 +211,7 @@ flowchart LR
 | 中文实体 | 英文技术标识 | 说明 |
 | --- | --- | --- |
 | 药材 | `Herb` | 核心药材实体 |
+| 饮片 | `PreparedHerb` | 炮制后的药材形态 |
 | 成分 | `Component` | 化学成分、活性成分等 |
 | 品种 | `Variant` | 同源不同种、变种 |
 | 工艺 | `Process` | 加工、炮制、储存相关工艺 |
@@ -219,15 +220,22 @@ flowchart LR
 | 性味 | `Flavor` | 性味与药性 |
 | 归经 | `Meridian` | 归属经脉 |
 | 病证 | `Disease` | 疾病或证候相关对象 |
+| 方剂 | `Formula` | 临床组方 |
+| 医案 | `MedicalCase` | 叙事医案 |
+| 穴位 | `Acupoint` | 针灸取穴 |
+| 治法 | `TreatmentMethod` | 治法 / 治则 |
 | 时间点 | `TimePoint` | 年份、陈化时间等时间维度 |
 | 来源 | `Source` | 文献、药典、教材、数据集来源 |
+| 证据 | `Evidence` | 入图证据块 |
 
 ### 7.2 中文关系名称
 
 | 中文关系 | 英文技术标识 | 说明 |
 | --- | --- | --- |
+| 具有饮片 | `HAS_PREPARED_FORM` | 药材对应饮片 |
 | 包含成分 | `CONTAINS` | 药材包含某成分 |
-| 来源于 | `EXTRACTED_FROM` / `ORIGINATED_FROM` | 成分或药材与来源地/来源对象的关系 |
+| 提取自 | `EXTRACTED_FROM` | 成分提取来源 |
+| 来源于 | `ORIGINATED_FROM` | 节点与文献/数据集来源 |
 | 具有品种 | `HAS_VARIANT` | 药材拥有品种 |
 | 属于药材 | `VARIANT_OF` | 品种归属于药材 |
 | 经过工艺 | `PROCESSED_BY` | 药材经由加工或炮制工艺 |
@@ -238,45 +246,44 @@ flowchart LR
 | 具有功效 | `HAS_EFFICACY` | 药材、成分、品种与功效关系 |
 | 具有性味 | `HAS_FLAVOR` | 药材与性味关系 |
 | 归于经脉 | `ENTERS_MERIDIAN` | 药材与归经关系 |
-| 治疗病证 | `TREATS` | 药材或成分与病证关系 |
+| 治疗病证 | `TREATS` | 药材、方剂或医案与病证关系 |
+| 组成药材 | `CONTAINS_HERB` | 方剂组成 |
+| 使用方剂 | `USES_FORMULA` | 医案使用方剂 |
+| 取用穴位 | `USES_ACUPOINT` | 医案或治法取穴 |
+| 采用治法 | `USES_METHOD` | 医案采用治法 |
+| 记载于医案 | `RECORDED_IN_CASE` | 知识记载于医案 |
+| 由证据支持 | `SUPPORTED_BY` | 节点由证据块支持 |
+| 派生自 | `DERIVED_FROM` | 派生关系 |
+| 父类 | `PARENT_OF` | 层级父类 |
+| 子类 | `CHILD_OF` | 层级子类 |
+| 相互作用 | `INTERACTS_WITH` | 成分之间的相互作用 |
+| 相似于 | `SIMILAR_TO` | 药材、功效等相似关系 |
 
 ### 7.3 生产图谱存储
 
 Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、`具有性味`、`名称`、`待验证`）。API DTO 仍可通过 `graph_i18n.PROPERTY_ZH_TO_EN` 映回英文。`db.propertyKeys()` 会残留历史英文键，清目录只能导出活图后重建空库（`recreate_graph_store`），不能靠 `neo4j-admin dump`。近重复文本只合标点/OCR，见 `knowledge-dataset.md`。
-| 相互作用 | `INTERACTS_WITH` | 成分之间的相互作用 |
-| 相似于 | `SIMILAR_TO` | 药材、功效等相似关系 |
 
 ## 8. 共享包的推荐结构
 
 推荐共享包采用 Python-first 结构，以声明式模型承载唯一真源：
+
+落地文件名保持英文，中文语义在模块内容里：
 
 ```text
 packages/knowledge_model/
 ├── pyproject.toml
 └── knowledge_model/
     ├── __init__.py
-    ├── 常量.py
-    ├── 节点.py
-    ├── 关系.py
-    ├── 知识结构定义.py
-    ├── 导入记录.py
-    ├── 中文映射.py
-    └── 版本.py
+    ├── constants.py
+    ├── node_models.py
+    ├── edge_models.py
+    ├── schema.py
+    ├── labels.py
+    ├── graph_i18n.py
+    └── text_normalize.py
 ```
 
-其中：
-
-- `常量.py`：`Literal`、`StrEnum`、字段键集合
-- `节点.py`：节点类型与属性模型
-- `关系.py`：关系类型与属性模型
-- `知识结构定义.py`：联合类型、注册表、校验入口
-- `导入记录.py`：面向采集与导入的统一中间格式
-- `中文映射.py`：中文主称、展示名、说明文本
-
-说明：
-
-- 文件名是否最终保留中文，可以在实施时结合工具链兼容性调整
-- 但中文语义必须存在于该共享包中，不能只写在文档里
+中文语义必须存在于该共享包中，不能只写在文档里。
 
 ## 9. 稳定约束
 

@@ -8,7 +8,7 @@
 
 | 状态 | 文档 | 目标 |
 |------|------|------|
-| **partial** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | 药典 605 + 苏子阳 v3 已入库；catalog/publish CLI 与图消费未收口 |
+| **partial** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | 数据已入库；剩余 catalog/publish CLI 与 Workbench / 问答消费 |
 
 设计规格：[../specs/2026-08-16-baicao-knowledge-dataset-design.md](../specs/2026-08-16-baicao-knowledge-dataset-design.md)
 

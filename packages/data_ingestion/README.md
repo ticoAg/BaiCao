@@ -2,7 +2,7 @@
 
 `packages/data_ingestion/` 是 BaiCao 的数据采集边界包，负责把来源适配、原始材料整理、候选抽取这类“进入知识图谱之前”的工作收敛到一个最小可复用边界。
 
-处理后的源、结构化快照和产量台账进 `datasets/baicao-knowledge/`（HF 发布面，private）。当前源与计划量见该目录 `catalog.json` / `tasks/ledger.json`。实施计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
+处理后的源、结构化快照和产量台账进 `datasets/baicao-knowledge/`（HF 发布面，private，id `ticoAg/baicao-knowledge`）。当前源与计划量见该目录 `catalog.json` / `tasks/ledger.json`。实施计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
 
 ## 边界规则
 
@@ -21,6 +21,51 @@
 
 - `ExtractionCandidate`：候选抽取结果，携带目标 `NodeType`、名称、来源和可选属性
 - `SourceDocument`：来源适配后得到的最小文本单元
+
+## 数据集 catalog / Parquet / 发布
+
+校验 catalog 与 ledger（visibility 必须是 private，id 锁定 `ticoAg/baicao-knowledge`）：
+
+```bash
+cd packages/data_ingestion
+uv run --with pytest pytest tests/test_dataset_catalog.py tests/test_dataset_publish.py -q
+```
+
+从各源 latest JSONL 生成 VIEW 数量段（Cypher 用中文键）：
+
+```bash
+cd packages/data_ingestion
+uv run python -m data_ingestion.cli.compute_dataset_stats \
+  --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl \
+  --source-id daoyi-suyang \
+  --out-dir ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest \
+  --filter-key manual:baicao-knowledge:daoyi-suyang
+```
+
+拼发布表：
+
+```bash
+cd packages/data_ingestion
+uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
+  --dataset-root ../../datasets/baicao-knowledge
+```
+
+预览将上传的文件（不得包含原文、`work/`、`exports/`、`*.jsonl`）：
+
+```bash
+cd packages/data_ingestion
+uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
+  --dataset-root ../../datasets/baicao-knowledge \
+  --dry-run
+```
+
+实际上传需要 `HF_TOKEN`，且只会建/更新 **private** repo：
+
+```bash
+cd packages/data_ingestion
+uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
+  --dataset-root ../../datasets/baicao-knowledge
+```
 
 ## 药典条目 LLM dry-run
 

@@ -1,0 +1,70 @@
+{
+  "updated_at": "2026-08-16",
+  "repo_plan": "docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md",
+  "tasks": [
+    {
+      "task_id": "pharmacopoeia-segment-605",
+      "source_id": "national-standard-2022-pharmacopoeia",
+      "status": "done",
+      "unit": "entries",
+      "planned_units": 605,
+      "completed_units": 605,
+      "as_of": "2026-04-06",
+      "evidence": "packages/data_ingestion/tmp/pharmacopoeia-segmentation-assessment/check-20260406/segmentation_summary.json",
+      "notes": "three_line_header 604 + body_text_fallback 1"
+    },
+    {
+      "task_id": "pharmacopoeia-extract-605",
+      "source_id": "national-standard-2022-pharmacopoeia",
+      "status": "done",
+      "unit": "entries",
+      "planned_units": 605,
+      "completed_units": 605,
+      "count_is_estimate": false,
+      "as_of": "2026-08-17",
+      "evidence": "datasets/baicao-knowledge/sources/national-standard-2022-pharmacopoeia/processed/latest/stats.json",
+      "notes": "13 个 ingest run 按 generated_at 后写覆盖。entry_key 成功 605/605，failures.jsonl 为空。药材节点 593，另 6 条是饮片（制何首乌等）。"
+    },
+    {
+      "task_id": "pharmacopoeia-merge-latest",
+      "source_id": "national-standard-2022-pharmacopoeia",
+      "status": "done",
+      "unit": "snapshots",
+      "planned_units": 1,
+      "completed_units": 1,
+      "as_of": "2026-08-17",
+      "notes": "latest 3431 条去重记录。merge import：merged 3430 / created 1 / pharm_nodes 3431 / pharm_rels 7549。人参 latin 未覆盖。"
+    },
+    {
+      "task_id": "daoyi-suyang-collect",
+      "source_id": "daoyi-suyang",
+      "status": "done",
+      "unit": "chapters",
+      "planned_units": 389,
+      "completed_units": 389,
+      "intake_path": "/Users/ticoag/Downloads/道医苏子阳.md",
+      "notes": "69423 行 / 3389883 bytes。private only。"
+    },
+    {
+      "task_id": "daoyi-suyang-extract-wave-1",
+      "source_id": "daoyi-suyang",
+      "status": "done",
+      "unit": "records",
+      "planned_units": 1687,
+      "completed_units": 1687,
+      "as_of": "2026-08-16",
+      "evidence": "datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/stats.json",
+      "notes": "v1/v2 作废。v3=2026-08-16-suyang-v3-b01..b10，389 章，skip 262，医案 112 全部有病证+干预，方剂组成率 90%。"
+    },
+    {
+      "task_id": "daoyi-suyang-neo4j-import",
+      "source_id": "daoyi-suyang",
+      "status": "done",
+      "unit": "graph_nodes",
+      "planned_units": 923,
+      "completed_units": 923,
+      "as_of": "2026-08-17",
+      "notes": "merge import：created 732 / merged 693 / rels 3355。人参 source=huggingface latin 未覆盖。"
+    }
+  ]
+}

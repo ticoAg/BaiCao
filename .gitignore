@@ -69,4 +69,8 @@ test-results/
 /tmp/data/
 /.cache/huggingface/
 /packages/data_ingestion/tmp/
-/datasets
+/datasets/baicao-knowledge/sources/*/source/
+/datasets/baicao-knowledge/sources/*/processed/
+/datasets/baicao-knowledge/sources/*/work/
+/datasets/baicao-knowledge/data/
+/datasets/baicao-knowledge/exports/
