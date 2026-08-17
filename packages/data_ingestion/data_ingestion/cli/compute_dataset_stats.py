@@ -105,6 +105,11 @@ def main() -> None:
     stats = compute_stats(records)
     args.out_dir.mkdir(parents=True, exist_ok=True)
     stats_path = args.out_dir / "stats.json"
+    if stats_path.is_file():
+        previous = json.loads(stats_path.read_text(encoding="utf-8"))
+        for key in ("entries_succeeded", "entries_failed", "runs"):
+            if key in previous and key not in stats:
+                stats[key] = previous[key]
     stats_path.write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     view_path = args.out_dir.parent.parent / "VIEW.md"
     if view_path.parent.name.startswith("sources") or (args.out_dir.parent.parent / "SOURCE.md").exists():

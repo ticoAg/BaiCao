@@ -13,6 +13,18 @@ GRAPH_NODE_PROPS = {
     "source_book",
     "alias",
     "skip_reason",
+    "latin_name",
+    "pinyin_name",
+    "base_description",
+    "indications",
+    "usage_text",
+    "storage_text",
+    "caution_text",
+    "source_provider",
+    "dataset_name",
+    "file_path",
+    "entry_title",
+    "evidence_id",
 }
 GRAPH_EDGE_PROPS = {"dosage"}
 PROTECTED_EXISTING_PROPS = {
@@ -35,9 +47,15 @@ PROTECTED_EXISTING_PROPS = {
 }
 DEFAULT_SCOPE_KEYS = {
     "daoyi-suyang": "manual:baicao-knowledge:daoyi-suyang",
+    "national-standard-2022-pharmacopoeia": (
+        "huggingface|ZJUFanLab/TCMChat-dataset-600k|"
+        "pretrain/train/books/national_standard/2022年中药药典.txt"
+    ),
 }
 DEFAULT_PROMPT_FILES = {
     "daoyi-suyang": Path(__file__).with_name("EXTRACT_SUYANG.md"),
+    "national-standard-2022-pharmacopoeia": Path(__file__).resolve().parents[0]
+    / "processors/huggingface/zjufanlab_tcmchat_dataset_600k/national_standard_2022_pharmacopoeia/prompts.py",
 }
 
 

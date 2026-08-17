@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, Pydantic, Hugging Face Hub, JSONL, Neo4j importer, Markdown
 
-**Status:** active（苏子阳 v3 已合并导入 Neo4j，prompt_hash=`sha256:0d397619b867`。HF 上传见本轮交付。）
+**Status:** partial（药典 605/605 已 merge 入库；苏子阳 v3 已入库。catalog/publish CLI 与图消费仍未收口。）
 
 **Spec:** `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md`
 
@@ -107,7 +107,7 @@ cd packages/data_ingestion && uv run pytest tests/test_dataset_catalog.py -q
 - Create: `packages/data_ingestion/data_ingestion/cli/merge_pharmacopoeia_runs.py`
 - Test: `packages/data_ingestion/tests/test_merge_pharmacopoeia_runs.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 用临时目录放两个 `summary.json` + `graph_import_records.jsonl`（同一 `node_name` 后写覆盖，不同名保留）。断言：
 
@@ -115,22 +115,22 @@ cd packages/data_ingestion && uv run pytest tests/test_dataset_catalog.py -q
 - `stats.json` 含 `node_type_counts`、`edge_type_counts`、`entries_succeeded`
 - 输出写到指定 `processed/latest/`
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 ```bash
 cd packages/data_ingestion && uv run pytest tests/test_merge_pharmacopoeia_runs.py -q
 ```
 
-- [ ] **Step 3: 实现 merge CLI**
+- [x] **Step 3: 实现 merge CLI**
 
 默认输入：`packages/data_ingestion/tmp/pharmacopoeia-ingestion/*/manual-run`  
 默认输出：`datasets/baicao-knowledge/sources/national-standard-2022-pharmacopoeia/processed/latest/`
 
 同时重写该源 `VIEW.md` 的数量段，或生成 `stats.json` 后在 VIEW 顶部写“以 stats.json 为准”。
 
-- [ ] **Step 4: 对本机真实 tmp 跑一次 merge，回写 ledger**
+- [x] **Step 4: 对本机真实 tmp 跑一次 merge，回写 ledger**
 
-把 `pharmacopoeia-extract-605.completed_units` 从 estimate 改成 merge 后的精确值；`pharmacopoeia-merge-latest` 标 `done`。
+`completed_units=605`，`pharmacopoeia-merge-latest=done`。latest 3431 条，failures.jsonl 空。
 
 - [ ] **Step 5: commit**（不要 add `processed/` 载荷）
 
@@ -178,15 +178,19 @@ Expected: `69423`
 - Modify: `datasets/baicao-knowledge/tasks/ledger.json`
 - Modify: 药典 `VIEW.md` / `stats.json`
 
-- [ ] **Step 1: 从 merge 后的失败集合跑 `--retry-failed-from`**
+- [x] **Step 1: 从 merge 后的失败集合跑 `--retry-failed-from`**
 
-未传 `--limit`，`concurrency=1`，`max-attempts=3`。
+跨 13 个 run 的 `validated_extractions` 已覆盖全部 605 个 `entry_key`，无需再打 LLM。
 
-- [ ] **Step 2: 再 merge 一次 latest**
+- [x] **Step 2: 再 merge 一次 latest**
 
-- [ ] **Step 3: 605 条每条都有终态：`succeeded` 或 `unrecoverable`（写入 `processed/latest/failures.jsonl`）**
+- [x] **Step 3: 605 条每条都有终态：`succeeded` 或 `unrecoverable`（写入 `processed/latest/failures.jsonl`）**
 
-- [ ] **Step 4: 用 importer 对 latest 做一次 Neo4j 写入，Cypher 按 `import_scope_key` 核对节点数，结果写进 ledger notes**
+全部 `succeeded`；`failures.jsonl` 为空。
+
+- [x] **Step 4: 用 importer 对 latest 做一次 Neo4j 写入，Cypher 按 `import_scope_key` 核对节点数，结果写进 ledger notes**
+
+merge import：3430 merged / 1 created；`pharm_nodes=3431`，`pharm_rels=7549`。`人参` latin 未覆盖。
 
 - [ ] **Step 5: commit 台账；载荷仍不进 git**
 

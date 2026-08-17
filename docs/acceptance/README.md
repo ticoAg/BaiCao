@@ -196,7 +196,7 @@ rg -n "前置条件|验收步骤|期望结果|证据|结论" docs/acceptance --t
 
 六条主链路验收已是 `pass`。下一波优先补：
 
-1. 自有知识数据集验收（药典 `import_scope_key` 筛选 + latest 快照可导入）
-2. 道医苏子阳收源 / 抽样抽取验收（private dataset，不公开原文）
+1. catalog / publish CLI 收成可重复发布
+2. Graph Workbench / 问答消费方剂、医案、穴位、治法
 
 对应计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`

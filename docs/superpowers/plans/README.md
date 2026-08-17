@@ -8,7 +8,7 @@
 
 | 状态 | 文档 | 目标 |
 |------|------|------|
-| **active** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | 自有 Hugging Face 知识数据集 + 药典收口 + 道医苏子阳接入 |
+| **partial** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | 药典 605 + 苏子阳 v3 已入库；catalog/publish CLI 与图消费未收口 |
 
 设计规格：[../specs/2026-08-16-baicao-knowledge-dataset-design.md](../specs/2026-08-16-baicao-knowledge-dataset-design.md)
 
