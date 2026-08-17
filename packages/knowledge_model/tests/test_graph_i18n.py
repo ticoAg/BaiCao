@@ -1,4 +1,9 @@
-from knowledge_model.graph_i18n import localize_status, to_graph_properties, zh_property
+from knowledge_model.graph_i18n import (
+    PROPERTY_ZH_TO_EN,
+    localize_status,
+    to_graph_properties,
+    zh_property,
+)
 
 
 def test_property_and_status_are_chinese():
@@ -18,3 +23,20 @@ def test_property_and_status_are_chinese():
     assert props["状态"] == "待验证"
     assert props["导入源"] == "道医苏子阳"
     assert props["导入范围键"] == "人工:白草知识:道医苏子阳"
+    assert to_graph_properties({"storage_text": "置于燥处"})["贮藏"] == "置干燥处。"
+
+
+def test_legacy_extract_keys_localize_and_unmapped_ascii_is_dropped():
+    props = to_graph_properties(
+        {
+            "theory": "子午流注",
+            "usage": "水煎服",
+            "unknown_english_key": "should-drop",
+            "名称": "保留中文键",
+        }
+    )
+    assert props["理论"] == "子午流注"
+    assert props["用法"] == "水煎服。"
+    assert props["名称"] == "保留中文键"
+    assert "unknown_english_key" not in props
+    assert PROPERTY_ZH_TO_EN["用法"] == "usage_text"

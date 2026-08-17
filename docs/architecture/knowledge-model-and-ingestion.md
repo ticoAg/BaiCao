@@ -239,6 +239,10 @@ flowchart LR
 | 具有性味 | `HAS_FLAVOR` | 药材与性味关系 |
 | 归于经脉 | `ENTERS_MERIDIAN` | 药材与归经关系 |
 | 治疗病证 | `TREATS` | 药材或成分与病证关系 |
+
+### 7.3 生产图谱存储
+
+Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、`具有性味`、`名称`、`待验证`）。API DTO 仍可通过 `graph_i18n.PROPERTY_ZH_TO_EN` 映回英文。`db.propertyKeys()` 会残留历史英文键，清目录只能导出活图后重建空库（`recreate_graph_store`），不能靠 `neo4j-admin dump`。近重复文本只合标点/OCR，见 `knowledge-dataset.md`。
 | 相互作用 | `INTERACTS_WITH` | 成分之间的相互作用 |
 | 相似于 | `SIMILAR_TO` | 药材、功效等相似关系 |
 

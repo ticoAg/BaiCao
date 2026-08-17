@@ -12,7 +12,9 @@ WHERE n.导入范围键 = '抱抱脸:中药药典2022'
 RETURN count(n)
 ```
 
-期望：`3431`。条目终态 605/605，`failures.jsonl` 空。`人参.source=huggingface`，`latin_name=GINSENGRADIXETRHIZOMA`。
+期望：约 `3427`（原 3431；`干/成/淫/湿疹、湿疮` 四个近重复词条并入已有节点）。条目终态 605/605，`failures.jsonl` 空。`人参.来源=2022年中药药典`，`人参.拉丁名=GINSENGRADIXETRHIZOMA`。
+
+图存储口径（2026-08-17）：标签、关系类型、属性键均为中文；`CALL db.propertyKeys()` 英文键为 `0`。近重复只合标点/OCR，贮藏条件差不合。全图 `4175` 节点 / `12575` 边。
 
 ## 苏子阳
 

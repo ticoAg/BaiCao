@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12, Pydantic, Hugging Face Hub, JSONL, Neo4j importer, Markdown
 
-**Status:** partial（药典 605/605 已 merge 入库；苏子阳 v3 已入库。catalog/publish CLI 与图消费仍未收口。）
+**Status:** partial（药典 605/605 与苏子阳 v3 已入库；图为中文键，近重复文本已合并。catalog/publish CLI 与 Workbench 消费仍未收口。）
 
 **Spec:** `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md`
 

@@ -133,6 +133,32 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 
 同类型且名称/别名命中已有节点时复用实体，只补空属性并追加 `import_source_ids` / `prompt_hashes`。
 
+## 合并近重复文本
+
+只合标点、空白、书名号和白名单 OCR，不合贮藏条件差或「跌打 / 跌扑」这类近义。共享词条节点（功效/性味/归经/病证等）按表面键并点；药材/饮片/方剂/医案不并。
+
+```bash
+cd packages/data_ingestion
+uv run --with neo4j python -m data_ingestion.cli.merge_near_duplicates
+uv run --with neo4j python -m data_ingestion.cli.merge_near_duplicates --apply
+```
+
+## 清空属性键目录幽灵
+
+`CALL db.propertyKeys()` / Neo4j Browser 会列出历史上出现过、现已不用的英文键。`neo4j-admin dump` 和 APOC rename 都清不掉。要重建空库再导活图：
+
+```bash
+cd packages/data_ingestion
+uv run --with neo4j python -m data_ingestion.cli.recreate_graph_store export \
+  --file ../../datasets/baicao-knowledge/exports/graph-zh-live.json
+cd ../../infra
+docker compose stop neo4j && docker compose rm -f neo4j && docker volume rm baicao_neo4j_data
+docker compose up -d neo4j
+cd ../packages/data_ingestion
+uv run --with neo4j python -m data_ingestion.cli.recreate_graph_store import \
+  --file ../../datasets/baicao-knowledge/exports/graph-zh-live.json
+```
+
 ## 将快照导入 Neo4j
 
 拿到 `graph_import_records.jsonl` 后，可以复用 `packages/api` 现有导入 CLI 直接写图谱：

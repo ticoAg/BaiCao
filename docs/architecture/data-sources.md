@@ -155,14 +155,14 @@ audience: developer, data-team
 
 ## 6. 白草自有数据集（进行中）
 
-外部 HF 源只是输入。白草自己的发布面是 private dataset `ticoag/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`。
+外部 HF 源只是输入。白草自己的发布面是 private dataset `ticoAg/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`。
 
 每份源固定三件套：`source/`、`processed/`、`VIEW.md`。任务计划量和完成量在 `tasks/ledger.json`。
 
-| source_id | 状态 | 计划 | 完成（2026-08-16） |
+| source_id | 状态 | 计划 | 完成（2026-08-17） |
 |-----------|------|------|---------------------|
-| `national-standard-2022-pharmacopoeia` | partial | 605 条 | ~595 条抽取（estimate，待 merge） |
-| `daoyi-suyang` | collected | 389 章收源 | 原文已定位，未进 staging / 未抽取 |
+| `national-standard-2022-pharmacopoeia` | imported | 605 条 | 605/605，3431 条记录已入图 |
+| `daoyi-suyang` | imported | 389 章 | v3 1687 条记录；原文不上 HF |
 
 苏子阳是叙事医案，不是药典字段；原文未授权公开转载，只进 private dataset。筛选入图数据用各源 `SOURCE.md` 的 `import_scope_key`。
 

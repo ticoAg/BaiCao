@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .constants import NodeType
+from .text_normalize import canonicalize_property_value
 
 LEGACY_NEO4J_LABELS: dict[NodeType, str] = {
     NodeType.HERB: "Herb",
@@ -83,9 +84,60 @@ PROPERTY_EN_TO_ZH: dict[str, str] = {
     "duration": "时长",
     "alias": "别名",
     "skip_reason": "跳过原因",
+    "aliases": "别名列表",
+    "formula_count": "方剂数量",
+    "acupoints": "穴位列表",
+    "ratio_note": "配比说明",
+    "ratio_range": "配比范围",
+    "from_daoyi_suyang": "来自道医苏子阳",
+    "formula_name": "方剂名",
+    "symptoms": "症状",
+    "usage": "用法",
+    "method": "方法",
+    "form": "剂型",
+    "practice_times": "练习次数",
+    "theory": "理论",
+    "tongue": "舌象",
+    "number_theory": "数理",
+    "patient_context": "患者背景",
+    "formula_context": "方剂背景",
+    "principle": "治则",
+    "pulse": "脉象",
+    "course": "病程",
+    "origin": "产地",
+    "real_use": "实际用法",
+    "precautions": "注意事项",
+    "patient": "患者",
+    "cause": "病因",
+    "author": "作者",
+    "context": "背景",
+    "water_level": "水位",
+    "interval": "间隔",
+    "symptom": "症状",
+    "pulse_change": "脉象变化",
+    "dose": "剂量",
+    "speaker": "讲述人",
+    "meridian": "经脉",
+    "location": "部位",
+    "indication": "适应证",
+    "note": "备注",
+    "etiology": "病因",
+    "therapy": "疗法",
+    "cited_in": "引用处",
+    "used_in": "用于",
+    "components": "成分列表",
+    "herb": "药材",
+    "component_of": "所属成分",
+    "preparation": "炮制",
+    "topic": "主题",
+    "start_date": "开始日期",
+    "end_date": "结束日期",
+    "year_range": "年份范围",
 }
 
-PROPERTY_ZH_TO_EN: dict[str, str] = {zh: en for en, zh in PROPERTY_EN_TO_ZH.items()}
+PROPERTY_ZH_TO_EN: dict[str, str] = {}
+for _en, _zh in PROPERTY_EN_TO_ZH.items():
+    PROPERTY_ZH_TO_EN.setdefault(_zh, _en)
 
 STATUS_EN_TO_ZH: dict[str, str] = {
     "pending": "待验证",
@@ -109,6 +161,10 @@ PROVIDER_VALUE_EN_TO_ZH: dict[str, str] = {
     "huggingface": "抱抱脸",
     "manual": "人工",
 }
+
+
+def is_ascii_property_key(key: str) -> bool:
+    return bool(key) and all(ord(char) < 128 for char in key)
 
 
 def zh_property(key: str) -> str:
@@ -142,5 +198,8 @@ def to_graph_properties(props: dict[str, object]) -> dict[str, object]:
     for key, value in props.items():
         if value is None:
             continue
-        localized[zh_property(key)] = localize_value(key, value)
+        chinese_key = zh_property(key)
+        if chinese_key == key and is_ascii_property_key(key):
+            continue
+        localized[chinese_key] = canonicalize_property_value(chinese_key, localize_value(key, value))
     return localized

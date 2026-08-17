@@ -80,8 +80,11 @@ Viewer 主表是仓库根下 `data/*.parquet`，把各源 latest 拼在一起。
 - 标签用 `药材`/`方剂`/`医案` 等，不用 `Herb`
 - 属性键用 `名称`/`来源`/`导入源`/`抽取契约哈希` 等
 - 状态值用 `待验证`/`已验证`/`已拒绝`
+- Neo4j Browser 侧边栏读的是 `db.propertyKeys()` 目录。APOC 改名不会删除旧英文键；要清幽灵英文键，只能导出活图、清空 `baicao_neo4j_data` 后用 `data_ingestion.cli.recreate_graph_store` 重导。不要用 `neo4j-admin dump`，它会把目录幽灵一并带回去。
 
-同类型且 `name` / `alias` / `aliases` / `pinyin_name` / `latin_name` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。
+同类型且 `名称` / `别名` / `拼音` / `拉丁名` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。
+
+近重复文本只合标点、空白、书名号和白名单 OCR（如 `置于燥处`→`置干燥处`，性味 `成`→`咸`），不合「置干燥处」与「置阴凉防蛀」这类条件差。共享词条（功效/性味/归经/病证/治法/穴位/工艺）同名表面键才并节点；药材/饮片/方剂/医案不按文本合并。命令：`python -m data_ingestion.cli.merge_near_duplicates --apply`。
 
 Cypher 筛选：
 
@@ -161,15 +164,21 @@ uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
 产出 `data/records.parquet` 与 `data/edges.parquet`。上传：
 
 ```bash
-hf repos create ticoag/baicao-knowledge --type dataset --private --exist-ok
-hf upload ticoag/baicao-knowledge datasets/baicao-knowledge --type dataset --private
+hf repos create ticoAg/baicao-knowledge --type dataset --private --exist-ok
+hf upload ticoAg/baicao-knowledge datasets/baicao-knowledge --type dataset --private \
+  --exclude "sources/*/source/**" \
+  --exclude "sources/*/work/**" \
+  --exclude "exports/**" \
+  --exclude "**/*.jsonl"
 ```
+
+不要上传苏子阳原文、切章、抽取中间态、任务批次稿，也不要上传 `exports/graph-zh-live.json`。
 
 验证 Viewer：
 
 ```bash
-curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoag/baicao-knowledge"
-curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoag/baicao-knowledge"
+curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoAg/baicao-knowledge"
+curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoAg/baicao-knowledge"
 ```
 
 private 仓库需要 `Authorization: Bearer $HF_TOKEN`。
