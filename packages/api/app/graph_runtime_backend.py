@@ -28,8 +28,8 @@ class ApiGraphRuntimeBackend:
                 f"MATCH (source{source_filter})-[r]->(target{target_filter}) "
                 "WHERE type(r) CONTAINS $rel_query "
                 "RETURN "
-                "source {.id, .name, labels: labels(source)} AS source, "
-                "target {.id, .name, labels: labels(target)} AS target, "
+                "source {id: source.标识, name: source.名称, labels: labels(source)} AS source, "
+                "target {id: target.标识, name: target.名称, labels: labels(target)} AS target, "
                 "type(r) AS rel_type, properties(r) AS properties "
                 "LIMIT $limit"
             ),

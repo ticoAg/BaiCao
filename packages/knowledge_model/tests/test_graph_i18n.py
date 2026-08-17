@@ -1,5 +1,6 @@
 from knowledge_model.graph_i18n import (
     PROPERTY_ZH_TO_EN,
+    delocalize_status,
     localize_status,
     to_graph_properties,
     zh_property,
@@ -9,6 +10,8 @@ from knowledge_model.graph_i18n import (
 def test_property_and_status_are_chinese():
     assert zh_property("latin_name") == "拉丁名"
     assert localize_status("pending") == "待验证"
+    assert delocalize_status("待验证") == "pending"
+    assert delocalize_status("pending") == "pending"
     props = to_graph_properties(
         {
             "name": "人参",

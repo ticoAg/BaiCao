@@ -1,5 +1,4 @@
-# LLM 客户端 - 基于 LangChain + LangGraph
-# 支持 OpenAI 和 Anthropic 双后端，通过 .env 配置切换
+# LLM 客户端 - OpenAI 兼容接口（Fireworks 等）
 
 from collections.abc import AsyncIterator, Callable
 from typing import Any
@@ -49,33 +48,14 @@ def _try_openai() -> BaseChatModel | None:
     }
     if settings.openai_base_url:
         kwargs["base_url"] = settings.openai_base_url
-    logger.info("Using OpenAI Responses API (model={model})", model=settings.openai_model)
+        kwargs["use_responses_api"] = False
+    logger.info("Using OpenAI-compatible Chat Completions (model={model})", model=settings.openai_model)
     return ChatOpenAI(**kwargs)
-
-
-def _try_anthropic() -> BaseChatModel | None:
-    """尝试构建 Anthropic ChatModel（Messages API）"""
-    if not settings.anthropic_api_key:
-        return None
-    from langchain_anthropic import ChatAnthropic
-
-    kwargs: dict[str, Any] = {
-        "api_key": settings.anthropic_api_key,
-        "model": settings.anthropic_model,
-        "temperature": settings.llm_temperature,
-        "streaming": True,
-        "max_tokens": 2048,
-    }
-    if settings.anthropic_base_url:
-        kwargs["base_url"] = settings.anthropic_base_url
-    logger.info("Using Anthropic Messages API (model={model})", model=settings.anthropic_model)
-    return ChatAnthropic(**kwargs)
 
 
 # provider 名称 → 构建函数
 _PROVIDERS: dict[str, Callable[[], BaseChatModel | None]] = {
     "openai": _try_openai,
-    "anthropic": _try_anthropic,
 }
 
 
@@ -83,9 +63,8 @@ def get_chat_model() -> BaseChatModel | None:
     """根据配置获取 LangChain ChatModel 实例
 
     策略:
-      1. LLM_PROVIDER 指定了具体 provider → 只尝试该 provider
-      2. LLM_PROVIDER=auto（默认）→ 按 openai → anthropic 顺序自动探测第一个有 key 的
-      3. LLM_PROVIDER=none → 直接返回 None（规则引擎）
+      1. LLM_PROVIDER=openai（默认）→ 使用 OpenAI 兼容 Chat Completions
+      2. LLM_PROVIDER=none → 直接返回 None
 
     Returns:
         ChatModel 实例，无可用 provider 时返回 None

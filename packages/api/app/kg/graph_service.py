@@ -12,7 +12,13 @@ from ..models.enums import (
     TraitCategory,
 )
 from knowledge_model.constants import parse_node_type, to_neo4j_label
-from knowledge_model.graph_i18n import PROPERTY_ZH_TO_EN, localize_status, to_graph_properties, zh_property
+from knowledge_model.graph_i18n import (
+    PROPERTY_ZH_TO_EN,
+    delocalize_status,
+    localize_status,
+    to_graph_properties,
+    zh_property,
+)
 from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
 from .db import cypher_rows, cypher_single
 from .models import NODE_MODEL_MAP, REL_TYPE_TO_ATTR
@@ -89,28 +95,28 @@ RETURN r
 
 QUERY_EXPAND_QUERY_FRONTIER = """
 MATCH (current)-[r]-(connected)
-WHERE current.id IN $frontier_ids
+WHERE current.标识 IN $frontier_ids
 RETURN
     connected {.*, labels: labels(connected)} AS connected_node,
     {
-        id: coalesce(r.id, elementId(r)),
+        id: coalesce(r.标识, elementId(r)),
         rel_type: type(r),
-        status: coalesce(r.status, 'pending'),
-        verification_id: r.verification_id,
-        verified_by: r.verified_by,
-        verified_at: toString(r.verified_at),
+        status: coalesce(r.状态, '待验证'),
+        verification_id: r.验证标识,
+        verified_by: r.验证人,
+        verified_at: toString(r.验证时间),
         source: {
-            id: startNode(r).id,
-            name: startNode(r).name,
-            source: startNode(r).source,
-            status: startNode(r).status,
+            id: startNode(r).标识,
+            name: startNode(r).名称,
+            source: startNode(r).来源,
+            status: startNode(r).状态,
             labels: labels(startNode(r))
         },
         target: {
-            id: endNode(r).id,
-            name: endNode(r).name,
-            source: endNode(r).source,
-            status: endNode(r).status,
+            id: endNode(r).标识,
+            name: endNode(r).名称,
+            source: endNode(r).来源,
+            status: endNode(r).状态,
             labels: labels(endNode(r))
         }
     } AS edge
@@ -207,10 +213,15 @@ class GraphService:
 
     def _localize_edge_payload(self, edge: Dict[str, Any]) -> Dict[str, Any]:
         localized = dict(edge)
+        if "status" in localized:
+            localized["status"] = delocalize_status(localized.get("status"))
         for endpoint in ("source", "target"):
             node_ref = localized.get(endpoint)
             if isinstance(node_ref, dict):
-                localized[endpoint] = self._map_node_to_dict(node_ref)
+                mapped = self._map_node_to_dict(node_ref)
+                if "status" in mapped:
+                    mapped["status"] = delocalize_status(mapped.get("status"))
+                localized[endpoint] = mapped
         return localized
 
     def _normalize_query_label(self, label: Any) -> str | None:
@@ -465,21 +476,21 @@ class GraphService:
         """Build the one-hop expansion query plus bound parameters."""
         rel_type = self._query_value(edge_filters.get("rel_type"))
         rel_clause = f":{rel_type}" if rel_type in ALLOWED_QUERY_REL_TYPES else ""
-        where_clauses = ["current.id IN $frontier_ids"]
+        where_clauses = ["current.标识 IN $frontier_ids"]
         params: Dict[str, Any] = {}
 
         edge_status = self._query_value(edge_filters.get("status"))
         if edge_status in QUERY_STATUS_DISPLAY:
-            where_clauses.append("r.status = $edge_status")
-            params["edge_status"] = edge_status
+            where_clauses.append("r.状态 = $edge_status")
+            params["edge_status"] = localize_status(edge_status)
 
         connected_name = edge_filters.get("connected_name_contains")
         if connected_name:
-            where_clauses.append("connected.name CONTAINS $connected_name_contains")
+            where_clauses.append("connected.名称 CONTAINS $connected_name_contains")
             params["connected_name_contains"] = connected_name
 
         query = QUERY_EXPAND_QUERY_FRONTIER.replace(
-            "MATCH (current)-[r]-(connected)\nWHERE current.id IN $frontier_ids",
+            "MATCH (current)-[r]-(connected)\nWHERE current.标识 IN $frontier_ids",
             f"MATCH (current)-[r{rel_clause}]-(connected)\nWHERE {' AND '.join(where_clauses)}",
         )
         return query, params

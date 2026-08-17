@@ -144,6 +144,7 @@ STATUS_EN_TO_ZH: dict[str, str] = {
     "verified": "已验证",
     "rejected": "已拒绝",
 }
+STATUS_ZH_TO_EN: dict[str, str] = {zh: en for en, zh in STATUS_EN_TO_ZH.items()}
 
 SOURCE_VALUE_EN_TO_ZH: dict[str, str] = {
     "huggingface": "2022年中药药典",
@@ -175,6 +176,12 @@ def localize_status(value: str | None) -> str | None:
     if value is None:
         return None
     return STATUS_EN_TO_ZH.get(value, value)
+
+
+def delocalize_status(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return STATUS_ZH_TO_EN.get(value, value)
 
 
 def localize_value(key: str, value: object) -> object:

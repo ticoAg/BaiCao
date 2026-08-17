@@ -1,5 +1,5 @@
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, ToolMessage
 from langgraph.types import Command
 
 from app.services.chat_agent_runtime.event_adapter import adapt_agent_events
@@ -132,87 +132,84 @@ async def test_adapt_agent_events_maps_langgraph_stream_to_sse_protocol():
 
 
 @pytest.mark.asyncio
-async def test_stream_turn_builds_agent_with_real_runtime_dependencies(monkeypatch):
+async def test_stream_turn_uses_openai_agents_runner(monkeypatch):
+    from types import SimpleNamespace
+
     from app.services.chat_agent_runtime import runtime
 
     captured = {}
 
-    class FakeAgent:
-        async def astream_events(self, payload, config=None, version="v2"):
-            captured["payload"] = payload
-            captured["config"] = config
-            captured["version"] = version
-            yield {
-                "event": "on_chain_end",
-                "name": "LangGraph",
-                "data": {
-                    "output": {
-                        "messages": [AIMessage(content=[{"type": "text", "text": "done"}])],
-                    }
-                },
-            }
+    class FakeResult:
+        async def stream_events(self):
+            yield SimpleNamespace(type="raw_response_event", data=SimpleNamespace(delta="done"))
 
-    def fake_create_deep_agent(*, model, tools, system_prompt, checkpointer):
-        captured["model"] = model
-        captured["tools"] = tools
-        captured["system_prompt"] = system_prompt
-        captured["checkpointer"] = checkpointer
-        return FakeAgent()
+    def fake_run_streamed(agent, question, session=None):
+        captured["question"] = question
+        captured["session"] = session
+        captured["agent_name"] = agent.name
+        return FakeResult()
 
-    monkeypatch.setattr(runtime, "get_chat_model", lambda: object())
-    monkeypatch.setattr(runtime, "build_graph_tools", lambda: ["search_nodes"])
-    monkeypatch.setattr(runtime, "build_graph_specialist_system_prompt", lambda: "prompt")
-    monkeypatch.setattr(runtime, "create_deep_agent", fake_create_deep_agent)
+    monkeypatch.setattr(
+        runtime,
+        "get_settings",
+        lambda: SimpleNamespace(
+            openai_api_key="fw-test",
+            openai_base_url="https://api.fireworks.ai/inference/v1",
+            openai_model="accounts/fireworks/models/deepseek-v4-flash-0731",
+        ),
+    )
+
+    async def fake_mcp():
+        return object()
+
+    monkeypatch.setattr(runtime, "get_knowledge_mcp_server", fake_mcp)
+    monkeypatch.setattr(runtime.Runner, "run_streamed", fake_run_streamed)
 
     events = [event async for event in runtime.stream_turn("第一问", session_id="sid-runtime")]
 
     assert events[0]["type"] == "session"
     assert events[-1]["type"] == "final"
-    assert captured["tools"] == ["search_nodes"]
-    assert captured["system_prompt"] == "prompt"
-    assert captured["checkpointer"] is runtime._SESSION_MANAGER.checkpointer
-    assert len(captured["payload"]["messages"]) == 1
-    assert isinstance(captured["payload"]["messages"][0], HumanMessage)
-    assert captured["payload"]["messages"][0].content == "第一问"
-    assert captured["config"] == {"configurable": {"thread_id": "sid-runtime"}}
-    assert captured["version"] == "v2"
+    assert captured["question"] == "第一问"
+    assert captured["session"] is runtime._OPENAI_SESSIONS["sid-runtime"]
+    assert captured["agent_name"] == "BaiCao Graph Specialist"
 
 
 @pytest.mark.asyncio
-async def test_stream_turn_reuses_thread_id_without_manually_replaying_old_messages(monkeypatch):
-    from app.services.chat_agent_runtime.runtime import stream_turn
+async def test_stream_turn_reuses_openai_session(monkeypatch):
+    from types import SimpleNamespace
 
-    calls: list[dict] = []
+    from app.services.chat_agent_runtime import runtime
 
-    class FakeAgent:
-        async def astream_events(self, payload, config=None, version="v2"):
-            calls.append({"payload": payload, "config": config, "version": version})
-            yield {
-                "event": "on_chain_end",
-                "name": "LangGraph",
-                "data": {
-                    "output": {
-                        "messages": [AIMessage(content=[{"type": "text", "text": "ok"}])],
-                    }
-                },
-            }
+    sessions: list[object] = []
 
-    monkeypatch.setattr("app.services.chat_agent_runtime.runtime.get_chat_model", lambda: object())
-    monkeypatch.setattr("app.services.chat_agent_runtime.runtime.build_graph_tools", lambda: ["search_nodes"])
-    monkeypatch.setattr("app.services.chat_agent_runtime.runtime.build_graph_specialist_system_prompt", lambda: "prompt")
-    monkeypatch.setattr("app.services.chat_agent_runtime.runtime.create_deep_agent", lambda **_: FakeAgent())
+    class FakeResult:
+        async def stream_events(self):
+            if False:
+                yield None
 
-    async for _ in stream_turn("第一问", session_id="sid-keep-all"):
+    def fake_run_streamed(agent, question, session=None):
+        sessions.append(session)
+        return FakeResult()
+
+    monkeypatch.setattr(
+        runtime,
+        "get_settings",
+        lambda: SimpleNamespace(
+            openai_api_key="fw-test",
+            openai_base_url="https://api.fireworks.ai/inference/v1",
+            openai_model="accounts/fireworks/models/deepseek-v4-flash-0731",
+        ),
+    )
+    async def fake_mcp():
+        return object()
+
+    monkeypatch.setattr(runtime, "get_knowledge_mcp_server", fake_mcp)
+    monkeypatch.setattr(runtime.Runner, "run_streamed", fake_run_streamed)
+
+    async for _ in runtime.stream_turn("第一问", session_id="sid-keep-all"):
         pass
-    async for _ in stream_turn("第二问", session_id="sid-keep-all"):
+    async for _ in runtime.stream_turn("第二问", session_id="sid-keep-all"):
         pass
 
-    assert len(calls) == 2
-    assert calls[0]["config"] == {"configurable": {"thread_id": "sid-keep-all"}}
-    assert calls[1]["config"] == {"configurable": {"thread_id": "sid-keep-all"}}
-    assert len(calls[0]["payload"]["messages"]) == 1
-    assert len(calls[1]["payload"]["messages"]) == 1
-    assert isinstance(calls[0]["payload"]["messages"][0], HumanMessage)
-    assert isinstance(calls[1]["payload"]["messages"][0], HumanMessage)
-    assert calls[0]["payload"]["messages"][0].content == "第一问"
-    assert calls[1]["payload"]["messages"][0].content == "第二问"
+    assert len(sessions) == 2
+    assert sessions[0] is sessions[1]

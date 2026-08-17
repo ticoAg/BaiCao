@@ -1,48 +1,72 @@
 from collections.abc import AsyncIterator
-from typing import cast
 from uuid import uuid4
 
-from deepagents import create_deep_agent
-from langchain_core.messages import HumanMessage
-from langgraph.checkpoint.memory import InMemorySaver
+from agents import Agent, OpenAIChatCompletionsModel, Runner, SQLiteSession, set_tracing_disabled
+from openai import AsyncOpenAI
 
-from ..graph_tools import build_graph_tools
-from ..llm_client import get_chat_model
-from .event_adapter import adapt_agent_events
+from ...core.config import get_settings
+from ..knowledge_mcp.agent_client import get_knowledge_mcp_server
+from .openai_event_adapter import adapt_openai_stream
 from .session_memory import InMemorySessionManager
 from .system_prompt import build_graph_specialist_system_prompt
 
+set_tracing_disabled(disabled=True)
 
 _SESSION_MANAGER = InMemorySessionManager()
+_OPENAI_SESSIONS: dict[str, SQLiteSession] = {}
+
+
+def _openai_ready(settings) -> bool:
+    key = settings.openai_api_key
+    return bool(key) and key != "your_api_key_here" and bool(settings.openai_base_url)
+
+
+async def build_graph_agent(settings=None) -> Agent:
+    current = settings or get_settings()
+    client = AsyncOpenAI(api_key=current.openai_api_key, base_url=current.openai_base_url)
+    model = OpenAIChatCompletionsModel(model=current.openai_model, openai_client=client)
+    mcp_server = await get_knowledge_mcp_server()
+    return Agent(
+        name="BaiCao Graph Specialist",
+        instructions=build_graph_specialist_system_prompt(),
+        model=model,
+        mcp_servers=[mcp_server],
+    )
+
+
+def _session_for(session_id: str) -> SQLiteSession:
+    existing = _OPENAI_SESSIONS.get(session_id)
+    if existing is not None:
+        return existing
+    session = SQLiteSession(session_id)
+    _OPENAI_SESSIONS[session_id] = session
+    return session
 
 
 async def stream_turn(question: str, session_id: str | None = None) -> AsyncIterator[dict]:
     sid = session_id or str(uuid4())
     turn_id = str(uuid4())
     async with _SESSION_MANAGER.session(sid):
-        messages = [HumanMessage(content=question)]
-
         yield {"type": "session", "data": {"session_id": sid, "turn_id": turn_id}}
 
-        model = get_chat_model()
-        if model is None:
-            yield {"type": "error", "data": {"message": "当前未配置可用的聊天模型，无法执行图谱问答 agent。"}}
+        settings = get_settings()
+        if not _openai_ready(settings):
+            yield {
+                "type": "error",
+                "data": {
+                    "message": "当前未配置 OPENAI_API_KEY / OPENAI_BASE_URL，无法启动知识 agent。"
+                },
+            }
             return
 
-        agent = create_deep_agent(
-            model=model,
-            tools=build_graph_tools(),
-            system_prompt=build_graph_specialist_system_prompt(),
-            checkpointer=cast(InMemorySaver, _SESSION_MANAGER.checkpointer),
-        )
-
         try:
-            async for event in adapt_agent_events(
-                agent.astream_events(
-                    {"messages": messages},
-                    config={"configurable": {"thread_id": sid}},
-                    version="v2",
-                ),
+            result = Runner.run_streamed(
+                await build_graph_agent(settings),
+                question,
+                session=_session_for(sid),
+            )
+            async for event in adapt_openai_stream(
+                result.stream_events(),
                 session_id=sid,
                 turn_id=turn_id,
             ):

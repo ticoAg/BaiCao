@@ -4,6 +4,7 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 from ...graph_runtime_backend import ApiGraphRuntimeBackend
+from ..knowledge_mcp.handlers import KnowledgeMcpHandlers
 
 
 class SearchEdgesArgs(BaseModel):
@@ -16,8 +17,7 @@ class SearchEdgesArgs(BaseModel):
 def build_search_edges_tool(
     backend_factory: Callable[[], ApiGraphRuntimeBackend] | None = None,
 ) -> StructuredTool:
-    def _backend() -> ApiGraphRuntimeBackend:
-        return backend_factory() if backend_factory else ApiGraphRuntimeBackend()
+    handlers = KnowledgeMcpHandlers(backend_factory=backend_factory)
 
     async def _search_edges(
         rel_query: str,
@@ -25,11 +25,13 @@ def build_search_edges_tool(
         target_label: str | None = None,
         limit: int = 10,
     ):
-        return await _backend().search_edges(
-            rel_query=rel_query,
-            source_label=source_label,
-            target_label=target_label,
-            limit=limit,
+        return await handlers.search_edges(
+            {
+                "rel_query": rel_query,
+                "source_label": source_label,
+                "target_label": target_label,
+                "limit": limit,
+            }
         )
 
     return StructuredTool.from_function(

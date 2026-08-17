@@ -4,6 +4,7 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 from ...graph_runtime_backend import ApiGraphRuntimeBackend
+from ..knowledge_mcp.handlers import KnowledgeMcpHandlers
 
 
 class LookupNodesArgs(BaseModel):
@@ -13,11 +14,10 @@ class LookupNodesArgs(BaseModel):
 def build_lookup_nodes_tool(
     backend_factory: Callable[[], ApiGraphRuntimeBackend] | None = None,
 ) -> StructuredTool:
-    def _backend() -> ApiGraphRuntimeBackend:
-        return backend_factory() if backend_factory else ApiGraphRuntimeBackend()
+    handlers = KnowledgeMcpHandlers(backend_factory=backend_factory)
 
     async def _lookup_nodes(node_ids: list[str]):
-        return await _backend().lookup_nodes(node_ids=node_ids)
+        return await handlers.lookup_nodes({"node_ids": node_ids})
 
     return StructuredTool.from_function(
         coroutine=_lookup_nodes,

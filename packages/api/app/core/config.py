@@ -1,9 +1,14 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # App
     app_name: str = "BaiCao ShiTan API"
@@ -22,14 +27,11 @@ class Settings(BaseSettings):
     neo4j_user: str = "neo4j"
     neo4j_password: str = "password"
 
-    # LLM
-    llm_provider: str = "auto"  # "auto" | "openai" | "anthropic" | "none"
+    # LLM（仅 OpenAI 兼容接口，例如 Fireworks）
+    llm_provider: str = "openai"  # "openai" | "none"
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"
-    openai_base_url: str = ""  # 兼容 API（如 DeepSeek、零一万物等）
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-sonnet-4-20250514"
-    anthropic_base_url: str = ""  # 兼容 API（如代理中转等）
+    openai_base_url: str = ""
     llm_temperature: float = 0.7
 
     # Redis (optional)

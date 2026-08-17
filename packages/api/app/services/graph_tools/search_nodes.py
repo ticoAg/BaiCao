@@ -4,22 +4,22 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 from ...graph_runtime_backend import ApiGraphRuntimeBackend
+from ..knowledge_mcp.handlers import KnowledgeMcpHandlers
 
 
 class SearchNodesArgs(BaseModel):
     query: str = Field(description="节点模糊查询关键词，优先用于定位锚点")
-    label: str | None = Field(default=None, description="可选节点类型过滤")
+    label: str | None = Field(default=None, description="可选中文节点类型，如 方剂/医案/药材")
     limit: int = Field(default=5, ge=1, le=20, description="候选节点上限")
 
 
 def build_search_nodes_tool(
     backend_factory: Callable[[], ApiGraphRuntimeBackend] | None = None,
 ) -> StructuredTool:
-    def _backend() -> ApiGraphRuntimeBackend:
-        return backend_factory() if backend_factory else ApiGraphRuntimeBackend()
+    handlers = KnowledgeMcpHandlers(backend_factory=backend_factory)
 
     async def _search_nodes(query: str, label: str | None = None, limit: int = 5):
-        return await _backend().search_nodes(query=query, label=label, limit=limit)
+        return await handlers.search_nodes({"query": query, "label": label, "limit": limit})
 
     return StructuredTool.from_function(
         coroutine=_search_nodes,

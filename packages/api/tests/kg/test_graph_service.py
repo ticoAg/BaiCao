@@ -594,6 +594,8 @@ async def test_query_graph_filters_by_name_label_and_rel_type(graph_service):
     assert first_params["name_contains"] == "人参"
     assert "[*1.." not in first_query
     assert "[*1.." not in second_query
+    assert "current.标识 IN $frontier_ids" in second_query
+    assert "current.id IN $frontier_ids" not in second_query
     assert second_params["frontier_ids"] == ["herb-001"]
     assert third_params["frontier_ids"] == ["eff-001"]
     assert session.run.await_count == 3

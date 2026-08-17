@@ -548,6 +548,9 @@ def _build_api_command(ctx: RuntimeContext) -> str:
         "NEO4J_PASSWORD",
         "REDIS_URL",
         "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_MODEL",
+        "LLM_PROVIDER",
     )
     exports = " ".join(
         f"{key}={shlex.quote(ctx.env[key])}"
@@ -567,8 +570,11 @@ def _build_api_command(ctx: RuntimeContext) -> str:
 
 def _build_web_command(ctx: RuntimeContext) -> str:
     port = _resource_port(ctx, "web")
+    api_base = ctx.env.get("WEB_API_BASE_URL")
+    prefix = f"export WEB_API_BASE_URL={shlex.quote(api_base)} && " if api_base else ""
     command = (
         f"cd {shlex.quote(str(WEB_DIR))} && "
+        f"{prefix}"
         "pnpm install && "
         f"pnpm dev --host 0.0.0.0 --port {port}"
     )

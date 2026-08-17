@@ -4,10 +4,11 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
 
 from ...graph_runtime_backend import ApiGraphRuntimeBackend
+from ..knowledge_mcp.handlers import KnowledgeMcpHandlers
 
 
 class ExpandNeighborsArgs(BaseModel):
-    node_id: str = Field(description="已定位锚点节点的 id")
+    node_id: str = Field(description="已定位锚点节点的标识，例如 formula-乌梅丸")
     depth: int = Field(default=1, ge=1, le=2, description="邻居展开深度")
     limit: int = Field(default=20, ge=1, le=50, description="子图节点上限")
 
@@ -15,11 +16,12 @@ class ExpandNeighborsArgs(BaseModel):
 def build_expand_neighbors_tool(
     backend_factory: Callable[[], ApiGraphRuntimeBackend] | None = None,
 ) -> StructuredTool:
-    def _backend() -> ApiGraphRuntimeBackend:
-        return backend_factory() if backend_factory else ApiGraphRuntimeBackend()
+    handlers = KnowledgeMcpHandlers(backend_factory=backend_factory)
 
     async def _expand_neighbors(node_id: str, depth: int = 1, limit: int = 20):
-        return await _backend().expand_neighbors(node_id=node_id, depth=depth, limit=limit)
+        return await handlers.expand_neighbors(
+            {"node_id": node_id, "depth": depth, "limit": limit}
+        )
 
     return StructuredTool.from_function(
         coroutine=_expand_neighbors,
