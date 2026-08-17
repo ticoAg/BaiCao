@@ -1,0 +1,75 @@
+{
+  "dataset_id": "ticoAg/baicao-knowledge",
+  "visibility": "private",
+  "hf_url": "https://huggingface.co/datasets/ticoAg/baicao-knowledge",
+  "knowledge_model": "packages/knowledge_model",
+  "updated_at": "2026-08-17",
+  "sources": [
+    {
+      "source_id": "national-standard-2022-pharmacopoeia",
+      "title": "2022年中药药典",
+      "status": "imported",
+      "kind": "pharmacopoeia_entries",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "pretrain/train/books/national_standard/2022年中药药典.txt",
+        "import_scope_key": "huggingface|ZJUFanLab/TCMChat-dataset-600k|pretrain/train/books/national_standard/2022年中药药典.txt"
+      },
+      "planned": {
+        "unit": "entries",
+        "count": 605,
+        "records": 3431
+      },
+      "completed": {
+        "unit": "entries",
+        "count": 605,
+        "extracted_records": 3431,
+        "count_is_estimate": false,
+        "as_of": "2026-08-17",
+        "note": "13 run merge 后 entry_key 605/605。Neo4j 药典触达节点=3427 / 边=7548（4 个近重复词条已并入）。prompt_hash=sha256:af13c4738a53。图属性键全中文。"
+      },
+      "paths": {
+        "source_doc": "sources/national-standard-2022-pharmacopoeia/SOURCE.md",
+        "view": "sources/national-standard-2022-pharmacopoeia/VIEW.md",
+        "source_dir": "sources/national-standard-2022-pharmacopoeia/source/",
+        "processed_dir": "sources/national-standard-2022-pharmacopoeia/processed/latest/"
+      }
+    },
+    {
+      "source_id": "daoyi-suyang",
+      "title": "道医苏子阳",
+      "status": "imported",
+      "kind": "narrative_medical_cases",
+      "filter": {
+        "source_provider": "manual",
+        "dataset_name": "baicao-knowledge",
+        "file_path": "sources/daoyi-suyang/source/道医苏子阳.md",
+        "import_scope_key": "manual:baicao-knowledge:daoyi-suyang"
+      },
+      "planned": {
+        "unit": "chapters",
+        "count": 389,
+        "records": null
+      },
+      "completed": {
+        "unit": "chapters",
+        "count": 389,
+        "extracted_records": 1687,
+        "neo4j_touched_nodes": 923,
+        "neo4j_created_nodes": 732,
+        "neo4j_merged_nodes": 693,
+        "neo4j_rels": 3355,
+        "prompt_hash": "sha256:0d397619b867",
+        "as_of": "2026-08-17",
+        "note": "v3 合并导入。药典同名只追加导入源列表/抽取契约哈希列表，不覆盖拉丁名。全图 4175 节点 / 12575 边（中文键；近重复词条已合并）。"
+      },
+      "paths": {
+        "source_doc": "sources/daoyi-suyang/SOURCE.md",
+        "view": "sources/daoyi-suyang/VIEW.md",
+        "source_dir": "sources/daoyi-suyang/source/",
+        "processed_dir": "sources/daoyi-suyang/processed/latest/"
+      }
+    }
+  ]
+}

@@ -61,6 +61,7 @@ export type GraphQueryPropertyKey =
 
 export type GraphNodeLabel =
   | "药材"
+  | "饮片"
   | "成分"
   | "品种"
   | "工艺"
@@ -69,7 +70,13 @@ export type GraphNodeLabel =
   | "性味"
   | "归经"
   | "病证"
-  | "时间点";
+  | "方剂"
+  | "医案"
+  | "穴位"
+  | "治法"
+  | "时间点"
+  | "来源"
+  | "证据";
 
 export type GraphEdgeRelType =
   | "具有饮片"
@@ -86,6 +93,11 @@ export type GraphEdgeRelType =
   | "具有性味"
   | "归于经脉"
   | "治疗病证"
+  | "组成药材"
+  | "使用方剂"
+  | "取用穴位"
+  | "采用治法"
+  | "记载于医案"
   | "相互作用"
   | "相似于"
   | "父类"
@@ -235,6 +247,7 @@ export const labelColorMap: Record<string, string> = {
 // 节点类型 Ant Tag 颜色
 export const labelTagColors: Record<string, string> = {
   药材: "blue",
+  饮片: "blue",
   功效: "green",
   性味: "orange",
   归经: "purple",
@@ -243,8 +256,13 @@ export const labelTagColors: Record<string, string> = {
   品种: "geekblue",
   工艺: "lime",
   性状: "volcano",
+  方剂: "geekblue",
+  医案: "cyan",
+  穴位: "magenta",
+  治法: "volcano",
   时间点: "magenta",
   来源: "default",
+  证据: "default",
 };
 
 export const defaultNodeColor = "#8c8c8c";
@@ -273,6 +291,12 @@ export const nodeStyleMap: Record<
   性状: { fill: "#DA7194", stroke: "#cc3c6c", textColor: "#FFFFFF" },
   时间点: { fill: "#FFC454", stroke: "#d7a013", textColor: "#2A2C34" },
   来源: { fill: "#A5ABB6", stroke: "#8d95a0", textColor: "#FFFFFF" },
+  饮片: { fill: "#69b1ff", stroke: "#1677ff", textColor: "#FFFFFF" },
+  方剂: { fill: "#2f54eb", stroke: "#1d39c4", textColor: "#FFFFFF" },
+  医案: { fill: "#13c2c2", stroke: "#08979c", textColor: "#FFFFFF" },
+  穴位: { fill: "#eb2f96", stroke: "#c41d7f", textColor: "#FFFFFF" },
+  治法: { fill: "#fa541c", stroke: "#d4380d", textColor: "#FFFFFF" },
+  证据: { fill: "#8c8c8c", stroke: "#595959", textColor: "#FFFFFF" },
 };
 
 export const defaultNodeStyle = {
@@ -308,4 +332,9 @@ export const relTypeLabels: Record<string, string> = {
   来源于: "来源于",
   派生自: "派生自",
   由证据支持: "由证据支持",
+  组成药材: "组成药材",
+  使用方剂: "使用方剂",
+  取用穴位: "取用穴位",
+  采用治法: "采用治法",
+  记载于医案: "记载于医案",
 };

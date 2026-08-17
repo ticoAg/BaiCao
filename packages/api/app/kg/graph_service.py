@@ -17,41 +17,8 @@ from ..schemas.graph import GRAPH_QUERY_PROPERTY_KEYS
 from .db import cypher_rows, cypher_single
 from .models import NODE_MODEL_MAP, REL_TYPE_TO_ATTR
 
-QUERY_LABEL_DISPLAY = {
-    NodeType.HERB.value: "药材",
-    NodeType.COMPONENT.value: "成分",
-    NodeType.VARIANT.value: "品种",
-    NodeType.PROCESS.value: "工艺",
-    NodeType.TRAIT.value: "性状",
-    NodeType.EFFICACY.value: "功效",
-    NodeType.FLAVOR.value: "性味",
-    NodeType.MERIDIAN.value: "归经",
-    NodeType.DISEASE.value: "病证",
-    NodeType.TIMEPOINT.value: "时间点",
-}
-QUERY_REL_TYPE_DISPLAY = {
-    EdgeType.CONTAINS.value: EdgeType.CONTAINS.value,
-    EdgeType.EXTRACTED_FROM.value: EdgeType.EXTRACTED_FROM.value,
-    EdgeType.HAS_VARIANT.value: EdgeType.HAS_VARIANT.value,
-    EdgeType.VARIANT_OF.value: EdgeType.VARIANT_OF.value,
-    EdgeType.PROCESSED_BY.value: EdgeType.PROCESSED_BY.value,
-    EdgeType.APPLIES_TO.value: EdgeType.APPLIES_TO.value,
-    EdgeType.STORED_FOR.value: EdgeType.STORED_FOR.value,
-    EdgeType.HAS_TRAIT.value: EdgeType.HAS_TRAIT.value,
-    EdgeType.OBSERVED_IN.value: EdgeType.OBSERVED_IN.value,
-    EdgeType.HAS_EFFICACY.value: EdgeType.HAS_EFFICACY.value,
-    EdgeType.HAS_FLAVOR.value: EdgeType.HAS_FLAVOR.value,
-    EdgeType.ENTERS_MERIDIAN.value: EdgeType.ENTERS_MERIDIAN.value,
-    EdgeType.TREATS.value: EdgeType.TREATS.value,
-    EdgeType.INTERACTS_WITH.value: EdgeType.INTERACTS_WITH.value,
-    EdgeType.SIMILAR_TO.value: EdgeType.SIMILAR_TO.value,
-    EdgeType.PARENT_OF.value: EdgeType.PARENT_OF.value,
-    EdgeType.CHILD_OF.value: EdgeType.CHILD_OF.value,
-    EdgeType.ORIGINATED_FROM.value: EdgeType.ORIGINATED_FROM.value,
-    EdgeType.DERIVED_FROM.value: EdgeType.DERIVED_FROM.value,
-    EdgeType.HAS_PREPARED_FORM.value: EdgeType.HAS_PREPARED_FORM.value,
-    EdgeType.SUPPORTED_BY.value: EdgeType.SUPPORTED_BY.value,
-}
+QUERY_LABEL_DISPLAY = {node_type.value: node_type.value for node_type in NodeType}
+QUERY_REL_TYPE_DISPLAY = {edge_type.value: edge_type.value for edge_type in EdgeType}
 QUERY_STATUS_DISPLAY = {
     NodeStatus.PENDING.value: "待验证",
     NodeStatus.VERIFIED.value: "已验证",

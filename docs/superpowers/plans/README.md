@@ -8,7 +8,7 @@
 
 | 状态 | 文档 | 目标 |
 |------|------|------|
-| **partial** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | 药典 605 + 苏子阳 v3 已入库；catalog/publish CLI 与图消费未收口 |
+| **partial** | [2026-08-16-baicao-knowledge-dataset.md](2026-08-16-baicao-knowledge-dataset.md) | CLI 与查询消费已落地；private HF 实际上传待 Infisical 证书修复 |
 
 设计规格：[../specs/2026-08-16-baicao-knowledge-dataset-design.md](../specs/2026-08-16-baicao-knowledge-dataset-design.md)
 

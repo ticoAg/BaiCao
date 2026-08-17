@@ -35,7 +35,18 @@ RETURN count(r)
 
 期望：`3355`。
 
+## 查询消费
+
+```http
+POST /api/v1/graph/query
+{"node":{"label":"方剂"},"limit":5}
+```
+
+期望：200，节点 `labels` 含 `方剂`。Workbench `/graph` 查询下拉含方剂、医案、穴位、治法；关系下拉含组成药材、使用方剂、取用穴位、采用治法、记载于医案。
+
+契约测试：`packages/api/tests/api/test_graph_routes.py::TestGraphQuery::test_query_graph_accepts_formula_and_case_filters`
+
 ## 证据
 
 - latest stats：`datasets/baicao-knowledge/sources/*/processed/latest/stats.json`（不进 git）
-- HF：`ticoAg/baicao-knowledge`（private）
+- HF：`ticoAg/baicao-knowledge`（private；publish CLI 已就绪，本机实际上传受 Infisical TLS 证书过期阻塞）
