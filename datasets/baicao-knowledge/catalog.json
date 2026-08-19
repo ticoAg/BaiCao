@@ -487,6 +487,36 @@
         "view": "sources/tcmchat-600k/VIEW.md",
         "processed_dir": "sources/tcmchat-600k/processed/latest/"
       }
+    },
+    {
+      "source_id": "national-standard-terms",
+      "title": "国标临床术语与成方制剂",
+      "status": "cleaned_local",
+      "kind": "national_standard_terms",
+      "publish": false,
+      "license_status": "apache-2.0_dataset_filter_brand_and_pii",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "pretrain/train/books/national_standard/{疾病,证候,成方制剂}.txt",
+        "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/national_standard"
+      },
+      "planned": {"unit": "terms_and_formulas", "count": 5219, "records": null},
+      "completed": {
+        "unit": "terms_and_formulas",
+        "count": 5219,
+        "extracted_records": 5219,
+        "extracted_edges": 0,
+        "qualified_name_pairs": 1,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "疾病 1308、证候 2050、成方 1861。痞气两条按父类限定。不重复消费药典。"
+      },
+      "paths": {
+        "source_doc": "sources/national-standard-terms/SOURCE.md",
+        "view": "sources/national-standard-terms/VIEW.md",
+        "processed_dir": "sources/national-standard-terms/processed/latest/"
+      }
     }
   ]
 }

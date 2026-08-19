@@ -771,3 +771,19 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 下一步优先清洗国标术语、成方制剂、教材和去标识医案
 - `data_ingestion`：135 passed
 
+## 21. 2026-08-19 国标术语消歧清洗补充证据
+
+### 本轮范围
+
+- 抽出共用身份门禁 `entity_identity.py`
+- 清洗疾病、证候术语和成方制剂各论
+
+### 结果
+
+- 5,219 records / 0 edges；病证 3,358、方剂 1,861
+- 同名不同码：`痞气（痞病）` 与 `痞气（积聚类病）`
+- 隔离 Neo4j：5219 节点，待验证/scope 错误 0，两条痞气未合并
+- 未解析缺口：疾病 61、成方 759
+- `data_ingestion`：139 passed
+
+

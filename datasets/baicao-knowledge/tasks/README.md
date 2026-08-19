@@ -30,3 +30,5 @@
 | `zybert-pretrain-public-release` | ZY-BERT rar | blocked | 1 source | 0（许可不继承） |
 | `tcmchat-600k-inventory` | TCMChat-600k | done | 61 files | 0 records / 盘点完成 |
 | `tcmchat-600k-public-release` | TCMChat-600k | blocked | 1 source | 0（原文不进 public） |
+| `national-standard-terms-structural-clean` | 国标术语/成方 | done | 5219 | 5219 / 0 edges |
+| `national-standard-terms-public-release` | 国标术语/成方 | blocked | 1 source | 0（原文不进 public） |

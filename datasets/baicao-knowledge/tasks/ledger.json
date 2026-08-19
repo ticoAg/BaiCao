@@ -315,6 +315,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "Apache-2.0 允许使用，但公开面不含医案原文、百科全文和带品牌的说明书。"
+    },
+    {
+      "task_id": "national-standard-terms-structural-clean",
+      "source_id": "national-standard-terms",
+      "status": "done",
+      "unit": "terms_and_formulas",
+      "planned_units": 5219,
+      "completed_units": 5219,
+      "output_records": 5219,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/national-standard-terms/processed/latest/stats.json",
+      "notes": "统一身份门禁。疾病 1308、证候 2050、成方 1861。痞气两条不合并。"
+    },
+    {
+      "task_id": "national-standard-terms-public-release",
+      "source_id": "national-standard-terms",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "公开面只允许后续脱敏结构，不含国标原文。"
     }
   ]
 }

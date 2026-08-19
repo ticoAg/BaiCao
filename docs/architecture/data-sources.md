@@ -43,6 +43,16 @@ audience: developer, data-team
 - 文献作者名、历史医家名保留为来源，不按个人隐私删除。
 - 共现、模型问答和说明书跨度仍不得伪装成已验证临床事实。
 
+### 实体身份门禁
+
+共用实现：`packages/data_ingestion/data_ingestion/entity_identity.py`。
+
+- 合并只允许：同一节点类型 + 规范名一致 + 稳定 ID 一致，且非空属性无冲突
+- 稳定 ID：国标术语用编号，成方用拼音串，其他源沿用各自已核实 ID
+- 禁止用别名、拼音、编辑距离、后缀或 LLM 自动合并
+- 同名不同码保持两个节点，展示名用父类或编号限定
+- 跨类型同名永远是两个节点；导入器按 `名称` MERGE 时，必须先消解同类型冲突
+
 ## 纳入决策
 
 这里回答「这份数据集要不要进白草数据源」。三列必须分开看：
@@ -71,6 +81,7 @@ audience: developer, data-team
 | `BC-12` | SylvanL TCM Pretrain | 是 | 可作抽取候选，不整包入图 | 否 | Card 为 Apache-2.0；内容混杂和串文，必须先过滤再抽 |
 | `BC-13` | ZY-BERT 预训练语料 | 是 | 可本地解压后抽 | 否 | 未单独禁止；不能继承 TCM-SD 条款，解压后仍要滤隐私 |
 | `BC-14` | TCMChat-dataset-600k | 是 | 分子集，见下表 | 否，原文不进 public | 整包 Apache-2.0；此前只登记了药典 |
+| `BC-15` | 国标临床术语与成方 | 是 | 是，仅本地术语/成方节点 | 否 | 统一身份门禁；痞气两条不合并；成方未解析 759 条 |
 
 ### 明确不纳入独立数据源
 
@@ -94,8 +105,8 @@ audience: developer, data-team
 | 子集 | 纳入图谱 | 纳入 public | 原因与过滤 |
 |---|---|---|---|
 | 国标药典（已是 `BC-01`） | 已入 | 仅脱敏结构 | 继续用 train 版；test 版差 100 字节，不用第二份 |
-| 中医临床诊疗术语·疾病 / 证候 | 是，待结构清洗 | 仅术语结构 | 国标术语，去页眉后可入病证 |
-| 中药成方制剂（临床用药须知 2015） | 是，待结构清洗 | 仅结构 | 成方与应用说明；滤出版社与商品名 |
+| 中医临床诊疗术语·疾病 / 证候 | 是，已清洗为 `national-standard-terms` | 仅术语结构 | 3,358 个病证；两条痞气按父类限定，不合并 |
+| 中药成方制剂（临床用药须知 2015） | 是，已清洗 1,861 / 声称 2,620 | 仅结构 | 未解析缺口 759，不补猜 |
 | 教材 7 种 | 是，作证据后再抽 | 否 | `伤寒论.txt` 只有歌诀摘录；`药理学.txt` 偏西药 |
 | 名医验案 18 本 | 是，去标识后作医案 | 否 | 含「汤某女22岁」等姓氏病例；保留医家名 |
 | ChatMed 问答 93 MB | 否作事实 | 否 | 模型生成文本，只抽候选 |
@@ -122,7 +133,8 @@ audience: developer, data-team
 | `BC-11` | [classical-tcm-canon](../../datasets/baicao-knowledge/sources/classical-tcm-canon/SOURCE.md) | 115 部、9,401,166 字 Parquet；0 records / 0 edges | `cleaned_local`；`publish: false` | `license: other` / `proprietary-commercial`；原作公版声明不能覆盖数字整理本 | 标题与 id 唯一，全文隔离 | `blocked` |
 | `BC-12` | [SylvanL TCM Pretrain](../../datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/SOURCE.md) | 177,054 条 `{text}`；0 records / 0 edges | `cleaned_local`；`publish: false` | Card 为 Apache-2.0，但内容混杂且医案文件未持有 | 串文 `source2` index 11949；西药/美容/问答与中药条目并列 | `blocked` |
 | `BC-13` | [ZY-BERT 预训练语料](../../datasets/baicao-knowledge/sources/zybert-pretrain-corpus/SOURCE.md) | RAR 218 MB，成员 1 个约 821 MB TXT；0 records / 0 edges | `cleaned_local`；`publish: false` | 许可不继承 TCM-SD；Dropbox 包未单独授权 | 只清单不解压 | `blocked` |
-| `BC-14` | [TCMChat-dataset-600k](../../datasets/baicao-knowledge/sources/tcmchat-600k/SOURCE.md) | 61 文件 / 1.57 GB；0 整包 records | `cleaned_local`；`publish: false` | Apache-2.0；公开面不含原文 | 药典已入图；国标术语/成方/教材/医案待按子集清洗并去标识 | `conditional` |
+| `BC-14` | [TCMChat-dataset-600k](../../datasets/baicao-knowledge/sources/tcmchat-600k/SOURCE.md) | 61 文件 / 1.57 GB；0 整包 records | `cleaned_local`；`publish: false` | Apache-2.0；公开面不含原文 | 药典已入图；国标术语/成方已分源清洗；教材/医案仍待去标识 | `conditional` |
+| `BC-15` | [国标临床术语与成方](../../datasets/baicao-knowledge/sources/national-standard-terms/SOURCE.md) | 5,219 records / 0 edges | `cleaned_local`；`publish: false` | Apache-2.0；滤批准文号 | 病证 3,358、方剂 1,861；痞气两条按父类限定 | `conditional` |
 
 当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-14` 尚未触发远端重发。
 
