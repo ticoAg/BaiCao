@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-03 DragonTCM`）
+**Status:** active（当前源：`CAND-04 TCM-MKG`）
 
 ## 全局门禁
 
@@ -123,7 +123,7 @@ status: active
 
 提交证据：`4c87231 feat: clean tcm-db source`
 
-## 当前源：CAND-03 DragonTCM
+## 已完成源：CAND-03 DragonTCM
 
 ### 已确认事实
 
@@ -143,7 +143,7 @@ status: active
 - [x] 生成本地 records/stats/质量报告，并按许可与来源链结论设置发布门禁
 - [x] 运行 importer dry-run 与隔离 Neo4j smoke
 - [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
-- [ ] 独立提交 `CAND-03`，再把当前源切换为 `CAND-04`
+- [x] 独立提交 `CAND-03`，再把当前源切换为 `CAND-04`
 
 ### 当前实现证据
 
@@ -163,6 +163,38 @@ status: active
 - formula 的 syndromes/actions/treats、condition 的 nested pattern 和 condition-to-formula `treats` 未提升为图事实，等待图模型契约和医学证据共同确认。
 - AI 自动解析的组成、剂量、适应证、禁忌和关系需抽样回到原始来源；未经专家确认的医学内容保持 `pending`。
 - 许可不足以支持 public 再发布；本地清洗结果和逐条派生关系不得进入 public dataset。
+
+提交证据：`713fe46 feat: clean DragonTCM source`
+
+## 当前源：CAND-04 TCM-MKG
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-MKG/`，持有 D1-D24、SD1、开放文档 PDF 和 369,912 行 `original_kg/nodes.tsv`。
+- 48,849,793 行、约 5.64 GB 的 `original_kg/edges.tsv` 未下载；当前不得把完整图边写成已持有或已验证事实。
+- Hugging Face Dataset Card 声明它是 Zenodo TCM-MKG V1.0 的格式转换与再分发，标记 `CC-BY-4.0`，并要求引用原作者和 DOI `10.5281/zenodo.13763953`。
+- 数据跨越中医术语、中成药、饮片、药性、天然产物、靶点、疾病本体和预测关系；当前项目优先审计 D1-D7 的中医药主域实体及显式关系。
+
+### Tasks
+
+- [ ] 用 AnySearch、Zenodo、Hugging Face 和各本体官方条款核实许可、署名与再分发边界
+- [ ] 完成三路 Grok 许可、关系契约与实体消歧独立审查
+- [ ] 审计 D1-D24、SD1 和 nodes.tsv 的 schema、行数、空值、重复、ID 与跨表端点
+- [ ] 限定 BaiCao 主域子图，区分源事实、标准本体映射、距离关系和 SD1 预测关系
+- [ ] 决定中成药/方剂、饮片/药材、疾病/症状/证候及中英文名称的实体合并门禁
+- [ ] 实现来源专用只读 parser/CLI，只消费许可与语义边界明确的主域表
+- [ ] 为 schema、ID 连接、关系方向、预测关系排除和跨类型不合并补最小测试
+- [ ] 生成本地 records/stats/质量报告，并按上游权利链结论设置发布门禁
+- [ ] 运行 importer dry-run 与隔离 Neo4j smoke
+- [ ] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
+- [ ] 独立提交 `CAND-04`，再把当前源切换为 `CAND-05`
+
+### 当前风险
+
+- Dataset Card 的 `CC-BY-4.0` 不能自动替代 ICD-11、MeSH、DOID、蛋白互作库等上游资源的独立条款；许可链未闭合前保持 `publish: false`。
+- D5/D18-D24 的疾病映射和 D11-D17 的化学/靶点标识可能是外部本体对齐，不等于中医临床治疗或因果事实。
+- SD1 明确是 predicted links，不得与 D1-D24 的来源表事实混合，也不得进入默认临床知识图。
+- 中成药、方剂、饮片、药材、病名、证候和症状必须按源类型与稳定 ID 区分；名称近似或跨语言 alias 不触发自动合并。
 
 ## Verification
 
