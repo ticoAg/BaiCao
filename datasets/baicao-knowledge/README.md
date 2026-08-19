@@ -51,7 +51,7 @@ configs:
 | `zybert-pretrain-corpus` | cleaned_local | 0 records / 0 edges | 只清单不解压，`publish: false` |
 | `tcmchat-600k` | cleaned_local | 0 整包 records | Apache-2.0 整包盘点；除药典外待按子集清洗，`publish: false` |
 | `national-standard-terms` | cleaned_local | 5219 records / 0 edges | 国标疾病/证候/成方；痞气两条不合并，`publish: false` |
-| `tcmchat-medical-cases` | staged_local | 461 units / 0 records | 已去标识切分，待 agent accept，`publish: false` |
+| `tcmchat-medical-cases` | cleaned_local | 3989 records | 去姓氏留性别年龄；医案+词表提及，`publish: false` |
 
 ## Neo4j 筛选
 

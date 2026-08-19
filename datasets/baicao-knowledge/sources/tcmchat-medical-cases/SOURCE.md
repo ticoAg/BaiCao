@@ -4,28 +4,20 @@
 
 - `source_id`: `tcmchat-medical-cases`
 - 载体：`pretrain/train/books/medical_case/` 18 本 TXT
-- 状态：已 `prepare`，等待 agent 抽取后 `accept`
+- 状态：`cleaned_local`（规则层已出图记录，agent 仍可补抽）
 - `publish: false`
 
-## 协作方式
+## 过滤
 
-```text
-规则切分/去标识
-  -> agent_queue.jsonl
-  -> agent 按 ExtractionCandidate 抽取
-  -> organize accept（身份门禁 + 品牌隔离）
-  -> records.jsonl
-  -> importer / Neo4j
-```
+去掉姓氏（`汤某` → `患者`），**保留性别和年龄**（`女22岁`、`男40岁`）。电话、证件、住院号、国药准字仍过滤。
 
-命令：
+## 协作
 
-```bash
-cd packages/data_ingestion
-uv run python -m data_ingestion.cli.organize prepare
-uv run python -m data_ingestion.cli.organize accept --extractions <agent.jsonl>
-```
+规则：切分 461 案，写入医案节点，并用国标词表做最长匹配。
+agent：继续从 `agent_queue.jsonl` 补药材/治法等规则没抓住的项，经 `organize accept` 入图。
 
-规则层已切出 461 个去标识单元。姓氏+年龄已替换为「患者」。agent 只允许输出病证、方剂、药材、治法，不得回写姓名或商品名。
+## 本轮产量
 
-本轮尚未执行 accept，图记录为 0。
+- 医案 461，其中 113 案解析到性别
+- 病证提及 3,189，方剂提及 339
+- 合计 3,989 records；提及边为 `记载于医案`

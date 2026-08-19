@@ -344,10 +344,10 @@
       "unit": "case_units",
       "planned_units": 461,
       "completed_units": 461,
-      "output_records": 0,
-      "output_edges": 0,
+      "output_records": 3989,
+      "output_edges": 3528,
       "evidence": "datasets/baicao-knowledge/sources/tcmchat-medical-cases/processed/latest/stats.json",
-      "notes": "规则切分并去标识。等待 agent 抽取后 accept。"
+      "notes": "去姓氏、留性别年龄。461 医案，词表提及病证 3189、方剂 339。"
     },
     {
       "task_id": "tcmchat-cases-accept",

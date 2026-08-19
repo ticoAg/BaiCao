@@ -521,7 +521,7 @@
     {
       "source_id": "tcmchat-medical-cases",
       "title": "TCMChat 名医验案",
-      "status": "staged_local",
+      "status": "cleaned_local",
       "kind": "agent_organized_medical_cases",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -535,11 +535,11 @@
       "completed": {
         "unit": "case_units",
         "count": 461,
-        "extracted_records": 0,
-        "extracted_edges": 0,
+        "extracted_records": 3989,
+        "extracted_edges": 3528,
         "count_is_estimate": false,
         "as_of": "2026-08-19",
-        "note": "规则已切分并去标识。等待 agent 抽取后经 identity accept 入图。"
+        "note": "去姓氏、留性别年龄。医案 461 + 国标词表提及。agent 仍可补抽。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-medical-cases/SOURCE.md",

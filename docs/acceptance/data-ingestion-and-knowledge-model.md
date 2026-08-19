@@ -799,5 +799,13 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 本轮未跑 LLM，图记录仍为 0
 - `data_ingestion`：142 passed
 
+## 23. 2026-08-19 验案保留性别年龄并规则入图
+
+- 姓氏替换为患者，保留 `女22岁` / `男40岁`
+- 461 医案 + 3189 病证提及 + 339 方剂提及 = 3989 records
+- 113 案解析到性别；importer dry-run 3989
+- `data_ingestion`：143 passed；`knowledge_model`：28 passed
+
+
 
 
