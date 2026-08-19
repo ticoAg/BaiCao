@@ -13,7 +13,7 @@ audience: developer, data-team
 
 # BaiCao 数据源与质量校验清单
 
-截至 2026-08-19，BaiCao 有 5 个正式登记源、8 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
+截至 2026-08-19，BaiCao 有 6 个正式登记源、7 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
 
 本文档是逐源质量校验的单一入口，不替代以下事实真源：
 
@@ -43,8 +43,9 @@ audience: developer, data-team
 | `BC-03` | [fengxi177/Knowlegde_Graph_TCM](../../datasets/baicao-knowledge/sources/fengxi177-knowledge-graph-tcm/SOURCE.md) | 19,923 条原始关系；4,996 records / 11,445 edges | `cleaned_local`；`publish: false` | 上游无 LICENSE，状态为 `unlicensed_upstream`；禁止公开逐条派生关系 | 结构校验通过；737 条组成无可绑定剂量；存在疑似截断词、剂量混入药名和一对多别名；全部保持 `pending` | `blocked` |
 | `BC-04` | [ShenNong TCM-KG](../../datasets/baicao-knowledge/sources/shennong-tcm-kg/SOURCE.md) | 123,358 条原始三元组；19,066 records / 52,247 edges | `cleaned_local`；`publish: false` | 两个上游仓库均无许可证文件；ShenNong README 限定仅供学术研究、禁止商业用途；无充分再发布授权 | 中药/治法/证候只保留中性关联；化学关系 67,481 条排除；`TS_MS` 245 条、功能冲突 337 条隔离；3,278 个来源标注证候，12,687 个未分类临床概念 | `blocked` |
 | `BC-05` | [tcm-db](../../datasets/baicao-knowledge/sources/tcm-db/SOURCE.md) | 1,746 个主域实体行、655 条显式关系；1,715 records / 654 edges | `cleaned_local`；`publish: false` | 混合数据库仅 1 个上游核实为 MulanPSL-2.0，其余来源缺少明确再发布许可 | 29 个异常方剂、2 条冲突白芷和 1 条同名跨类型边隔离；症状/证候保持独立，逐边保留表行定位 | `blocked` |
+| `BC-06` | [DragonTCM](../../datasets/baicao-knowledge/sources/dragontcm/SOURCE.md) | 4,743 个实体行、28,735 条源关系；11,598 records / 46,666 edges | `cleaned_local`；`publish: false` | `CC-BY-NC-4.0` 非商业限制；American Dragon、书籍和 SNOMED CT 的完整上游权利链未闭合 | 仅 803 个 disorder 映射病证；316 个非 disorder 和 11,930 条不安全关系隔离；中英文 alias 不自动合并 | `blocked` |
 
-当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04`、`BC-05` 尚未触发远端重发，后续即使重发也只允许发布元数据。
+当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-06` 尚未触发远端重发，后续即使重发也只允许发布元数据。
 
 ## 本地候选源
 
@@ -52,7 +53,6 @@ audience: developer, data-team
 
 | ID | 数据源与上游 | 本地载体与规模 | 许可状态 | 已知质量风险 | 建议用途 | 审阅结论 |
 |---|---|---|---|---|---|---|
-| `CAND-03` | [DragonTCM](https://huggingface.co/datasets/f-galkin/DragonTCM) | `tmp/qibo-datasets/DragonTCM/`；1,044 herbs、2,580 formulas、1,119 conditions、约 28,000 edges | `CC-BY-NC-4.0`，非商业限制；并入 public 数据集前需确认兼容性 | 英文实体为主；中文名映射、关系方向、重复实体和来源证据尚未校验 | 方剂组成、适应证、禁忌；适合跨语言对齐后补图 | `pending` |
 | `CAND-04` | [TCM-MKG](https://huggingface.co/datasets/JX-Lab/TCM-MKG) | `tmp/qibo-datasets/TCM-MKG/`；D1-D24、SD1、约 37 万节点；未下载 4,884 万条完整边 | `CC-BY-4.0`，需保留署名和版本信息 | 规模大、跨本体；成药、饮片、疾病和化学实体需限定子图；ID 映射和预测关系不可混同事实关系 | 优先取 D3-D7 的成药、饮片、疾病与药性关系 | `pending` |
 | `CAND-05` | [TCM-SD / ZY-BERT](https://github.com/Borororo/ZY-BERT) | `tmp/qibo-datasets/TCM-SD/`；train 43,180、dev 5,486、test 5,486；148 个证候 | `CC-BY-NC-SA-4.0`；非商业和相同方式共享限制 | 临床文本需检查去标识化；病名到证候标签不等于因果关系；训练、开发、测试集不可重复汇总 | 疾病到证候的标注关系，以及证候抽取评测 | `pending` |
 | `CAND-06` | [TCM-NER DeepNER 镜像](https://github.com/z814081807/DeepNER) | `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`；850 篇训练说明书及 dev/test/stack JSON | `unverified`；官方天池/OpenKG 原包未取得，镜像数据许可链需复核 | NER 标签只证明文本跨度，不证明实体间关系；`stack.json` 可能与 train/dev/test 重复；镜像与官方版本一致性未知 | 抽取器训练和实体覆盖校验，不直接作为图谱事实源 | `pending` |
@@ -93,7 +93,7 @@ audience: developer, data-team
 |---|---|---|
 | P0 | `BC-01`、`BC-02` | 已公开，优先确认语义正确率、许可说明和脱敏边界 |
 | P0 | `BC-03`、`BC-04` | 已完成结构清洗，确认是否值得继续争取授权或只保留本地 |
-| P1 | `CAND-03` | 验证跨语言方剂、适应证和组成关系 |
+| P1 | `BC-06` | 专家抽检跨语言药材/方剂、condition 分类和临床表现投影 |
 | P2 | `CAND-04`、`CAND-05` | 分别验证跨本体大图和疾病-证候标签 |
 | P3 | `CAND-06` 至 `CAND-10` | 用于抽取器或原文证据，处理成本和许可不确定性更高 |
 
@@ -136,7 +136,7 @@ audience: developer, data-team
 | `BC-03` | 待填写 | 待填写 | 无许可证 | 已自动验证 | 待校验 | `blocked` | 737 条组成无剂量及异常词 |
 | `BC-04` | 待填写 | 待填写 | 仅限学术研究、无再发布许可 | 已自动验证 | 待校验 | `blocked` | 3,278 个来源标注证候、245 条跨语言映射、337 条功能冲突和 12,687 个未分类临床概念待人工复核 |
 | `BC-05` | 待填写 | 待填写 | 混合上游许可不完整 | 已自动验证 | 待校验 | `blocked` | 29 个异常方剂、冲突白芷和 3 组症状/证候跨类型同名待人工复核 |
-| `CAND-03` | 待填写 | 待填写 | CC-BY-NC-4.0 | 待校验 | 待校验 | `pending` | |
+| `BC-06` | 待填写 | 待填写 | CC-BY-NC-4.0；上游权利链未闭合 | 已自动验证 | 待校验 | `blocked` | 316 个非 disorder、11,930 条隔离关系、7,194 个临床表现和 20 组跨类型同名待人工复核 |
 | `CAND-04` | 待填写 | 待填写 | CC-BY-4.0 | 待校验 | 待校验 | `pending` | |
 | `CAND-05` | 待填写 | 待填写 | CC-BY-NC-SA-4.0 | 待校验 | 待校验 | `pending` | |
 | `CAND-06` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
@@ -159,3 +159,6 @@ audience: developer, data-team
 8. [WHO ICD-11 Traditional Medicine FAQ](https://www.who.int/standards/classifications/frequently-asked-questions/traditional-medicine)
 9. [tcm-db](https://github.com/xiaogege6697/tcm-db)
 10. [原发性乳腺癌规范化诊疗指南](https://www.nhc.gov.cn/ewebeditor/uploadfile/2013/07/20130725152900765.pdf)
+11. [DragonTCM](https://huggingface.co/datasets/f-galkin/DragonTCM)
+12. [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
+13. [SNOMED CT licensing](https://docs.snomed.org/snomed-ct-practical-guides/snomed-nrc-guide/the-role-of-nrcs-related-to-snomed-ct-licensing)

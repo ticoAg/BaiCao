@@ -191,6 +191,41 @@
         "view": "sources/tcm-db/VIEW.md",
         "processed_dir": "sources/tcm-db/processed/latest/"
       }
+    },
+    {
+      "source_id": "dragontcm",
+      "title": "DragonTCM",
+      "status": "cleaned_local",
+      "kind": "structured_tcm_database",
+      "publish": false,
+      "license_status": "restricted_noncommercial_upstream_rights_unverified",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "f-galkin/DragonTCM",
+        "file_path": "herbs + formulas + conditions + relations Parquet",
+        "import_scope_key": "huggingface:f-galkin/DragonTCM@57e19c6bb7aaf62feacbba97aa84d9baecd05582"
+      },
+      "planned": {
+        "unit": "entity_rows",
+        "count": 4743,
+        "records": null
+      },
+      "completed": {
+        "unit": "entity_rows",
+        "count": 4743,
+        "extracted_records": 11598,
+        "extracted_edges": 46666,
+        "quarantined_condition_rows": 316,
+        "quarantined_relations": 11930,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "只接受 SNOMED disorder 为病证；condition-herb treats 降级为中性关联，condition-formula treats 隔离；clinical manifestations 仅作可追溯关联症状。CC-BY-NC-4.0 且上游权利链未闭合，禁止进入 public Parquet。"
+      },
+      "paths": {
+        "source_doc": "sources/dragontcm/SOURCE.md",
+        "view": "sources/dragontcm/VIEW.md",
+        "processed_dir": "sources/dragontcm/processed/latest/"
+      }
     }
   ]
 }

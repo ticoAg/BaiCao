@@ -26,6 +26,7 @@ def test_property_and_status_are_chinese():
     assert props["状态"] == "待验证"
     assert props["导入源"] == "道医苏子阳"
     assert props["导入范围键"] == "人工:白草知识:道医苏子阳"
+    assert to_graph_properties({"snomed_id": "123456"})["SNOMED 标识"] == "123456"
     assert to_graph_properties({"storage_text": "置于燥处"})["贮藏"] == "置干燥处。"
 
 

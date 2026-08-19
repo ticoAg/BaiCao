@@ -41,6 +41,7 @@ configs:
 | `fengxi177-knowledge-graph-tcm` | cleaned_local | 4996 / 19923 条关系 | 仅本地 records；上游无许可证，`publish: false` |
 | `shennong-tcm-kg` | cleaned_local | 19066 / 123358 条三元组 | 仅本地 records；许可限制，`publish: false` |
 | `tcm-db` | cleaned_local | 1715 records / 654 edges | 仅本地 records；混合上游许可不完整，`publish: false` |
+| `dragontcm` | cleaned_local | 11598 records / 46666 edges | 仅本地 records；非商业限制且上游权利链未闭合，`publish: false` |
 
 ## Neo4j 筛选
 

@@ -50,6 +50,7 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "location": ["干燥根茎"],
             "quantity": ["3～10g"],
             "toxicity": ["有毒"],
+            "snomed_id": "123456",
             "note": "drop me",
         },
         edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "junk": 1})],
@@ -68,6 +69,7 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
         "location": ["干燥根茎"],
         "quantity": ["3～10g"],
         "toxicity": ["有毒"],
+        "snomed_id": "123456",
     }
     assert slim.edges[0].properties == {"dosage": "4g"}
 

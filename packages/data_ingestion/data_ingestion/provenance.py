@@ -62,6 +62,7 @@ GRAPH_NODE_PROPS = {
     "file_path",
     "entry_title",
     "evidence_id",
+    "snomed_id",
 }
 GRAPH_EDGE_PROPS = {"dosage", "evidence_ref"}
 PROTECTED_EXISTING_PROPS = {

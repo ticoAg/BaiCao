@@ -490,3 +490,64 @@ changed-file Ruff: passed
 - 混合数据库只有一个上游核实为 MulanPSL-2.0，其余来源缺少明确再发布许可；固定 `publish:false`
 - 方剂组成关系没有剂量，角色全为“未知”；不补造剂量或君臣佐使
 - 医学语义仍需专家抽样，当前只证明结构、方向、隔离和溯源门禁成立
+
+## 14. 2026-08-19 DragonTCM 保守清洗补充证据
+
+### 本轮范围
+
+- 严格校验 herbs、formulas、conditions、relations 四个 Parquet 的 schema 和嵌套 JSON 类型
+- 仅将来源标记为 SNOMED `disorder` 的 condition 映射为病证；其他语义类型显式隔离
+- 同类型只合并确定性表面重复；中文 alias、跨语言候选和跨类型同名不参与自动合并
+- `contains` 映射为组成药材；condition-herb `treats` 降级为中性关联药材；condition-formula `treats` 隔离
+- disorder 的 clinical manifestations 投影为关联症状，并保留原始嵌套 JSON、pattern 和逐项证据定位
+
+### 结构与隔离结果
+
+- 输入：4,743 个实体行、28,735 条显式关系
+- 输出：11,598 节点记录、46,666 条关系
+- 节点：药材 1,027、方剂 2,574、病证 803、症状/临床表现 7,194
+- 关系：组成药材 14,608、关联药材 2,197、关联症状 29,861
+- condition 隔离：316 行；关系隔离：被隔离端点 5,576、condition-to-formula 6,354
+- manifestation 隔离：截断 45、空 2、缺失 list 3、非 list 1；重复病证/症状边折叠 7,281
+- 同名门禁：药材 17 组和方剂 6 组无冲突表面重复合并；1 组药材属性冲突、20 组 herb/formula 跨类型同名保持独立
+
+### 隔离 Neo4j smoke
+
+使用无持久卷 `neo4j:5-community` 临时容器，未连接或修改现有图库。导入结果：
+
+```text
+created=11598
+edges=46666
+nodes=11598
+relationships=46666
+```
+
+Cypher 语义校验：
+
+- `组成药材=14,608`、`关联药材=2,197`、`关联症状=29,861`
+- 三类关系 source/target 类型错误均为 0
+- 关系缺失 `证据定位=0`
+- 节点/边 scope 缺失或错误均为 0
+- 同标签同名重复为 0，非 `pending` 状态为 0
+- SNOMED 病证节点 227，herb/formula 跨类型同名 20 组
+- `FUSHI` / `FU SHI` 保持两个独立药材节点
+- `治疗病证`、`使用方剂`、`关联证候` 均为 0
+
+验证后临时容器已停止并自动删除。
+
+### 回归证据
+
+```text
+data_ingestion: 108 passed
+knowledge_model: 28 passed
+API non-integration: 293 passed, 4 deselected
+importer dry-run: 11598 records / 46666 edges
+changed-file Ruff: passed
+changed-file ty: passed
+```
+
+### 结论与边界
+
+- 结果：结构清洗、实体消歧和隔离入图 `pass`；全部医学内容继续为 `pending`
+- clinical manifestations 可能同时包含症状与体征，当前只表达来源中性关联，不是因果、诊断标准或已验证分类
+- Dataset Card 为 `CC-BY-NC-4.0`，且 American Dragon、书籍和 SNOMED CT 的完整上游权利链未闭合；固定 `publish:false`

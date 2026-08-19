@@ -134,23 +134,35 @@ status: active
 
 ### Tasks
 
-- [ ] 用 AnySearch、Hugging Face 官方页面和上游一手来源核实许可、署名及再利用边界
-- [ ] 完成三路 Grok 许可、关系契约与实体消歧独立审查
-- [ ] 审计四个 Parquet 的 schema、空值、重复、端点完整性、关系类型和方向
-- [ ] 决定中英文实体、SNOMED 声称、condition/症状/证候边界和同名实体的合并门禁
-- [ ] 实现来源专用只读 parser/CLI，只提升有原始显式边支撑且符合共享图模型的事实
-- [ ] 为 schema 门禁、关系方向、跨语言不自动合并和隔离统计补最小测试
-- [ ] 生成本地 records/stats/质量报告，并按许可与来源链结论设置发布门禁
-- [ ] 运行 importer dry-run 与隔离 Neo4j smoke
-- [ ] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
+- [x] 用 AnySearch、Hugging Face 官方页面和上游一手来源核实许可、署名及再利用边界
+- [x] 完成三路 Grok 许可、关系契约与实体消歧独立审查
+- [x] 审计四个 Parquet 的 schema、空值、重复、端点完整性、关系类型和方向
+- [x] 决定中英文实体、SNOMED 声称、condition/症状/证候边界和同名实体的合并门禁
+- [x] 实现来源专用只读 parser/CLI，只提升有原始显式边支撑且符合共享图模型的事实
+- [x] 为 schema 门禁、关系方向、跨语言不自动合并和隔离统计补最小测试
+- [x] 生成本地 records/stats/质量报告，并按许可与来源链结论设置发布门禁
+- [x] 运行 importer dry-run 与隔离 Neo4j smoke
+- [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
 - [ ] 独立提交 `CAND-03`，再把当前源切换为 `CAND-04`
 
-### 当前风险
+### 当前实现证据
 
-- `CC-BY-NC-4.0` 禁止商业使用；Dataset Card 的许可声明是否覆盖 American Dragon 网站和书籍的完整派生内容仍需核实。
-- 英文名称、拼音、中文名和同义词不能仅凭字符串近似自动合并；没有标准标识或可信来源支撑时保持独立并进入待审。
-- condition、disease、TCM syndrome 和 symptom 可能混放；仅按字段名或 edge label 提升为疾病、证候、症状或治疗事实会造成临床语义错误。
+- 输出：11,598 records / 46,666 edges；药材 1,027、方剂 2,574、病证 803、症状/临床表现 7,194
+- 显式/中性关系：`组成药材=14,608`、`关联药材=2,197`、`关联症状=29,861`；`治疗病证=0`
+- condition 门禁：仅 803 个 disorder 入图；257 finding、40 morphologic abnormality、12 observable entity、4 qualifier value、2 procedure 和 1 个无合法标签行隔离
+- SNOMED：入图病证 227 个有合法 ID，576 个无 ID；无 ID 不生成、不猜测
+- 合并门禁：药材 17 组、方剂 6 组无冲突表面重复合并；`FUSHI` / `FU SHI` 冲突组和 20 个 herb/formula 跨类型同名保持独立
+- 隔离：被隔离 condition 端点关系 5,576，condition 到 formula 关系 6,354，坏或截断 manifestation 51；重复病证/症状边折叠 7,281
+- 入图验收：11,598 节点 / 46,666 边；端点类型、证据定位、scope、同标签重复和状态错误均为 0
+- 发布门禁：Dataset Card 为 `CC-BY-NC-4.0`，但上游网站、书籍和 SNOMED CT 权利链未闭合，固定 `publish: false`
+
+### CAND-03 残余风险
+
+- clinical manifestations 可能混合患者症状与临床体征；当前只保留中性 `关联症状` 和逐项证据定位，仍需专家抽检。
+- 20 组跨类型同名和大量中英文 aliases 尚未做标准标识对齐；没有可信来源前不得跨类型或跨语言自动合并。
+- formula 的 syndromes/actions/treats、condition 的 nested pattern 和 condition-to-formula `treats` 未提升为图事实，等待图模型契约和医学证据共同确认。
 - AI 自动解析的组成、剂量、适应证、禁忌和关系需抽样回到原始来源；未经专家确认的医学内容保持 `pending`。
+- 许可不足以支持 public 再发布；本地清洗结果和逐条派生关系不得进入 public dataset。
 
 ## Verification
 

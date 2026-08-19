@@ -54,6 +54,7 @@ PROPERTY_EN_TO_ZH: dict[str, str] = {
     "file_path": "文件路径",
     "entry_title": "条目标题",
     "evidence_id": "证据标识",
+    "snomed_id": "SNOMED 标识",
     "line_start": "起始行",
     "line_end": "结束行",
     "imported_at": "导入时间",

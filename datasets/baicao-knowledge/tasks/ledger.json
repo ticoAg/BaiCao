@@ -126,6 +126,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "混合数据库中仅一个上游核实为 MulanPSL-2.0，其余来源缺少明确再发布许可；保持 publish=false，未进入 public Parquet。"
+    },
+    {
+      "task_id": "dragontcm-structural-clean",
+      "source_id": "dragontcm",
+      "status": "done",
+      "unit": "entity_rows",
+      "planned_units": 4743,
+      "completed_units": 4743,
+      "output_records": 11598,
+      "output_edges": 46666,
+      "evidence": "datasets/baicao-knowledge/sources/dragontcm/processed/latest/stats.json",
+      "notes": "严格校验四个 Parquet 和嵌套 JSON；只接受 803 个 disorder，其他 316 个 condition 隔离。组成药材 14608、关联药材 2197、关联症状 29861；不生成治疗病证。"
+    },
+    {
+      "task_id": "dragontcm-public-release",
+      "source_id": "dragontcm",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "Dataset Card 为 CC-BY-NC-4.0，且 American Dragon、书籍与 SNOMED CT 的完整上游权利链未闭合；保持 publish=false，未进入 public Parquet。"
     }
   ]
 }
