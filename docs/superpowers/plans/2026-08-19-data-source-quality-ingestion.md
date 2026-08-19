@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-02 tcm-db`）
+**Status:** active（当前源：`CAND-03 DragonTCM`）
 
 ## 全局门禁
 
@@ -35,7 +35,7 @@ status: active
 
 每个源固定执行：`许可确认 -> 契约映射 -> 消歧门禁 -> 清洗 -> 测试 -> Neo4j smoke -> 质量结论 -> 独立提交`。
 
-## 当前源：CAND-01 ShenNong TCM-KG
+## 已完成源：CAND-01 ShenNong TCM-KG
 
 ### 已确认事实
 
@@ -74,7 +74,7 @@ status: active
 - `TS_MS` 和功能/临床冲突已隔离但尚未人工逐条复核，不参与当前图谱合并。
 - 许可不足以支持再发布；本地清洗结果和逐条派生关系不得进入 public dataset。
 
-## 当前源：CAND-02 tcm-db
+## 已完成源：CAND-02 tcm-db
 
 ### 已确认事实
 
@@ -95,7 +95,7 @@ status: active
 - [x] 生成本地 records/stats/质量报告，固定 `publish: false`
 - [x] 运行 importer dry-run 与隔离 Neo4j smoke
 - [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
-- [ ] 独立提交 `CAND-02`，再把当前源切换为 `CAND-03`
+- [x] 独立提交 `CAND-02`，再把当前源切换为 `CAND-03`
 
 ### 当前实现证据
 
@@ -120,6 +120,37 @@ status: active
 - `indication`、`composition`、`representative_formulas` 和 `related_*` 是长文本或列表字段，不得直接提升为治疗、组成、诊断或因果关系。
 - `formula_herbs` 的 dosage 全空、role 全为“未知”；关系可保留成员事实，但不能伪造剂量或君臣佐使。
 - 临床医案存在来源身份键问题且不在本轮中医药/疾病/症状显式关系范围内，保持排除。
+
+提交证据：`4c87231 feat: clean tcm-db source`
+
+## 当前源：CAND-03 DragonTCM
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/DragonTCM/`，包含 herbs、formulas、conditions、relations 四个 Parquet 配置和一个上游 connector 快照。
+- Dataset Card 标注 1,044 herbs、2,580 formulas、1,119 conditions、28,735 relations，许可声明为 `CC-BY-NC-4.0`。
+- 数据以英文为主，Dataset Card 声明来源为 American Dragon 网站和 Joel Penner 的著作，并明确说明结构化过程由 AI agents 自动完成、可能不准确。
+- Dataset Card 声称 conditions 映射 SNOMED disease ontology，但公开 schema 没有独立标准标识字段，必须从实际内容核实，不能按声明自动接受对齐。
+
+### Tasks
+
+- [ ] 用 AnySearch、Hugging Face 官方页面和上游一手来源核实许可、署名及再利用边界
+- [ ] 完成三路 Grok 许可、关系契约与实体消歧独立审查
+- [ ] 审计四个 Parquet 的 schema、空值、重复、端点完整性、关系类型和方向
+- [ ] 决定中英文实体、SNOMED 声称、condition/症状/证候边界和同名实体的合并门禁
+- [ ] 实现来源专用只读 parser/CLI，只提升有原始显式边支撑且符合共享图模型的事实
+- [ ] 为 schema 门禁、关系方向、跨语言不自动合并和隔离统计补最小测试
+- [ ] 生成本地 records/stats/质量报告，并按许可与来源链结论设置发布门禁
+- [ ] 运行 importer dry-run 与隔离 Neo4j smoke
+- [ ] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
+- [ ] 独立提交 `CAND-03`，再把当前源切换为 `CAND-04`
+
+### 当前风险
+
+- `CC-BY-NC-4.0` 禁止商业使用；Dataset Card 的许可声明是否覆盖 American Dragon 网站和书籍的完整派生内容仍需核实。
+- 英文名称、拼音、中文名和同义词不能仅凭字符串近似自动合并；没有标准标识或可信来源支撑时保持独立并进入待审。
+- condition、disease、TCM syndrome 和 symptom 可能混放；仅按字段名或 edge label 提升为疾病、证候、症状或治疗事实会造成临床语义错误。
+- AI 自动解析的组成、剂量、适应证、禁忌和关系需抽样回到原始来源；未经专家确认的医学内容保持 `pending`。
 
 ## Verification
 
