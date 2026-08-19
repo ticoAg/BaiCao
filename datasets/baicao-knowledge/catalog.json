@@ -262,6 +262,41 @@
         "view": "sources/tcm-mkg/VIEW.md",
         "processed_dir": "sources/tcm-mkg/processed/latest/"
       }
+    },
+    {
+      "source_id": "tcm-sd",
+      "title": "TCM-SD / ZY-BERT",
+      "status": "cleaned_local",
+      "kind": "syndrome_differentiation_benchmark",
+      "publish": false,
+      "license_status": "cc_by_nc_sa_4_0_dataset_mit_code_residual_phi",
+      "filter": {
+        "source_provider": "github",
+        "dataset_name": "Borororo/ZY-BERT",
+        "file_path": "TCM-SD/syndrome_vocab.txt",
+        "import_scope_key": "github:Borororo/ZY-BERT:TCM-SD"
+      },
+      "planned": {
+        "unit": "labeled_rows",
+        "count": 54152,
+        "records": null
+      },
+      "completed": {
+        "unit": "labeled_rows",
+        "count": 54152,
+        "extracted_records": 148,
+        "extracted_edges": 0,
+        "unique_syndrome_labels": 148,
+        "quarantined_case_pairs": 2023,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "只提升 148 个证候术语。病例原文、病名节点、病-证共现和知识库定义全部隔离。CC-BY-NC-SA-4.0 且存在残留病历标识，禁止进入 public Parquet。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-sd/SOURCE.md",
+        "view": "sources/tcm-sd/VIEW.md",
+        "processed_dir": "sources/tcm-sd/processed/latest/"
+      }
     }
   ]
 }

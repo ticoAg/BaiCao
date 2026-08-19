@@ -16,3 +16,5 @@
 | `daoyi-suyang-extract-wave-1` | 道医苏子阳 | planned | 切段后定抽取单元 | 0 |
 | `fengxi177-tcm-kg-structural-clean` | Knowlegde_Graph_TCM | done | 19923 relations | 19923 / 4996 records |
 | `fengxi177-tcm-kg-public-release` | Knowlegde_Graph_TCM | blocked | 1 source | 0（无许可证） |
+| `tcm-sd-structural-clean` | TCM-SD / ZY-BERT | done | 54152 labeled rows | 148 records / 0 edges |
+| `tcm-sd-public-release` | TCM-SD / ZY-BERT | blocked | 1 source | 0（CC-BY-NC-SA-4.0 且残留标识） |

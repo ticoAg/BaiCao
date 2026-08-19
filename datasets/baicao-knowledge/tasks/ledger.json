@@ -168,6 +168,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "Zenodo V1.0 为 CC-BY-NC-4.0，WHO TCM terminology 为 CC-BY-NC-SA-3.0-IGO，ICD-11 为 CC-BY-ND-3.0-IGO，且其他聚合上游权利链未闭合；保持 publish=false。"
+    },
+    {
+      "task_id": "tcm-sd-structural-clean",
+      "source_id": "tcm-sd",
+      "status": "done",
+      "unit": "labeled_rows",
+      "planned_units": 54152,
+      "completed_units": 54152,
+      "output_records": 148,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-sd/processed/latest/stats.json",
+      "notes": "只提升 148 个证候术语；病例原文、病名节点、2,023 个病-证共现和 1,027 条知识库定义全部隔离。不生成治疗病证或关联证候。"
+    },
+    {
+      "task_id": "tcm-sd-public-release",
+      "source_id": "tcm-sd",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "数据集为 CC-BY-NC-SA-4.0，仓库 MIT 只覆盖代码；论文脱敏声明被本地残留标识否定。保持 publish=false。"
     }
   ]
 }

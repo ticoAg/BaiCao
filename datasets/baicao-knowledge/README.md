@@ -43,6 +43,7 @@ configs:
 | `tcm-db` | cleaned_local | 1715 records / 654 edges | 仅本地 records；混合上游许可不完整，`publish: false` |
 | `dragontcm` | cleaned_local | 11598 records / 46666 edges | 仅本地 records；非商业限制且上游权利链未闭合，`publish: false` |
 | `tcm-mkg` | cleaned_local | 19519 records / 177672 edges | 仅本地 records；聚合许可与 WHO 上游条款冲突，`publish: false` |
+| `tcm-sd` | cleaned_local | 148 records / 0 edges | 仅本地证候词表；CC-BY-NC-SA-4.0 且残留病历标识，`publish: false` |
 
 ## Neo4j 筛选
 
