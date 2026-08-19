@@ -210,6 +210,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "DeepNER 无许可证，天池/OpenKG 官方包未持有；说明书含商品名和药厂名。保持 publish=false。"
+    },
+    {
+      "task_id": "tcm-ancient-books-structural-clean",
+      "source_id": "tcm-ancient-books",
+      "status": "done",
+      "unit": "numbered_books",
+      "planned_units": 700,
+      "completed_units": 700,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-ancient-books/processed/latest/stats.json",
+      "notes": "699 本 GB18030 可解码；203 解码失败；700.李培生与下载残留隔离。不提升全文或图关系。"
+    },
+    {
+      "task_id": "tcm-ancient-books-public-release",
+      "source_id": "tcm-ancient-books",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "仓库无许可证，数字整理本版权未核实。保持 publish=false。"
     }
   ]
 }

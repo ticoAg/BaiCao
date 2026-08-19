@@ -699,3 +699,36 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 结果：结构审计和隔离入图门禁 `pass`；该源不得作为图谱真源
 - 本轮未发起 Grok 审查；最终验收以本地测试和统计为准
 - 固定 `publish:false`
+
+## 18. 2026-08-19 TCM-Ancient-Books 书目审计补充证据
+
+### 本轮范围
+
+- 只读消费编号 `000`–`699` 的 TXT
+- 校验书名唯一、编号连续、编码和未完成下载
+- 不把全文或书目节点写入图谱
+
+### 结构与隔离结果
+
+- 输出：0 节点记录、0 条关系
+- 可解码 699 本，全部 GB18030
+- 隔离：`203-婴童类萃.txt` 解码失败、`700.李培生老中医经验集.txt`、2 个下载残留
+
+### 隔离 Neo4j smoke
+
+无图记录，未启动临时容器。
+
+### 回归证据
+
+```text
+data_ingestion: 124 passed, 2 skipped
+changed-file Ruff: passed
+changed-file ty: passed
+cleaner CLI: 0 records / 0 edges, publish=false
+```
+
+### 结论与边界
+
+- 结果：书目审计 `pass`；全文不得作为图谱真源
+- 仓库无许可证，固定 `publish:false`
+- 统一纳入决策见 `docs/architecture/data-sources.md`

@@ -45,6 +45,7 @@ configs:
 | `tcm-mkg` | cleaned_local | 19519 records / 177672 edges | 仅本地 records；聚合许可与 WHO 上游条款冲突，`publish: false` |
 | `tcm-sd` | cleaned_local | 148 records / 0 edges | 仅本地证候词表；CC-BY-NC-SA-4.0 且残留病历标识，`publish: false` |
 | `tcm-ner` | cleaned_local | 0 records / 0 edges | 仅本地审计；竞赛镜像无许可证，跨度不入图，`publish: false` |
+| `tcm-ancient-books` | cleaned_local | 0 records / 0 edges | 仅书目审计；无许可证且全文不入图，`publish: false` |
 
 ## Neo4j 筛选
 

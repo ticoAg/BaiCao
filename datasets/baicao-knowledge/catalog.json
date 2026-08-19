@@ -332,6 +332,41 @@
         "view": "sources/tcm-ner/VIEW.md",
         "processed_dir": "sources/tcm-ner/processed/latest/"
       }
+    },
+    {
+      "source_id": "tcm-ancient-books",
+      "title": "TCM-Ancient-Books",
+      "status": "cleaned_local",
+      "kind": "ancient_book_plaintext",
+      "publish": false,
+      "license_status": "unlicensed_upstream_digital_edition_unverified",
+      "filter": {
+        "source_provider": "github",
+        "dataset_name": "xiaopangxia/TCM-Ancient-Books",
+        "file_path": "NNN-书名.txt",
+        "import_scope_key": "github:xiaopangxia/TCM-Ancient-Books"
+      },
+      "planned": {
+        "unit": "numbered_books",
+        "count": 700,
+        "records": null
+      },
+      "completed": {
+        "unit": "numbered_books",
+        "count": 700,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "decodable_books": 699,
+        "decode_errors": 1,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "只做书目审计。全文、解码失败文件和未完成下载不入图。仓库无许可证，固定 publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-ancient-books/SOURCE.md",
+        "view": "sources/tcm-ancient-books/VIEW.md",
+        "processed_dir": "sources/tcm-ancient-books/processed/latest/"
+      }
     }
   ]
 }

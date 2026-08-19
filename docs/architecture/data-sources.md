@@ -13,7 +13,7 @@ audience: developer, data-team
 
 # BaiCao 数据源与质量校验清单
 
-截至 2026-08-19，BaiCao 有 9 个正式登记源、4 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
+截至 2026-08-19，BaiCao 有 10 个正式登记源、3 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。是否纳入图谱或 public，以「纳入决策」节为准。
 
 本文档是逐源质量校验的单一入口，不替代以下事实真源：
 
@@ -34,6 +34,52 @@ audience: developer, data-team
 
 `public` 不是质量结论。任何源只有在许可、结构、语义、证据和隐私边界都明确后，才可在 catalog 中设置 `publish: true`。
 
+## 纳入决策
+
+这里回答「这份数据集要不要进白草数据源」。三列必须分开看：
+
+| 列 | 含义 |
+|---|---|
+| 纳入登记 | 是否进入 catalog / 本清单，作为已处理或候选源跟踪 |
+| 纳入图谱 | 是否把实体或关系写入本地 Neo4j 知识图 |
+| 纳入 public | 是否进入 public Hugging Face `ticoAg/baicao-knowledge` |
+
+### 已处理源
+
+| ID | 数据集 | 纳入登记 | 纳入图谱 | 纳入 public | 原因 |
+|---|---|---|---|---|---|
+| `BC-01` | 2022 年中药药典 | 是 | 是 | 是，仅脱敏结构化结果 | 国家标准条目，结构稳定，已入图；原文载体条款仍需独立复核，故公开面不含原文 |
+| `BC-02` | 道医苏子阳 | 是 | 是 | 是，仅脱敏结构化结果 | 项目自有医案抽取，已入图；原文未获转载授权，公开面不含全文 |
+| `BC-03` | Knowlegde_Graph_TCM | 是 | 是，仅本地 | 否 | 中文药材/方剂边可本地使用；上游无许可证，禁止公开逐条派生 |
+| `BC-04` | ShenNong TCM-KG | 是 | 是，仅本地且排除化学边 | 否 | 三元组可映射中性关联；两仓库无许可证且限定学术研究 |
+| `BC-05` | tcm-db | 是 | 是，仅本地 | 否 | 显式实体/关系表可用；混合上游权利链未闭合 |
+| `BC-06` | DragonTCM | 是 | 是，仅本地且限 SNOMED disorder | 否 | 英文方剂库可补对照；CC-BY-NC-4.0 且书籍/SNOMED 条款未闭合 |
+| `BC-07` | TCM-MKG V1.0 | 是 | 是，仅本地主域子图 | 否 | D1-D7/D18 可映射方剂/饮片/病证；Zenodo NC、WHO NC-SA/ND 与其他上游不兼容 public |
+| `BC-08` | TCM-SD / ZY-BERT | 是 | 有限：只入 148 个证候术语 | 否 | 监督学习语料不是病-证知识；CC-BY-NC-SA-4.0，且病历文本仍有残留标识 |
+| `BC-09` | TCM-NER / DeepNER | 是 | 否 | 否 | 竞赛镜像无许可证；NER 跨度噪声大、260 个跨类型同名，只作抽取评测审计 |
+| `BC-10` | TCM-Ancient-Books | 是 | 否 | 否 | 可作后续原文证据库；仓库无许可证，数字整理版权不明，全文与未完成下载均不入图 |
+
+### 尚未清洗的候选
+
+| ID | 数据集 | 纳入登记 | 纳入图谱 | 纳入 public | 当前原因 |
+|---|---|---|---|---|---|
+| `CAND-08` | classical-tcm-canon | 候选 | 否 | 否 | 115 部经典原文有证据价值，但 `license: other` 与数字版本边界未核完 |
+| `CAND-09` | SylvanL TCM Pretrain | 候选 | 否 | 否 | 多源混合且已见字段串行；必须先分源分类，不能整包入图 |
+| `CAND-10` | ZY-BERT 预训练语料 | 候选 | 否 | 否 | 尚未解压，不能继承 TCM-SD 的 CC 条款，当前不处理 |
+
+### 明确不纳入独立数据源
+
+| 资源 | 纳入登记 | 原因 |
+|---|---|---|
+| `Knowlegde_Graph_TCM/` 原始目录 | 否，附属 `BC-03` | 只读输入，禁止双计数 |
+| `TCM_KG/` 示例仓 | 否 | 几乎只有示例，完整图已是 `BC-04` |
+| `TCM-SD-repo/` | 否，附属 `BC-08` | 上游快照，解压数据在 `TCM-SD/` |
+| `fangji-extra/` 聚合目录 | 否，只登记其中 `tcm-db` | 其他文件不是独立源 |
+| TCM-MKG `original_kg/edges.tsv` | 否 | 未持有完整边文件 |
+| 天池 TCM-NER / TCM-SD 官方包 | 否 | 未取得 |
+| 对话/SFT 问答集 | 否 | 不是图谱事实源 |
+| `wangekxy/tcm-formulary` 商业全量 | 否 | 未购买、未持有 |
+
 ## 正式登记源
 
 | ID | 数据源 | 形态与规模 | 当前状态 | 许可与发布边界 | 已知质量事实 | 审阅结论 |
@@ -47,8 +93,9 @@ audience: developer, data-team
 | `BC-07` | [TCM-MKG V1.0](../../datasets/baicao-knowledge/sources/tcm-mkg/SOURCE.md) | D1-D7/D18 共 213,655 行；19,519 records / 177,672 edges | `cleaned_local`；`publish: false` | Zenodo 为 `CC-BY-NC-4.0`；WHO 术语与 ICD-11 另有 NC-SA / ND 条款，其他聚合上游权利链未闭合 | 仅取方剂、饮片、病证、治法、性味、归经；D3/D5 降级为中性关联；13 组方剂/饮片同名隔离，10 个 TCMT/ICD 精确同名合并 | `blocked` |
 | `BC-08` | [TCM-SD / ZY-BERT](../../datasets/baicao-knowledge/sources/tcm-sd/SOURCE.md) | train/dev/test 共 54,152 条标注；148 records / 0 edges | `cleaned_local`；`publish: false` | 数据集为 `CC-BY-NC-SA-4.0`；仓库 MIT 只覆盖代码；论文脱敏声明被本地残留标识否定 | 只提升 148 个证候术语；病例原文、病名节点和 2,023 个病-证共现全部隔离 | `blocked` |
 | `BC-09` | [TCM-NER / DeepNER](../../datasets/baicao-knowledge/sources/tcm-ner/SOURCE.md) | train 850、dev 150、test 500、stack 1000；0 records / 0 edges | `cleaned_local`；`publish: false` | 仓库无许可证；天池/OpenKG 官方包未持有 | 17,757 条跨度与 260 个跨类型同名全部隔离；不把说明书共现当图事实 | `blocked` |
+| `BC-10` | [TCM-Ancient-Books](../../datasets/baicao-knowledge/sources/tcm-ancient-books/SOURCE.md) | 700 个编号 TXT + 1 个未编号现代医论；0 records / 0 edges | `cleaned_local`；`publish: false` | 仓库无许可证；数字整理版权未核实 | 699 本 GB18030 可解码；`203-婴童类萃` 解码失败；全文与未完成下载不入图 | `blocked` |
 
-当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-09` 尚未触发远端重发，后续即使重发也只允许发布元数据。
+当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-10` 尚未触发远端重发，后续即使重发也只允许发布元数据。
 
 ## 本地候选源
 
@@ -56,7 +103,6 @@ audience: developer, data-team
 
 | ID | 数据源与上游 | 本地载体与规模 | 许可状态 | 已知质量风险 | 建议用途 | 审阅结论 |
 |---|---|---|---|---|---|---|
-| `CAND-07` | [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books) | `tmp/qibo-datasets/TCM-Ancient-Books/`；701 本 TXT 古籍 | `unverified`；仓库未提供本地许可文件 | 版本、OCR、繁简、异体字、篇章边界和现代整理版权需逐项检查；全文关系必须保留原文定位 | 古籍证据、方剂组成和功效主治抽取 | `pending` |
 | `CAND-08` | [classical-tcm-canon](https://huggingface.co/datasets/wangekxy/classical-tcm-canon) | `tmp/qibo-datasets/classical-tcm-canon/`；115 部经典、约 940 万字 Parquet | Dataset Card 标记 `license: other`，声明原作公版；数字版本边界仍需复核 | Dataset Card 声明零 OCR：53 部多源验证、61 部单源、1 部轻微差异；仍需核实版本、章节切分、异体字和现代标点 | 可溯源经典原文和证据型 RAG | `pending` |
 | `CAND-09` | [SylvanL TCM Pretrain](https://huggingface.co/datasets/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain) | `tmp/qibo-datasets/TCM-Pretrain/`；146,244 书籍切段、17,921 + 12,889 百科/国标记录 | `unverified`；当前本地载体没有完整许可说明 | 多来源混合；含中药、西药、放射性药品等异质条目；已观察到疑似字段串行或药理内容错配，不能直接入图 | 百科属性候选；必须先分源、分类和清洗，书籍部分走证据抽取 | `pending` |
 | `CAND-10` | [ZY-BERT 预训练语料](https://www.dropbox.com/s/jrgngr8afqz41oy/tcm_pretrain_corpus_a.rar?dl=0) | `tmp/qibo-datasets/TCM-Pretrain/zybert-corpus/tcm_pretrain_corpus_a.rar`；218 MB，尚未解压 | `unverified`；不能直接继承 TCM-SD 的 CC 条款 | 无标注混合文本；尚未检查内容清单、编码、重复、隐私和来源构成 | 仅作为后续实体/关系抽取候选，当前不处理 | `pending` |
@@ -95,7 +141,7 @@ audience: developer, data-team
 | P0 | `BC-03`、`BC-04` | 已完成结构清洗，确认是否值得继续争取授权或只保留本地 |
 | P1 | `BC-06` | 专家抽检跨语言药材/方剂、condition 分类和临床表现投影 |
 | P2 | `BC-08` | 专家抽检 148 个证候术语，以及残留标识是否还出现在下游消费面 |
-| P3 | `CAND-07` 至 `CAND-10` | 用于抽取器或原文证据，处理成本和许可不确定性更高 |
+| P3 | `CAND-08` 至 `CAND-10` | 用于抽取器或原文证据，处理成本和许可不确定性更高 |
 
 ## 人工质量校验方法
 
@@ -140,7 +186,7 @@ audience: developer, data-team
 | `BC-07` | 待填写 | 待填写 | Zenodo CC-BY-NC-4.0；WHO NC-SA / ND；其他上游未闭合 | 已自动验证 | 待校验 | `blocked` | 10 个 TCMT/ICD 精确同名合并、13 组方剂/饮片同名、D3/D5 适用关系和 D6 黄芪错位修复待人工复核 |
 | `BC-08` | 待填写 | 待填写 | CC-BY-NC-SA-4.0；残留病历标识 | 已自动验证 | 待校验 | `blocked` | 病例原文、2,023 个病-证共现、1,027 条知识库和跨类型同名“风寒湿痹证”待人工复核 |
 | `BC-09` | 待填写 | 待填写 | 竞赛镜像无许可证；官方包未持有 | 已自动验证 | 待校验 | `blocked` | 17,757 条跨度、260 个跨类型同名和说明书商品名/药厂名待人工复核 |
-| `CAND-07` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
+| `BC-10` | 待填写 | 待填写 | 仓库无许可证；数字整理版权未核实 | 已自动验证 | 待校验 | `blocked` | 全文不入图；`203-婴童类萃` 解码失败；`700.李培生老中医经验集` 与 5 个现代书名待人工复核 |
 | `CAND-08` | 待填写 | 待填写 | `other` / 公版声明 | 待校验 | 待校验 | `pending` | |
 | `CAND-09` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | `CPT_tcmKnowledge_source2_12889.json:35850`：“注射用亚锡葡庚糖酸钠Ⅰ”的药理段落串入氨苄西林/舒巴坦内容 |
 | `CAND-10` | 待填写 | 待填写 | 待核实 | 未解压 | 待校验 | `pending` | |
@@ -165,3 +211,4 @@ audience: developer, data-team
 14. [Zenodo TCM-MKG V1.0](https://zenodo.org/records/13763953)
 15. [WHO TCM terminology](https://www.who.int/publications/i/item/9789240042322)
 16. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)
+17. [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books)

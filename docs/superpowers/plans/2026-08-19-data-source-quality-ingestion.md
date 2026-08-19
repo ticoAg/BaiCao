@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-07 TCM-Ancient-Books`）
+**Status:** active（当前源：`CAND-08 classical-tcm-canon`）
 
 ## 全局门禁
 
@@ -278,30 +278,58 @@ status: active
 - 未对照官方 brat 包核验转换 JSON 是否完整或被改写。
 - 跨度类型噪声未做专家重标；不得被下游当药品知识。
 
-## 当前源：CAND-07 TCM-Ancient-Books
+## 已完成源：CAND-07 TCM-Ancient-Books
 
 ### 已确认事实
 
-- 本地只读副本位于 `tmp/qibo-datasets/TCM-Ancient-Books/`，约 701 本 TXT 古籍。
-- 上游仓库为 `xiaopangxia/TCM-Ancient-Books`；本地未见许可文件。
-- 版本、OCR、繁简、异体字和现代整理版权需逐项检查；全文关系必须保留原文定位。
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-Ancient-Books/`：编号 `000`–`699` 共 700 本，另有未编号 `700.李培生老中医经验集.txt`。
+- 上游仓库无许可证。可读编号书全部为 GB18030；`203-婴童类萃.txt` 解码失败。
+- `290-外科证治全书.txt` 已存在，同时残留百度云下载文件。
 
 ### Tasks
 
-- [ ] 核实许可、版本来源与再利用边界
-- [ ] 审计目录、编码、重复和篇章边界
-- [ ] 决定本轮只建书目台账，还是允许带原文定位的抽取
-- [ ] 若允许结构清洗，实现来源专用 parser/CLI、最小测试和验收
-- [ ] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后分开提交代码与数据文档
+- [x] 核实许可、版本来源与再利用边界
+- [x] 审计目录、编码、重复和篇章边界
+- [x] 决定本轮只建书目台账，不抽取全文
+- [x] 实现来源专用 parser/CLI 和最小测试
+- [x] 更新 SOURCE/VIEW、catalog/ledger、纳入决策与验收证据后分开提交
+
+### 当前实现证据
+
+- 输出：0 records / 0 edges
+- 可解码 699；隔离解码失败 1、未编号 1、下载残留 2
+- 发布门禁：无许可证，固定 `publish: false`
+
+提交证据：`7ee591c feat: audit TCM-Ancient-Books bibliography only`
+
+### CAND-07 残余风险
+
+- 数字整理本是否为足本、OCR 与现代标点均未核验。
+- 「思考中医」等现代书名仍在编号目录中，后续抽取必须单独标记。
+
+## 当前源：CAND-08 classical-tcm-canon
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/classical-tcm-canon/`，115 部经典、约 940 万字 Parquet。
+- Dataset Card 标记 `license: other`，声明原作公版；数字版本边界仍需复核。
+
+### Tasks
+
+- [ ] 核实 Dataset Card、数字版本与再利用边界
+- [ ] 审计 Parquet schema、部数、切分和重复
+- [ ] 决定只建书目，还是允许带篇章定位的原文证据
+- [ ] 若允许结构清洗，实现 parser/CLI、最小测试和验收
+- [ ] 更新 SOURCE/VIEW、catalog/ledger、纳入决策与验收证据后分开提交
 
 ## Verification
 
 ```bash
 cd packages/data_ingestion
-uv run --with pytest pytest tests/test_tcm_ner.py -q
-uvx ruff check data_ingestion/tcm_ner.py \
-  data_ingestion/cli/tcm_ner_clean.py tests/test_tcm_ner.py
-uv run python -m data_ingestion.cli.tcm_ner_clean --help
+uv run --with pytest pytest tests/test_tcm_ancient_books.py -q
+uvx ruff check data_ingestion/tcm_ancient_books.py \
+  data_ingestion/cli/tcm_ancient_books_clean.py tests/test_tcm_ancient_books.py
+uv run python -m data_ingestion.cli.tcm_ancient_books_clean --help
 ```
 
 共享契约发生变化时，额外执行知识模型/API contract 测试、`pnpm --dir packages/shared typecheck` 和至少一条 web 消费检查。隔离 Neo4j smoke 必须使用无持久卷容器，不修改现有图库。
@@ -321,3 +349,4 @@ uv run python -m data_ingestion.cli.tcm_ner_clean --help
 11. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)
 12. [ZY-BERT](https://github.com/Borororo/ZY-BERT)
 13. [DeepNER](https://github.com/z814081807/DeepNER)
+14. [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books)
