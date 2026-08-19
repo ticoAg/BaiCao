@@ -210,7 +210,7 @@ flowchart TB
 | [acceptance/data-ingestion-and-knowledge-model.md](acceptance/data-ingestion-and-knowledge-model.md) | 共享图模型与数据采集边界验收 |
 | [acceptance/data-pipeline-workbench-mainline.md](acceptance/data-pipeline-workbench-mainline.md) | 数据处理工作台主链路验收 |
 | [acceptance/review-export-persistence-wave-2.md](acceptance/review-export-persistence-wave-2.md) | review/export 持久化验收 |
-| [architecture/data-sources.md](architecture/data-sources.md) | 外部候选源 + 自有 dataset 规划 |
+| [architecture/data-sources.md](architecture/data-sources.md) | 已登记源、本地候选源与人工质量校验清单 |
 | [architecture/knowledge-dataset.md](architecture/knowledge-dataset.md) | 自有 HF dataset 任务定义与 Parquet 发布 |
 | [superpowers/plans/README.md](superpowers/plans/README.md) | 实施计划状态索引 |
 | [../datasets/baicao-knowledge/README.md](../datasets/baicao-knowledge/README.md) | 自有知识数据集 staging 与产量台账 |

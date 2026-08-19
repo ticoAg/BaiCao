@@ -46,6 +46,10 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "aliases": ["止咳散"],
             "origin": ["华北"],
             "formula_name": "止嗽散",
+            "tcm_type": "证候",
+            "location": ["干燥根茎"],
+            "quantity": ["3～10g"],
+            "toxicity": ["有毒"],
             "note": "drop me",
         },
         edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "junk": 1})],
@@ -60,6 +64,10 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
         "aliases": ["止咳散"],
         "origin": ["华北"],
         "formula_name": "止嗽散",
+        "tcm_type": "证候",
+        "location": ["干燥根茎"],
+        "quantity": ["3～10g"],
+        "toxicity": ["有毒"],
     }
     assert slim.edges[0].properties == {"dosage": "4g"}
 

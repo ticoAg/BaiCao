@@ -78,6 +78,7 @@ PROPERTY_EN_TO_ZH: dict[str, str] = {
     "nature": "药性",
     "tcm_type": "中医类型",
     "quantity": "用量",
+    "toxicity": "毒性",
     "dosage": "剂量",
     "observation": "观察",
     "value": "取值",

@@ -37,6 +37,9 @@ class EdgeType(StrEnum):
     HAS_FLAVOR = "具有性味"
     ENTERS_MERIDIAN = "归于经脉"
     TREATS = "治疗病证"
+    RELATED_HERB = "关联药材"
+    RELATED_TREATMENT_METHOD = "关联治法"
+    RELATED_SYNDROME = "关联证候"
     INTERACTS_WITH = "相互作用"
     SIMILAR_TO = "相似于"
     PARENT_OF = "父类"
@@ -112,6 +115,9 @@ EDGE_TYPE_TO_NEO4J_REL: dict[EdgeType, str] = {
     EdgeType.HAS_FLAVOR: "具有性味",
     EdgeType.ENTERS_MERIDIAN: "归于经脉",
     EdgeType.TREATS: "治疗病证",
+    EdgeType.RELATED_HERB: "关联药材",
+    EdgeType.RELATED_TREATMENT_METHOD: "关联治法",
+    EdgeType.RELATED_SYNDROME: "关联证候",
     EdgeType.INTERACTS_WITH: "相互作用",
     EdgeType.SIMILAR_TO: "相似于",
     EdgeType.PARENT_OF: "父类",
@@ -199,6 +205,9 @@ EdgeTypeLiteral = Literal[
     "具有性味",
     "归于经脉",
     "治疗病证",
+    "关联药材",
+    "关联治法",
+    "关联证候",
     "相互作用",
     "相似于",
     "父类",

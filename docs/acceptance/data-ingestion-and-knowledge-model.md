@@ -370,3 +370,62 @@ uv run --extra dev pytest tests/services/test_graph_agent_service.py tests/api/t
 - 本轮只覆盖 runtime 与 API 接线的最小主路径，未执行真实 Neo4j 数据库上的端到端 graph agent 问答
 - 默认 agent 目前采用规则化 schema-aware planning 与图谱邻接探索，LLM synthesis / LangChain adapter 不在本轮范围
 - 只读 Cypher fallback 已在 runtime facade 中保留校验入口，但默认 agent 尚未主动触发 fallback
+
+## 12. 2026-08-19 ShenNong TCM-KG 保守清洗补充证据
+
+### 本轮范围
+
+- 严格解析 `head<TAB>tail<TAB>relation`，未知关系、坏列和空字段直接失败
+- 排除化学关系，隔离跨语言映射和功能/临床类型冲突
+- 临床 head 保留为未分类 `病证`，来源标注证候只记录来源类型
+- `中药`、`治法`、`证候` 映射为中性 `关联药材`、`关联治法`、`关联证候`，不提升为治疗、诊断或因果关系
+- importer 以 100 条为一个 managed transaction，并用已解析名称连接同批次目标，避免逐记录事务和动态目标扫描
+
+### 结构与隔离结果
+
+- 输入：123,358 行
+- 输出：19,066 节点记录、52,247 条物化关系
+- 节点：药材 947、功效 846、性味 22、归经 12、病证 15,965、治法 1,274
+- 关系：具有功效 2,180、具有性味 2,231、归于经脉 1,954、关联证候 35,444、关联药材 7,832、关联治法 2,606
+- 隔离：化学关系 67,481、`TS_MS` 245、功能/临床冲突 337、证候自环 9
+- 来源类型：来源标注证候 3,278、未分类临床概念 12,687
+
+### 隔离 Neo4j smoke
+
+使用无持久卷 `neo4j:5-community` 临时容器，端口 `30687`，未连接或修改现有图库。导入结果：
+
+```text
+created=19066
+edges=52247
+nodes=19066
+relationships=52247
+```
+
+Cypher 语义校验：
+
+- `关联证候=35,444`，非 `病证` source/target 均为 0
+- `关联药材=7,832`，非 `病证` source、非 `药材` target 均为 0
+- `关联治法=2,606`，非 `病证` source、非 `治法` target 均为 0
+- `病证.中医类型=来源标注证候` 为 3,278
+- `治疗病证=0`
+- 药材/病证跨类型同名合并为 0
+- 关系 scope 缺失或错误为 0
+
+验证后已停止临时容器；容器带 `--rm`，未保留临时图数据。
+
+### 回归证据
+
+```text
+data_ingestion: 97 passed, 1 skipped
+knowledge_model: 27 passed
+API graph contract/routes: 16 passed
+shared typecheck: passed
+web production build: passed
+changed-file Ruff: passed
+```
+
+### 结论与边界
+
+- 结果：结构清洗与隔离入图 `pass`，内容状态继续为 `pending`
+- 两个上游缺少再发布许可证，且 ShenNong README 限定仅供学术研究并禁止商业用途；固定 `publish:false`
+- 疾病、症状和证候仍不得按名称后缀、编辑距离、跨语言候选或 LLM 推断自动拆分或合并

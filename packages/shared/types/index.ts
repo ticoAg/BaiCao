@@ -222,6 +222,9 @@ export type EdgeType =
   | '具有性味'
   | '归于经脉'
   | '治疗病证'
+  | '关联药材'
+  | '关联治法'
+  | '关联证候'
   | '相互作用'
   | '相似于'
   | '父类'
@@ -283,6 +286,9 @@ export type GraphEdge =
   | { type: '具有性味'; source: string; target: string; properties: BaseEdge }
   | { type: '归于经脉'; source: string; target: string; properties: BaseEdge }
   | { type: '治疗病证'; source: string; target: string; properties: BaseEdge }
+  | { type: '关联药材'; source: string; target: string; properties: BaseEdge }
+  | { type: '关联治法'; source: string; target: string; properties: BaseEdge }
+  | { type: '关联证候'; source: string; target: string; properties: BaseEdge }
   | { type: '来源于'; source: string; target: string; properties: BaseEdge }
   | { type: '由证据支持'; source: string; target: string; properties: BaseEdge }
   | { type: '组成药材'; source: string; target: string; properties: BaseEdge }

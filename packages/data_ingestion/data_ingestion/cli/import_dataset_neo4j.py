@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 from collections import Counter
+from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -36,20 +37,39 @@ def load_jsonl(path: Path) -> list[DatasetRecord]:
     return records
 
 
-def find_existing(tx: Any, label: str, names: list[str]) -> dict[str, Any] | None:
+def find_existing(
+    tx: Any, label: str, names: list[str], *, include_aliases: bool = True
+) -> dict[str, Any] | None:
     result = tx.run(
         f"""
         MATCH (n:{label})
-        WHERE n.名称 IN $names OR n.name IN $names
-           OR n.别名 IN $names OR n.alias IN $names
-           OR n.拼音 IN $names OR n.pinyin_name IN $names
-           OR n.拉丁名 IN $names OR n.latin_name IN $names
+        WHERE n.名称 IN $names
         RETURN elementId(n) AS eid, properties(n) AS props
         LIMIT 5
         """,
         names=names,
     )
     rows = list(result)
+    if not rows and include_aliases:
+        result = tx.run(
+            f"""
+            MATCH (n:{label})
+            WHERE any(key IN $lookup_keys WHERE properties(n)[key] IN $names)
+            RETURN elementId(n) AS eid, properties(n) AS props
+            LIMIT 5
+            """,
+            names=names,
+            lookup_keys=[
+                "name",
+                "别名",
+                "alias",
+                "拼音",
+                "pinyin_name",
+                "拉丁名",
+                "latin_name",
+            ],
+        )
+        rows = list(result)
     if not rows:
         return None
     exact = next(
@@ -59,12 +79,18 @@ def find_existing(tx: Any, label: str, names: list[str]) -> dict[str, Any] | Non
     return {"eid": exact["eid"], "props": dict(exact["props"])}
 
 
-def write_node(tx: Any, record: DatasetRecord, stats: Counter) -> str:
+def write_node(
+    tx: Any,
+    record: DatasetRecord,
+    stats: Counter,
+    *,
+    include_aliases: bool = True,
+) -> str:
     label = to_neo4j_label(record.node_type)
     names = lookup_names(record.node_type, record.node_name)
     if alias := (record.properties or {}).get("alias"):
         names = append_unique(names, str(alias))
-    existing = find_existing(tx, label, names)
+    existing = find_existing(tx, label, names, include_aliases=include_aliases)
     if existing:
         existing_en = {
             **existing["props"],
@@ -149,7 +175,14 @@ def write_node(tx: Any, record: DatasetRecord, stats: Counter) -> str:
     return record.node_name
 
 
-def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Counter) -> None:
+def write_edges(
+    tx: Any,
+    record: DatasetRecord,
+    resolved_name: str,
+    stats: Counter,
+    *,
+    resolved_targets: dict[tuple[str, str], str] | None = None,
+) -> None:
     source_label = to_neo4j_label(record.node_type)
     for edge in record.edges:
         rel = to_neo4j_rel(edge.type)
@@ -159,6 +192,9 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             "取用穴位": ("穴位",),
             "采用治法": ("治法",),
             "治疗病证": ("病证",),
+            "关联药材": ("药材",),
+            "关联治法": ("治法",),
+            "关联证候": ("病证",),
             "记载于医案": ("医案",),
             "由证据支持": ("证据",),
             "来源于": ("来源",),
@@ -172,6 +208,29 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             raise ValueError(f"unsupported import edge type: {edge.type}")
         target_names = lookup_names(target_types[0], edge.target)
         target_labels = [to_neo4j_label(target_type) for target_type in target_types]
+        resolved_target = next(
+            (
+                resolved_targets[(target_type, edge.target)]
+                for target_type in target_types
+                if resolved_targets and (target_type, edge.target) in resolved_targets
+            ),
+            None,
+        )
+        target_match = (
+            f"MATCH (target:{target_labels[0]})"
+            if len(target_labels) == 1
+            else "MATCH (target)"
+        )
+        target_where = (
+            "target.名称 = $resolved_target"
+            if resolved_target
+            else "any(key IN $target_name_keys WHERE properties(target)[key] IN $target_names)"
+        )
+        if len(target_labels) > 1:
+            target_where = (
+                "any(target_label IN labels(target) WHERE target_label IN $target_labels) "
+                f"AND {target_where}"
+            )
         dosage = (edge.properties or {}).get("dosage")
         localized = to_graph_properties(
             {
@@ -186,10 +245,8 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
         result = tx.run(
             f"""
             MATCH (source:{source_label} {{名称: $source_name}})
-            MATCH (target)
-            WHERE any(target_label IN labels(target) WHERE target_label IN $target_labels)
-              AND (target.名称 IN $target_names OR target.name IN $target_names
-               OR target.别名 IN $target_names OR target.alias IN $target_names)
+            {target_match}
+            WHERE {target_where}
             WITH source, target LIMIT 1
             MERGE (source)-[r:{rel} {{导入范围键: $scope}}]->(target)
             SET r.导入源 = $source_id
@@ -203,7 +260,9 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             """,
             source_name=resolved_name,
             target_names=target_names,
+            target_name_keys=["名称", "name", "别名", "alias"],
             target_labels=target_labels,
+            resolved_target=resolved_target,
             scope=localized.get("导入范围键"),
             source_id=localized.get("导入源"),
             batch_id=record.batch_id,
@@ -217,17 +276,72 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             stats["edges"] += 1
 
 
-def import_records(records: list[DatasetRecord], driver: Any) -> dict[str, int]:
+def _write_node_batch(
+    tx: Any,
+    records: tuple[DatasetRecord, ...],
+    preexisting_labels: set[str],
+) -> tuple[list[tuple[DatasetRecord, str]], Counter]:
+    stats: Counter = Counter()
+    resolved = [
+        (
+            record,
+            write_node(
+                tx,
+                record,
+                stats,
+                include_aliases=to_neo4j_label(record.node_type) in preexisting_labels,
+            ),
+        )
+        for record in records
+    ]
+    return resolved, stats
+
+
+def _write_edge_batch(
+    tx: Any,
+    resolved: tuple[tuple[DatasetRecord, str], ...],
+    resolved_targets: dict[tuple[str, str], str],
+) -> Counter:
+    stats: Counter = Counter()
+    for record, name in resolved:
+        write_edges(tx, record, name, stats, resolved_targets=resolved_targets)
+    return stats
+
+
+def _preexisting_labels(session: Any, records: list[DatasetRecord]) -> set[str]:
+    labels = {to_neo4j_label(record.node_type) for record in records}
+    return {
+        label
+        for label in labels
+        if session.run(f"MATCH (n:{label}) RETURN count(n) > 0 AS present").single()[
+            "present"
+        ]
+    }
+
+
+def import_records(
+    records: list[DatasetRecord], driver: Any, *, batch_size: int = 100
+) -> dict[str, int]:
     stats: Counter = Counter()
     graph_records = [record for record in records if not is_skip_record(record)]
     stats["skipped_records"] = len(records) - len(graph_records)
     resolved: list[tuple[DatasetRecord, str]] = []
     with driver.session(database="neo4j") as session:
-        for record in graph_records:
-            name = session.execute_write(write_node, record, stats)
-            resolved.append((record, name))
-        for record, name in resolved:
-            session.execute_write(write_edges, record, name, stats)
+        preexisting_labels = _preexisting_labels(session, graph_records)
+        for batch in batched(graph_records, batch_size):
+            batch_resolved, batch_stats = session.execute_write(
+                _write_node_batch, batch, preexisting_labels
+            )
+            resolved.extend(batch_resolved)
+            stats.update(batch_stats)
+        resolved_targets = {
+            (record.node_type, record.node_name): name for record, name in resolved
+        }
+        edge_records = [item for item in resolved if item[0].edges]
+        for batch in batched(edge_records, batch_size):
+            stats.update(
+                session.execute_write(_write_edge_batch, batch, resolved_targets)
+            )
     return dict(stats)
 
 

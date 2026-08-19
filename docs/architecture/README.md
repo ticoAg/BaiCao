@@ -23,7 +23,7 @@
 | 3 | [graph-workbench.md](graph-workbench.md) | 理解 `/graph` 的当前稳定实现 | 看 Graph Workbench、metadata、D3 结果视图和 Neo4j 运行时边界 |
 | 4 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | 理解共享图模型与数据采集边界 | 看仓库级图模型唯一真源、中文语义与数据采集二级子项目架构 |
 | 5 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
-| 6 | [data-sources.md](data-sources.md) | 看有哪些源、处理到哪 | 外部候选源 + 自有 `baicao-knowledge` 台账 |
+| 6 | [data-sources.md](data-sources.md) | 校验数据源质量 | 已登记源、本地候选源、许可边界与人工审阅记录 |
 | 7 | [knowledge-dataset.md](knowledge-dataset.md) | 维护 HF 数据集 | 任务定义、信封、Parquet、苏子阳抽取验收 |
 
 ## 文档索引
@@ -35,7 +35,7 @@
 | [graph-workbench.md](graph-workbench.md) | stable | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | stable | 仓库级图模型唯一真源、中文知识结构定义与数据采集架构 |
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
-| [data-sources.md](data-sources.md) | stable | 外部候选源评估 + 白草自有 `baicao-knowledge` 数据集登记 |
+| [data-sources.md](data-sources.md) | review | 已登记源、本地候选源、许可边界与人工质量校验清单 |
 | [knowledge-dataset.md](knowledge-dataset.md) | stable | 自有 HF dataset 任务定义、Parquet 发布、源/批次筛选 |
 
 ## 架构主线

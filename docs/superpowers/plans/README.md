@@ -6,9 +6,9 @@
 
 ## 当前入口
 
-当前无 active plan。新工作先创建单一实施计划，不从 archive 恢复历史 checkbox。
+- [2026-08-19-data-source-quality-ingestion.md](2026-08-19-data-source-quality-ingestion.md)：逐个处理现有候选源；当前执行 `CAND-01 ShenNong TCM-KG`。
 
-dataset、可信问答与第三数据源结构清洗计划均已完成并归档。
+dataset、可信问答与第三数据源结构清洗计划均已完成并归档；后续数据源统一进入当前 active plan，不恢复历史 checkbox。
 
 数据集台账（计划/完成量）：[`../../../datasets/baicao-knowledge/`](../../../datasets/baicao-knowledge/)
 

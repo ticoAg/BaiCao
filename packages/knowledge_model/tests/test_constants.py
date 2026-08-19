@@ -56,12 +56,18 @@ def test_edge_type_uses_chinese_literals():
     assert EdgeType.HAS_FLAVOR == "具有性味"
     assert EdgeType.ENTERS_MERIDIAN == "归于经脉"
     assert EdgeType.TREATS == "治疗病证"
+    assert EdgeType.RELATED_HERB == "关联药材"
+    assert EdgeType.RELATED_TREATMENT_METHOD == "关联治法"
+    assert EdgeType.RELATED_SYNDROME == "关联证候"
 
 
 def test_edge_type_has_neo4j_relation_mapping():
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.CONTAINS] == "包含成分"
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.HAS_EFFICACY] == "具有功效"
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.TREATS] == "治疗病证"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_HERB] == "关联药材"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_TREATMENT_METHOD] == "关联治法"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_SYNDROME] == "关联证候"
     assert NEO4J_REL_TO_EDGE_TYPE["具有性味"] == EdgeType.HAS_FLAVOR
 
 

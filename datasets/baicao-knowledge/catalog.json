@@ -120,6 +120,42 @@
         "source_dir": "sources/fengxi177-knowledge-graph-tcm/source/",
         "processed_dir": "sources/fengxi177-knowledge-graph-tcm/processed/latest/"
       }
+    },
+    {
+      "source_id": "shennong-tcm-kg",
+      "title": "ShenNong TCM-KG",
+      "status": "cleaned_local",
+      "kind": "structured_graph_relations",
+      "publish": false,
+      "license_status": "restricted_no_redistribution_grant",
+      "filter": {
+        "source_provider": "github",
+        "dataset_name": "michael-wzhu/ShenNong-TCM-LLM",
+        "file_path": "src/TCM-KG_triples.txt",
+        "import_scope_key": "github:michael-wzhu/ShenNong-TCM-LLM:src/TCM-KG_triples.txt"
+      },
+      "planned": {
+        "unit": "triples",
+        "count": 123358,
+        "records": null
+      },
+      "completed": {
+        "unit": "triples",
+        "count": 123358,
+        "extracted_records": 19066,
+        "extracted_edges": 52247,
+        "excluded_chemical_relations": 67481,
+        "quarantined_external_mappings": 245,
+        "quarantined_semantic_conflicts": 337,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "保守结构清洗完成；中药/治法/证候只保留中性关联，病证 head 未强制拆分疾病/症状/证候，来源标注证候 3278。上游无许可证且声明仅供学术研究，禁止进入 public Parquet。"
+      },
+      "paths": {
+        "source_doc": "sources/shennong-tcm-kg/SOURCE.md",
+        "view": "sources/shennong-tcm-kg/VIEW.md",
+        "processed_dir": "sources/shennong-tcm-kg/processed/latest/"
+      }
     }
   ]
 }

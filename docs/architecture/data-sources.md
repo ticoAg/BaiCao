@@ -1,245 +1,159 @@
-<!--
 ---
+type: Data Source Inventory
+title: BaiCao 数据源与质量校验清单
+description: 汇总已登记数据源、本地候选源、许可边界、已知风险和人工质量审阅结论。
+resource: docs/architecture/data-sources.md
+tags: [data-sources, knowledge-graph, data-ingestion, quality-review]
+timestamp: 2026-08-19T00:00:00+08:00
 doc_kind: architecture
-status: stable
-tags: ["data-sources", "knowledge-graph", "data-ingestion"]
-summary: 图谱数据候选源评估与分级整理（Hugging Face 数据集调研）
+status: review
+summary: BaiCao 当前持有数据源的单一质量审阅入口
 audience: developer, data-team
 ---
--->
 
-# 图谱数据候选源
+# BaiCao 数据源与质量校验清单
 
-本文档整理从互联网（主要为 Hugging Face）调研到的与中药材 / 中医药知识图谱相关的候选数据源，并给出评估结论与落地建议。
+截至 2026-08-19，BaiCao 有 4 个正式登记源、9 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
 
-> **背景**：2026-03-23 完成调研，结论是"可直接接入图谱的高质量结构化数据很少，更多是问答或训练语料"。本文档将这些调研发现整理为正式归档。
+本文档是逐源质量校验的单一入口，不替代以下事实真源：
 
----
+- 已登记源状态、产量和发布开关：[`datasets/baicao-knowledge/catalog.json`](../../datasets/baicao-knowledge/catalog.json)
+- 每个已登记源的身份与边界：`datasets/baicao-knowledge/sources/*/SOURCE.md`
+- 原始候选文件：`tmp/qibo-datasets/`，只读、本地保留、不提交 Git
+- 图模型与关系语义：[`packages/knowledge_model/`](../../packages/knowledge_model/)
 
-## 1. 数据源总览
+## 状态口径
 
-| # | 数据集 | 定位 | 分级 | 建议用途 |
-|---|--------|------|------|---------|
-| 1 | `AIeathumberger/TCMKG` | 图谱型数据候选，含 Neo4j 存储文件 | 探索型图谱源 | 单独评估是否可导出为结构化图数据 |
-| 2 | `ZJUFanLab/TCMChat-dataset-600k` | 大规模训练语料，含药典文本和知识 JSON | 优先辅助抽取源 | 从 `knowledge.json`、药典文本中抽实体与关系 |
-| 3 | `michaelwzhu/ShenNong_TCM_Dataset` | 问答数据集，偏症状、证候、方剂推荐 | 训练 / 评测语料 | 问答侧补料，不作为图谱真源 |
-| 4 | `xihao1/Traditional-Chinese-Medicine-Knowledge` | 对话结构知识数据 | 辅助问答语料 | 轻量知识补料，不作为图谱真源 |
-| 5 | `TCMNER/TCMNER2025` | 命名实体识别训练集 | 抽取辅助数据 | 用于实体抽取质量提升或校验 |
+| 字段 | 允许值 | 含义 |
+|---|---|---|
+| 持有状态 | `published` / `imported` / `cleaned_local` / `staged_local` / `not_held` | 当前实际处理位置 |
+| 结构质量 | `pass` / `partial` / `pending` | 能否稳定解析、是否有坏端点、缺失或重复 |
+| 语义质量 | `pass` / `conditional` / `pending` / `blocked` | 实体、关系和属性是否符合中医药语义 |
+| 许可状态 | `confirmed` / `restricted` / `unverified` / `unlicensed` | 能否复制、派生和公开发布 |
+| 审阅结论 | `accept` / `conditional` / `reject` / `pending` | 人工质量校验的最终决定 |
 
----
+`public` 不是质量结论。任何源只有在许可、结构、语义、证据和隐私边界都明确后，才可在 catalog 中设置 `publish: true`。
 
-## 2. 优先评估候选源
+## 正式登记源
 
-### 2.1 `AIeathumberger/TCMKG`
-
-**链接**: <https://huggingface.co/datasets/AIeathumberger/TCMKG>
-
-**定位判断**:
-- 最接近"图谱型数据"的候选
-- 数据仓库中直接包含大量 Neo4j 存储文件
-
-**适配评估**:
-
-| 维度 | 评估 |
-|------|------|
-| 潜在价值 | 高 — 可能已包含实体与关系网络 |
-| 接入风险 | 高 — 公开形态更像 Neo4j store 目录打包，而非清晰导出的结构化图数据 |
-| 字段说明 | 缺失 — 缺少明确字段、标签、关系说明 |
-| 直接可用性 | 低 |
-
-**结论**: 作为"高风险探索型候选源"，适合单独做一次导出可行性评估，不建议直接列为主真源。
-
-**落地条件**: 需完成 Neo4j 导出可行性评估，判断能否转成 CSV / JSONL / Cypher。
-
----
-
-### 2.2 `ZJUFanLab/TCMChat-dataset-600k`
-
-**链接**: <https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k>
-
-**定位判断**:
-- 大规模中医药训练语料与任务数据集合
-- 包含 `knowledge.json`、`recommend_herb.json`、`2022年中药药典.txt` 等文件
-
-**与图谱结构重合度**:
-
-| 已有结构 | 数据中对应内容 |
-|----------|---------------|
-| 药材 (Herb) | knowledge.json 中药材名称 |
-| 成分 (Component) | 成分列表 |
-| 功效 (Efficacy) | 功效主治 |
-| 性味 (Flavor) | 性味归经 |
-| 归经 (Meridian) | 性味归经 |
-| 来源 (Source) | 药典文本 |
-
-**适配评估**:
-
-| 维度 | 评估 |
-|------|------|
-| 结构重合度 | 高 — 与本项目药材/成分/功效/性味/归经/来源结构明显重合 |
-| 直接可用性 | 中 — 原始形式仍以 instruction/output 文本为主，不是可直接入图的结构化真源 |
-| 抽取价值 | 高 — 适合进入规则 + agent 抽取链路 |
-
-**结论**: 作为"优先辅助抽取源"，适合验证"规则 + agent -> 统一中间格式 -> 共享图模型"主链路。
-
-**落地条件**: 需走数据采集二级子项目的抽取流程，不建议直接导入。
-
----
-
-## 3. 次优候选源
-
-### 3.1 `michaelwzhu/ShenNong_TCM_Dataset`
-
-**链接**: <https://huggingface.co/datasets/michaelwzhu/ShenNong_TCM_Dataset>
-
-**定位判断**:
-- 以 `query/response` 为主的问答数据
-- 更偏中医症状、证候、方剂或中药推荐
-
-**结论**: 适合作为问答训练或评测语料，不适合作为图谱主数据源。
-
----
-
-### 3.2 `xihao1/Traditional-Chinese-Medicine-Knowledge`
-
-**链接**: <https://huggingface.co/datasets/xihao1/Traditional-Chinese-Medicine-Knowledge>
-
-**定位判断**:
-- `conversation/system/input/output` 结构
-- 包含一定中药知识问答内容
-
-**结论**: 可作为轻量辅助抽取语料，结构稳定性与可溯源性不足，不宜直接入图。
-
----
-
-## 4. 辅助能力型数据源
-
-### 4.1 `TCMNER/TCMNER2025`
-
-**链接**: <https://huggingface.co/datasets/TCMNER/TCMNER2025>
-
-**定位判断**:
-- 命名实体识别数据集
-- 不是药材知识库，而是抽取能力训练数据
-
-**结论**: 作为"抽取器训练 / 校验辅助数据"，服务于规则 + agent 的实体抽取流程，而不是直接入图。
-
----
-
-## 5. 落地顺序建议
-
-### 第一阶段：验证主链路
-
-以 `ZJUFanLab/TCMChat-dataset-600k` 作为首个辅助抽取源，验证以下主链路：
-
-```
-原始语料
-  → 规则 + agent 抽取
-  → 统一中间格式（经过 packages/knowledge_model 校验）
-  → 导入器写入 Neo4j
-```
-
-### 第二阶段：探索型评估
-
-并行做一次 `AIeathumberger/TCMKG` 的导出可行性评估：
-
-- 判断能否从 Neo4j store 打包格式中提取结构化数据
-- 判断节点标签和关系类型是否与本项目图模型兼容
-- 评估数据量和质量
-
-### 第三阶段：辅助数据接入
-
-在共享图模型稳定后，再决定是否把问答类语料纳入 RAG、评测或知识补全体系。
-
----
-
-## 6. 白草自有数据集（public）
-
-外部 HF 源只是输入。白草自己的发布面是 public dataset `ticoAg/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`；公开面只含脱敏结构化结果。
-
-每份源固定三件套：`source/`、`processed/`、`VIEW.md`。任务计划量和完成量在 `tasks/ledger.json`。
-
-| source_id | 状态 | 计划 | 完成（2026-08-17） |
-|-----------|------|------|---------------------|
-| `national-standard-2022-pharmacopoeia` | imported | 605 条 | 605/605，3431 条记录已入图 |
-| `daoyi-suyang` | imported | 389 章 | v3 1687 条记录；原文不上 HF |
-| `fengxi177-knowledge-graph-tcm` | cleaned_local | 19,923 条关系 | 4,996 条结构记录；无许可证，`publish: false` |
-
-苏子阳是叙事医案，不是药典字段；原文未授权公开转载，只进本地 staging，公开 Parquet 会清空证据原文并删除 properties 原文字段。筛选入图数据用各源 `SOURCE.md` 的 `import_scope_key`。
-
-`fengxi177/Knowlegde_Graph_TCM` 只做本地结构清洗和内部 smoke。其上游没有许可证，不能因 GitHub 公开可见而把逐条派生关系并入 public Hugging Face。
-
-任务定义与 Parquet 发布口径：`knowledge-dataset.md`。已完成计划归档在 `docs/superpowers/plans/archive/`。
-
-## 7. 相关文档
-
-- [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) — 仓库级图模型与数据采集边界
-- [data-model.md](data-model.md) — Neo4j 节点与关系模型
-- `datasets/baicao-knowledge/README.md` — 自有数据集台账
-- `docs/superpowers/specs/archive/2026-08-16-baicao-knowledge-dataset-design.md` — 数据集设计历史
-- `docs/superpowers/specs/archive/2026-03-23-knowledge-model-and-data-ingestion-design.md` — 原始调研设计文档
-
----
-
-## 8. TCM 训练语料构建（TCMChat 数据体系，背景归档）
-
-本章节整理中医药大语言模型训练语料的完整构建流程，涵盖数据来源、预处理方式及七类场景数据构造策略。
-
-### 7.1 数据来源
-
-| 来源 | 类型 | 规模 | 说明 |
-|------|------|------|------|
-| 图书（国家标准、医学教材、医学案例） | 结构化文本 | 4 项国家标准、7 部医学教材、18 个医学案例 | 通过 OCR 提取 PDF 文本，人工校对 |
-| TCM-DaYi（<https://www.dayi.org.cn/>） | 疾病与证候数据 | 4214 条记录 | 中国医药信息查询平台 |
-| ETCM（<http://www.tcmip.cn/ETCM2/front/>） | 中药与方剂数据 | 1852 味中药、8872 条方剂数据 | 中医药百科 |
-| CNKI 文献摘要 | 文献 | 近 50 万篇摘要 | 关键词："Herb"、"Formula"、"Ingredient" |
-| BaiduBaike | 百科 | — | 从 baby-llama2-chinese 代码库获取 |
-| AliTianchi 平台 | 阅读理解 + NER | 18478 条阅读理解、2480 条实体识别 | TCM 阅读理解数据 + TCM-NER 数据集 |
-| ZY-BERT（GitHub） | 辨证论治文献 | — | 文献支持的证候数据 |
-| ShenNong_TCM_Dataset（HuggingFace） | 方剂/中药推荐 | 11 万条 | 药材或方剂推荐场景 |
-| Herb2.0（<http://47.92.70.12/>） | TCM 分子数据 | 6893 条 TCM 数据、49259 条分子数据 | ADMET 预测场景 |
-| PharmaBench（GitHub） | ADMET 数据 | LogD(14140)、AMES(9140)、BBB(8653)、PPB(1263)、CYP2C9(1000)、CYP2D6(4505)、CYP3A4(4506) | 分子属性预测 |
-
-### 7.2 数据预处理
-
-#### 7.2.1 无监督数据处理
-
-主要处理对象：图书、BaiduBaike、TCM-DaYi、专业文献、ShenNong_TCM_Dataset。
-
-- **图书**：使用 OCR 提取 PDF 文本，人工校对（纠正错别字、标点修正、段落格式化）
-- **文献摘要**：去除 HTML 标签，修正符号错误
-- **TCM-DaYi / ShenNong_TCM_Dataset**：简单分词处理
-
-#### 7.2.2 有监督指令数据构建策略
-
-构建方式分三类：
-
-1. **人机交互指令创建**（Human-AI Interaction Instruction Creation）
-2. **模板转换为文本格式**（Template Conversion to Text Format）
-3. **开源数据集收集**（Open-source Dataset Collection）
-
-最终通过人工验证过滤，生成七类核心场景数据。
-
-### 7.3 七类场景数据构造
-
-| 场景 | 数据内容 | 构建方式 |
-|------|----------|----------|
-| **TCM 知识库** | 药材的性味归经、功效主治、组成、配伍等 | 模板转换为文本格式 |
-| **选择题** | 五选一选项 + 答案 + 分析描述 | 人机交互指令 + 模板转换 |
-| **阅读理解** | 基于《黄帝内经》、名医百科、专利中药、慢性病保健等文献 | 模板转换为文本格式 |
-| **实体抽取** | 13 类实体：药材、药物成分、疾病、症状等 | 模板转换为文本格式 |
-| **医学案例诊断** | 主诉、疾病、证候、治法、中药/方剂建议 | TCM-SD 与 ETCM 映射构建 |
-| **方剂/中药推荐** | 功效、靶点、证据、疾病等属性 | 公开数据库（ChatMed-TCM、ETCM、图书）整合 + 模板转换 |
-| **ADMET 预测** | TCM SMILES 指令集、ADMET 回归/分类预测任务 | Herb2.0 + PharmaBench，模板转换 |
-
-#### 场景详情
-
-**医学案例诊断数据构造**：
-
-- 数据源：TCM-SD（疾病、证候、症状）、ETCM（中药功效）
-- 构建方式：通过证候与治法映射构建，输出字段包括：主诉、疾病、证候、治法、中药/方剂建议
-
-**ADMET 预测数据构造**：
-
-- TCM 分子 SMILES 指令集 ← Herb2.0
-- ADMET 回归/分类预测任务 ← PharmaBench（LogD、AMES、BBB、PPB、CYP2C9、CYP2D6、CYP3A4）
+| ID | 数据源 | 形态与规模 | 当前状态 | 许可与发布边界 | 已知质量事实 | 审阅结论 |
+|---|---|---|---|---|---|---|
+| `BC-01` | [2022 年中药药典](../../datasets/baicao-knowledge/sources/national-standard-2022-pharmacopoeia/SOURCE.md) | 605 条目；3,431 条抽取记录 | `imported`；`publish: true` | 原始载体为 `ZJUFanLab/TCMChat-dataset-600k`；公开面只含脱敏结构化结果；上游具体再发布条款仍需独立复核 | 605/605 条目成功；Neo4j 触达 3,427 节点、7,548 边；4 个近重复词条已合并；LLM 语义仍需专家抽样 | `pending` |
+| `BC-02` | [道医苏子阳](../../datasets/baicao-knowledge/sources/daoyi-suyang/SOURCE.md) | 389 章叙事医案；1,687 条抽取记录 | `imported`；`publish: true` | 原文未获公开转载授权；原文仅本地保存，公开面只含脱敏结构化结果 | v3 已合并入图；262 章因无可用临床知识跳过；叙事抽取、同名实体和诊疗语义需专家抽样 | `pending` |
+| `BC-03` | [fengxi177/Knowlegde_Graph_TCM](../../datasets/baicao-knowledge/sources/fengxi177-knowledge-graph-tcm/SOURCE.md) | 19,923 条原始关系；4,996 records / 11,445 edges | `cleaned_local`；`publish: false` | 上游无 LICENSE，状态为 `unlicensed_upstream`；禁止公开逐条派生关系 | 结构校验通过；737 条组成无可绑定剂量；存在疑似截断词、剂量混入药名和一对多别名；全部保持 `pending` | `blocked` |
+| `BC-04` | [ShenNong TCM-KG](../../datasets/baicao-knowledge/sources/shennong-tcm-kg/SOURCE.md) | 123,358 条原始三元组；19,066 records / 52,247 edges | `cleaned_local`；`publish: false` | 两个上游仓库均无许可证文件；ShenNong README 限定仅供学术研究、禁止商业用途；无充分再发布授权 | 中药/治法/证候只保留中性关联；化学关系 67,481 条排除；`TS_MS` 245 条、功能冲突 337 条隔离；3,278 个来源标注证候，12,687 个未分类临床概念 | `blocked` |
+
+当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 尚未触发远端重发，后续即使重发也只允许发布元数据。
+
+## 本地候选源
+
+以下源已经位于 `tmp/qibo-datasets/`，但尚未进入 catalog。路径均相对仓库根目录。
+
+| ID | 数据源与上游 | 本地载体与规模 | 许可状态 | 已知质量风险 | 建议用途 | 审阅结论 |
+|---|---|---|---|---|---|---|
+| `CAND-02` | [xiaogege6697/tcm-db](https://github.com/xiaogege6697/tcm-db) | `tmp/qibo-datasets/fangji-extra/tcm-db/tcm_knowledge.db`；472 药材、234 方剂、727 症状、194 证候 | README 只明确 `hantang-nihaixia-follower` 为 MulanPSL-2.0，其他上游要求各查 LICENSE；数据库整体授权需复核 | `formula_herbs` 仅 196 条；部分 `composition` 为空；权威数据库不可由现存脚本完整重建；需核实方证内容证据 | 小规模经方、方药组成和证候对齐，可作人工金标准候选 | `pending` |
+| `CAND-03` | [DragonTCM](https://huggingface.co/datasets/f-galkin/DragonTCM) | `tmp/qibo-datasets/DragonTCM/`；1,044 herbs、2,580 formulas、1,119 conditions、约 28,000 edges | `CC-BY-NC-4.0`，非商业限制；并入 public 数据集前需确认兼容性 | 英文实体为主；中文名映射、关系方向、重复实体和来源证据尚未校验 | 方剂组成、适应证、禁忌；适合跨语言对齐后补图 | `pending` |
+| `CAND-04` | [TCM-MKG](https://huggingface.co/datasets/JX-Lab/TCM-MKG) | `tmp/qibo-datasets/TCM-MKG/`；D1-D24、SD1、约 37 万节点；未下载 4,884 万条完整边 | `CC-BY-4.0`，需保留署名和版本信息 | 规模大、跨本体；成药、饮片、疾病和化学实体需限定子图；ID 映射和预测关系不可混同事实关系 | 优先取 D3-D7 的成药、饮片、疾病与药性关系 | `pending` |
+| `CAND-05` | [TCM-SD / ZY-BERT](https://github.com/Borororo/ZY-BERT) | `tmp/qibo-datasets/TCM-SD/`；train 43,180、dev 5,486、test 5,486；148 个证候 | `CC-BY-NC-SA-4.0`；非商业和相同方式共享限制 | 临床文本需检查去标识化；病名到证候标签不等于因果关系；训练、开发、测试集不可重复汇总 | 疾病到证候的标注关系，以及证候抽取评测 | `pending` |
+| `CAND-06` | [TCM-NER DeepNER 镜像](https://github.com/z814081807/DeepNER) | `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`；850 篇训练说明书及 dev/test/stack JSON | `unverified`；官方天池/OpenKG 原包未取得，镜像数据许可链需复核 | NER 标签只证明文本跨度，不证明实体间关系；`stack.json` 可能与 train/dev/test 重复；镜像与官方版本一致性未知 | 抽取器训练和实体覆盖校验，不直接作为图谱事实源 | `pending` |
+| `CAND-07` | [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books) | `tmp/qibo-datasets/TCM-Ancient-Books/`；701 本 TXT 古籍 | `unverified`；仓库未提供本地许可文件 | 版本、OCR、繁简、异体字、篇章边界和现代整理版权需逐项检查；全文关系必须保留原文定位 | 古籍证据、方剂组成和功效主治抽取 | `pending` |
+| `CAND-08` | [classical-tcm-canon](https://huggingface.co/datasets/wangekxy/classical-tcm-canon) | `tmp/qibo-datasets/classical-tcm-canon/`；115 部经典、约 940 万字 Parquet | Dataset Card 标记 `license: other`，声明原作公版；数字版本边界仍需复核 | Dataset Card 声明零 OCR：53 部多源验证、61 部单源、1 部轻微差异；仍需核实版本、章节切分、异体字和现代标点 | 可溯源经典原文和证据型 RAG | `pending` |
+| `CAND-09` | [SylvanL TCM Pretrain](https://huggingface.co/datasets/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain) | `tmp/qibo-datasets/TCM-Pretrain/`；146,244 书籍切段、17,921 + 12,889 百科/国标记录 | `unverified`；当前本地载体没有完整许可说明 | 多来源混合；含中药、西药、放射性药品等异质条目；已观察到疑似字段串行或药理内容错配，不能直接入图 | 百科属性候选；必须先分源、分类和清洗，书籍部分走证据抽取 | `pending` |
+| `CAND-10` | [ZY-BERT 预训练语料](https://www.dropbox.com/s/jrgngr8afqz41oy/tcm_pretrain_corpus_a.rar?dl=0) | `tmp/qibo-datasets/TCM-Pretrain/zybert-corpus/tcm_pretrain_corpus_a.rar`；218 MB，尚未解压 | `unverified`；不能直接继承 TCM-SD 的 CC 条款 | 无标注混合文本；尚未检查内容清单、编码、重复、隐私和来源构成 | 仅作为后续实体/关系抽取候选，当前不处理 | `pending` |
+
+## 重复目录与辅助材料
+
+这些路径保留用于来源追踪或复现，不作为独立数据源重复计数。
+
+| 路径 | 处理口径 |
+|---|---|
+| `tmp/qibo-datasets/Knowlegde_Graph_TCM/` | `BC-03` 的只读原始输入，不再作为候选源重复登记 |
+| `tmp/qibo-datasets/TCM_KG/` | 只有约 1.5 KB 示例三元组和建图脚本；完整图已登记为 `BC-04`，禁止重复导入 |
+| `tmp/qibo-datasets/TCM-SD-repo/` | `CAND-05` 的上游仓库快照；实际 train/dev/test 使用 `TCM-SD/`，禁止双计数 |
+| `tmp/qibo-datasets/fangji-extra/` | 聚合目录；当前只把其中 `tcm-db` 作为 `CAND-02` 计数 |
+| `tmp/qibo-datasets/README.md`、`STATUS.json`、`USAGE.md` | 下载状态、来源说明和本地用法，不是业务数据 |
+
+## 明确未持有或有意跳过
+
+| 资源 | 状态与原因 |
+|---|---|
+| TCM-MKG `original_kg/edges.tsv` | 未下载；约 5.64 GB / 48,849,793 条边，先用 D1-D24 验证子图价值 |
+| 天池 TCM-NER 86819 官方 brat 包 | 未取得；需要登录，当前只有 DeepNER JSON 镜像 |
+| 天池 TCM-SD 139034 官方下载 | 未取得；本地数据来自 GitHub ZY-BERT 仓库 |
+| Qibo 未公开约 2 GB 预训练混合语料 | 从未公开，未持有 |
+| ShenNong/ChatMed SFT、CMtMedQA 等对话数据 | 按当前知识图谱范围有意跳过，不作为事实源 |
+| `wangekxy/tcm-formulary` 商业全量 | 未购买、未持有；仅知道公开样例存在 |
+| `AIeathumberger/TCMKG` Neo4j store | 仅完成历史调研，当前未下载；导出格式和图模型未知 |
+| `michaelwzhu/ShenNong_TCM_Dataset`、`xihao1/Traditional-Chinese-Medicine-Knowledge` | 仅完成历史调研，当前未持有；均偏问答语料，不作为图谱真源 |
+| `TCMNER/TCMNER2025` | 仅完成历史调研，当前未持有；定位为抽取器辅助数据 |
+
+## 建议校验顺序
+
+| 优先级 | 数据源 | 目的 |
+|---|---|---|
+| P0 | `BC-01`、`BC-02` | 已公开，优先确认语义正确率、许可说明和脱敏边界 |
+| P0 | `BC-03`、`BC-04` | 已完成结构清洗，确认是否值得继续争取授权或只保留本地 |
+| P1 | `CAND-02` | 中文且结构直接，作为下一轮清洗输入 |
+| P2 | `CAND-03`、`CAND-04`、`CAND-05` | 分别验证跨语言方剂、跨本体大图和疾病-证候标签 |
+| P3 | `CAND-06` 至 `CAND-10` | 用于抽取器或原文证据，处理成本和许可不确定性更高 |
+
+## 人工质量校验方法
+
+每个源先做一次筛查抽检：随机 30 条，加上针对已知风险挑选的 20 条。该样本只用于发现明显问题，不代表统计学质量保证。
+
+### 硬门禁
+
+- [ ] 身份可追溯到上游 URL、版本或 commit，且本地文件与记录一致
+- [ ] 许可明确覆盖当前使用方式；`unverified` 或 `unlicensed` 不得公开发布
+- [ ] 原文、个人信息、医案隐私和受限内容没有进入公开导出
+- [ ] 关系表达事实、引用或明确标注的推断；共现和模型猜测不得伪装成事实
+
+### 结构检查
+
+- [ ] 编码、分隔符、schema 和字段含义稳定
+- [ ] 记录数与上游说明一致，缺失、坏行、空值和重复有统计
+- [ ] 边端点存在且实体类型正确，关系方向符合共享图模型
+- [ ] train/dev/test、镜像目录和聚合文件没有重复导入
+
+### 语义与证据检查
+
+- [ ] 药材、方剂、病、证候、症状、功效、治法等类型没有混淆
+- [ ] 别名、异体字、繁简体和中英文映射不会造成错误合并
+- [ ] 剂量、单位、炮制、禁忌和适应证没有被截断或挂错对象
+- [ ] 每条高风险临床关系能回到原记录、章节、表行或上游标识
+- [ ] 专家抽检记录包含样本键、错误类型、严重度和修正建议
+
+严重度口径：`critical` 表示错误临床关系、隐私或许可违规；`major` 表示实体/关系挂错或大面积缺失；`minor` 表示格式、别名或非关键属性问题。出现 `critical` 时该源直接 `reject` 或保持 `publish: false`。
+
+## 审阅记录
+
+用户或专家完成抽检后直接填写本表；原始问题样例不要覆盖，应保留样本键和证据定位。
+
+| ID | 审阅人 / 日期 | 样本范围 | 许可 | 结构 | 语义 | 结论 | 问题与证据定位 |
+|---|---|---|---|---|---|---|---|
+| `BC-01` | 待填写 | 待填写 | 待复核 | 已自动验证 | 待校验 | `pending` | |
+| `BC-02` | 待填写 | 待填写 | 原文受限 | 已自动验证 | 待校验 | `pending` | |
+| `BC-03` | 待填写 | 待填写 | 无许可证 | 已自动验证 | 待校验 | `blocked` | 737 条组成无剂量及异常词 |
+| `BC-04` | 待填写 | 待填写 | 仅限学术研究、无再发布许可 | 已自动验证 | 待校验 | `blocked` | 3,278 个来源标注证候、245 条跨语言映射、337 条功能冲突和 12,687 个未分类临床概念待人工复核 |
+| `CAND-02` | 待填写 | 待填写 | 待复核 | 待校验 | 待校验 | `pending` | |
+| `CAND-03` | 待填写 | 待填写 | CC-BY-NC-4.0 | 待校验 | 待校验 | `pending` | |
+| `CAND-04` | 待填写 | 待填写 | CC-BY-4.0 | 待校验 | 待校验 | `pending` | |
+| `CAND-05` | 待填写 | 待填写 | CC-BY-NC-SA-4.0 | 待校验 | 待校验 | `pending` | |
+| `CAND-06` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
+| `CAND-07` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
+| `CAND-08` | 待填写 | 待填写 | `other` / 公版声明 | 待校验 | 待校验 | `pending` | |
+| `CAND-09` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | `CPT_tcmKnowledge_source2_12889.json:35850`：“注射用亚锡葡庚糖酸钠Ⅰ”的药理段落串入氨苄西林/舒巴坦内容 |
+| `CAND-10` | 待填写 | 待填写 | 待核实 | 未解压 | 待校验 | `pending` | |
+
+审阅完成后的落点：质量事实回写本文件和对应 `SOURCE.md`；正式接入时新增 catalog source、任务 ledger 和验收证据；只有明确允许公开的源才设置 `publish: true`。
+
+## Citations
+
+1. [BaiCao dataset catalog](../../datasets/baicao-knowledge/catalog.json)
+2. [BaiCao knowledge dataset architecture](knowledge-dataset.md)
+3. [本地候选源下载与规模记录](../../tmp/qibo-datasets/README.md)
+4. [本地候选源状态记录](../../tmp/qibo-datasets/STATUS.json)
+5. [OKF v0.1 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+6. [ShenNong-TCM-LLM](https://github.com/michael-wzhu/ShenNong-TCM-LLM)
+7. [TCM_KG](https://github.com/ywjawmw/TCM_KG)
+8. [WHO ICD-11 Traditional Medicine FAQ](https://www.who.int/standards/classifications/frequently-asked-questions/traditional-medicine)
