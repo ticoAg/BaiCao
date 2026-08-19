@@ -664,3 +664,38 @@ changed-file ty: passed
 - 三路 Grok 审查均超时，未计作有效结论；最终验收以本地测试和隔离图库为准
 - 病例标签不是疾病定义上的证候知识
 - 数据集 `CC-BY-NC-SA-4.0` 且残留病历标识，固定 `publish:false`
+
+## 17. 2026-08-19 TCM-NER / DeepNER 抽取评测审计补充证据
+
+### 本轮范围
+
+- 只读消费 `tmp/qibo-datasets/TCM-NER/DeepNER-raw/` 的 train/dev JSON
+- 确认 stack 为 train∪dev、test 无标签、13 类跨度与原文对齐
+- 不把 NER 跨度或说明书共现提升为图节点/边
+
+### 结构与隔离结果
+
+- 输入：标注 1,000 篇、17,757 条跨度；无标签测试 500 篇
+- 输出：0 节点记录、0 条关系
+- 隔离：stack 1,000、跨类型同名表面 260、药厂/公司名 904 篇
+- 许可：DeepNER 无许可证，官方包未持有
+
+### 隔离 Neo4j smoke
+
+无图记录，未启动临时容器。空 `records.jsonl` 不跑 importer dry-run。
+
+### 回归证据
+
+```text
+data_ingestion: 119 passed, 2 skipped
+knowledge_model: 28 passed
+changed-file Ruff: passed
+changed-file ty: passed
+cleaner CLI: 0 records / 0 edges, publish=false
+```
+
+### 结论与边界
+
+- 结果：结构审计和隔离入图门禁 `pass`；该源不得作为图谱真源
+- 本轮未发起 Grok 审查；最终验收以本地测试和统计为准
+- 固定 `publish:false`

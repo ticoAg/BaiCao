@@ -18,3 +18,5 @@
 | `fengxi177-tcm-kg-public-release` | Knowlegde_Graph_TCM | blocked | 1 source | 0（无许可证） |
 | `tcm-sd-structural-clean` | TCM-SD / ZY-BERT | done | 54152 labeled rows | 148 records / 0 edges |
 | `tcm-sd-public-release` | TCM-SD / ZY-BERT | blocked | 1 source | 0（CC-BY-NC-SA-4.0 且残留标识） |
+| `tcm-ner-structural-clean` | TCM-NER / DeepNER | done | 1000 labeled docs | 0 records / 0 edges |
+| `tcm-ner-public-release` | TCM-NER / DeepNER | blocked | 1 source | 0（竞赛镜像无许可证） |

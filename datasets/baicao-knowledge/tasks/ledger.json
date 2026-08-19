@@ -189,6 +189,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "数据集为 CC-BY-NC-SA-4.0，仓库 MIT 只覆盖代码；论文脱敏声明被本地残留标识否定。保持 publish=false。"
+    },
+    {
+      "task_id": "tcm-ner-structural-clean",
+      "source_id": "tcm-ner",
+      "status": "done",
+      "unit": "labeled_docs",
+      "planned_units": 1000,
+      "completed_units": 1000,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-ner/processed/latest/stats.json",
+      "notes": "审计 train/dev 17,757 条跨度；stack 确认为并集后隔离。不提升实体节点或共现边。"
+    },
+    {
+      "task_id": "tcm-ner-public-release",
+      "source_id": "tcm-ner",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "DeepNER 无许可证，天池/OpenKG 官方包未持有；说明书含商品名和药厂名。保持 publish=false。"
     }
   ]
 }

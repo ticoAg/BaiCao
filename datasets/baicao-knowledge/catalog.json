@@ -297,6 +297,41 @@
         "view": "sources/tcm-sd/VIEW.md",
         "processed_dir": "sources/tcm-sd/processed/latest/"
       }
+    },
+    {
+      "source_id": "tcm-ner",
+      "title": "TCM-NER / DeepNER",
+      "status": "cleaned_local",
+      "kind": "package_insert_ner_benchmark",
+      "publish": false,
+      "license_status": "unverified_competition_mirror_unlicensed_repo",
+      "filter": {
+        "source_provider": "github",
+        "dataset_name": "z814081807/DeepNER",
+        "file_path": "data/raw_data",
+        "import_scope_key": "github:z814081807/DeepNER:data/raw_data"
+      },
+      "planned": {
+        "unit": "labeled_docs",
+        "count": 1000,
+        "records": null
+      },
+      "completed": {
+        "unit": "labeled_docs",
+        "count": 1000,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "labeled_spans": 17757,
+        "cross_type_surfaces": 260,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "竞赛镜像无许可证，官方包未持有。NER 跨度与 260 个跨类型同名全部隔离，不生成图节点或共现边。固定 publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-ner/SOURCE.md",
+        "view": "sources/tcm-ner/VIEW.md",
+        "processed_dir": "sources/tcm-ner/processed/latest/"
+      }
     }
   ]
 }

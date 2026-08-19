@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-06 TCM-NER / DeepNER`）
+**Status:** active（当前源：`CAND-07 TCM-Ancient-Books`）
 
 ## 全局门禁
 
@@ -247,33 +247,61 @@ status: active
 - 病例标签和知识库常见病/推荐方仍可能被下游误用为治疗或诊断事实，必须保持隔离。
 - 残留标识证明论文脱敏声明不可信；下游不得回读原始 JSON 到问答或 public 导出。
 
-## 当前源：CAND-06 TCM-NER / DeepNER
+## 已完成源：CAND-06 TCM-NER / DeepNER
 
 ### 已确认事实
 
-- 本地只读副本位于 `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`，包含 850 篇训练说明书及 dev/test/stack JSON。
-- 官方天池/OpenKG 原包未取得；当前是镜像数据，许可链未核实。
-- NER 标签只证明文本跨度，不证明实体间关系。
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`：train 850、dev 150、test 500、stack 1000。
+- DeepNER 仓库无许可证；天池 86819 / OpenKG 官方 brat 包未持有。
+- `stack.json` 与 train∪dev 内容完全一致；test 无标签。
+- 13 类共 17,757 条跨度全部与原文切片对齐，但类型噪声和 260 个跨类型同名使其不能自动入图。
 
 ### Tasks
 
-- [ ] 用 AnySearch、上游仓库和数据文件核实许可、镜像一致性与再利用边界
-- [ ] 用 Grok 独立审查实体类型、跨度语义和是否允许入图
-- [ ] 审计 train/dev/test/stack 的 schema、重复和标签边界
-- [ ] 决定该源只作抽取器评测，还是允许生成可追溯实体清单
-- [ ] 若允许结构清洗，实现来源专用 parser/CLI、最小测试、dry-run 和隔离 Neo4j smoke
-- [ ] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后独立提交
+- [x] 用 GitHub API、天池页面和本地文件核实许可、镜像边界与再利用限制
+- [x] 审计 train/dev/test/stack 的 schema、重复和标签边界
+- [x] 决定该源只作抽取器评测审计，不生成实体清单或共现边
+- [x] 实现来源专用 parser/CLI 和最小测试；空 records 不跑 importer / Neo4j
+- [x] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后分开提交代码与数据文档
+- [ ] Grok 独立审查：本轮不发起。上一源三路审查均超时，改为本地证据审查
+
+### 当前实现证据
+
+- 输出：0 records / 0 edges
+- 隔离：标注篇 1,000、跨度 17,757、无标签测试 500、stack 1,000、药厂名 904 篇
+- 发布门禁：竞赛镜像无许可证，固定 `publish: false`
+
+提交证据：`fede603 feat: audit TCM-NER source without graph lift`
+
+### CAND-06 残余风险
+
+- 未对照官方 brat 包核验转换 JSON 是否完整或被改写。
+- 跨度类型噪声未做专家重标；不得被下游当药品知识。
+
+## 当前源：CAND-07 TCM-Ancient-Books
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-Ancient-Books/`，约 701 本 TXT 古籍。
+- 上游仓库为 `xiaopangxia/TCM-Ancient-Books`；本地未见许可文件。
+- 版本、OCR、繁简、异体字和现代整理版权需逐项检查；全文关系必须保留原文定位。
+
+### Tasks
+
+- [ ] 核实许可、版本来源与再利用边界
+- [ ] 审计目录、编码、重复和篇章边界
+- [ ] 决定本轮只建书目台账，还是允许带原文定位的抽取
+- [ ] 若允许结构清洗，实现来源专用 parser/CLI、最小测试和验收
+- [ ] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后分开提交代码与数据文档
 
 ## Verification
 
 ```bash
 cd packages/data_ingestion
-uv run --with pytest pytest tests/test_tcm_sd.py -q
-uvx ruff check data_ingestion/tcm_sd.py \
-  data_ingestion/cli/tcm_sd_clean.py tests/test_tcm_sd.py
-uv run python -m data_ingestion.cli.tcm_sd_clean --help
-uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
-  --records ../../datasets/baicao-knowledge/sources/tcm-sd/processed/latest/records.jsonl --dry-run
+uv run --with pytest pytest tests/test_tcm_ner.py -q
+uvx ruff check data_ingestion/tcm_ner.py \
+  data_ingestion/cli/tcm_ner_clean.py tests/test_tcm_ner.py
+uv run python -m data_ingestion.cli.tcm_ner_clean --help
 ```
 
 共享契约发生变化时，额外执行知识模型/API contract 测试、`pnpm --dir packages/shared typecheck` 和至少一条 web 消费检查。隔离 Neo4j smoke 必须使用无持久卷容器，不修改现有图库。
@@ -292,3 +320,4 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 10. [WHO TCM terminology](https://www.who.int/publications/i/item/9789240042322)
 11. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)
 12. [ZY-BERT](https://github.com/Borororo/ZY-BERT)
+13. [DeepNER](https://github.com/z814081807/DeepNER)
