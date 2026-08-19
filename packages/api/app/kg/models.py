@@ -119,6 +119,14 @@ class DiseaseNode(GraphNodeBase):
     __label__ = "病证"
 
     tcm_type = StringProperty(db_property="中医类型")
+    related_symptom = AsyncRelationshipTo("SymptomNode", "关联症状", model=BaseRel)
+
+
+class SymptomNode(GraphNodeBase):
+    __label__ = "症状"
+
+    category = StringProperty(db_property="分类")
+    description = StringProperty(db_property="说明")
 
 
 class SourceNode(GraphNodeBase):
@@ -192,6 +200,7 @@ NODE_MODEL_MAP = {
     "性味": FlavorNode,
     "归经": MeridianNode,
     "病证": DiseaseNode,
+    "症状": SymptomNode,
     "来源": SourceNode,
     "证据": EvidenceNode,
     "方剂": FormulaNode,
@@ -209,6 +218,7 @@ NODE_MODEL_MAP = {
     "Flavor": FlavorNode,
     "Meridian": MeridianNode,
     "Disease": DiseaseNode,
+    "Symptom": SymptomNode,
     "Source": SourceNode,
     "Evidence": EvidenceNode,
     "Formula": FormulaNode,
@@ -232,6 +242,7 @@ REL_TYPE_TO_ATTR = {
     "具有性味": "has_flavor",
     "归于经脉": "enters_meridian",
     "治疗病证": "treats",
+    "关联症状": "related_symptom",
     "相似于": "similar_to",
     "派生自": "derived_from",
 }

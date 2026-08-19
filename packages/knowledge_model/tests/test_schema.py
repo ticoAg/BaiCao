@@ -9,7 +9,12 @@ if str(PACKAGE_ROOT) not in sys.path:
 
 from knowledge_model.constants import EdgeType, NodeType
 from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
-from knowledge_model.node_models import EvidenceNodeModel, HerbNodeModel, PreparedHerbNodeModel
+from knowledge_model.node_models import (
+    EvidenceNodeModel,
+    HerbNodeModel,
+    PreparedHerbNodeModel,
+    SymptomNodeModel,
+)
 
 
 def test_graph_import_record_accepts_known_node_type():
@@ -75,6 +80,19 @@ def test_prepared_herb_node_model_accepts_parent_reference():
 
     assert node.type == NodeType.PREPARED_HERB
     assert node.prepared_from_herb == "一枝黄花"
+
+
+def test_symptom_node_model_keeps_symptom_separate_from_disease():
+    node = SymptomNodeModel(
+        id="症状:口干",
+        name="口干",
+        source="tcm-db",
+        category="问诊",
+        description="自觉口渴或口腔干燥",
+    )
+
+    assert node.type == NodeType.SYMPTOM
+    assert node.category == "问诊"
 
 
 def test_evidence_node_model_requires_source_location_fields():

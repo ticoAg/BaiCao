@@ -76,6 +76,7 @@ export type NodeType =
   | '性味'
   | '归经'
   | '病证'
+  | '症状'
   | '方剂'
   | '医案'
   | '穴位'
@@ -166,6 +167,12 @@ export interface DiseaseNode extends BaseNode {
   tcmType?: string
 }
 
+export interface SymptomNode extends BaseNode {
+  type: '症状'
+  category?: string
+  description?: string
+}
+
 export interface FormulaNode extends BaseNode {
   type: '方剂'
   compositionText?: string
@@ -200,6 +207,7 @@ export type GraphNode =
   | FlavorNode
   | MeridianNode
   | DiseaseNode
+  | SymptomNode
   | FormulaNode
   | MedicalCaseNode
   | AcupointNode
@@ -225,6 +233,7 @@ export type EdgeType =
   | '关联药材'
   | '关联治法'
   | '关联证候'
+  | '关联症状'
   | '相互作用'
   | '相似于'
   | '父类'

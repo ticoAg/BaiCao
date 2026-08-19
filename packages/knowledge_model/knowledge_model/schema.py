@@ -14,6 +14,7 @@ from .node_models import (
     MedicalCaseNodeModel,
     MeridianNodeModel,
     PreparedHerbNodeModel,
+    SymptomNodeModel,
     TimePointNodeModel,
     TreatmentMethodNodeModel,
     VariantNodeModel,
@@ -29,6 +30,7 @@ GraphNodeModel = Annotated[
     | FlavorNodeModel
     | MeridianNodeModel
     | DiseaseNodeModel
+    | SymptomNodeModel
     | FormulaNodeModel
     | MedicalCaseNodeModel
     | AcupointNodeModel

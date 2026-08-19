@@ -5,6 +5,7 @@ import pytest
 from data_ingestion.cli import import_dataset_neo4j as importer
 from data_ingestion.cli.import_dataset_neo4j import find_existing, write_edges
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
+from data_ingestion.provenance import slim_record
 
 
 class Result:
@@ -96,10 +97,38 @@ def test_write_edges_uses_resolved_target_name_and_static_label():
     assert params["resolved_target"] == "芍药"
 
 
+def test_write_edges_persists_source_row_locator():
+    tx = Tx()
+    record = DatasetRecord(
+        source_id="tcm-db",
+        batch_id="batch",
+        unit_id="病证:测试证",
+        node_type="病证",
+        node_name="测试证",
+        edges=[
+            DatasetEdge(
+                type="关联症状",
+                target="口干",
+                properties={"evidence_ref": "tcm_knowledge.db:syndrome_symptoms:1"},
+            )
+        ],
+    )
+
+    write_edges(tx, record, "测试证", Counter())
+
+    query, params = tx.calls[0]
+    assert "r.证据定位" in query
+    assert params["evidence_ref"] == "tcm_knowledge.db:syndrome_symptoms:1"
+
+    slimmed = slim_record(record, prompt_hash="sha256:test", import_scope_key="scope")
+    assert slimmed.edges[0].properties["evidence_ref"] == params["evidence_ref"]
+
+
 @pytest.mark.parametrize(
     ("edge_type", "target", "target_label"),
     [
         ("关联证候", "心经积热证", "病证"),
+        ("关联症状", "口干", "症状"),
         ("关联药材", "仙茅", "药材"),
         ("关联治法", "温阳散寒", "治法"),
     ],

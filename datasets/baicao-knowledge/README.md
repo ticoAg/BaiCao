@@ -39,6 +39,8 @@ configs:
 | `national-standard-2022-pharmacopoeia` | imported | 3431 / 605 条 | 药典 2022，entry_key 全成功 |
 | `daoyi-suyang` | imported | 1687 / 389 章 | v3 宁缺毋滥；skip 262；已合并入 Neo4j |
 | `fengxi177-knowledge-graph-tcm` | cleaned_local | 4996 / 19923 条关系 | 仅本地 records；上游无许可证，`publish: false` |
+| `shennong-tcm-kg` | cleaned_local | 19066 / 123358 条三元组 | 仅本地 records；许可限制，`publish: false` |
+| `tcm-db` | cleaned_local | 1715 records / 654 edges | 仅本地 records；混合上游许可不完整，`publish: false` |
 
 ## Neo4j 筛选
 

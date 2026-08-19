@@ -195,6 +195,7 @@ def write_edges(
             "关联药材": ("药材",),
             "关联治法": ("治法",),
             "关联证候": ("病证",),
+            "关联症状": ("症状",),
             "记载于医案": ("医案",),
             "由证据支持": ("证据",),
             "来源于": ("来源",),
@@ -232,6 +233,7 @@ def write_edges(
                 f"AND {target_where}"
             )
         dosage = (edge.properties or {}).get("dosage")
+        evidence_ref = (edge.properties or {}).get("evidence_ref")
         localized = to_graph_properties(
             {
                 "import_source_id": record.source_id,
@@ -240,6 +242,7 @@ def write_edges(
                 "import_scope_key": record.import_scope_key,
                 "prompt_hash": record.prompt_hash,
                 "dosage": dosage,
+                "evidence_ref": evidence_ref,
             }
         )
         result = tx.run(
@@ -256,6 +259,9 @@ def write_edges(
             FOREACH (_ IN CASE WHEN $dosage IS NULL THEN [] ELSE [1] END |
               SET r.剂量 = $dosage
             )
+            FOREACH (_ IN CASE WHEN $evidence_ref IS NULL THEN [] ELSE [1] END |
+              SET r.证据定位 = $evidence_ref
+            )
             RETURN type(r) AS rel
             """,
             source_name=resolved_name,
@@ -269,6 +275,7 @@ def write_edges(
             unit_id=record.unit_id,
             prompt_hash=record.prompt_hash,
             dosage=dosage,
+            evidence_ref=localized.get("证据定位"),
         )
         if result.single() is None:
             stats["dangling_edges"] += 1

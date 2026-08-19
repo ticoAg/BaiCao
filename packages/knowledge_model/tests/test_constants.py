@@ -44,6 +44,7 @@ def test_node_type_exposes_prepared_piece_and_evidence():
     assert NodeType.PREPARED_HERB == "饮片"
     assert NodeType.EVIDENCE == "证据"
     assert NodeType.FORMULA == "方剂"
+    assert NodeType.SYMPTOM == "症状"
 
 
 def test_edge_type_exposes_chinese_content_relations():
@@ -59,6 +60,7 @@ def test_edge_type_uses_chinese_literals():
     assert EdgeType.RELATED_HERB == "关联药材"
     assert EdgeType.RELATED_TREATMENT_METHOD == "关联治法"
     assert EdgeType.RELATED_SYNDROME == "关联证候"
+    assert EdgeType.RELATED_SYMPTOM == "关联症状"
 
 
 def test_edge_type_has_neo4j_relation_mapping():
@@ -68,6 +70,7 @@ def test_edge_type_has_neo4j_relation_mapping():
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_HERB] == "关联药材"
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_TREATMENT_METHOD] == "关联治法"
     assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_SYNDROME] == "关联证候"
+    assert EDGE_TYPE_TO_NEO4J_REL[EdgeType.RELATED_SYMPTOM] == "关联症状"
     assert NEO4J_REL_TO_EDGE_TYPE["具有性味"] == EdgeType.HAS_FLAVOR
 
 

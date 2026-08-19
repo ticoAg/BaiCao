@@ -70,6 +70,7 @@ export type GraphNodeLabel =
   | "性味"
   | "归经"
   | "病证"
+  | "症状"
   | "方剂"
   | "医案"
   | "穴位"
@@ -96,6 +97,7 @@ export type GraphEdgeRelType =
   | "关联药材"
   | "关联治法"
   | "关联证候"
+  | "关联症状"
   | "组成药材"
   | "使用方剂"
   | "取用穴位"
@@ -185,6 +187,8 @@ export const graphNodeLabelDisplayMap: Record<string, string> = {
   归经: "归经",
   Disease: "病证",
   病证: "病证",
+  Symptom: "症状",
+  症状: "症状",
   Formula: "方剂",
   方剂: "方剂",
   MedicalCase: "医案",
@@ -234,6 +238,7 @@ export const labelColorMap: Record<string, string> = {
   性味: "#fa8c16",
   归经: "#722ed1",
   病证: "#f5222d",
+  症状: "#d46b08",
   成分: "#13c2c2",
   品种: "#2f54eb",
   工艺: "#a0d911",
@@ -255,6 +260,7 @@ export const labelTagColors: Record<string, string> = {
   性味: "orange",
   归经: "purple",
   病证: "red",
+  症状: "orange",
   成分: "cyan",
   品种: "geekblue",
   工艺: "lime",
@@ -288,6 +294,7 @@ export const nodeStyleMap: Record<
   性味: { fill: "#F79767", stroke: "#f36924", textColor: "#FFFFFF" },
   归经: { fill: "#C990C0", stroke: "#b261a5", textColor: "#FFFFFF" },
   病证: { fill: "#F16667", stroke: "#eb2728", textColor: "#FFFFFF" },
+  症状: { fill: "#E6A23C", stroke: "#c7851e", textColor: "#2A2C34" },
   成分: { fill: "#57C7E3", stroke: "#23b3d7", textColor: "#2A2C34" },
   品种: { fill: "#4C8EDA", stroke: "#2870c2", textColor: "#FFFFFF" },
   工艺: { fill: "#D9C8AE", stroke: "#c0a378", textColor: "#2A2C34" },
@@ -331,6 +338,7 @@ export const relTypeLabels: Record<string, string> = {
   关联药材: "关联药材",
   关联治法: "关联治法",
   关联证候: "关联证候",
+  关联症状: "关联症状",
   相互作用: "相互作用",
   相似于: "相似于",
   父类: "父类",

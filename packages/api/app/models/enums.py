@@ -69,6 +69,7 @@ class EdgeType(StrEnum):
     RELATED_HERB = "关联药材"
     RELATED_TREATMENT_METHOD = "关联治法"
     RELATED_SYNDROME = "关联证候"
+    RELATED_SYMPTOM = "关联症状"
     INTERACTS_WITH = "相互作用"
     SIMILAR_TO = "相似于"
     PARENT_OF = "父类"

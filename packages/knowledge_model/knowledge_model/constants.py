@@ -13,6 +13,7 @@ class NodeType(StrEnum):
     FLAVOR = "性味"
     MERIDIAN = "归经"
     DISEASE = "病证"
+    SYMPTOM = "症状"
     FORMULA = "方剂"
     MEDICAL_CASE = "医案"
     ACUPOINT = "穴位"
@@ -40,6 +41,7 @@ class EdgeType(StrEnum):
     RELATED_HERB = "关联药材"
     RELATED_TREATMENT_METHOD = "关联治法"
     RELATED_SYNDROME = "关联证候"
+    RELATED_SYMPTOM = "关联症状"
     INTERACTS_WITH = "相互作用"
     SIMILAR_TO = "相似于"
     PARENT_OF = "父类"
@@ -84,6 +86,7 @@ LEGACY_ENGLISH_NEO4J_LABELS: dict[NodeType, str] = {
     NodeType.FLAVOR: "Flavor",
     NodeType.MERIDIAN: "Meridian",
     NodeType.DISEASE: "Disease",
+    NodeType.SYMPTOM: "Symptom",
     NodeType.FORMULA: "Formula",
     NodeType.MEDICAL_CASE: "MedicalCase",
     NodeType.ACUPOINT: "Acupoint",
@@ -118,6 +121,7 @@ EDGE_TYPE_TO_NEO4J_REL: dict[EdgeType, str] = {
     EdgeType.RELATED_HERB: "关联药材",
     EdgeType.RELATED_TREATMENT_METHOD: "关联治法",
     EdgeType.RELATED_SYNDROME: "关联证候",
+    EdgeType.RELATED_SYMPTOM: "关联症状",
     EdgeType.INTERACTS_WITH: "相互作用",
     EdgeType.SIMILAR_TO: "相似于",
     EdgeType.PARENT_OF: "父类",
@@ -181,6 +185,7 @@ NodeTypeLiteral = Literal[
     "性味",
     "归经",
     "病证",
+    "症状",
     "方剂",
     "医案",
     "穴位",
@@ -208,6 +213,7 @@ EdgeTypeLiteral = Literal[
     "关联药材",
     "关联治法",
     "关联证候",
+    "关联症状",
     "相互作用",
     "相似于",
     "父类",

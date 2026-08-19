@@ -63,6 +63,12 @@ class DiseaseNodeModel(BaseNodeModel):
     tcm_type: str | None = Field(default=None, description="中医病证分类")
 
 
+class SymptomNodeModel(BaseNodeModel):
+    type: NodeType = Field(default=NodeType.SYMPTOM, description="节点类型：症状")
+    category: str | None = Field(default=None, description="症状分类")
+    description: str | None = Field(default=None, description="症状说明")
+
+
 class FormulaNodeModel(BaseNodeModel):
     type: NodeType = Field(default=NodeType.FORMULA, description="节点类型：方剂")
     composition_text: str | None = Field(default=None, description="组成原文")

@@ -105,6 +105,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "两个上游仓库均无许可证文件，ShenNong README 又限定仅供学术研究且禁止商业用途；保持 publish=false，未进入 public Parquet。"
+    },
+    {
+      "task_id": "tcm-db-structural-clean",
+      "source_id": "tcm-db",
+      "status": "done",
+      "unit": "entity_rows",
+      "planned_units": 1746,
+      "completed_units": 1746,
+      "output_records": 1715,
+      "output_edges": 654,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-db/processed/latest/stats.json",
+      "notes": "mode=ro + query_only；严格消费 5 个实体表和 3 个关系表。29 个异常方剂、2 条冲突白芷和 1 条乳癌同名跨类型边隔离；其他显式关系保留逐行证据定位。"
+    },
+    {
+      "task_id": "tcm-db-public-release",
+      "source_id": "tcm-db",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "混合数据库中仅一个上游核实为 MulanPSL-2.0，其余来源缺少明确再发布许可；保持 publish=false，未进入 public Parquet。"
     }
   ]
 }

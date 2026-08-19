@@ -220,6 +220,7 @@ flowchart LR
 | 性味 | `Flavor` | 性味与药性 |
 | 归经 | `Meridian` | 归属经脉 |
 | 病证 | `Disease` | 疾病或证候相关对象 |
+| 症状 | `Symptom` | 患者表现或来源显式标注的症状对象；与疾病、证候分开 |
 | 方剂 | `Formula` | 临床组方 |
 | 医案 | `MedicalCase` | 叙事医案 |
 | 穴位 | `Acupoint` | 针灸取穴 |
@@ -250,6 +251,7 @@ flowchart LR
 | 关联药材 | `RELATED_HERB` | 未分类临床概念与来源标为中药的对象之间的中性关联 |
 | 关联治法 | `RELATED_TREATMENT_METHOD` | 未分类临床概念与来源标为治法的对象之间的中性关联 |
 | 关联证候 | `RELATED_SYNDROME` | 未分类临床概念与来源标注为证候的对象之间的中性关联 |
+| 关联症状 | `RELATED_SYMPTOM` | 病证或证候与来源显式症状对象之间的中性关联 |
 | 组成药材 | `CONTAINS_HERB` | 方剂组成 |
 | 使用方剂 | `USES_FORMULA` | 医案使用方剂 |
 | 取用穴位 | `USES_ACUPOINT` | 医案或治法取穴 |
@@ -266,7 +268,7 @@ flowchart LR
 
 Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、`具有性味`、`名称`、`待验证`）。API DTO 仍可通过 `graph_i18n.PROPERTY_ZH_TO_EN` 映回英文。`db.propertyKeys()` 会残留历史英文键，清目录只能导出活图后重建空库（`recreate_graph_store`），不能靠 `neo4j-admin dump`。近重复文本只合标点/OCR，见 `knowledge-dataset.md`。
 
-当来源只用 relation 给 tail 标注药材、治法或证候、但未给 head 提供疾病或症状类型时，head 继续使用 `病证` + `中医类型=未分类临床概念`，并按来源方向使用 `关联药材`、`关联治法` 或 `关联证候` 指向带来源类型的 tail。未经独立核实的证候 tail 使用 `中医类型=来源标注证候`，这些中性关系和来源类型都不等于治疗、诊断、因果、语义等价或已验证分类。只有显式类型或可信标准标识才能进一步拆分疾病、症状与证候；名称后缀、编辑距离、跨语言候选和 LLM 猜测不得触发自动拆分或合并。
+当来源只用 relation 给 tail 标注药材、治法或证候、但未给 head 提供疾病或症状类型时，head 继续使用 `病证` + `中医类型=未分类临床概念`，并按来源方向使用 `关联药材`、`关联治法` 或 `关联证候` 指向带来源类型的 tail。来源若以独立表明确区分证候和症状，则分别使用 `病证`、`症状`，以 `关联症状` 连接；跨类型同名仍保留为不同节点，不据名称建立等价或合并关系。未经独立核实的证候 tail 使用 `中医类型=来源标注证候`，这些中性关系和来源类型都不等于治疗、诊断、因果、语义等价或已验证分类。只有显式类型或可信标准标识才能进一步拆分疾病、症状与证候；名称后缀、编辑距离、跨语言候选和 LLM 猜测不得触发自动拆分或合并。
 
 ## 8. 共享包的推荐结构
 
@@ -306,6 +308,7 @@ packages/knowledge_model/
 
 - `GraphImportRecord.properties` 写入 `source_provider`、`dataset_name`、`file_path`、`entry_title`、`evidence_id`、`import_scope_key`
 - `GraphImportEdge.properties` 写入同一组 scope 字段
+- 来源适配器有精确表行定位时，`GraphImportEdge.properties.evidence_ref` 写入关系属性 `证据定位`
 - Neo4j 写关系时，若存在 `import_scope_key`，用它参与关系 `MERGE`
 - 重置时先删除该 scope 下的关系，再删除证据节点和无关系的孤立节点
 - 对旧版本不带 scope 的快照，使用快照中的 `source -> type -> target` 精确删除旧关系
