@@ -367,6 +367,96 @@
         "view": "sources/tcm-ancient-books/VIEW.md",
         "processed_dir": "sources/tcm-ancient-books/processed/latest/"
       }
+    },
+    {
+      "source_id": "classical-tcm-canon",
+      "title": "classical-tcm-canon",
+      "status": "cleaned_local",
+      "kind": "classical_fulltext_canon",
+      "publish": false,
+      "license_status": "other_proprietary_commercial_pd_claim",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/classical-tcm-canon",
+        "file_path": "classical-tcm-canon.parquet",
+        "import_scope_key": "huggingface:wangekxy/classical-tcm-canon"
+      },
+      "planned": {"unit": "works", "count": 115, "records": null},
+      "completed": {
+        "unit": "works",
+        "count": 115,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "char_count_sum": 9401166,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "115 部全文隔离。Dataset Card 为 proprietary-commercial，固定 publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/classical-tcm-canon/SOURCE.md",
+        "view": "sources/classical-tcm-canon/VIEW.md",
+        "processed_dir": "sources/classical-tcm-canon/processed/latest/"
+      }
+    },
+    {
+      "source_id": "sylvanl-tcm-pretrain",
+      "title": "SylvanL TCM Pretrain",
+      "status": "cleaned_local",
+      "kind": "unstructured_pretrain_text",
+      "publish": false,
+      "license_status": "apache-2.0_card_mixed_unstructured_content",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain",
+        "file_path": "CPT_tcmBooks_source1_146244.json + 2 knowledge JSON",
+        "import_scope_key": "huggingface:SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain"
+      },
+      "planned": {"unit": "text_rows", "count": 177054, "records": null},
+      "completed": {
+        "unit": "text_rows",
+        "count": 177054,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "mixed_pharmacology_rows": 1,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "自由文本含西药与串文，医案文件未持有。不入图，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/sylvanl-tcm-pretrain/SOURCE.md",
+        "view": "sources/sylvanl-tcm-pretrain/VIEW.md",
+        "processed_dir": "sources/sylvanl-tcm-pretrain/processed/latest/"
+      }
+    },
+    {
+      "source_id": "zybert-pretrain-corpus",
+      "title": "ZY-BERT 预训练语料",
+      "status": "cleaned_local",
+      "kind": "unlabeled_pretrain_archive",
+      "publish": false,
+      "license_status": "unverified_dropbox_archive_not_inherited_from_tcm_sd",
+      "filter": {
+        "source_provider": "dropbox",
+        "dataset_name": "zybert-tcm-pretrain-corpus",
+        "file_path": "tcm_pretrain_corpus_a.rar",
+        "import_scope_key": "dropbox:zybert:tcm_pretrain_corpus_a.rar"
+      },
+      "planned": {"unit": "archives", "count": 1, "records": null},
+      "completed": {
+        "unit": "archives",
+        "count": 1,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "members": 1,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "只清单不解压。不能继承 TCM-SD 许可。不入图，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/zybert-pretrain-corpus/SOURCE.md",
+        "view": "sources/zybert-pretrain-corpus/VIEW.md",
+        "processed_dir": "sources/zybert-pretrain-corpus/processed/latest/"
+      }
     }
   ]
 }

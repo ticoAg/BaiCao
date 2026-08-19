@@ -22,3 +22,9 @@
 | `tcm-ner-public-release` | TCM-NER / DeepNER | blocked | 1 source | 0（竞赛镜像无许可证） |
 | `tcm-ancient-books-structural-clean` | TCM-Ancient-Books | done | 700 numbered books | 0 records / 0 edges |
 | `tcm-ancient-books-public-release` | TCM-Ancient-Books | blocked | 1 source | 0（无许可证） |
+| `classical-tcm-canon-structural-clean` | classical-tcm-canon | done | 115 works | 0 records / 0 edges |
+| `classical-tcm-canon-public-release` | classical-tcm-canon | blocked | 1 source | 0（proprietary-commercial） |
+| `sylvanl-tcm-pretrain-structural-clean` | SylvanL pretrain | done | 177054 text rows | 0 records / 0 edges |
+| `sylvanl-tcm-pretrain-public-release` | SylvanL pretrain | blocked | 1 source | 0（内容混杂） |
+| `zybert-pretrain-structural-clean` | ZY-BERT rar | done | 1 archive | 0 records / 0 edges |
+| `zybert-pretrain-public-release` | ZY-BERT rar | blocked | 1 source | 0（许可不继承） |

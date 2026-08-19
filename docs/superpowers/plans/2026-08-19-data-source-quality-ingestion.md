@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-08 classical-tcm-canon`）
+**Status:** done（本地已收录候选源已全部审计）
 
 ## 全局门禁
 
@@ -307,29 +307,36 @@ status: active
 - 数字整理本是否为足本、OCR 与现代标点均未核验。
 - 「思考中医」等现代书名仍在编号目录中，后续抽取必须单独标记。
 
-## 当前源：CAND-08 classical-tcm-canon
+## 已完成源：CAND-08 / CAND-09 / CAND-10
 
 ### 已确认事实
 
-- 本地只读副本位于 `tmp/qibo-datasets/classical-tcm-canon/`，115 部经典、约 940 万字 Parquet。
-- Dataset Card 标记 `license: other`，声明原作公版；数字版本边界仍需复核。
+- `classical-tcm-canon`：115 部、9,401,166 字；`license: other` / `proprietary-commercial`。
+- SylvanL 预训练：三份 `{text}` JSON 共 177,054 行；医案 4 文件未持有；source2 index 11949 串文。
+- ZY-BERT rar：RAR v5，成员 `tcm_pretrain_corpus_a.txt` 约 821 MB，未解压；许可不继承 TCM-SD。
 
 ### Tasks
 
-- [ ] 核实 Dataset Card、数字版本与再利用边界
-- [ ] 审计 Parquet schema、部数、切分和重复
-- [ ] 决定只建书目，还是允许带篇章定位的原文证据
-- [ ] 若允许结构清洗，实现 parser/CLI、最小测试和验收
-- [ ] 更新 SOURCE/VIEW、catalog/ledger、纳入决策与验收证据后分开提交
+- [x] 核实三份已持有源的许可与载体
+- [x] 审计 schema / 行数 / 归档成员
+- [x] 决定均不入图、不进 public
+- [x] 实现三份 parser/CLI 与最小测试
+- [x] 回写纳入决策、catalog 与验收证据
+
+### 当前实现证据
+
+- 三源均为 0 records / 0 edges，`publish: false`
+- 本地已收录独立候选源已全部处理，本计划不再有下一个当前源
+
+提交证据：`1b13e39 feat: audit remaining locally held corpora`
 
 ## Verification
 
 ```bash
 cd packages/data_ingestion
-uv run --with pytest pytest tests/test_tcm_ancient_books.py -q
-uvx ruff check data_ingestion/tcm_ancient_books.py \
-  data_ingestion/cli/tcm_ancient_books_clean.py tests/test_tcm_ancient_books.py
-uv run python -m data_ingestion.cli.tcm_ancient_books_clean --help
+uv run --with pytest --with pyarrow pytest tests/test_remaining_local_sources.py -q
+uvx ruff check data_ingestion/classical_tcm_canon.py \
+  data_ingestion/sylvanl_tcm_pretrain.py data_ingestion/zybert_pretrain.py
 ```
 
 共享契约发生变化时，额外执行知识模型/API contract 测试、`pnpm --dir packages/shared typecheck` 和至少一条 web 消费检查。隔离 Neo4j smoke 必须使用无持久卷容器，不修改现有图库。
@@ -350,3 +357,5 @@ uv run python -m data_ingestion.cli.tcm_ancient_books_clean --help
 12. [ZY-BERT](https://github.com/Borororo/ZY-BERT)
 13. [DeepNER](https://github.com/z814081807/DeepNER)
 14. [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books)
+15. [classical-tcm-canon](https://huggingface.co/datasets/wangekxy/classical-tcm-canon)
+16. [SylvanL TCM Pretrain](https://huggingface.co/datasets/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain)

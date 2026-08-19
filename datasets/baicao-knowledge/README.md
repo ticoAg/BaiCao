@@ -46,6 +46,9 @@ configs:
 | `tcm-sd` | cleaned_local | 148 records / 0 edges | 仅本地证候词表；CC-BY-NC-SA-4.0 且残留病历标识，`publish: false` |
 | `tcm-ner` | cleaned_local | 0 records / 0 edges | 仅本地审计；竞赛镜像无许可证，跨度不入图，`publish: false` |
 | `tcm-ancient-books` | cleaned_local | 0 records / 0 edges | 仅书目审计；无许可证且全文不入图，`publish: false` |
+| `classical-tcm-canon` | cleaned_local | 0 records / 0 edges | 115 部全文隔离；proprietary-commercial，`publish: false` |
+| `sylvanl-tcm-pretrain` | cleaned_local | 0 records / 0 edges | 自由文本含串文；医案未持有，`publish: false` |
+| `zybert-pretrain-corpus` | cleaned_local | 0 records / 0 edges | 只清单不解压，`publish: false` |
 
 ## Neo4j 筛选
 

@@ -732,3 +732,22 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 结果：书目审计 `pass`；全文不得作为图谱真源
 - 仓库无许可证，固定 `publish:false`
 - 统一纳入决策见 `docs/architecture/data-sources.md`
+
+## 19. 2026-08-19 剩余已收录源审计补充证据
+
+### 本轮范围
+
+- `classical-tcm-canon`、SylvanL 预训练三份 JSON、ZY-BERT 预训练 RAR
+- 全部只做结构/许可审计，不入图
+
+### 结构与隔离结果
+
+- 经典 115 部 / 9,401,166 字，全文隔离
+- 预训练文本 177,054 行；串文 `source2` index 11949；医案文件未持有
+- RAR 成员 1 个，约 821 MB，未解压
+
+### 结论与边界
+
+- 三源 `records=0`，`publish:false`
+- 本地已收录独立候选已全部处理
+- `data_ingestion`：134 passed

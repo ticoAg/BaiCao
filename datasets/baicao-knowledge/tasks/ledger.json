@@ -231,6 +231,69 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "仓库无许可证，数字整理本版权未核实。保持 publish=false。"
+    },
+    {
+      "task_id": "classical-tcm-canon-structural-clean",
+      "source_id": "classical-tcm-canon",
+      "status": "done",
+      "unit": "works",
+      "planned_units": 115,
+      "completed_units": 115,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/classical-tcm-canon/processed/latest/stats.json",
+      "notes": "115 部、9,401,166 字与 Dataset Card 一致。全文隔离。"
+    },
+    {
+      "task_id": "classical-tcm-canon-public-release",
+      "source_id": "classical-tcm-canon",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "license_name 为 proprietary-commercial。保持 publish=false。"
+    },
+    {
+      "task_id": "sylvanl-tcm-pretrain-structural-clean",
+      "source_id": "sylvanl-tcm-pretrain",
+      "status": "done",
+      "unit": "text_rows",
+      "planned_units": 177054,
+      "completed_units": 177054,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/processed/latest/stats.json",
+      "notes": "三份 JSON 仅 text 字段。source2 index 11949 串文。医案文件未持有。"
+    },
+    {
+      "task_id": "sylvanl-tcm-pretrain-public-release",
+      "source_id": "sylvanl-tcm-pretrain",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "内容混杂，不能作为白草知识图公开面。保持 publish=false。"
+    },
+    {
+      "task_id": "zybert-pretrain-structural-clean",
+      "source_id": "zybert-pretrain-corpus",
+      "status": "done",
+      "unit": "archives",
+      "planned_units": 1,
+      "completed_units": 1,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/zybert-pretrain-corpus/processed/latest/stats.json",
+      "notes": "RAR 成员 1 个，约 821 MB 未解压。"
+    },
+    {
+      "task_id": "zybert-pretrain-public-release",
+      "source_id": "zybert-pretrain-corpus",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "许可不继承 TCM-SD。保持 publish=false。"
     }
   ]
 }
