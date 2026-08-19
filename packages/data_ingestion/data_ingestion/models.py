@@ -23,5 +23,9 @@ class ExtractionCandidate(BaseModel):
     node_name: str = Field(description="候选节点名称")
     source_name: str = Field(description="候选来源名称")
     properties: dict[str, object] = Field(default_factory=dict, description="候选节点属性集合")
+    role: str | None = Field(default=None, description="候选角色，如疾病、证候、中成药")
+    stable_id: str | None = Field(default=None, description="稳定身份，缺省时用规范名")
+    aliases: list[str] = Field(default_factory=list, description="不参与身份的别名")
+    evidence_ref: str | None = Field(default=None, description="来源定位")
 
     model_config = ConfigDict(use_enum_values=False)
