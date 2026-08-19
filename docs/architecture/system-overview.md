@@ -25,7 +25,7 @@ BaiCao ShiTan（白草药坛）是一个面向中药材知识场景的可信问�
 
 当前仓库处于 **MVP 早期实现中**，需要把“代码里已经存在的骨架”和“架构上已确认的目标形态”分开理解：
 
-- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI / React 主骨架、Graph Workbench `/graph`、数据处理工作台 `/data/pipeline`、共享知识模型 / 数据采集边界、CSV/JSONL 导入器、review/export 持久化、SSE 问答流（deepagents）、MinIO 本地对象存储、药典 605 与苏子阳 v3 入图（中文标签/属性键）
+- 已实现：monorepo 骨架、Docker Compose 编排、FastAPI / React 主骨架、Graph Workbench `/graph`、数据处理工作台 `/data/pipeline`、共享知识模型 / 数据采集边界、CSV/JSONL 导入器、review/export 持久化、SSE 问答流（OpenAI Agents SDK + MCP）、MinIO 本地对象存储、药典 605 与苏子阳 v3 入图（中文标签/属性键）
 - 进行中：`datasets/baicao-knowledge/` 的 catalog/publish CLI，以及 Workbench / 问答消费方剂、医案、穴位、治法
 - 规划中：更完整的溯源链路、事件驱动、鉴权治理、多 worker 会话持久化、监控
 
@@ -134,18 +134,18 @@ sequenceDiagram
     participant Web as Web
     participant API as FastAPI
     participant Runtime as ChatAgentRuntime
-    participant Agent as DeepAgents Graph Specialist
-    participant Tools as Graph Tools
+    participant Agent as OpenAI Agents Graph Specialist
+    participant Tools as MCP Structured Tools
     participant Graph as GraphService
     participant Neo4j as Neo4j
     participant LLM as LLM
 
     User->>Web: 输入问题
     Web->>API: POST /api/v1/chat/stream
-    API->>Runtime: 以 session_id 触发 thread_id 续接
-    Runtime->>Runtime: 进程内 memory checkpointer + 30 分钟 TTL 回收 + 同 session 串行锁
-    Runtime->>Agent: 注入当前用户消息、system prompt、基础图工具
-    Agent->>Tools: 自主选择 search / expand / lookup / readonly cypher
+    API->>Runtime: 以 session_id 续接会话
+    Runtime->>Runtime: 进程内 SQLiteSession + 30 分钟 TTL 回收 + 同 session 串行锁
+    Runtime->>Agent: 注入当前用户消息、system prompt、MCP server
+    Agent->>Tools: 自主选择 search / expand / lookup
     Tools->>Graph: 查询节点、关系、子图
     Graph->>Neo4j: 执行图查询
     Neo4j-->>Graph: 返回图数据
@@ -158,8 +158,9 @@ sequenceDiagram
 ```
 
 - 图谱问答主入口已经收敛到 `/api/v1/chat/stream`，不再保留独立 `graph-agent` 主路径。
-- `deepagents` graph specialist 的上下文真源已经收敛到 LangGraph `thread_id` + `InMemorySaver`；应用层不再手动回放完整 thread 历史。
-- 当前进程内会话策略为：30 分钟未访问即回收 checkpoint，且同一 `session_id` 的并发请求串行执行，不同 session 可并发。
+- OpenAI Agents graph specialist 的上下文真源是进程内 `SQLiteSession` registry；应用层不再手动回放完整 thread 历史。
+- 当前进程内会话策略为：30 分钟未访问即从 registry 移除并关闭 session；同一 `session_id` 的并发请求串行执行，不同 session 可并发；应用退出会关闭全部 session。
+- agent MCP 只暴露 `search_nodes`、`search_edges`、`expand_neighbors`、`lookup_nodes`。原始 Cypher 在独立 Neo4j READ-only 身份、查询 timeout/limit、procedure allowlist 和集成测试落地前保持禁用。
 - provider 原生 reasoning 仅在模型提供时透传到页面；若 provider 不返回 reasoning，页面不会伪造该内容。
 
 ### 6.2 知识可信度闭环

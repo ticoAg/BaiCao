@@ -25,6 +25,8 @@ from app.models import (
     VerificationModel,
     VerificationStatus,
 )
+from knowledge_model.constants import EdgeType, to_neo4j_label, to_neo4j_rel
+from knowledge_model.graph_i18n import to_graph_properties
 
 settings = get_settings()
 
@@ -364,20 +366,28 @@ async def seed_neo4j():
     try:
         async with driver.session() as session:
             for node in GRAPH_NODES:
+                label = to_neo4j_label(node["label"])
                 query = f"""
-                MERGE (n:{node['label']} {{name: $name}})
+                MERGE (n:{label} {{名称: $name}})
                 SET n += $props
                 RETURN n
                 """
-                await session.run(query, name=node["name"], props={"name": node["name"], **node["props"]})
+                await session.run(
+                    query,
+                    name=node["name"],
+                    props=to_graph_properties({"name": node["name"], **node["props"]}),
+                )
 
             for edge in GRAPH_EDGES:
                 from_label, from_name = edge["from"]
                 to_label, to_name = edge["to"]
+                from_label = to_neo4j_label(from_label)
+                to_label = to_neo4j_label(to_label)
+                rel_type = to_neo4j_rel(EdgeType[edge["type"]])
                 query = f"""
-                MATCH (a:{from_label} {{name: $from_name}})
-                MATCH (b:{to_label} {{name: $to_name}})
-                MERGE (a)-[r:{edge['type']}]->(b)
+                MATCH (a:{from_label} {{名称: $from_name}})
+                MATCH (b:{to_label} {{名称: $to_name}})
+                MERGE (a)-[r:{rel_type}]->(b)
                 SET r += $props
                 RETURN r
                 """
@@ -385,7 +395,7 @@ async def seed_neo4j():
                     query,
                     from_name=from_name,
                     to_name=to_name,
-                    props=edge["props"],
+                    props=to_graph_properties(edge["props"]),
                 )
     finally:
         await driver.close()

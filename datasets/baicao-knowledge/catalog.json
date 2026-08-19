@@ -1,15 +1,27 @@
 {
   "dataset_id": "ticoAg/baicao-knowledge",
-  "visibility": "private",
+  "visibility": "public",
   "hf_url": "https://huggingface.co/datasets/ticoAg/baicao-knowledge",
   "knowledge_model": "packages/knowledge_model",
-  "updated_at": "2026-08-17",
+  "updated_at": "2026-08-19",
+  "publication": {
+    "status": "published",
+    "published_at": "2026-08-19",
+    "allowed_file_count": 12,
+    "remote_file_count": 13,
+    "records": 5118,
+    "edges": 11202,
+    "viewer_status": "ready",
+    "viewer_http_status": 200,
+    "source_text_redacted": true
+  },
   "sources": [
     {
       "source_id": "national-standard-2022-pharmacopoeia",
       "title": "2022年中药药典",
       "status": "imported",
       "kind": "pharmacopoeia_entries",
+      "publish": true,
       "filter": {
         "source_provider": "huggingface",
         "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
@@ -41,6 +53,7 @@
       "title": "道医苏子阳",
       "status": "imported",
       "kind": "narrative_medical_cases",
+      "publish": true,
       "filter": {
         "source_provider": "manual",
         "dataset_name": "baicao-knowledge",
@@ -69,6 +82,43 @@
         "view": "sources/daoyi-suyang/VIEW.md",
         "source_dir": "sources/daoyi-suyang/source/",
         "processed_dir": "sources/daoyi-suyang/processed/latest/"
+      }
+    },
+    {
+      "source_id": "fengxi177-knowledge-graph-tcm",
+      "title": "Knowlegde_Graph_TCM",
+      "status": "cleaned_local",
+      "kind": "structured_graph_relations",
+      "publish": false,
+      "license_status": "unlicensed_upstream",
+      "filter": {
+        "source_provider": "github",
+        "dataset_name": "fengxi177/Knowlegde_Graph_TCM",
+        "file_path": "zhongyao/data_zhongyao/relations_zhongyao.json + fangji/data_fangji/relations_fangji.json",
+        "import_scope_key": "github:fengxi177/Knowlegde_Graph_TCM"
+      },
+      "planned": {
+        "unit": "relations",
+        "count": 19923,
+        "records": null
+      },
+      "completed": {
+        "unit": "relations",
+        "count": 19923,
+        "extracted_records": 4996,
+        "formula_variants": 742,
+        "composition_edges": 6521,
+        "dosage_edges": 5784,
+        "safe_source_edges": 436,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "结构清洗完成，全部记录为 pending；上游无 LICENSE，禁止进入 public Parquet。"
+      },
+      "paths": {
+        "source_doc": "sources/fengxi177-knowledge-graph-tcm/SOURCE.md",
+        "view": "sources/fengxi177-knowledge-graph-tcm/VIEW.md",
+        "source_dir": "sources/fengxi177-knowledge-graph-tcm/source/",
+        "processed_dir": "sources/fengxi177-knowledge-graph-tcm/processed/latest/"
       }
     }
   ]

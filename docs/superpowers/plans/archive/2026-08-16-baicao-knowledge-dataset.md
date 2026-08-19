@@ -8,7 +8,9 @@
 
 **Tech Stack:** Python 3.12, Pydantic, Hugging Face Hub, Parquet, Neo4j, React / Vite
 
-**Status:** partial（catalog/publish CLI 与 Workbench 查询消费已落地。private HF 实际上传被 Infisical TLS 证书过期阻塞。）
+**Status:** done（2026-08-19；后续按用户决定改为脱敏 public 发布，Viewer 已通过）
+
+> 本文保留原 private 方案的历史拆解。最终发布决策与脱敏边界见稳定文档 `docs/architecture/knowledge-dataset.md`。
 
 **Spec:** `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md`
 
@@ -339,7 +341,7 @@ def main() -> None:
 
 `huggingface_hub` 用 `uv run --with huggingface_hub`，不要先加进 `pyproject.toml` 常驻依赖。
 
-- [x] **Step 8: dry-run + 实际上传一次**（dry-run 通过；实际上传因 Infisical `infisical.ticoag.fun` 证书过期未完成）
+- [x] **Step 8: dry-run + 实际上传一次**（2026-08-19 已通过当前 `hf auth` 登录身份上传）
 
 ```bash
 cd packages/data_ingestion
@@ -349,12 +351,14 @@ uv run python -m data_ingestion.cli.export_dataset_parquet \
 uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dataset-root ../../datasets/baicao-knowledge \
   --dry-run
-infisical run --project-config-dir="$PWD/../.." -- \
-  uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
+hf auth whoami
+uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
 Expected：dry-run 无原文、无 jsonl；实际上传后 Viewer `is-valid` 为 true（private 带 `HF_TOKEN`）。
+
+Actual（2026-08-19）：远端发布成功，清单收敛为 10 个允许文件 + `.gitattributes`；用户随后确认可改为 public。导出层增加原文脱敏后，匿名 Viewer `/is-valid`、`/splits` 与 rows 均返回 200，`records` / `edges` 为 5,118 / 11,202 行。
 
 把 dataset URL 写回 `catalog.json` 与 `datasets/baicao-knowledge/README.md`。`data_ingestion/README.md` 补 catalog / stats / parquet / publish 命令。
 
@@ -513,4 +517,4 @@ git commit -m "feat(graph): expose formula and case types in query and chat"
 | 图消费方剂/医案/穴位/治法 | Task 2 |
 | 不重抽、不扩模型、不公开原文 | Global Constraints |
 
-本 plan 完成后：顶部 Status 改为 `done`，在 `plans/README.md` 毕业；稳定口径已在 `docs/architecture/knowledge-dataset.md`。
+Viewer 验证通过后：顶部 Status 改为 `done`，在 `plans/README.md` 毕业；稳定口径已在 `docs/architecture/knowledge-dataset.md`。

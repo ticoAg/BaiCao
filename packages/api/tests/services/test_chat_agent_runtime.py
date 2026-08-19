@@ -213,3 +213,136 @@ async def test_stream_turn_reuses_openai_session(monkeypatch):
 
     assert len(sessions) == 2
     assert sessions[0] is sessions[1]
+
+
+def _patch_openai_runtime(monkeypatch, runtime, run_streamed=None):
+    from types import SimpleNamespace
+
+    class FakeResult:
+        async def stream_events(self):
+            if False:
+                yield None
+
+    def fake_run_streamed(agent, question, session=None):
+        return FakeResult()
+
+    monkeypatch.setattr(
+        runtime,
+        "get_settings",
+        lambda: SimpleNamespace(
+            openai_api_key="fw-test",
+            openai_base_url="https://api.fireworks.ai/inference/v1",
+            openai_model="accounts/fireworks/models/deepseek-v4-flash-0731",
+        ),
+    )
+
+    async def fake_mcp():
+        return object()
+
+    monkeypatch.setattr(runtime, "get_knowledge_mcp_server", fake_mcp)
+    monkeypatch.setattr(runtime.Runner, "run_streamed", run_streamed or fake_run_streamed)
+
+
+@pytest.mark.asyncio
+async def test_expired_openai_session_is_removed_from_registry_and_closed(monkeypatch):
+    from app.services.chat_agent_runtime import runtime
+
+    _patch_openai_runtime(monkeypatch, runtime)
+
+    async for _ in runtime.stream_turn("第一问", session_id="sid-ttl-close"):
+        pass
+
+    expired = runtime._OPENAI_SESSIONS["sid-ttl-close"]
+    runtime._SESSION_MANAGER._last_seen["sid-ttl-close"] = (  # noqa: SLF001 - force TTL expiry
+        runtime._SESSION_MANAGER.time_fn() - runtime._SESSION_MANAGER.ttl_seconds - 1
+    )
+
+    async for _ in runtime.stream_turn("第二问", session_id="sid-ttl-fresh"):
+        pass
+
+    assert "sid-ttl-close" not in runtime._OPENAI_SESSIONS
+    assert expired._closed is True  # noqa: SLF001 - SQLiteSession close flag
+
+
+@pytest.mark.asyncio
+async def test_stream_turn_creates_new_openai_session_after_ttl_eviction(monkeypatch):
+    from agents import SQLiteSession
+
+    from app.services.chat_agent_runtime import runtime
+
+    captured: list[SQLiteSession] = []
+
+    class FakeResult:
+        async def stream_events(self):
+            if False:
+                yield None
+
+    def fake_run_streamed(agent, question, session: SQLiteSession | None = None):
+        assert session is not None
+        captured.append(session)
+        return FakeResult()
+
+    _patch_openai_runtime(monkeypatch, runtime, run_streamed=fake_run_streamed)
+
+    async for _ in runtime.stream_turn("第一问", session_id="sid-ttl-reuse"):
+        pass
+    first = captured[0]
+    runtime._SESSION_MANAGER._last_seen["sid-ttl-reuse"] = (  # noqa: SLF001 - force TTL expiry
+        runtime._SESSION_MANAGER.time_fn() - runtime._SESSION_MANAGER.ttl_seconds - 1
+    )
+
+    async for _ in runtime.stream_turn("第二问", session_id="sid-ttl-reuse"):
+        pass
+
+    assert len(captured) == 2
+    assert captured[1] is not first
+    assert first._closed is True  # noqa: SLF001 - SQLiteSession close flag
+    assert captured[1] is runtime._OPENAI_SESSIONS["sid-ttl-reuse"]
+    assert captured[1]._closed is False  # noqa: SLF001 - replacement session stays open
+
+
+def test_close_all_openai_sessions_closes_registry(monkeypatch):
+    from app.services.chat_agent_runtime import runtime
+
+    isolated: dict[str, object] = {}
+    monkeypatch.setattr(runtime, "_OPENAI_SESSIONS", isolated)
+
+    first = runtime._session_for("sid-close-all-a")
+    second = runtime._session_for("sid-close-all-b")
+
+    runtime.close_all_openai_sessions()
+
+    assert isolated == {}
+    assert first._closed is True  # noqa: SLF001 - SQLiteSession close flag
+    assert second._closed is True  # noqa: SLF001 - SQLiteSession close flag
+
+
+@pytest.mark.asyncio
+async def test_app_shutdown_closes_openai_sessions(monkeypatch):
+    from contextlib import asynccontextmanager
+    from unittest.mock import AsyncMock
+
+    from app import main
+    from app.services.chat_agent_runtime import runtime
+
+    monkeypatch.setattr(main, "init_db", AsyncMock())
+    monkeypatch.setattr(main, "init_kg_db", AsyncMock())
+    monkeypatch.setattr(main, "close_knowledge_mcp_server", AsyncMock())
+    monkeypatch.setattr(main.knowledge_mcp, "streamable_http_app", lambda: None)
+
+    @asynccontextmanager
+    async def fake_run():
+        yield
+
+    monkeypatch.setattr(main.knowledge_mcp.session_manager, "run", lambda: fake_run())
+
+    isolated: dict[str, object] = {}
+    monkeypatch.setattr(runtime, "_OPENAI_SESSIONS", isolated)
+    session = runtime._session_for("sid-app-shutdown")
+
+    async with main.lifespan(main.app):
+        assert isolated["sid-app-shutdown"] is session
+        assert session._closed is False  # noqa: SLF001 - still open during runtime
+
+    assert isolated == {}
+    assert session._closed is True  # noqa: SLF001 - SQLiteSession close flag

@@ -459,6 +459,79 @@ export interface Evidence {
   createdAt: string
 }
 
+// ============ Provenance Graph API ============
+// 对外契约保持 content / source_name / page_reference；图谱存储映射为
+// 标识 / 名称 / 证据原文 / 状态，以及兼容属性 来源 / 页码。不泄漏中文存储键。
+// 关系存储类型使用 由证据支持、来源于。
+
+export type ProvenanceRelationType = Extract<EdgeType, '由证据支持' | '来源于'>
+
+export interface ProvenanceNode {
+  id: string
+  name: string
+  status: NodeStatus
+}
+
+export interface ProvenanceEvidenceNode {
+  id: string
+  content: string
+  source_name: string
+  page_reference?: string
+  status: NodeStatus
+}
+
+export interface CreateProvenanceEvidenceRequest {
+  content: string
+  source_name: string
+  page_reference?: string
+}
+
+export interface LinkProvenanceSourceRequest {
+  source_id: string
+}
+
+export interface ProvenanceRelationship {
+  type: ProvenanceRelationType
+  status: NodeStatus
+  evidence_id?: string
+  source_id?: string
+}
+
+export interface ProvenanceLineageChain {
+  entity: ProvenanceNode
+  evidence: ProvenanceEvidenceNode | null
+  source: ProvenanceNode
+}
+
+export interface ProvenanceEvidenceCollectionItem {
+  evidence: ProvenanceEvidenceNode
+  source: ProvenanceNode | null
+}
+
+export interface ProvenanceLineageCompleteness {
+  entity: ProvenanceNode
+  evidence: ProvenanceEvidenceNode | null
+  source: ProvenanceNode | null
+  has_evidence: boolean
+  has_source: boolean
+  chain_complete: boolean
+}
+
+export interface ProvenanceSourceDerivationsResponse {
+  derivations: ProvenanceLineageChain[]
+  count: number
+}
+
+export interface ProvenanceEvidenceCollectionResponse {
+  evidence: ProvenanceEvidenceCollectionItem[]
+  count: number
+}
+
+export interface LinkProvenanceSourceResponse {
+  relationship: ProvenanceRelationship
+  message: string
+}
+
 // ============ Pipeline Source Ingestion ============
 
 export type PipelineSourceType = 'huggingface_repo' | 'remote_url' | 'local_upload'

@@ -75,6 +75,9 @@ def _parse_tool_payload(value: Any) -> Any:
     if isinstance(value, ToolMessage):
         value = value.content
 
+    if isinstance(value, dict) and value.get("type") == "text" and isinstance(value.get("text"), str):
+        return _parse_tool_payload(value["text"])
+
     if isinstance(value, (dict, list)):
         return value
 

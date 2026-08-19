@@ -77,7 +77,7 @@ async def load_graph_node(neo4j_driver):
     async def _load_graph_node(node_id: str) -> dict | None:
         query = """
         MATCH (n)
-        WHERE n.id = $node_id
+        WHERE n.标识 = $node_id
         RETURN n
         """
         async with neo4j_driver.session() as session:

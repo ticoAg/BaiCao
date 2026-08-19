@@ -4,6 +4,7 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
+from .citations import citations_from_graph_state
 from .event_adapter import (
     _base_final_payload,
     _merge_graph_patch,
@@ -159,6 +160,7 @@ async def adapt_openai_stream(
         "node_count": len(graph_state["nodes"]),
         "edge_count": len(graph_state["edges"]),
     }
+    final_payload["evidence"] = citations_from_graph_state(graph_state)
     final_payload["reasoning_trace"] = [
         {
             "kind": "tool",

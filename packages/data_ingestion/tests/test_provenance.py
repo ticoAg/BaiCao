@@ -43,6 +43,9 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "import_source_id": "daoyi-suyang",
             "import_batch_id": "2026-08-16-suyang-v3-b01",
             "composition_text": "桔梗4g",
+            "aliases": ["止咳散"],
+            "origin": ["华北"],
+            "formula_name": "止嗽散",
             "note": "drop me",
         },
         edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "junk": 1})],
@@ -52,7 +55,12 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
     assert slim.unit_title is None
     assert slim.prompt_hash == "sha256:abc"
     assert slim.import_scope_key == "manual:baicao-knowledge:daoyi-suyang"
-    assert slim.properties == {"composition_text": "桔梗4g"}
+    assert slim.properties == {
+        "composition_text": "桔梗4g",
+        "aliases": ["止咳散"],
+        "origin": ["华北"],
+        "formula_name": "止嗽散",
+    }
     assert slim.edges[0].properties == {"dosage": "4g"}
 
 

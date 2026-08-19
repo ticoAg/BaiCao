@@ -34,8 +34,31 @@ export interface ChatResponse {
 }
 
 export interface GraphAgentEvidence {
-  node_id?: string;
+  entity_id?: string;
+  evidence_id?: string;
   snippet: string;
+  source_id?: string;
+  source_name?: string;
+  /** 旧字段，仅作展示回退，不得当作 lineage 实体 */
+  node_id?: string;
+}
+
+export interface ChatReviewPrefill {
+  entityType?: string;
+  entityId?: string;
+  content?: string;
+  sourceId?: string;
+}
+
+/** lineage 只能用 entity_id，禁止把 source_id 当实体 */
+export function getEvidenceEntityId(evidence: GraphAgentEvidence): string | undefined {
+  const entityId = evidence.entity_id?.trim();
+  return entityId ? entityId : undefined;
+}
+
+export function getEvidenceSourceLabel(evidence: GraphAgentEvidence): string {
+  const sourceName = evidence.source_name?.trim();
+  return sourceName ? sourceName : "来源未标注";
 }
 
 export interface GraphAgentSubgraphMeta {

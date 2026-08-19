@@ -23,9 +23,9 @@
 
 `MVP early`。可运行的 monorepo、问答与图谱主链路、验证与数据处理工作台已经在。药典 605 与苏子阳 v3 已入库。
 
-下一波是 catalog / publish CLI，以及 Graph Workbench / 问答消费方剂、医案、穴位、治法。计划：[`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`](docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md)。
+脱敏后的 public HF dataset 已真实发布并通过 Viewer 验收；OpenAI Agents + MCP 可信问答、citation、Neo4j integration、E2E 与真实 provider smoke 已闭环。第三数据源已完成本地结构清洗；因上游无许可证，不进入 public Parquet。
 
-完整溯源闭环、专家治理、鉴权、事件驱动与监控还没做。这是研发仓库，不是生产系统。
+多 worker 会话共享、专家治理、鉴权、事件驱动与监控还没做。这是研发仓库，不是生产系统。
 
 ## 快速开始
 

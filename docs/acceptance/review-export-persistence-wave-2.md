@@ -14,7 +14,7 @@ audience: developer
 
 - 功能名称：数据处理工作台第二波主链路
 - 验收目标：验证 `human_review` 已升级为可持久化的逐项修订流程，`export` 已升级为显式执行链路，并在导出时先写 JSONL snapshot 再写 Neo4j
-- 对应需求：`docs/superpowers/plans/2026-03-25-review-export-persistence-wave-2.md`
+- 对应需求：`docs/superpowers/plans/archive/2026-03-25-review-export-persistence-wave-2.md`
 - 当前版本 / 日期：Wave 2 / 2026-03-25
 
 ## 2. 验收范围

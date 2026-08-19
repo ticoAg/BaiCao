@@ -12,8 +12,16 @@ from .system_prompt import build_graph_specialist_system_prompt
 
 set_tracing_disabled(disabled=True)
 
-_SESSION_MANAGER = InMemorySessionManager()
 _OPENAI_SESSIONS: dict[str, SQLiteSession] = {}
+
+
+def _close_registered_session(session_id: str) -> None:
+    session = _OPENAI_SESSIONS.pop(session_id, None)
+    if session is not None:
+        session.close()
+
+
+_SESSION_MANAGER = InMemorySessionManager(on_evict=_close_registered_session)
 
 
 def _openai_ready(settings) -> bool:
@@ -41,6 +49,11 @@ def _session_for(session_id: str) -> SQLiteSession:
     session = SQLiteSession(session_id)
     _OPENAI_SESSIONS[session_id] = session
     return session
+
+
+def close_all_openai_sessions() -> None:
+    for session_id in list(_OPENAI_SESSIONS):
+        _close_registered_session(session_id)
 
 
 async def stream_turn(question: str, session_id: str | None = None) -> AsyncIterator[dict]:

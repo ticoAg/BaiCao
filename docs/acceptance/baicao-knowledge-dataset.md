@@ -1,7 +1,7 @@
 # 验收 · 白草知识数据集
 
-**状态：** pass（2026-08-17）  
-**范围：** 药典 2022 + 道医苏子阳 v3 入图与筛选
+**状态：** pass（入图、查询与 public Viewer，2026-08-19）
+**范围：** 药典 2022 + 道医苏子阳 v3 的脱敏 public HF 发布；fengxi177 图谱的本地结构清洗与隔离 smoke
 
 ## 药典
 
@@ -46,7 +46,21 @@ POST /api/v1/graph/query
 
 契约测试：`packages/api/tests/api/test_graph_routes.py::TestGraphQuery::test_query_graph_accepts_formula_and_case_filters`
 
+## fengxi177 图谱（local only）
+
+- 输入：药材 3,335 + 方剂 16,588 = 19,923 条关系
+- 输出：4,996 records；方剂 742、药材 1,117
+- 边：11,445；组成药材 6,521，其中 dosage 5,784；安全来源边 436
+- 完整源测试：`21 passed`（含 importer/provenance 回归），Ruff 通过
+- 临时 Neo4j 真实导入：4,996 created / 11,445 edges；各关系目标 label 错误均为 0；临时容器已删除，现有图库未修改
+- 上游 `license=null` 且无许可证文件，catalog 固定 `publish: false`；public Parquet 重导仍为 5,118 / 11,202
+
 ## 证据
 
 - latest stats：`datasets/baicao-knowledge/sources/*/processed/latest/stats.json`（不进 git）
-- HF：`ticoAg/baicao-knowledge`（private；publish CLI 已就绪，本机实际上传受 Infisical TLS 证书过期阻塞）
+- HF：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)（public；2026-08-19 真实发布成功）
+- 远端清单：12 个允许文件 + `.gitattributes`；第三源只含 SOURCE/VIEW 元数据，无其 records；无原文、JSONL、`processed/latest`、work 或 exports
+- 远端 Parquet 直读：`records=5,118`，`edges=11,202`
+- public 导出脱敏：`evidence_text` 全空；`properties_json` 不含 `raw_text`、`evidence_text`、`source_text`、`content`、`text`
+- public Viewer：匿名 `/is-valid`、`/splits`、`records`/`edges` 首行读取均返回 200；总行数 5,118 / 11,202
+- 真实主链使用 `graph-zh-live.json` 导入 4,179 节点 / 12,673 关系；fresh-volume integration `4 passed, 293 deselected`

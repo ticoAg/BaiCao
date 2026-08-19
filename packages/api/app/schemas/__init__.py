@@ -15,6 +15,20 @@ from .graph import (
     SearchResult,
     GraphRecord,
 )
+from .provenance import (
+    CreateEvidenceRequest,
+    EvidenceCollectionItem,
+    EvidenceCollectionResponse,
+    EvidenceResponse,
+    LineageChainResponse,
+    LineageCompletenessResponse,
+    LinkSourceRequest,
+    LinkSourceResponse,
+    ProvenanceEvidence,
+    ProvenanceNode,
+    ProvenanceRelationship,
+    SourceDerivationsResponse,
+)
 
 __all__ = [
     # Common
@@ -43,4 +57,17 @@ __all__ = [
     "GraphData",
     "SearchResult",
     "GraphRecord",
+    # Provenance
+    "CreateEvidenceRequest",
+    "EvidenceCollectionItem",
+    "EvidenceCollectionResponse",
+    "EvidenceResponse",
+    "LineageChainResponse",
+    "LineageCompletenessResponse",
+    "LinkSourceRequest",
+    "LinkSourceResponse",
+    "ProvenanceEvidence",
+    "ProvenanceNode",
+    "ProvenanceRelationship",
+    "SourceDerivationsResponse",
 ]

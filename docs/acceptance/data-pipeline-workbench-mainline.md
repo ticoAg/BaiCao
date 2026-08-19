@@ -14,7 +14,7 @@ audience: developer
 
 - 功能名称：数据处理工作台七步预览主链路与统一来源录入
 - 验收目标：验证 `pipeline` 在固定七步中返回结构化预览，并支持 `huggingface_repo`、`remote_url`、`local_upload` 三类来源在 `source_ingest` / `source_preview` 的录入、落盘、README 预览与回退主路径
-- 对应需求：`docs/superpowers/plans/2026-03-30-pipeline-source-ingestion-wave-1.md`
+- 对应需求：`docs/superpowers/plans/archive/2026-03-30-pipeline-source-ingestion-wave-1.md`
 - 对应任务：Task 1 至 Task 7
 - 当前版本 / 日期：Wave 1 / 2026-03-30
 

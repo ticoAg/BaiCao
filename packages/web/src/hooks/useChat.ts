@@ -7,6 +7,7 @@ import type {
   ChatAgentFinalPayload,
   ChatGraphData,
   Entity,
+  GraphAgentEvidence,
   GraphAgentResponse,
   Message,
 } from "../types/chat";
@@ -125,6 +126,37 @@ function extractEntities(graphData: ChatGraphData): Entity[] {
   }));
 }
 
+function asOptionalString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+/** 只消费 final.evidence 契约字段；source_id 不得回填成 entity_id */
+export function normalizeGraphAgentEvidence(
+  items: GraphAgentResponse["evidence"] | undefined,
+): GraphAgentEvidence[] {
+  if (!Array.isArray(items)) return [];
+
+  return items.flatMap((item) => {
+    const snippet = typeof item?.snippet === "string" ? item.snippet : "";
+    const entityId = asOptionalString(item?.entity_id);
+    const evidenceId = asOptionalString(item?.evidence_id);
+    if (!snippet && !entityId && !evidenceId) return [];
+
+    return [
+      {
+        entity_id: entityId,
+        evidence_id: evidenceId,
+        snippet,
+        source_id: asOptionalString(item?.source_id),
+        source_name: asOptionalString(item?.source_name),
+        node_id: asOptionalString(item?.node_id),
+      },
+    ];
+  });
+}
+
 function createLocalSessionId() {
   return globalThis.crypto?.randomUUID?.() ?? `graph-agent-${Date.now()}`;
 }
@@ -139,7 +171,7 @@ function buildAssistantMessage(response: GraphAgentResponse): Message {
     content: response.answer,
     graphData,
     entities: extractEntities(graphData),
-    evidence: response.evidence,
+    evidence: normalizeGraphAgentEvidence(response.evidence),
     subgraphMeta: response.subgraph_meta,
     reasoningTrace: response.reasoning_trace,
     toolCalls: response.tool_calls,

@@ -14,8 +14,8 @@ audience: developer
 
 - 功能名称：Graph Workbench `/graph`
 - 验收目标：验证 `/graph` 已升级为三栏 Graph Workbench，能够同时展示数据库级 `Database information`、中央 D3 图谱结果视图与右侧检查器，并覆盖原图谱查询工作区主链路
-- 对应 spec：[../superpowers/specs/2026-03-23-graph-workbench-design.md](../superpowers/specs/2026-03-23-graph-workbench-design.md)
-- 对应 plan：[../superpowers/plans/2026-03-23-graph-workbench.md](../superpowers/plans/2026-03-23-graph-workbench.md)
+- 对应 spec：[../superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../superpowers/specs/archive/2026-03-23-graph-workbench-design.md)
+- 对应 plan：[../superpowers/plans/archive/2026-03-23-graph-workbench.md](../superpowers/plans/archive/2026-03-23-graph-workbench.md)
 - 当前版本 / 日期：graph workbench / 2026-03-24
 
 ## 2. 验收范围

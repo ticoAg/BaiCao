@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { Form, message } from "../ui/index";
 import { verificationApi } from "../../services/api";
+import type { ChatReviewPrefill } from "../../types/chat";
 import ModalDialog from "../ui/Dialog";
 import AppButton from "../ui/Button";
 import AppSelect from "../ui/Select";
@@ -10,12 +11,7 @@ import { TextArea, TextInput } from "../ui/Field";
 interface ReviewRequestModalProps {
   open: boolean;
   onClose: () => void;
-  prefill?: {
-    entityType?: string;
-    entityId?: string;
-    content?: string;
-    sourceId?: string;
-  };
+  prefill?: ChatReviewPrefill;
 }
 
 const entityTypeOptions = [
@@ -91,7 +87,7 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
           label="实体ID"
           rules={[{ required: true, message: "请填写实体ID" }]}
         >
-          <TextInput placeholder="实体ID" />
+          <TextInput aria-label="实体ID" placeholder="实体ID" />
         </Form.Item>
 
         <Form.Item
@@ -99,11 +95,11 @@ const ReviewRequestModal = ({ open, onClose, prefill }: ReviewRequestModalProps)
           label="审查内容"
           rules={[{ required: true, message: "请填写审查内容" }]}
         >
-          <TextArea rows={4} placeholder="待审查的内容" />
+          <TextArea aria-label="审查内容" rows={4} placeholder="待审查的内容" />
         </Form.Item>
 
         <Form.Item name="source_id" label="来源ID">
-          <TextInput placeholder="来源ID（可选）" />
+          <TextInput aria-label="来源ID" placeholder="来源ID（可选）" />
         </Form.Item>
 
         <Form.Item>

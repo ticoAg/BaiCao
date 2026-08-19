@@ -71,7 +71,7 @@ const ChatPage = () => {
               </>
             )}
             <Text type="secondary" style={{ fontSize: 12 }}>
-              基于 deepagents 图谱专家的中药材问答
+              基于 OpenAI Agents 图谱专家的中药材问答
             </Text>
           </div>
         </div>

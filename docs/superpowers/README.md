@@ -83,8 +83,11 @@
 
 - 任务索引：`plans/README.md`（先看状态再打开 plan）
 - 规格索引：`specs/README.md`
-- **当前 active：** `plans/2026-08-16-baicao-knowledge-dataset.md`
-- 对应 spec：`specs/2026-08-16-baicao-knowledge-dataset-design.md`
+- 已完成计划：`plans/archive/README.md`
+- 已落地规格：`specs/archive/README.md`
+- **当前 active：** 无
+- 已完成 dataset / 可信问答计划：`plans/archive/README.md`
+- 已落地 dataset spec：`specs/archive/README.md`
 - 数据台账：`../../datasets/baicao-knowledge/`
 
 已完成 plan / spec 保留回溯，不要再执行。`packages/graph_runtime/` 不是 chat 主链。

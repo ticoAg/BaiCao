@@ -5,7 +5,7 @@ import pytest
 
 from app.services.graph_tools.read_cypher import build_read_cypher_tool
 from app.services.knowledge_mcp.handlers import KnowledgeMcpHandlers, reject_write_cypher
-from app.services.knowledge_mcp.server import create_knowledge_mcp
+from app.services.knowledge_mcp.server import KNOWLEDGE_MCP_INSTRUCTIONS, create_knowledge_mcp
 
 
 def test_reject_write_cypher():
@@ -35,8 +35,15 @@ async def test_knowledge_mcp_lists_graph_tools():
         "search_edges",
         "expand_neighbors",
         "lookup_nodes",
-        "read_cypher",
     }
+    assert "read_cypher" not in {tool.name for tool in tools}
+
+
+def test_knowledge_mcp_instructions_omit_raw_cypher():
+    assert "search_nodes" in KNOWLEDGE_MCP_INSTRUCTIONS
+    assert "lookup_nodes" in KNOWLEDGE_MCP_INSTRUCTIONS
+    assert "read_cypher" not in KNOWLEDGE_MCP_INSTRUCTIONS
+    assert "不要自行编写或执行 Cypher" in KNOWLEDGE_MCP_INSTRUCTIONS
 
 
 @pytest.mark.asyncio

@@ -10,18 +10,19 @@ audience: developer
 
 # 白草知识数据集
 
-这份文档是「用 Hugging Face Dataset 维护本项目产出数据」的稳定定义。实施拆解仍看 `docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。图模型真源仍是 `packages/knowledge_model/`，数据集只存实例。
+这份文档是「用 Hugging Face Dataset 维护本项目产出数据」的稳定定义。图模型真源仍是 `packages/knowledge_model/`，数据集只存实例。
 
 ## 1. 任务背景
 
 白草要的不是又一份问答语料，而是可入图、可按源/批次查询、可追溯证据的结构化知识。
 
-当前有两类产出：
+当前有三类产出；第三源只进入本地 staging：
 
 | 波次 | 源 | 知识形态 | 处理链 |
 |------|----|----------|--------|
 | 药典 2022 | `national-standard-2022-pharmacopoeia` | 条目字段：药材/饮片/性味/归经/功效 | 规则切段 + LLM → `GraphImportRecord` |
 | 道医苏子阳 | `daoyi-suyang` | 叙事医案：主诉、方剂、针灸、治法 | 按章切分 + 抽取 → 同一信封 |
+| Knowlegde_Graph_TCM | `fengxi177-knowledge-graph-tcm` | 药材与处方关系 | 规则清洗 → `DatasetRecord`；无许可证，`publish: false` |
 
 第一波苏子阳抽取（`2026-08-16-suyang-b*`）验收失败：覆盖够，但方剂被标成药材、证据被标成书名、边大量缺失。
 `2026-08-16-suyang-v2-*` 信封过关但语义灌水（空壳医案、方剂无组成、治法混进武术/诊法），已从 Neo4j 回滚。
@@ -31,8 +32,8 @@ audience: developer
 
 | 项 | 口径 |
 |----|------|
-| HF repo | `ticoAg/baicao-knowledge`（private） |
-| 本地 staging | `datasets/baicao-knowledge/`（整目录 gitignore） |
+| HF repo | `ticoAg/baicao-knowledge`（public，仅脱敏结构化结果） |
+| 本地 staging | `datasets/baicao-knowledge/`（元数据进 git，载荷 gitignore） |
 | 主存储格式 | **Apache Parquet**（HF Dataset Viewer 主路径） |
 | 辅助格式 | JSONL 仅作抽取中间态，不作为发布真源 |
 | 图模型版本 | catalog 钉死 `packages/knowledge_model` |
@@ -58,7 +59,7 @@ datasets/baicao-knowledge/
       stats.json
 ```
 
-Viewer 主表是仓库根下 `data/*.parquet`，把各源 latest 拼在一起。筛选列：`source_id`、`batch_id`、`unit_id`、`node_type`。
+Viewer 数据由 Dataset Card 分成 `records` / `edges` 两个 config，对应仓库根下两张不同 schema 的 Parquet。筛选列：`source_id`、`batch_id`、`unit_id`、`node_type`。
 
 ## 3. 记录信封
 
@@ -161,15 +162,13 @@ uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-产出 `data/records.parquet` 与 `data/edges.parquet`。上传：
+产出 `data/records.parquet` 与 `data/edges.parquet`。只有 catalog 中显式 `publish: true` 的源会进入汇总，默认不发布。visibility 为 public 时，导出器还会清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
 
 ```bash
-hf repos create ticoAg/baicao-knowledge --type dataset --private --exist-ok
-hf upload ticoAg/baicao-knowledge datasets/baicao-knowledge --type dataset --private \
-  --exclude "sources/*/source/**" \
-  --exclude "sources/*/work/**" \
-  --exclude "exports/**" \
-  --exclude "**/*.jsonl"
+uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
+  --dataset-root ../../datasets/baicao-knowledge --dry-run
+uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
+  --dataset-root ../../datasets/baicao-knowledge
 ```
 
 不要上传苏子阳原文、切章、抽取中间态、任务批次稿，也不要上传 `exports/graph-zh-live.json`。
@@ -181,11 +180,11 @@ curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoAg/baicao-k
 curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoAg/baicao-knowledge"
 ```
 
-private 仓库需要 `Authorization: Bearer $HF_TOKEN`。
+截至 2026-08-19，repo 已公开，匿名 `/is-valid`、`/splits` 和两张表的行读取均返回 200；发布行数为 `records=5,118`、`edges=11,202`。原文与含原文的本地 JSONL 不进入 allowlist。
 
 ## 7. 相关文档
 
 - 图模型真源：`packages/knowledge_model/knowledge_model/constants.py`
 - 抽取契约：`packages/data_ingestion/data_ingestion/EXTRACT_SUYANG.md`
 - 候选外源：`data-sources.md`
-- 实施计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`
+- 历史计划：`docs/superpowers/plans/archive/`

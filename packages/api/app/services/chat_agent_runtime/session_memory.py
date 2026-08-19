@@ -1,26 +1,20 @@
 import asyncio
+import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import Protocol
-
-from langgraph.checkpoint.memory import InMemorySaver
-
-
-class ThreadDeleteProtocol(Protocol):
-    def delete_thread(self, thread_id: str) -> None: ...
 
 
 class InMemorySessionManager:
     def __init__(
         self,
         *,
-        checkpointer: ThreadDeleteProtocol | None = None,
+        on_evict: Callable[[str], None] | None = None,
         ttl_seconds: float = 1_800.0,
         time_fn: Callable[[], float] | None = None,
     ) -> None:
-        self.checkpointer = checkpointer or InMemorySaver()
+        self.on_evict = on_evict
         self.ttl_seconds = ttl_seconds
-        self.time_fn = time_fn or __import__("time").time
+        self.time_fn = time_fn or time.time
         self._last_seen: dict[str, float] = {}
         self._locks: dict[str, asyncio.Lock] = {}
         self._active_counts: dict[str, int] = {}
@@ -56,6 +50,7 @@ class InMemorySessionManager:
             and self._active_counts.get(session_id, 0) == 0
         ]
         for session_id in expired:
-            self.checkpointer.delete_thread(session_id)
+            if self.on_evict is not None:
+                self.on_evict(session_id)
             self._last_seen.pop(session_id, None)
             self._locks.pop(session_id, None)

@@ -2,17 +2,29 @@
 license: other
 pretty_name: BaiCao Knowledge
 configs:
-  - config_name: default
+  - config_name: records
     data_files:
       - split: train
         path: data/records.parquet
+  - config_name: edges
+    data_files:
+      - split: train
+        path: data/edges.parquet
 ---
 
 # baicao-knowledge
 
-白草自有中医药知识数据集（private）。HF id：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)。图模型真源在仓库 `packages/knowledge_model/`，这里只放实例、统计和溯源字段。
+白草自有中医药结构化知识数据集（public）。HF id：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)。图模型真源在仓库 `packages/knowledge_model/`，这里只放实例、统计和溯源字段。
 
-苏子阳原文未获转载授权，**不在本 repo 发布全文**，只发布结构化记录。
+苏子阳原文未获转载授权，**不在本 repo 或 Hugging Face 发布全文**，只发布脱敏后的结构化记录。
+
+## 发布状态
+
+- 2026-08-19 已真实发布：12 个允许文件 + `.gitattributes`（第三源只发布 SOURCE/VIEW 元数据）
+- `records`：5,118 行；`edges`：11,202 行
+- 远端不含原文、JSONL、`processed/latest`、work 或 exports
+- public Dataset Viewer 的 `/is-valid`、`/splits` 和两张表首行读取均返回 200
+- public 导出会清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`
 
 ## 筛选列
 
@@ -26,6 +38,7 @@ configs:
 |-----------|------|------|------|
 | `national-standard-2022-pharmacopoeia` | imported | 3431 / 605 条 | 药典 2022，entry_key 全成功 |
 | `daoyi-suyang` | imported | 1687 / 389 章 | v3 宁缺毋滥；skip 262；已合并入 Neo4j |
+| `fengxi177-knowledge-graph-tcm` | cleaned_local | 4996 / 19923 条关系 | 仅本地 records；上游无许可证，`publish: false` |
 
 ## Neo4j 筛选
 

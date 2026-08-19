@@ -1,12 +1,15 @@
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
-from data_ingestion.cli.dataset_publish import PublishError, plan_upload
+from data_ingestion.cli.dataset_publish import plan_upload, upload_dataset
 
 
-def _write_private_catalog(root: Path, visibility: str = "private") -> None:
+def _write_catalog(root: Path, visibility: str = "private") -> None:
     catalog = {
         "dataset_id": "ticoAg/baicao-knowledge",
         "visibility": visibility,
@@ -36,14 +39,13 @@ def _write_private_catalog(root: Path, visibility: str = "private") -> None:
     (root / "catalog.json").write_text(json.dumps(catalog, ensure_ascii=False), encoding="utf-8")
 
 
-def test_plan_upload_rejects_public(tmp_path: Path):
-    _write_private_catalog(tmp_path, visibility="public")
-    with pytest.raises(PublishError, match="private"):
-        plan_upload(tmp_path)
+def test_plan_upload_accepts_public(tmp_path: Path):
+    _write_catalog(tmp_path, visibility="public")
+    assert plan_upload(tmp_path) == [tmp_path / "catalog.json"]
 
 
 def test_plan_upload_excludes_payloads(tmp_path: Path):
-    _write_private_catalog(tmp_path)
+    _write_catalog(tmp_path)
     (tmp_path / "README.md").write_text("# baicao-knowledge\n", encoding="utf-8")
     (tmp_path / "tasks").mkdir()
     (tmp_path / "tasks" / "ledger.json").write_text("{}", encoding="utf-8")
@@ -75,3 +77,25 @@ def test_plan_upload_excludes_payloads(tmp_path: Path):
         "source/" in name and name.endswith(".md") and "SOURCE.md" not in name for name in relative
     )
     assert not any(name.startswith("exports/") for name in relative)
+
+
+def test_upload_dataset_replaces_remote_contents(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _write_catalog(tmp_path, visibility="public")
+    api = MagicMock()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(HfApi=MagicMock(return_value=api)))
+
+    upload_dataset(tmp_path, "ticoAg/baicao-knowledge", None)
+
+    api.create_repo.assert_called_once_with(
+        repo_id="ticoAg/baicao-knowledge", repo_type="dataset", private=False, exist_ok=True
+    )
+    api.update_repo_settings.assert_called_once_with(
+        repo_id="ticoAg/baicao-knowledge", repo_type="dataset", private=False
+    )
+    api.upload_folder.assert_called_once_with(
+        folder_path=str(tmp_path),
+        repo_id="ticoAg/baicao-knowledge",
+        repo_type="dataset",
+        allow_patterns=["catalog.json"],
+        delete_patterns="*",
+    )

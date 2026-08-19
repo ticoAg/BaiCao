@@ -3,7 +3,8 @@ import { useState } from "react";
 import { List, Card, Space, Typography, Spin, Collapse, Tag, Button, Drawer, Divider } from "../ui/index";
 import { RobotOutlined, UserOutlined, AuditOutlined, FormOutlined } from "../ui/icons";
 import { useNavigate } from "react-router-dom";
-import type { Message, ChatGraphData, Source, Entity } from "../../types/chat";
+import type { Message, ChatGraphData, Source, Entity, GraphAgentEvidence, ChatReviewPrefill } from "../../types/chat";
+import { getEvidenceEntityId, getEvidenceSourceLabel } from "../../types/chat";
 import { getGraphNodeLabelDisplayName, getGraphNodeTagColor } from "../../types/graph";
 import ReasoningChain from "./ReasoningChain";
 import EntityHighlighter from "./EntityHighlighter";
@@ -21,12 +22,6 @@ interface MessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
-// 从 sources 中提取首个实体 ID（用于溯源 Drawer）
-function getFirstEntityId(sources?: Source[]): string | undefined {
-  if (!sources || sources.length === 0) return undefined;
-  return sources[0].id;
-}
-
 // 从 ReasoningStep entities 提取全部唯一实体字符串（向后兼容：ReasoningStep.entities 为 string[]）
 // 用于在没有结构化 entities 字段时的 fallback
 function extractEntitiesFromSources(sources?: Source[]): Entity[] {
@@ -37,6 +32,94 @@ function extractEntitiesFromSources(sources?: Source[]): Entity[] {
     type: "Herb",
   }));
 }
+
+function getEvidenceDisplayName(item: GraphAgentEvidence, entities?: Entity[]): string {
+  const entityId = getEvidenceEntityId(item);
+  const matched = entityId
+    ? entities?.find((entity) => entity.id === entityId)
+    : undefined;
+  return matched?.name ?? entityId ?? "图谱证据";
+}
+
+const MessageEvidenceCitations = ({
+  evidence,
+  entities,
+  onOpenLineage,
+  onRequestReview,
+}: {
+  evidence: GraphAgentEvidence[];
+  entities?: Entity[];
+  onOpenLineage: (entityId: string, entityName?: string) => void;
+  onRequestReview: (prefill: ChatReviewPrefill) => void;
+}) => {
+  if (evidence.length === 0) return null;
+
+  return (
+    <Space direction="vertical" size={6} style={{ marginTop: 8, width: "100%" }}>
+      {evidence.map((item, index) => {
+        const entityId = getEvidenceEntityId(item);
+        const title = getEvidenceDisplayName(item, entities);
+        const citationKey = item.evidence_id ?? `${entityId ?? "evidence"}-${index}`;
+
+        return (
+          <div
+            key={citationKey}
+            data-testid="chat-citation"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              minHeight: 28,
+              flexWrap: "wrap",
+            }}
+          >
+            <Space size={6} wrap>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                来源：
+              </Text>
+              <Tag style={{ marginInlineEnd: 0 }}>{getEvidenceSourceLabel(item)}</Tag>
+            </Space>
+            <Space size={4} wrap>
+              <Button
+                type="link"
+                size="small"
+                icon={<AuditOutlined />}
+                disabled={!entityId}
+                aria-label={entityId ? `查看溯源 ${title}` : "查看溯源不可用"}
+                onClick={() => {
+                  if (!entityId) return;
+                  onOpenLineage(entityId, title);
+                }}
+                style={{ padding: "0 4px", fontSize: 12 }}
+              >
+                查看溯源
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                icon={<FormOutlined />}
+                disabled={!entityId}
+                aria-label={entityId ? `申请审查 ${title}` : "申请审查不可用"}
+                onClick={() =>
+                  onRequestReview({
+                    entityType: "herb",
+                    entityId,
+                    sourceId: item.source_id,
+                    content: item.snippet,
+                  })
+                }
+                style={{ padding: "0 4px", fontSize: 12 }}
+              >
+                申请审查
+              </Button>
+            </Space>
+          </div>
+        );
+      })}
+    </Space>
+  );
+};
 
 function hasGraphAgentBasis(msg: Message): boolean {
   return Boolean(
@@ -65,14 +148,24 @@ const ProvenanceDrawer = ({
     enabled: open && !!entityId,
   });
 
-  const evidenceItems = (evidence as Record<string, unknown>[]).map((e) => ({
-    id: String(e.id ?? ""),
-    content: String(e.content ?? ""),
-    source_name: String(e.source_name ?? ""),
-    page_reference: e.page_reference != null ? String(e.page_reference) : undefined,
-    status: String(e.status ?? "pending"),
-    ...e,
-  }));
+  const evidenceItems = (evidence as Record<string, unknown>[]).map((item) => {
+    const nested = item.evidence;
+    const node = nested && typeof nested === "object" && !Array.isArray(nested)
+      ? nested as Record<string, unknown>
+      : item;
+    const source = item.source && typeof item.source === "object" && !Array.isArray(item.source)
+      ? item.source as Record<string, unknown>
+      : undefined;
+
+    return {
+      ...node,
+      id: String(node.id ?? ""),
+      content: String(node.content ?? ""),
+      source_name: String(node.source_name ?? source?.name ?? ""),
+      page_reference: node.page_reference != null ? String(node.page_reference) : undefined,
+      status: String(node.status ?? "pending"),
+    };
+  });
 
   return (
     <Drawer
@@ -208,35 +301,27 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
   const [drawerEntityId, setDrawerEntityId] = useState<string | undefined>();
   const [drawerEntityName, setDrawerEntityName] = useState<string | undefined>();
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewPrefill, setReviewPrefill] = useState<{
-    entityType?: string;
-    entityId?: string;
-    content?: string;
-    sourceId?: string;
-  }>({});
+  const [reviewPrefill, setReviewPrefill] = useState<ChatReviewPrefill>({});
 
-  const handleOpenProvenance = (sources?: Source[]) => {
-    const firstSource = sources?.[0];
-    if (firstSource) {
-      setDrawerEntityId(firstSource.id);
-      setDrawerEntityName(firstSource.name);
-      setDrawerOpen(true);
-    }
+  const handleOpenLineage = (entityId: string, entityName?: string) => {
+    if (!entityId) return;
+    setDrawerEntityId(entityId);
+    setDrawerEntityName(entityName);
+    setDrawerOpen(true);
   };
 
-  const handleOpenReview = (sources?: Source[], content?: string) => {
-    const firstSource = sources?.[0];
+  const handleOpenReview = (prefill: ChatReviewPrefill) => {
     setReviewPrefill({
-      entityType: "herb",
-      entityId: firstSource?.id || "",
-      content: content ? content.slice(0, 500) : "",
-      sourceId: firstSource?.id,
+      entityType: prefill.entityType ?? "herb",
+      entityId: prefill.entityId,
+      content: prefill.content ? prefill.content.slice(0, 500) : "",
+      sourceId: prefill.sourceId,
     });
     setReviewOpen(true);
   };
 
-  const renderSources = (sources: Source[], msgContent?: string) => {
-    if (!sources || sources.length === 0) return null;
+  const renderLegacySources = (sources: Source[], content: string) => {
+    const firstSource = sources[0];
     return (
       <Space style={{ marginTop: 8 }} wrap>
         <Text type="secondary" style={{ fontSize: 12 }}>
@@ -249,7 +334,7 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
           type="link"
           size="small"
           icon={<AuditOutlined />}
-          onClick={() => handleOpenProvenance(sources)}
+          onClick={() => handleOpenLineage(firstSource.id, firstSource.name)}
           style={{ padding: "0 4px", fontSize: 12 }}
         >
           查看溯源
@@ -258,7 +343,14 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
           type="link"
           size="small"
           icon={<FormOutlined />}
-          onClick={() => handleOpenReview(sources, msgContent)}
+          onClick={() =>
+            handleOpenReview({
+              entityType: "herb",
+              entityId: firstSource.id,
+              content,
+              sourceId: firstSource.id,
+            })
+          }
           style={{ padding: "0 4px", fontSize: 12 }}
         >
           申请审查
@@ -327,9 +419,16 @@ const MessageList = ({ messages, loading, messagesEndRef }: MessageListProps) =>
                       {msg.role === "assistant" &&
                         msg.workbenchFrames &&
                         <WorkbenchResultPreview frames={msg.workbenchFrames} />}
-                      {msg.role === "assistant" &&
-                        msg.sources &&
-                        renderSources(msg.sources, msg.content)}
+                      {msg.role === "assistant" && msg.evidence?.length ? (
+                        <MessageEvidenceCitations
+                          evidence={msg.evidence}
+                          entities={entities}
+                          onOpenLineage={handleOpenLineage}
+                          onRequestReview={handleOpenReview}
+                        />
+                      ) : msg.role === "assistant" && msg.sources?.length ? (
+                        renderLegacySources(msg.sources, msg.content)
+                      ) : null}
                     </div>
                   </Space>
                 </Card>

@@ -5,7 +5,7 @@
 - `source_id`: `national-standard-2022-pharmacopoeia`
 - 标题：2022年中药药典
 - 原始载体：`ZJUFanLab/TCMChat-dataset-600k` 内 `pretrain/train/books/national_standard/2022年中药药典.txt`
-- 许可：跟随上游 Hugging Face 数据集条款；白草侧只做抽取与再发布结构化结果
+- 许可：跟随上游 Hugging Face 数据集条款；白草 public 数据集只再发布脱敏后的结构化结果
 - 状态：`imported`（605/605 条目已抽并 merge 入库）
 
 ## 筛选该源
@@ -32,3 +32,5 @@ RETURN n
 ## 处理链
 
 原文 → `pharmacopoeia` 切段 → section 解析 → LLM 抽取 → `GraphImportRecord` → Neo4j
+
+本地中间态可保留条目原文；public Parquet 导出会删除 `properties.raw_text` 等原文字段并清空 `evidence_text`。

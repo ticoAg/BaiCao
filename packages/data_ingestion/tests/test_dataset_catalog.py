@@ -20,6 +20,7 @@ def write_catalog(path: Path, **overrides) -> Path:
                 "title": "2022年中药药典",
                 "status": "imported",
                 "kind": "pharmacopoeia_entries",
+                "publish": True,
                 "filter": {
                     "source_provider": "huggingface",
                     "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
@@ -38,6 +39,7 @@ def write_catalog(path: Path, **overrides) -> Path:
                 "title": "道医苏子阳",
                 "status": "imported",
                 "kind": "narrative_medical_cases",
+                "publish": True,
                 "filter": {
                     "source_provider": "manual",
                     "dataset_name": "baicao-knowledge",
@@ -69,11 +71,17 @@ def test_load_catalog_locks_private_and_two_sources(tmp_path: Path):
     assert catalog.source("daoyi-suyang").filter.import_scope_key == (
         "manual:baicao-knowledge:daoyi-suyang"
     )
+    assert all(source.publish for source in catalog.sources)
 
 
-def test_reject_public_visibility(tmp_path: Path):
+def test_accept_public_visibility(tmp_path: Path):
     path = write_catalog(tmp_path / "catalog.json", visibility="public")
-    with pytest.raises(CatalogError, match="private"):
+    assert load_catalog(path).visibility == "public"
+
+
+def test_reject_unknown_visibility(tmp_path: Path):
+    path = write_catalog(tmp_path / "catalog.json", visibility="internal")
+    with pytest.raises(CatalogError, match="private or public"):
         load_catalog(path)
 
 
@@ -110,5 +118,5 @@ def test_ledger_tasks_must_reference_known_sources(tmp_path: Path):
 )
 def test_repo_catalog_matches_known_sources():
     catalog = load_catalog(REPO / "datasets/baicao-knowledge/catalog.json")
-    assert catalog.visibility == "private"
+    assert catalog.visibility == "public"
     assert catalog.dataset_id == "ticoAg/baicao-knowledge"

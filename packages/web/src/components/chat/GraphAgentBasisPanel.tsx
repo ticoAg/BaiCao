@@ -7,13 +7,15 @@ import {
   FunctionOutlined,
 } from "../ui/icons";
 import { useNavigate } from "react-router-dom";
-import type {
-  ChatAgentProviderReasoningChunk,
-  ChatGraphData,
-  GraphAgentEvidence,
-  GraphAgentReasoningTraceItem,
-  GraphAgentSubgraphMeta,
-  GraphAgentToolCall,
+import {
+  getEvidenceEntityId,
+  getEvidenceSourceLabel,
+  type ChatAgentProviderReasoningChunk,
+  type ChatGraphData,
+  type GraphAgentEvidence,
+  type GraphAgentReasoningTraceItem,
+  type GraphAgentSubgraphMeta,
+  type GraphAgentToolCall,
 } from "../../types/chat";
 import type { GraphData, GraphEdge, GraphNode, SelectedItem } from "../../types/graph";
 import { getGraphNodeLabelDisplayName, getGraphNodeTagColor, relTypeLabels } from "../../types/graph";
@@ -68,7 +70,14 @@ function getEdgeLabel(edge: GraphEdge) {
 }
 
 function getEvidenceNodeName(evidence: GraphAgentEvidence, nodeById: Map<string, GraphNode>) {
-  return evidence.node_id ? nodeById.get(evidence.node_id)?.name ?? evidence.node_id : "图谱证据";
+  const entityId = getEvidenceEntityId(evidence);
+  if (entityId) {
+    return nodeById.get(entityId)?.name ?? entityId;
+  }
+  if (evidence.node_id) {
+    return nodeById.get(evidence.node_id)?.name ?? evidence.node_id;
+  }
+  return "图谱证据";
 }
 
 const GraphAgentBasisPanel = ({
@@ -253,19 +262,28 @@ const GraphAgentBasisPanel = ({
             </Space>
           ),
           children: (
-            <List
-              size="small"
-              data-testid="graph-agent-evidence-list"
-              dataSource={evidence}
-              renderItem={(item) => (
-                <List.Item style={{ padding: "6px 0" }}>
-                  <Space direction="vertical" size={2} style={{ width: "100%" }}>
-                    <Text strong>{getEvidenceNodeName(item, nodeById)}</Text>
-                    <Paragraph style={{ marginBottom: 0 }}>{item.snippet}</Paragraph>
-                  </Space>
-                </List.Item>
-              )}
-            />
+            <div data-testid="graph-agent-evidence-list">
+              <List
+                size="small"
+                dataSource={evidence}
+                renderItem={(item, index) => (
+                  <List.Item
+                    key={item.evidence_id ?? item.entity_id ?? `evidence-${index}`}
+                    style={{ padding: "6px 0", alignItems: "flex-start" }}
+                  >
+                    <Space direction="vertical" size={4} style={{ width: "100%" }}>
+                      <Text strong>{getEvidenceNodeName(item, nodeById)}</Text>
+                      <Paragraph style={{ marginBottom: 0 }}>{item.snippet}</Paragraph>
+                      <span data-testid="chat-evidence-source">
+                        <Text type="secondary" style={{ fontSize: 12, minHeight: 20 }}>
+                          来源：{getEvidenceSourceLabel(item)}
+                        </Text>
+                      </span>
+                    </Space>
+                  </List.Item>
+                )}
+              />
+            </div>
           ),
         },
         {

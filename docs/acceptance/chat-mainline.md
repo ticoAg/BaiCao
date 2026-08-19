@@ -15,8 +15,8 @@ audience: developer
 - 功能名称：智能问答主链路
 - 验收目标：验证问答页面、`/api/v1/chat/stream` 单入口、自然语言回答、agent 工具过程流和可展开依据子图形成完整闭环
 - 对应需求：图谱增强智能问答
-- 对应计划：`docs/superpowers/plans/2026-04-20-chat-deepagents-graph-agent.md`
-- 当前版本 / 日期：Chat DeepAgents Graph Agent / 2026-04-20
+- 对应计划：`docs/superpowers/plans/archive/2026-04-20-chat-deepagents-graph-agent.md`
+- 当前版本 / 日期：OpenAI Agents Graph Agent / 2026-08-19
 
 ## 2. 验收范围
 
@@ -28,12 +28,13 @@ audience: developer
 - provider 原生 reasoning（若 provider 返回）
 - agent 工具调用、参数、结果摘要流式展示
 - 每轮回答可展开依据子图
-- 证据、推理轨迹和工具调用展示
+- 结构化 citation、证据来源、推理轨迹和工具调用展示
+- citation 以实体 ID 打开 lineage，并分别预填实体、来源和证据摘录到验证申请
 - 图谱预览跳转
 
 ### 不包含
 
-- 跨进程 / 跨重启的持久化会话恢复（当前仅支持单进程内存态会话）
+- 跨进程 / 跨重启的持久化会话恢复（当前仅支持单进程内 `SQLiteSession` registry）
 
 ## 3. 前置条件
 
@@ -105,25 +106,35 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream \
 - 若 provider 返回 reasoning，页面展示 `provider_reasoning`
 - 若 provider 不返回 reasoning，页面不展示 reasoning 面板
 - agent 查询图后，页面会逐步更新依据子图
+- `final.evidence` 每项包含 `entity_id`、`evidence_id`、`snippet`；有来源时包含 `source_id`、`source_name`
+- citation 只能来自查询子图中的 `由证据支持` / `来源于` 链路，不从回答文本补造
+- 点击 citation 的“查看溯源”使用 `entity_id`；验证申请分别预填 `entity_id`、`source_id` 和 `snippet`
 
 ## 6. 证据记录
 
 ### 实现证据
 
 - `packages/api/app/api/chat.py` — `/api/v1/chat/stream` 唯一入口
-- `packages/api/app/services/chat_agent_runtime/runtime.py` — deepagents runtime 真源
-- `packages/api/app/services/chat_agent_runtime/session_memory.py` — 进程内 memory checkpointer、TTL 与同 session 串行锁
+- `packages/api/app/services/chat_agent_runtime/runtime.py` — OpenAI Agents SDK、`SQLiteSession` registry 与 MCP 接线真源
+- `packages/api/app/services/chat_agent_runtime/session_memory.py` — TTL eviction callback 与同 session 串行锁
+- `packages/api/app/services/chat_agent_runtime/citations.py` — 从查询子图生成结构化 citation
 - `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — provider 原生 reasoning 透传
-- `packages/api/app/services/graph_tools/registry.py` — 基础图工具注册
+- `packages/api/app/services/knowledge_mcp/server.py` — agent 可用的四个 structured graph tools
 - `packages/web/src/pages/ChatPage.tsx` — 页面入口
 - `packages/web/src/hooks/useChat.ts` — chat stream 事件消费与消息归一化
 - `packages/web/src/components/chat/GraphAgentBasisPanel.tsx` — 每轮回答的依据子图、provider reasoning、工具调用展示
+- `packages/web/src/components/chat/MessageList.tsx` — citation 展示与 lineage 跳转
+- `packages/web/src/components/chat/ReviewRequestModal.tsx` — 验证申请预填
 - `packages/web/src/services/api.ts` — `chatApi.stream()` 客户端
 
 ### 运行证据
 
 ```bash
-corepack pnpm --dir packages/web test --run
+cd packages/api && uv run pytest -m 'not integration' -q
+pnpm run test:web
+pnpm --dir packages/web build
+pnpm run test:integration
+CI=true pnpm run test:e2e
 curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: application/json' -d '{"question":"人参有什么功效？","session_id":"acceptance-chat-1"}'
 curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: application/json' -d '{"question":"外寒入里怎么办","session_id":"acceptance-chat-2"}'
 ```
@@ -132,17 +143,22 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: appli
 
 - 页面可见结果：回答、依据子图、工具时间线出现；provider reasoning 仅在有原生返回时出现
 - 接口返回摘要：SSE 事件顺序可见 `session -> tool_start/tool_result -> answer_chunk -> final`
-- `final` 事件中包含 `answer`、`related_nodes`、`related_edges`、`subgraph_meta`、`tool_calls`
-- 运行时策略摘要：上下文由 LangGraph `thread_id` + 进程内 memory checkpointer 续接；单进程内 30 分钟未访问会话自动回收
+- `final` 事件中包含 `answer`、`evidence`、`related_nodes`、`related_edges`、`subgraph_meta`、`tool_calls`
+- 2026-08-19 fresh 自动验证：API 非集成 `293 passed, 4 deselected`；Web `61 passed`；citation 前端定向 `13 passed`；Web typecheck/build 与 API ruff/ty 通过
+- fresh-volume Neo4j integration：`4 passed, 293 deselected`；Playwright 主线 E2E：`1 passed`，覆盖首页、搜索、图谱、citation 展示、lineage 跳转和验证页
+- 真实 Fireworks + MCP + Neo4j smoke：药材 2 次工具调用 / 21 节点 / 19 边 / 2 citations；方剂 3 / 29 / 33 / 1；医案 2 / 5 / 5 / 1；穴位/治法 4 / 11 / 12 / 2
+- 运行时策略摘要：上下文由进程内 `SQLiteSession` registry 续接；单进程内 30 分钟未访问会话会从 registry 移除并关闭，应用退出关闭全部 session
 
 ## 7. 风险与未覆盖项
 
 - 当前 runtime 依赖 LLM + Neo4j 环境；若本地未配置对应依赖，只能验证单测与页面 mock 场景
 - provider 原生 reasoning 是否可见取决于当前 provider 是否返回该字段，页面不会伪造
 - 当前会话策略仅适用于单进程部署；多 worker 或服务重启后不会保留会话状态
+- 原始 Cypher 不向 agent MCP 暴露；恢复前必须先落地数据库级只读身份和查询防护
+- 真实 provider 仍受外部网络和速率限制影响；本轮 429 由 SDK 自动重试成功，一次 TLS 错误单独重试后通过
 
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：智能问答主链路已收敛到 `/api/v1/chat/stream`，并具备 deepagents 执行流、进程内会话续接、同 session 串行锁、可选 provider reasoning 与依据子图展示能力
-- 后续动作：若进入多 worker / 多实例部署阶段，把进程内 memory checkpointer 升级为持久化 checkpointer
+- 结论一句话：OpenAI Agents 执行流、结构化 citation、MCP 图工具、进程内会话回收、真实 Neo4j/provider 与 E2E 主链均已通过
+- 后续动作：多 worker 需求出现后再引入共享会话存储；用小型 golden set 持续评估回答与 citation 质量

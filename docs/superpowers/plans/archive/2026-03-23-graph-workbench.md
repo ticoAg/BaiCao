@@ -41,7 +41,7 @@
 - 聊天页复用
 - 旧 `GraphWorkbenchPage` 独立路线的继续扩展
 
-旧的“独立 Browser workbench 页”方向以及更早的 query workspace / canvas redesign 中间态计划，均已被本计划覆盖并删除。本计划以 [docs/superpowers/specs/2026-03-23-graph-workbench-design.md](/Users/ticoag/Documents/myws/BaiCao/docs/superpowers/specs/2026-03-23-graph-workbench-design.md) 为唯一设计真源。
+旧的“独立 Browser workbench 页”方向以及更早的 query workspace / canvas redesign 中间态计划，均已被本计划覆盖并删除。本计划以 [docs/superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../../specs/archive/2026-03-23-graph-workbench-design.md) 为唯一设计真源。
 
 ## File Map
 

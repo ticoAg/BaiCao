@@ -15,7 +15,7 @@ from .handlers import KnowledgeMcpHandlers
 KNOWLEDGE_MCP_INSTRUCTIONS = (
     "白草中医药知识图谱工具。节点/关系/属性键一律中文。"
     "先 search_nodes 定位，再 expand_neighbors 或 search_edges。"
-    "read_cypher 只用中文键：名称、标识、导入源。不要写 id/name。"
+    "lookup_nodes 按标识回看属性。不要自行编写或执行 Cypher。"
 )
 
 _handlers = KnowledgeMcpHandlers()
@@ -68,11 +68,6 @@ def create_knowledge_mcp() -> FastMCP:
     async def lookup_nodes(node_ids: list[str]) -> str:
         """按节点标识精确读取详情。"""
         return _dump(await _handlers.lookup_nodes({"node_ids": node_ids}))
-
-    @mcp.tool()
-    async def read_cypher(query: str) -> str:
-        """只读 Cypher。属性键用 名称/标识，不要写 n.id / n.name。"""
-        return _dump(await _handlers.read_cypher({"query": query}))
 
     return mcp
 

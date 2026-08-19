@@ -63,7 +63,7 @@ flowchart LR
 |------|------|------|
 | 验收入口页 | 已有 | 当前文件作为目录入口与规则说明 |
 | 验收模板 | 已补齐 | 使用 [template.md](template.md) 作为后续新文档起点 |
-| 具体功能验收文档 | 已补更多主链路 | 已补图谱查询、智能问答、验证闭环、共享知识模型/数据采集、数据处理工作台、review/export 持久化六条主链路，当前结论均为 `pass` |
+| 具体功能验收文档 | 已补更多主链路 | 已补六条主链路，当前结论均为 `pass` |
 
 ## 文档索引
 
@@ -72,7 +72,7 @@ flowchart LR
 | [README.md](README.md) | stable | 验收入口、规则、结构和证据格式 |
 | [template.md](template.md) | stable | 功能验收模板，适合复制后开始填写 |
 | [graph-workbench-mainline.md](graph-workbench-mainline.md) | stable | Graph Workbench `/graph` 三栏工作台主链路验收 |
-| [chat-mainline.md](chat-mainline.md) | stable | 智能问答主链路验收 |
+| [chat-mainline.md](chat-mainline.md) | stable | 智能问答主链路已通过真实 Neo4j/provider、citation 与 E2E 验收 |
 | [verification-workflow.md](verification-workflow.md) | stable | 验证申请与审核闭环验收 |
 | [data-ingestion-and-knowledge-model.md](data-ingestion-and-knowledge-model.md) | stable | 共享图模型、导入导出与数据采集边界主链路验收 |
 | [data-pipeline-workbench-mainline.md](data-pipeline-workbench-mainline.md) | stable | 数据处理工作台七步预览、映射门禁与回退主链路验收 |
@@ -194,9 +194,6 @@ rg -n "前置条件|验收步骤|期望结果|证据|结论" docs/acceptance --t
 
 ## 下一步建议
 
-六条主链路验收已是 `pass`。下一波优先补：
+六条主链路均为 `pass`。public HF Dataset Viewer 已通过匿名 `/is-valid`、`/splits` 与行读取验收；公开 Parquet 只含脱敏结构化结果。
 
-1. catalog / publish CLI 收成可重复发布
-2. Graph Workbench / 问答消费方剂、医案、穴位、治法
-
-对应计划：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`
+最近完成的数据工作计划：`docs/superpowers/plans/archive/2026-08-19-fengxi177-tcm-kg-cleaning.md`

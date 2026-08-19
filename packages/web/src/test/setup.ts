@@ -1,4 +1,14 @@
 import "@testing-library/jest-dom/vitest";
+import { beforeEach, vi } from "vitest";
+import { notificationApi } from "../services/api";
+
+beforeEach(() => {
+  vi.spyOn(notificationApi, "list").mockResolvedValue({
+    items: [],
+    total: 0,
+    unread_count: 0,
+  });
+});
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,

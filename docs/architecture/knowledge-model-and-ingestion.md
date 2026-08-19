@@ -148,7 +148,7 @@ flowchart LR
 
 ### 5.1 Graph Runtime / Agent 运行边界
 
-当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。它通过 `deepagents`、LangGraph `thread_id` 和进程内 memory checkpointer 续接会话，并直接复用 API 侧图工具与 backend adapter。
+当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。它通过 OpenAI Agents SDK、MCP structured tools 和进程内 `SQLiteSession` registry 续接会话，并复用 API 侧 graph backend。
 
 `packages/graph_runtime/` 仍保留为早期 graph runtime 研发产物与参考实现，但不再是当前 chat 主链的稳定入口。`packages/api/` 现在既承担 HTTP 接线，也承载当前稳定的 chat agent runtime 与图工具注册层。
 
@@ -157,7 +157,7 @@ flowchart LR
     User[用户 / Agent] --> CLI[graph CLI / 早期 runtime 参考]
     User --> API[packages/api<br/>HTTP 接线层 + chat runtime]
     CLI --> LegacyRuntime[packages/graph_runtime<br/>研发产物 / 参考实现]
-    API --> Runtime[chat_agent_runtime<br/>deepagents + graph tools]
+    API --> Runtime[chat_agent_runtime<br/>OpenAI Agents + MCP]
     Runtime --> Backend[GraphRuntimeBackend 协议]
     Backend --> GraphService[graph_service / graph_metadata_service]
     GraphService --> Neo4j[(Neo4j 图谱)]
@@ -338,7 +338,7 @@ flowchart LR
 - `packages/knowledge_model/` 已成为共享图模型与导入记录的代码真源
 - `packages/api/app/services/chat_agent_runtime/` 已成为 chat 主链 agent runtime 的代码真源
 - API graph schema 直接复用共享 `NodeType` / `NodeStatus`
-- chat 主链已经收敛到 `/api/v1/chat/stream`，上下文通过 LangGraph `thread_id` + 进程内 memory checkpointer 续接
+- chat 主链已经收敛到 `/api/v1/chat/stream`，上下文通过进程内 `SQLiteSession` registry 续接，30 分钟未访问即关闭并回收
 - importer / exporter 统一消费共享 `GraphImportRecord`
 - `packages/data_ingestion/` 已作为共享模型消费者落地，不再重复定义图谱枚举
 

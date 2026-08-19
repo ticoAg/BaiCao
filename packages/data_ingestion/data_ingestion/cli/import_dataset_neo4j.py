@@ -44,7 +44,6 @@ def find_existing(tx: Any, label: str, names: list[str]) -> dict[str, Any] | Non
            OR n.别名 IN $names OR n.alias IN $names
            OR n.拼音 IN $names OR n.pinyin_name IN $names
            OR n.拉丁名 IN $names OR n.latin_name IN $names
-           OR (n.aliases IS NOT NULL AND any(a IN n.aliases WHERE a IN $names))
         RETURN elementId(n) AS eid, properties(n) AS props
         LIMIT 5
         """,
@@ -66,7 +65,6 @@ def write_node(tx: Any, record: DatasetRecord, stats: Counter) -> str:
     if alias := (record.properties or {}).get("alias"):
         names = append_unique(names, str(alias))
     existing = find_existing(tx, label, names)
-    incoming = to_graph_properties(graph_node_props(record))
     if existing:
         existing_en = {
             **existing["props"],
@@ -155,22 +153,25 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
     source_label = to_neo4j_label(record.node_type)
     for edge in record.edges:
         rel = to_neo4j_rel(edge.type)
-        target_type = {
-            "组成药材": "药材",
-            "使用方剂": "方剂",
-            "取用穴位": "穴位",
-            "采用治法": "治法",
-            "治疗病证": "病证",
-            "记载于医案": "医案",
-            "由证据支持": "证据",
-            "来源于": "来源",
-            "经过工艺": "工艺",
-            "具有功效": "功效",
-            "具有性味": "性味",
-            "归于经脉": "归经",
-            "具有饮片": "饮片",
-        }.get(edge.type, "")
-        target_names = lookup_names(target_type, edge.target)
+        target_types = {
+            "组成药材": ("药材", "饮片"),
+            "使用方剂": ("方剂",),
+            "取用穴位": ("穴位",),
+            "采用治法": ("治法",),
+            "治疗病证": ("病证",),
+            "记载于医案": ("医案",),
+            "由证据支持": ("证据",),
+            "来源于": ("来源",),
+            "经过工艺": ("工艺",),
+            "具有功效": ("功效",),
+            "具有性味": ("性味",),
+            "归于经脉": ("归经",),
+            "具有饮片": ("饮片",),
+        }.get(edge.type)
+        if target_types is None:
+            raise ValueError(f"unsupported import edge type: {edge.type}")
+        target_names = lookup_names(target_types[0], edge.target)
+        target_labels = [to_neo4j_label(target_type) for target_type in target_types]
         dosage = (edge.properties or {}).get("dosage")
         localized = to_graph_properties(
             {
@@ -186,8 +187,9 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             f"""
             MATCH (source:{source_label} {{名称: $source_name}})
             MATCH (target)
-            WHERE target.名称 IN $target_names OR target.name IN $target_names
-               OR target.别名 IN $target_names OR target.alias IN $target_names
+            WHERE any(target_label IN labels(target) WHERE target_label IN $target_labels)
+              AND (target.名称 IN $target_names OR target.name IN $target_names
+               OR target.别名 IN $target_names OR target.alias IN $target_names)
             WITH source, target LIMIT 1
             MERGE (source)-[r:{rel} {{导入范围键: $scope}}]->(target)
             SET r.导入源 = $source_id
@@ -201,6 +203,7 @@ def write_edges(tx: Any, record: DatasetRecord, resolved_name: str, stats: Count
             """,
             source_name=resolved_name,
             target_names=target_names,
+            target_labels=target_labels,
             scope=localized.get("导入范围键"),
             source_id=localized.get("导入源"),
             batch_id=record.batch_id,

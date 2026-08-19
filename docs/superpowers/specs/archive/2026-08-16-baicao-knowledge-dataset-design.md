@@ -1,14 +1,16 @@
 # 白草自有知识数据集与下一波数据源设计
 
-**Status:** active  
-**Date:** 2026-08-16  
-**Updated:** 2026-08-17  
-**对应 plan:** `docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`  
+**Status:** done（2026-08-19）
+**Date:** 2026-08-16
+**Updated:** 2026-08-19
+**对应 plan:** `docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`；收口见 `docs/superpowers/plans/2026-08-19-trusted-chat-provenance-closure.md`
 **数据集台账:** `datasets/baicao-knowledge/`
+
+> 本文保留最初 private 设计的决策历史。用户后续确认采用 public 发布；最终脱敏与发布口径已毕业到 `docs/architecture/knowledge-dataset.md`，验收见 `docs/acceptance/baicao-knowledge-dataset.md`。
 
 ## 1. 背景
 
-仓库已有可运行的采集/入图链路。药典 2022 与道医苏子阳 v3 的结构化结果已经进 `datasets/baicao-knowledge/` 并合并入 Neo4j。剩下的不是再抽一遍，而是把这份资产收成可重复发布的 private HF dataset，并让 Workbench / 问答按新类型消费。
+仓库已有可运行的采集/入图链路。药典 2022 与道医苏子阳 v3 的结构化结果已经进 `datasets/baicao-knowledge/` 并合并入 Neo4j；private HF 发布与 Workbench / 问答新类型消费也已落地。当前只剩 private Dataset Viewer 的账号能力限制。
 
 ## 2. 目标
 
@@ -132,17 +134,16 @@ flowchart LR
 
 | 波次 | 做什么 | 状态 |
 |------|--------|------|
-| A | 数据集骨架、药典 merge、苏子阳收源 | 完成；缺 catalog 校验与元数据入库 |
+| A | 数据集骨架、药典 merge、苏子阳收源 | 完成 |
 | B | 药典 605 条终态 | 完成 |
 | C | 苏子阳 v3 抽取 + 入图 | 完成 |
 | D | 扩展方剂/医案/穴位/治法 | 完成 |
-| E | catalog/publish CLI + private 上传 | **剩余** |
-| F | Workbench / 问答消费新类型 | **剩余** |
-| 以后 | 溯源接到问答、鉴权、会话持久化 | 独立 spec |
+| E | catalog/publish CLI + private 上传 | 完成；private Viewer 需 PRO 或 Enterprise |
+| F | Workbench / 问答消费新类型 | 完成 |
+| 以后 | 鉴权、专家治理、多 worker 会话共享 | 独立 spec |
 
 ## 11. 风险
 
 - 苏子阳版权：只 private 分发，dataset card 写明来源与限制。
-- 当前 `.gitignore` 是整目录 `/datasets`，台账不在 git；换机器会丢产量真源。
-- `compute_dataset_stats` 仍生成英文键 Cypher，和生产图不一致。
 - HF id 大小写曾写成 `ticoag`；以 `ticoAg` 为准。
+- private Dataset Viewer 对当前账号返回 501，需 PRO 或 Enterprise；不得为绕过限制改成 public。

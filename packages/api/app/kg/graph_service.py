@@ -164,6 +164,8 @@ class GraphService:
         for zh_key, en_key in PROPERTY_ZH_TO_EN.items():
             if zh_key in result and en_key not in result:
                 result[en_key] = result[zh_key]
+        if "status" in result:
+            result["status"] = delocalize_status(result["status"])
         if labels is not None:
             result["labels"] = self._localize_label_list(labels)
         elif "labels" in result and isinstance(result["labels"], list):
@@ -290,7 +292,7 @@ class GraphService:
         for node in nodes:
             if not node:
                 continue
-            node_key = str(node.get("id") or node.get("name"))
+            node_key = str(node.get("id") or node.get("标识") or node.get("name") or node.get("名称"))
             deduped[node_key] = node
         return list(deduped.values())
 
@@ -1035,24 +1037,24 @@ class GraphService:
             reduce(edge_maps = [], p IN paths |
                 edge_maps + [r IN relationships(p) |
                     {{
-                        id: coalesce(r.id, elementId(r)),
+                        id: coalesce(r.标识, elementId(r)),
                         rel_type: type(r),
-                        status: coalesce(r.status, 'pending'),
-                        verification_id: r.verification_id,
-                        verified_by: r.verified_by,
-                        verified_at: toString(r.verified_at),
+                        status: coalesce(r.状态, '待验证'),
+                        verification_id: r.验证标识,
+                        verified_by: r.验证人,
+                        verified_at: toString(r.验证时间),
                         source: {{
-                            id: startNode(r).id,
-                            name: startNode(r).name,
-                            source: startNode(r).source,
-                            status: startNode(r).status,
+                            id: startNode(r).标识,
+                            name: startNode(r).名称,
+                            source: startNode(r).来源,
+                            status: startNode(r).状态,
                             labels: labels(startNode(r))
                         }},
                         target: {{
-                            id: endNode(r).id,
-                            name: endNode(r).name,
-                            source: endNode(r).source,
-                            status: endNode(r).status,
+                            id: endNode(r).标识,
+                            name: endNode(r).名称,
+                            source: endNode(r).来源,
+                            status: endNode(r).状态,
                             labels: labels(endNode(r))
                         }}
                     }}

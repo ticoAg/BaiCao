@@ -22,8 +22,8 @@ async def test_create_verification_then_verify_updates_postgres_and_neo4j(
     baseline_node = await load_graph_node(chenpi_id)
 
     assert baseline_node is not None
-    assert baseline_node["name"] == "陈皮"
-    assert baseline_node["status"] == "pending"
+    assert baseline_node["名称"] == "陈皮"
+    assert baseline_node["状态"] == "待验证"
 
     claimed_value = f"陈皮 integration smoke {uuid4()}"
     with warnings.catch_warnings():
@@ -96,7 +96,7 @@ async def test_create_verification_then_verify_updates_postgres_and_neo4j(
 
     synced_node = await load_graph_node(chenpi_id)
     assert synced_node is not None
-    assert synced_node["status"] == "verified"
-    assert synced_node["verification_id"] == str(verification_id)
-    assert synced_node["verified_by"] == demo_seed_data["user_ids"]["demo_expert"]
-    assert synced_node["verified_at"] is not None
+    assert synced_node["状态"] == "已验证"
+    assert synced_node["验证标识"] == str(verification_id)
+    assert synced_node["验证人"] == demo_seed_data["user_ids"]["demo_expert"]
+    assert synced_node["验证时间"] is not None

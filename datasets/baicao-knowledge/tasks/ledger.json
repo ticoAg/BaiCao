@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-16",
-  "repo_plan": "docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md",
+  "updated_at": "2026-08-19",
+  "repo_plan": "docs/superpowers/plans/archive/2026-08-19-fengxi177-tcm-kg-cleaning.md",
   "tasks": [
     {
       "task_id": "pharmacopoeia-segment-605",
@@ -65,6 +65,25 @@
       "completed_units": 923,
       "as_of": "2026-08-17",
       "notes": "merge import：created 732 / merged 693 / rels 3355。人参 source=huggingface latin 未覆盖。"
+    },
+    {
+      "task_id": "fengxi177-tcm-kg-structural-clean",
+      "source_id": "fengxi177-knowledge-graph-tcm",
+      "status": "done",
+      "unit": "relations",
+      "planned_units": 19923,
+      "completed_units": 19923,
+      "output_records": 4996,
+      "notes": "Grok 隔离实现 + 双路审查，Codex 集成验证；6521 组成边，5784 dosage，436 可安全归属来源边。"
+    },
+    {
+      "task_id": "fengxi177-tcm-kg-public-release",
+      "source_id": "fengxi177-knowledge-graph-tcm",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "上游 license=null 且无许可证文件；保持 publish=false，未进入 public Parquet。"
     }
   ]
 }

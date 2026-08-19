@@ -2,6 +2,9 @@ name: ci-e2e
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   e2e-smoke:

@@ -14,7 +14,7 @@
 - `local-development.md`：本地起栈、Infisical、手动启动、样例数据与验证命令
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
-- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 deepagents 执行流、进程内 memory checkpointer 与 SSE 事件适配
+- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 OpenAI Agents SDK 执行流、MCP 图工具、进程内 `SQLiteSession` 与 SSE 事件适配
 - `packages/graph_runtime/`：早期 graph runtime 研发产物与参考实现，不再作为 chat 主链真源
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
@@ -102,7 +102,7 @@ flowchart TB
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
 | `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
 | `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
-| `docs/superpowers/` | 任务系统在用 | 索引见 `superpowers/plans/README.md`；当前 active 为知识数据集 plan |
+| `docs/superpowers/` | 任务系统在用 | 索引见 `superpowers/plans/README.md`；当前 active 为可信问答与运行时收口 plan |
 | `datasets/baicao-knowledge/` | 数据台账 staging | 源注册、VIEW、计划/完成量；载荷不进 git |
 
 ## 如何放置信息

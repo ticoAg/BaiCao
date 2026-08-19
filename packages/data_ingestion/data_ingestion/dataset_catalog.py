@@ -28,6 +28,7 @@ class CatalogSource(BaseModel):
     title: str
     status: str
     kind: str
+    publish: bool = False
     filter: SourceFilter
     planned: dict
     completed: dict
@@ -75,8 +76,8 @@ def load_catalog(path: Path) -> Catalog:
     except (OSError, json.JSONDecodeError) as exc:
         raise CatalogError(f"invalid catalog: {path}: {exc}") from exc
     catalog = Catalog.model_validate(raw)
-    if catalog.visibility != "private":
-        raise CatalogError("visibility must be private")
+    if catalog.visibility not in {"private", "public"}:
+        raise CatalogError("visibility must be private or public")
     if catalog.dataset_id != DEFAULT_DATASET_ID:
         raise CatalogError(f"dataset_id must be {DEFAULT_DATASET_ID}")
     return catalog

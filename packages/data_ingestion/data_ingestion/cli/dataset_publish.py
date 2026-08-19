@@ -23,12 +23,9 @@ def repo_root() -> Path:
 def plan_upload(dataset_root: Path) -> list[Path]:
     catalog_path = dataset_root / "catalog.json"
     try:
-        catalog = load_catalog(catalog_path)
+        load_catalog(catalog_path)
     except CatalogError as exc:
         raise PublishError(str(exc)) from exc
-    if catalog.visibility != "private":
-        raise PublishError("refusing to publish non-private dataset")
-
     selected: list[Path] = []
     for path in dataset_root.rglob("*"):
         if not path.is_file():
@@ -54,15 +51,19 @@ def plan_upload(dataset_root: Path) -> list[Path]:
 def upload_dataset(dataset_root: Path, repo_id: str, token: str | None) -> None:
     from huggingface_hub import HfApi
 
+    catalog = load_catalog(dataset_root / "catalog.json")
     files = plan_upload(dataset_root)
     api = HfApi(token=token)
-    api.create_repo(repo_id=repo_id, repo_type="dataset", private=True, exist_ok=True)
+    private = catalog.visibility == "private"
+    api.create_repo(repo_id=repo_id, repo_type="dataset", private=private, exist_ok=True)
+    api.update_repo_settings(repo_id=repo_id, repo_type="dataset", private=private)
     allow_patterns = [path.relative_to(dataset_root).as_posix() for path in files]
     api.upload_folder(
         folder_path=str(dataset_root),
         repo_id=repo_id,
         repo_type="dataset",
         allow_patterns=allow_patterns,
+        delete_patterns="*",
     )
 
 

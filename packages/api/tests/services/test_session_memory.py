@@ -5,19 +5,16 @@ import pytest
 from app.services.chat_agent_runtime.session_memory import InMemorySessionManager
 
 
-class _FakeCheckpointer:
-    def __init__(self) -> None:
-        self.deleted: list[str] = []
-
-    def delete_thread(self, thread_id: str) -> None:
-        self.deleted.append(thread_id)
+def test_session_manager_default_ttl_is_30_minutes():
+    manager = InMemorySessionManager()
+    assert manager.ttl_seconds == 1_800.0
 
 
 def test_session_manager_evicts_expired_threads_before_touching_current_session():
     now = 2_000.0
-    checkpointer = _FakeCheckpointer()
+    evicted: list[str] = []
     manager = InMemorySessionManager(
-        checkpointer=checkpointer,
+        on_evict=evicted.append,
         ttl_seconds=1_800.0,
         time_fn=lambda: now,
     )
@@ -28,7 +25,7 @@ def test_session_manager_evicts_expired_threads_before_touching_current_session(
 
     manager.touch("current-session")
 
-    assert checkpointer.deleted == ["expired-session"]
+    assert evicted == ["expired-session"]
     assert "expired-session" not in manager._last_seen  # noqa: SLF001 - precise TTL behavior test
     assert manager._last_seen["fresh-session"] == now - 60.0  # noqa: SLF001 - precise TTL behavior test
     assert manager._last_seen["current-session"] == now  # noqa: SLF001 - precise TTL behavior test
@@ -58,9 +55,9 @@ async def test_session_manager_serializes_same_session_requests():
 @pytest.mark.asyncio
 async def test_session_manager_does_not_evict_active_session():
     now = 2_000.0
-    checkpointer = _FakeCheckpointer()
+    evicted: list[str] = []
     manager = InMemorySessionManager(
-        checkpointer=checkpointer,
+        on_evict=evicted.append,
         ttl_seconds=1_800.0,
         time_fn=lambda: now,
     )
@@ -79,6 +76,6 @@ async def test_session_manager_does_not_evict_active_session():
 
     manager.touch("fresh-session")
 
-    assert checkpointer.deleted == []
+    assert evicted == []
     release.set()
     await task

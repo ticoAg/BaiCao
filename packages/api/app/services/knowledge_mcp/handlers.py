@@ -57,6 +57,7 @@ class KnowledgeMcpHandlers:
         return await self._backend().lookup_nodes([str(item) for item in node_ids])
 
     async def read_cypher(self, args: dict[str, Any]) -> Any:
+        # graph_tools.read_cypher 仍走此内部入口；agent MCP 不再注册该工具。
         query = str(args.get("query") or "")
         blocked = reject_write_cypher(query)
         if blocked:

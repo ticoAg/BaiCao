@@ -153,9 +153,9 @@ audience: developer, data-team
 
 ---
 
-## 6. 白草自有数据集（进行中）
+## 6. 白草自有数据集（public）
 
-外部 HF 源只是输入。白草自己的发布面是 private dataset `ticoAg/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`。
+外部 HF 源只是输入。白草自己的发布面是 public dataset `ticoAg/baicao-knowledge`，仓库 staging 在 `datasets/baicao-knowledge/`；公开面只含脱敏结构化结果。
 
 每份源固定三件套：`source/`、`processed/`、`VIEW.md`。任务计划量和完成量在 `tasks/ledger.json`。
 
@@ -163,18 +163,21 @@ audience: developer, data-team
 |-----------|------|------|---------------------|
 | `national-standard-2022-pharmacopoeia` | imported | 605 条 | 605/605，3431 条记录已入图 |
 | `daoyi-suyang` | imported | 389 章 | v3 1687 条记录；原文不上 HF |
+| `fengxi177-knowledge-graph-tcm` | cleaned_local | 19,923 条关系 | 4,996 条结构记录；无许可证，`publish: false` |
 
-苏子阳是叙事医案，不是药典字段；原文未授权公开转载，只进 private dataset。筛选入图数据用各源 `SOURCE.md` 的 `import_scope_key`。
+苏子阳是叙事医案，不是药典字段；原文未授权公开转载，只进本地 staging，公开 Parquet 会清空证据原文并删除 properties 原文字段。筛选入图数据用各源 `SOURCE.md` 的 `import_scope_key`。
 
-任务定义与 Parquet 发布口径：`knowledge-dataset.md`。当前实施：`docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md`。
+`fengxi177/Knowlegde_Graph_TCM` 只做本地结构清洗和内部 smoke。其上游没有许可证，不能因 GitHub 公开可见而把逐条派生关系并入 public Hugging Face。
+
+任务定义与 Parquet 发布口径：`knowledge-dataset.md`。已完成计划归档在 `docs/superpowers/plans/archive/`。
 
 ## 7. 相关文档
 
 - [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) — 仓库级图模型与数据采集边界
 - [data-model.md](data-model.md) — Neo4j 节点与关系模型
 - `datasets/baicao-knowledge/README.md` — 自有数据集台账
-- `docs/superpowers/specs/2026-08-16-baicao-knowledge-dataset-design.md` — 数据集设计
-- `docs/superpowers/specs/2026-03-23-knowledge-model-and-data-ingestion-design.md` — 原始调研设计文档
+- `docs/superpowers/specs/archive/2026-08-16-baicao-knowledge-dataset-design.md` — 数据集设计历史
+- `docs/superpowers/specs/archive/2026-03-23-knowledge-model-and-data-ingestion-design.md` — 原始调研设计文档
 
 ---
 

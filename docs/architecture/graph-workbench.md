@@ -3,7 +3,7 @@
 doc_kind: architecture
 status: stable
 tags: ["knowledge-graph", "frontend", "neo4j", "workbench"]
-summary: `/graph` Graph Workbench 的稳定架构口径
+summary: "`/graph` Graph Workbench 的稳定架构口径"
 audience: developer
 ---
 -->
@@ -164,5 +164,5 @@ Graph Workbench 当前 Neo4j 访问口径已经统一到 `neomodel` 连接层：
 - [system-overview.md](system-overview.md)
 - [data-model.md](data-model.md)
 - [../acceptance/graph-workbench-mainline.md](../acceptance/graph-workbench-mainline.md)
-- [../superpowers/specs/2026-03-23-graph-workbench-design.md](../superpowers/specs/2026-03-23-graph-workbench-design.md)
-- [../superpowers/plans/2026-03-23-graph-workbench.md](../superpowers/plans/2026-03-23-graph-workbench.md)
+- [../superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../superpowers/specs/archive/2026-03-23-graph-workbench-design.md)
+- [../superpowers/plans/archive/2026-03-23-graph-workbench.md](../superpowers/plans/archive/2026-03-23-graph-workbench.md)
