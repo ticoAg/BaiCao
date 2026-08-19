@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-05 TCM-SD / ZY-BERT`）
+**Status:** active（当前源：`CAND-06 TCM-NER / DeepNER`）
 
 ## 全局门禁
 
@@ -214,21 +214,53 @@ status: active
 - SD1 明确是 predicted links，不得与 D1-D24 的来源表事实混合，也不得进入默认临床知识图。
 - 中成药、方剂、饮片、药材、病名、证候和症状必须按源类型与稳定 ID 区分；名称近似或跨语言 alias 不触发自动合并。
 
-## 当前源：CAND-05 TCM-SD / ZY-BERT
+## 已完成源：CAND-05 TCM-SD / ZY-BERT
 
 ### 已确认事实
 
 - 本地只读副本位于 `tmp/qibo-datasets/TCM-SD/`，包含 train 43,180、dev 5,486、test 5,486 条标注文本和 148 个证候标签。
-- 上游仓库为 `Borororo/ZY-BERT`，Dataset Card / 仓库声明 `CC-BY-NC-SA-4.0`；非商业和相同方式共享限制需要继续核实到具体文件。
+- 上游仓库为 `Borororo/ZY-BERT`。仓库 `LICENSE` 与 GitHub API 为 MIT（Software）；README 单独声明数据集 `CC-BY-NC-SA-4.0`。论文本身为 `CC-BY-NC-ND-4.0`。
 - 数据是疾病/临床文本到证候标签的监督学习语料；标签关联不等于治疗、因果、诊断标准或已验证患者事实。
-- train/dev/test 必须保持拆分，先检查重复、去标识化和标签一致性，再决定是否只作为抽取器评测集或生成中性候选关系。
+- 论文致谢声称已脱敏。本地审计发现至少 1 条手机号+人名、77 条住院号、11,626 条医院名。
 
 ### Tasks
 
-- [ ] 用 AnySearch、上游仓库和数据文件核实许可、来源、去标识化与再利用边界
-- [ ] 用 Grok 独立审查疾病/症状/证候边界、标签语义和实体消歧门禁
-- [ ] 审计三份 split 的 schema、编码、重复、文本泄漏、标签分布和 148 个证候定义
-- [ ] 决定该源用于抽取器训练/评测，还是允许生成带逐行证据的中性病证-证候候选关系
+- [x] 用 AnySearch、上游仓库和数据文件核实许可、来源、去标识化与再利用边界
+- [x] 审计三份 split 的 schema、编码、重复、文本泄漏、标签分布和 148 个证候定义
+- [x] 决定该源只作为抽取器评测/术语清单，不生成病-证候选关系
+- [x] 实现来源专用 parser/CLI、最小测试、dry-run 和隔离 Neo4j smoke
+- [x] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后独立提交
+- [ ] Grok 许可/契约/消歧三路审查：已发起但全部超时，未计作有效结论
+
+### 当前实现证据
+
+- 输出：148 records / 0 edges；全部为来源标注证候
+- 隔离：临床文本 59,638 行、病名 451、病-证共现 2,023、知识库 1,027
+- 合并门禁：不按 lcd_id/近义病名自动合并；`风寒湿痹证` 只保留证候节点
+- 发布门禁：数据集 `CC-BY-NC-SA-4.0`，且残留病历标识，固定 `publish: false`
+
+提交证据：`752bbb7 feat: clean TCM-SD source`
+
+### CAND-05 残余风险
+
+- 148 个证候术语尚未对照国家标准或专家词表逐条复核。
+- 病例标签和知识库常见病/推荐方仍可能被下游误用为治疗或诊断事实，必须保持隔离。
+- 残留标识证明论文脱敏声明不可信；下游不得回读原始 JSON 到问答或 public 导出。
+
+## 当前源：CAND-06 TCM-NER / DeepNER
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`，包含 850 篇训练说明书及 dev/test/stack JSON。
+- 官方天池/OpenKG 原包未取得；当前是镜像数据，许可链未核实。
+- NER 标签只证明文本跨度，不证明实体间关系。
+
+### Tasks
+
+- [ ] 用 AnySearch、上游仓库和数据文件核实许可、镜像一致性与再利用边界
+- [ ] 用 Grok 独立审查实体类型、跨度语义和是否允许入图
+- [ ] 审计 train/dev/test/stack 的 schema、重复和标签边界
+- [ ] 决定该源只作抽取器评测，还是允许生成可追溯实体清单
 - [ ] 若允许结构清洗，实现来源专用 parser/CLI、最小测试、dry-run 和隔离 Neo4j smoke
 - [ ] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后独立提交
 
@@ -236,12 +268,12 @@ status: active
 
 ```bash
 cd packages/data_ingestion
-uv run --with pytest pytest tests/test_tcm_mkg.py -q
-uvx ruff check data_ingestion/tcm_mkg.py \
-  data_ingestion/cli/tcm_mkg_clean.py tests/test_tcm_mkg.py
-uv run python -m data_ingestion.cli.tcm_mkg_clean --help
+uv run --with pytest pytest tests/test_tcm_sd.py -q
+uvx ruff check data_ingestion/tcm_sd.py \
+  data_ingestion/cli/tcm_sd_clean.py tests/test_tcm_sd.py
+uv run python -m data_ingestion.cli.tcm_sd_clean --help
 uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
-  --records <processed/latest/records.jsonl> --dry-run
+  --records ../../datasets/baicao-knowledge/sources/tcm-sd/processed/latest/records.jsonl --dry-run
 ```
 
 共享契约发生变化时，额外执行知识模型/API contract 测试、`pnpm --dir packages/shared typecheck` 和至少一条 web 消费检查。隔离 Neo4j smoke 必须使用无持久卷容器，不修改现有图库。

@@ -13,7 +13,7 @@ audience: developer, data-team
 
 # BaiCao 数据源与质量校验清单
 
-截至 2026-08-19，BaiCao 有 7 个正式登记源、6 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
+截至 2026-08-19，BaiCao 有 8 个正式登记源、5 个独立本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。
 
 本文档是逐源质量校验的单一入口，不替代以下事实真源：
 
@@ -45,8 +45,9 @@ audience: developer, data-team
 | `BC-05` | [tcm-db](../../datasets/baicao-knowledge/sources/tcm-db/SOURCE.md) | 1,746 个主域实体行、655 条显式关系；1,715 records / 654 edges | `cleaned_local`；`publish: false` | 混合数据库仅 1 个上游核实为 MulanPSL-2.0，其余来源缺少明确再发布许可 | 29 个异常方剂、2 条冲突白芷和 1 条同名跨类型边隔离；症状/证候保持独立，逐边保留表行定位 | `blocked` |
 | `BC-06` | [DragonTCM](../../datasets/baicao-knowledge/sources/dragontcm/SOURCE.md) | 4,743 个实体行、28,735 条源关系；11,598 records / 46,666 edges | `cleaned_local`；`publish: false` | `CC-BY-NC-4.0` 非商业限制；American Dragon、书籍和 SNOMED CT 的完整上游权利链未闭合 | 仅 803 个 disorder 映射病证；316 个非 disorder 和 11,930 条不安全关系隔离；中英文 alias 不自动合并 | `blocked` |
 | `BC-07` | [TCM-MKG V1.0](../../datasets/baicao-knowledge/sources/tcm-mkg/SOURCE.md) | D1-D7/D18 共 213,655 行；19,519 records / 177,672 edges | `cleaned_local`；`publish: false` | Zenodo 为 `CC-BY-NC-4.0`；WHO 术语与 ICD-11 另有 NC-SA / ND 条款，其他聚合上游权利链未闭合 | 仅取方剂、饮片、病证、治法、性味、归经；D3/D5 降级为中性关联；13 组方剂/饮片同名隔离，10 个 TCMT/ICD 精确同名合并 | `blocked` |
+| `BC-08` | [TCM-SD / ZY-BERT](../../datasets/baicao-knowledge/sources/tcm-sd/SOURCE.md) | train/dev/test 共 54,152 条标注；148 records / 0 edges | `cleaned_local`；`publish: false` | 数据集为 `CC-BY-NC-SA-4.0`；仓库 MIT 只覆盖代码；论文脱敏声明被本地残留标识否定 | 只提升 148 个证候术语；病例原文、病名节点和 2,023 个病-证共现全部隔离 | `blocked` |
 
-当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-07` 尚未触发远端重发，后续即使重发也只允许发布元数据。
+当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-08` 尚未触发远端重发，后续即使重发也只允许发布元数据。
 
 ## 本地候选源
 
@@ -54,7 +55,6 @@ audience: developer, data-team
 
 | ID | 数据源与上游 | 本地载体与规模 | 许可状态 | 已知质量风险 | 建议用途 | 审阅结论 |
 |---|---|---|---|---|---|---|
-| `CAND-05` | [TCM-SD / ZY-BERT](https://github.com/Borororo/ZY-BERT) | `tmp/qibo-datasets/TCM-SD/`；train 43,180、dev 5,486、test 5,486；148 个证候 | `CC-BY-NC-SA-4.0`；非商业和相同方式共享限制 | 临床文本需检查去标识化；病名到证候标签不等于因果关系；训练、开发、测试集不可重复汇总 | 疾病到证候的标注关系，以及证候抽取评测 | `pending` |
 | `CAND-06` | [TCM-NER DeepNER 镜像](https://github.com/z814081807/DeepNER) | `tmp/qibo-datasets/TCM-NER/DeepNER-raw/`；850 篇训练说明书及 dev/test/stack JSON | `unverified`；官方天池/OpenKG 原包未取得，镜像数据许可链需复核 | NER 标签只证明文本跨度，不证明实体间关系；`stack.json` 可能与 train/dev/test 重复；镜像与官方版本一致性未知 | 抽取器训练和实体覆盖校验，不直接作为图谱事实源 | `pending` |
 | `CAND-07` | [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books) | `tmp/qibo-datasets/TCM-Ancient-Books/`；701 本 TXT 古籍 | `unverified`；仓库未提供本地许可文件 | 版本、OCR、繁简、异体字、篇章边界和现代整理版权需逐项检查；全文关系必须保留原文定位 | 古籍证据、方剂组成和功效主治抽取 | `pending` |
 | `CAND-08` | [classical-tcm-canon](https://huggingface.co/datasets/wangekxy/classical-tcm-canon) | `tmp/qibo-datasets/classical-tcm-canon/`；115 部经典、约 940 万字 Parquet | Dataset Card 标记 `license: other`，声明原作公版；数字版本边界仍需复核 | Dataset Card 声明零 OCR：53 部多源验证、61 部单源、1 部轻微差异；仍需核实版本、章节切分、异体字和现代标点 | 可溯源经典原文和证据型 RAG | `pending` |
@@ -69,7 +69,7 @@ audience: developer, data-team
 |---|---|
 | `tmp/qibo-datasets/Knowlegde_Graph_TCM/` | `BC-03` 的只读原始输入，不再作为候选源重复登记 |
 | `tmp/qibo-datasets/TCM_KG/` | 只有约 1.5 KB 示例三元组和建图脚本；完整图已登记为 `BC-04`，禁止重复导入 |
-| `tmp/qibo-datasets/TCM-SD-repo/` | `CAND-05` 的上游仓库快照；实际 train/dev/test 使用 `TCM-SD/`，禁止双计数 |
+| `tmp/qibo-datasets/TCM-SD-repo/` | `BC-08` 的上游仓库快照；实际 train/dev/test 使用 `TCM-SD/`，禁止双计数 |
 | `tmp/qibo-datasets/fangji-extra/` | 聚合目录；当前只把其中 `tcm-db` 作为 `BC-05` 的只读原始输入 |
 | `tmp/qibo-datasets/README.md`、`STATUS.json`、`USAGE.md` | 下载状态、来源说明和本地用法，不是业务数据 |
 
@@ -94,7 +94,7 @@ audience: developer, data-team
 | P0 | `BC-01`、`BC-02` | 已公开，优先确认语义正确率、许可说明和脱敏边界 |
 | P0 | `BC-03`、`BC-04` | 已完成结构清洗，确认是否值得继续争取授权或只保留本地 |
 | P1 | `BC-06` | 专家抽检跨语言药材/方剂、condition 分类和临床表现投影 |
-| P2 | `CAND-04`、`CAND-05` | 分别验证跨本体大图和疾病-证候标签 |
+| P2 | `BC-08` | 专家抽检 148 个证候术语，以及残留标识是否还出现在下游消费面 |
 | P3 | `CAND-06` 至 `CAND-10` | 用于抽取器或原文证据，处理成本和许可不确定性更高 |
 
 ## 人工质量校验方法
@@ -138,7 +138,7 @@ audience: developer, data-team
 | `BC-05` | 待填写 | 待填写 | 混合上游许可不完整 | 已自动验证 | 待校验 | `blocked` | 29 个异常方剂、冲突白芷和 3 组症状/证候跨类型同名待人工复核 |
 | `BC-06` | 待填写 | 待填写 | CC-BY-NC-4.0；上游权利链未闭合 | 已自动验证 | 待校验 | `blocked` | 316 个非 disorder、11,930 条隔离关系、7,194 个临床表现和 20 组跨类型同名待人工复核 |
 | `BC-07` | 待填写 | 待填写 | Zenodo CC-BY-NC-4.0；WHO NC-SA / ND；其他上游未闭合 | 已自动验证 | 待校验 | `blocked` | 10 个 TCMT/ICD 精确同名合并、13 组方剂/饮片同名、D3/D5 适用关系和 D6 黄芪错位修复待人工复核 |
-| `CAND-05` | 待填写 | 待填写 | CC-BY-NC-SA-4.0 | 待校验 | 待校验 | `pending` | |
+| `BC-08` | 待填写 | 待填写 | CC-BY-NC-SA-4.0；残留病历标识 | 已自动验证 | 待校验 | `blocked` | 病例原文、2,023 个病-证共现、1,027 条知识库和跨类型同名“风寒湿痹证”待人工复核 |
 | `CAND-06` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
 | `CAND-07` | 待填写 | 待填写 | 待核实 | 待校验 | 待校验 | `pending` | |
 | `CAND-08` | 待填写 | 待填写 | `other` / 公版声明 | 待校验 | 待校验 | `pending` | |

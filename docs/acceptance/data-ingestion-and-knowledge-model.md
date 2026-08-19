@@ -610,3 +610,57 @@ changed-file ty: passed
 - `适用于` 只表达上游结构化 indication/疾病关联，不是已验证疗效、治疗建议或因果关系
 - 精确同名双 ID 合并只减少当前导入范围内的重复节点，不声明 TCMT 与 ICD-11 一般等价
 - Zenodo、WHO 术语、ICD-11 和其他聚合上游条款不能支持当前 public 派生发布；固定 `publish:false`
+
+## 16. 2026-08-19 TCM-SD / ZY-BERT 证候术语保守清洗补充证据
+
+### 本轮范围
+
+- 只读消费 `tmp/qibo-datasets/TCM-SD/` 的词表与 train/dev/test JSONL
+- 只提升 148 个 `norm_syndrome` 词表项为 `病证` / `来源标注证候`
+- 病例原文、病名节点、病-证共现、知识库定义和 `医案` 节点全部隔离
+- 不生成 `关联证候` 或 `治疗病证`
+
+### 结构与隔离结果
+
+- 输入：标注 54,152 行，与论文一致
+- 输出：148 节点记录、0 条关系
+- 隔离：临床文本 59,638 行、病名 451、病-证共现 2,023、知识库 1,027
+- 隐私：住院号 77、手机号 1、医院名 11,626
+- 泄漏：user_id 跨 split 50，全文跨 split 626
+- 跨类型同名：`风寒湿痹证` 只保留证候节点
+
+### 隔离 Neo4j smoke
+
+使用无持久卷 `neo4j:5-community` 临时容器，未连接或修改现有图库。导入结果：
+
+```text
+created=148
+nodes=148
+relationships=0
+```
+
+Cypher 语义校验：
+
+- 节点全部为 `病证`，`中医类型=来源标注证候` 148
+- `治疗病证=0`，`关联证候=0`
+- 节点 scope 错误为 0，非 `待验证` 节点为 0
+
+验证后临时容器已停止并删除。
+
+### 回归证据
+
+```text
+data_ingestion: 113 passed, 2 skipped
+knowledge_model: 28 passed
+API non-integration: 294 passed
+importer dry-run: 148 records / 148 graph_records
+changed-file Ruff: passed
+changed-file ty: passed
+```
+
+### 结论与边界
+
+- 结果：结构清洗、隐私门禁、关系不提升和隔离入图 `pass`；全部医学内容继续为 `pending`
+- 三路 Grok 审查均超时，未计作有效结论；最终验收以本地测试和隔离图库为准
+- 病例标签不是疾病定义上的证候知识
+- 数据集 `CC-BY-NC-SA-4.0` 且残留病历标识，固定 `publish:false`
