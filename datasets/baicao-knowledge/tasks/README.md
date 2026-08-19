@@ -28,3 +28,5 @@
 | `sylvanl-tcm-pretrain-public-release` | SylvanL pretrain | blocked | 1 source | 0（内容混杂） |
 | `zybert-pretrain-structural-clean` | ZY-BERT rar | done | 1 archive | 0 records / 0 edges |
 | `zybert-pretrain-public-release` | ZY-BERT rar | blocked | 1 source | 0（许可不继承） |
+| `tcmchat-600k-inventory` | TCMChat-600k | done | 61 files | 0 records / 盘点完成 |
+| `tcmchat-600k-public-release` | TCMChat-600k | blocked | 1 source | 0（原文不进 public） |

@@ -751,3 +751,23 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 三源 `records=0`，`publish:false`
 - 本地已收录独立候选已全部处理
 - `data_ingestion`：134 passed
+
+## 20. 2026-08-19 TCMChat-600k 补登与隐私原则修正
+
+### 本轮范围
+
+- 审查 `.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/` 的 books、opendata、web、sft，而不是只看药典
+- 使用原则改为：未明确禁止即可本地使用；整理时过滤品牌与个人标识
+
+### 结构事实
+
+- 61 个内容文件，约 1.57 GB，Dataset Card 为 Apache-2.0
+- `pretrain/test` 中 3 个国标文件与 train 哈希相同；药典差 100 字节
+- 论文目录未持有；SFT 医案与 TCM-SD 叙述同源
+
+### 结论
+
+- 整包登记为 `tcmchat-600k`，0 图记录
+- 下一步优先清洗国标术语、成方制剂、教材和去标识医案
+- `data_ingestion`：135 passed
+

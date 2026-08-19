@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** done（本地已收录候选源已全部审计）
+**Status:** done（tmp 候选已审计；TCMChat-600k 其余子集已补登，待按新隐私原则分批清洗）
 
 ## 全局门禁
 

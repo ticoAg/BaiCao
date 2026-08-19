@@ -457,6 +457,36 @@
         "view": "sources/zybert-pretrain-corpus/VIEW.md",
         "processed_dir": "sources/zybert-pretrain-corpus/processed/latest/"
       }
+    },
+    {
+      "source_id": "tcmchat-600k",
+      "title": "TCMChat-dataset-600k",
+      "status": "cleaned_local",
+      "kind": "mixed_pretrain_sft_corpus",
+      "publish": false,
+      "license_status": "apache-2.0_dataset_filter_brand_and_pii",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "pretrain/ + sft/",
+        "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k"
+      },
+      "planned": {"unit": "content_files", "count": 61, "records": null},
+      "completed": {
+        "unit": "content_files",
+        "count": 61,
+        "extracted_records": 0,
+        "extracted_edges": 0,
+        "identical_test_copies": 3,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "整包盘点。药典已单独入图。国标术语/成方/教材/医案待按子集清洗并过滤品牌与个人标识。"
+      },
+      "paths": {
+        "source_doc": "sources/tcmchat-600k/SOURCE.md",
+        "view": "sources/tcmchat-600k/VIEW.md",
+        "processed_dir": "sources/tcmchat-600k/processed/latest/"
+      }
     }
   ]
 }

@@ -13,13 +13,13 @@ audience: developer, data-team
 
 # BaiCao 数据源与质量校验清单
 
-截至 2026-08-19，BaiCao 有 13 个正式登记源、0 个未处理的本地候选源。另有重复目录、辅助仓库和明确未持有的资源，它们不计入独立数据源数量。是否纳入图谱或 public，以「纳入决策」节为准。本地已收录候选已全部审计完毕。
+截至 2026-08-19，BaiCao 有 14 个正式登记源。此前清单漏掉了仓库内 `.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/` 除药典以外的国标、教材、医案、网页和 SFT。是否纳入图谱或 public，以「纳入决策」节为准。
 
 本文档是逐源质量校验的单一入口，不替代以下事实真源：
 
 - 已登记源状态、产量和发布开关：[`datasets/baicao-knowledge/catalog.json`](../../datasets/baicao-knowledge/catalog.json)
 - 每个已登记源的身份与边界：`datasets/baicao-knowledge/sources/*/SOURCE.md`
-- 原始候选文件：`tmp/qibo-datasets/`，只读、本地保留、不提交 Git
+- 原始候选文件：`tmp/qibo-datasets/` 与 `.cache/huggingface/`，只读、本地保留、不提交 Git
 - 图模型与关系语义：[`packages/knowledge_model/`](../../packages/knowledge_model/)
 
 ## 状态口径
@@ -32,7 +32,16 @@ audience: developer, data-team
 | 许可状态 | `confirmed` / `restricted` / `unverified` / `unlicensed` | 能否复制、派生和公开发布 |
 | 审阅结论 | `accept` / `conditional` / `reject` / `pending` | 人工质量校验的最终决定 |
 
-`public` 不是质量结论。任何源只有在许可、结构、语义、证据和隐私边界都明确后，才可在 catalog 中设置 `publish: true`。
+`public` 不是质量结论。公开面只发脱敏结构化结果。
+
+## 使用与隐私原则
+
+- 上游**未明确禁止**复制、派生或本地入图时，允许纳入白草数据源。
+- 明确禁止的例子：Dataset Card 写 `proprietary-commercial`、条款写禁止再发布或仅限竞赛提交。
+- Apache-2.0、CC-BY（无 NC）等明示许可，优先使用。
+- 整理时必须过滤：患者姓名/姓氏+年龄+身份、电话、身份证、住院号；药品商品名、企业品牌、国药准字。
+- 文献作者名、历史医家名保留为来源，不按个人隐私删除。
+- 共现、模型问答和说明书跨度仍不得伪装成已验证临床事实。
 
 ## 纳入决策
 
@@ -55,12 +64,13 @@ audience: developer, data-team
 | `BC-05` | tcm-db | 是 | 是，仅本地 | 否 | 显式实体/关系表可用；混合上游权利链未闭合 |
 | `BC-06` | DragonTCM | 是 | 是，仅本地且限 SNOMED disorder | 否 | 英文方剂库可补对照；CC-BY-NC-4.0 且书籍/SNOMED 条款未闭合 |
 | `BC-07` | TCM-MKG V1.0 | 是 | 是，仅本地主域子图 | 否 | D1-D7/D18 可映射方剂/饮片/病证；Zenodo NC、WHO NC-SA/ND 与其他上游不兼容 public |
-| `BC-08` | TCM-SD / ZY-BERT | 是 | 有限：只入 148 个证候术语 | 否 | 监督学习语料不是病-证知识；CC-BY-NC-SA-4.0，且病历文本仍有残留标识 |
-| `BC-09` | TCM-NER / DeepNER | 是 | 否 | 否 | 竞赛镜像无许可证；NER 跨度噪声大、260 个跨类型同名，只作抽取评测审计 |
-| `BC-10` | TCM-Ancient-Books | 是 | 否 | 否 | 可作后续原文证据库；仓库无许可证，数字整理版权不明，全文与未完成下载均不入图 |
-| `BC-11` | classical-tcm-canon | 是 | 否 | 否 | 115 部经典可作后续证据库；Dataset Card 为 `proprietary-commercial`，全文不入图不公开 |
-| `BC-12` | SylvanL TCM Pretrain | 是 | 否 | 否 | 仅 `{text}` 自由文本，含西药、美容和串文；医案文件未持有，不能当知识图 |
-| `BC-13` | ZY-BERT 预训练语料 | 是 | 否 | 否 | 无标注混合文本且许可不继承 TCM-SD；本轮只清单不解压 |
+| `BC-08` | TCM-SD / ZY-BERT | 是 | 有限：证候术语可入；病历原文去标识后只作评测 | 否 | CC-BY-NC-SA 未禁止本地使用；标签不是病-证定义，原文有残留标识 |
+| `BC-09` | TCM-NER / DeepNER | 是 | 否自动入图 | 否 | 无明确再发布禁令，可作抽取评测；跨度噪声与品牌名太多，不升格事实 |
+| `BC-10` | TCM-Ancient-Books | 是 | 可作原文证据，清洗后再抽 | 否 | 无明确禁止；数字整理本先本地用，全文不进 public |
+| `BC-11` | classical-tcm-canon | 是 | 否 | 否 | Dataset Card 明确 `proprietary-commercial`，属于禁止整包再用 |
+| `BC-12` | SylvanL TCM Pretrain | 是 | 可作抽取候选，不整包入图 | 否 | Card 为 Apache-2.0；内容混杂和串文，必须先过滤再抽 |
+| `BC-13` | ZY-BERT 预训练语料 | 是 | 可本地解压后抽 | 否 | 未单独禁止；不能继承 TCM-SD 条款，解压后仍要滤隐私 |
+| `BC-14` | TCMChat-dataset-600k | 是 | 分子集，见下表 | 否，原文不进 public | 整包 Apache-2.0；此前只登记了药典 |
 
 ### 明确不纳入独立数据源
 
@@ -72,8 +82,28 @@ audience: developer, data-team
 | `fangji-extra/` 聚合目录 | 否，只登记其中 `tcm-db` | 其他文件不是独立源 |
 | TCM-MKG `original_kg/edges.tsv` | 否 | 未持有完整边文件 |
 | 天池 TCM-NER / TCM-SD 官方包 | 否 | 未取得 |
-| 对话/SFT 问答集 | 否 | 不是图谱事实源 |
+| TCMChat `pretrain/test` 国标副本 | 否，附属 `BC-14` / `BC-01` | 3 个文件与 train 哈希相同，禁止双计数 |
+| TCMChat Baichuan / 推荐选择题 SFT | 否 | 对话与评测语料，不是图谱事实 |
+| `pretrain/train/papers/` | 否 | 官方清单有摘要文件，本地未持有 |
 | `wangekxy/tcm-formulary` 商业全量 | 否 | 未购买、未持有 |
+
+## TCMChat-dataset-600k 子集
+
+本地路径：`.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/`。整包 Apache-2.0，61 个内容文件，约 1.57 GB。
+
+| 子集 | 纳入图谱 | 纳入 public | 原因与过滤 |
+|---|---|---|---|
+| 国标药典（已是 `BC-01`） | 已入 | 仅脱敏结构 | 继续用 train 版；test 版差 100 字节，不用第二份 |
+| 中医临床诊疗术语·疾病 / 证候 | 是，待结构清洗 | 仅术语结构 | 国标术语，去页眉后可入病证 |
+| 中药成方制剂（临床用药须知 2015） | 是，待结构清洗 | 仅结构 | 成方与应用说明；滤出版社与商品名 |
+| 教材 7 种 | 是，作证据后再抽 | 否 | `伤寒论.txt` 只有歌诀摘录；`药理学.txt` 偏西药 |
+| 名医验案 18 本 | 是，去标识后作医案 | 否 | 含「汤某女22岁」等姓氏病例；保留医家名 |
+| ChatMed 问答 93 MB | 否作事实 | 否 | 模型生成文本，只抽候选 |
+| 百度百科 + daiy 词条 | 否作事实 | 否 | 网页抽取候选，滤品牌 |
+| SFT `knowledge.json` | 是，滤后作属性候选 | 仅结构 | 70,309 条介绍问答 |
+| SFT `entity_extraction.json` | 否自动入图 | 否 | 说明书 NER，含国药准字和商品名 |
+| SFT `medical_case.json` | 否作事实 | 否 | 48,040 条，与 TCM-SD 病历叙述同源 |
+| 其余 SFT / Baichuan | 否 | 否 | 选择题、推荐、对话 |
 
 ## 正式登记源
 
@@ -92,12 +122,13 @@ audience: developer, data-team
 | `BC-11` | [classical-tcm-canon](../../datasets/baicao-knowledge/sources/classical-tcm-canon/SOURCE.md) | 115 部、9,401,166 字 Parquet；0 records / 0 edges | `cleaned_local`；`publish: false` | `license: other` / `proprietary-commercial`；原作公版声明不能覆盖数字整理本 | 标题与 id 唯一，全文隔离 | `blocked` |
 | `BC-12` | [SylvanL TCM Pretrain](../../datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/SOURCE.md) | 177,054 条 `{text}`；0 records / 0 edges | `cleaned_local`；`publish: false` | Card 为 Apache-2.0，但内容混杂且医案文件未持有 | 串文 `source2` index 11949；西药/美容/问答与中药条目并列 | `blocked` |
 | `BC-13` | [ZY-BERT 预训练语料](../../datasets/baicao-knowledge/sources/zybert-pretrain-corpus/SOURCE.md) | RAR 218 MB，成员 1 个约 821 MB TXT；0 records / 0 edges | `cleaned_local`；`publish: false` | 许可不继承 TCM-SD；Dropbox 包未单独授权 | 只清单不解压 | `blocked` |
+| `BC-14` | [TCMChat-dataset-600k](../../datasets/baicao-knowledge/sources/tcmchat-600k/SOURCE.md) | 61 文件 / 1.57 GB；0 整包 records | `cleaned_local`；`publish: false` | Apache-2.0；公开面不含原文 | 药典已入图；国标术语/成方/教材/医案待按子集清洗并去标识 | `conditional` |
 
-当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-13` 尚未触发远端重发，后续即使重发也只允许发布元数据。
+当前 public Hugging Face 数据集只汇总 `BC-01` 和 `BC-02`，共 `5,118 records / 11,202 edges`。`BC-03` 只发布 SOURCE/VIEW 元数据；`BC-04` 至 `BC-14` 尚未触发远端重发。
 
 ## 本地候选源
 
-本地 `tmp/qibo-datasets/` 中已收录的独立候选源已全部完成许可/结构审计并进入 catalog。当前没有下一个待清洗的已持有源。
+`tmp/qibo-datasets/` 中的独立候选已盘点。下一步优先清洗 TCMChat-600k 尚未入图的国标术语、成方制剂、教材和去标识医案，而不是再找新的外部仓。
 
 ## 重复目录与辅助材料
 
@@ -182,6 +213,7 @@ audience: developer, data-team
 | `BC-11` | 待填写 | 待填写 | other / proprietary-commercial | 已自动验证 | 待校验 | `blocked` | 115 部全文不入图 |
 | `BC-12` | 待填写 | 待填写 | Apache-2.0 Card；内容混杂 | 已自动验证 | 待校验 | `blocked` | `source2` index 11949 亚锡葡庚糖酸钠Ⅰ串入氨苄西林/舒巴坦 |
 | `BC-13` | 待填写 | 待填写 | 不继承 TCM-SD 条款 | 已自动验证 | 待校验 | `blocked` | 未解压的 821 MB 无标注文本 |
+| `BC-14` | 待填写 | TCMChat-600k 子集 | Apache-2.0 | 已盘点 | 待按子集清洗 | `conditional` | 医案姓氏病例、说明书商品名、SFT 与 TCM-SD 同源叙述 |
 
 审阅完成后的落点：质量事实回写本文件和对应 `SOURCE.md`；正式接入时新增 catalog source、任务 ledger 和验收证据；只有明确允许公开的源才设置 `publish: true`。
 
@@ -204,3 +236,4 @@ audience: developer, data-team
 15. [WHO TCM terminology](https://www.who.int/publications/i/item/9789240042322)
 16. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)
 17. [TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books)
+18. [TCMChat-dataset-600k](https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k)

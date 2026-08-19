@@ -294,6 +294,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "许可不继承 TCM-SD。保持 publish=false。"
+    },
+    {
+      "task_id": "tcmchat-600k-inventory",
+      "source_id": "tcmchat-600k",
+      "status": "done",
+      "unit": "content_files",
+      "planned_units": 61,
+      "completed_units": 61,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/tcmchat-600k/processed/latest/stats.json",
+      "notes": "补登 books/opendata/web/sft。3 个 test 国标与 train 相同；论文目录未持有。"
+    },
+    {
+      "task_id": "tcmchat-600k-public-release",
+      "source_id": "tcmchat-600k",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "Apache-2.0 允许使用，但公开面不含医案原文、百科全文和带品牌的说明书。"
     }
   ]
 }

@@ -49,6 +49,7 @@ configs:
 | `classical-tcm-canon` | cleaned_local | 0 records / 0 edges | 115 部全文隔离；proprietary-commercial，`publish: false` |
 | `sylvanl-tcm-pretrain` | cleaned_local | 0 records / 0 edges | 自由文本含串文；医案未持有，`publish: false` |
 | `zybert-pretrain-corpus` | cleaned_local | 0 records / 0 edges | 只清单不解压，`publish: false` |
+| `tcmchat-600k` | cleaned_local | 0 整包 records | Apache-2.0 整包盘点；除药典外待按子集清洗，`publish: false` |
 
 ## Neo4j 筛选
 
