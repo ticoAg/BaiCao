@@ -51,9 +51,10 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "quantity": ["3～10g"],
             "toxicity": ["有毒"],
             "snomed_id": "123456",
+            "cpm_id": "CPM00001",
             "note": "drop me",
         },
-        edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "junk": 1})],
+        edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "dosage_ratio": "0.5", "junk": 1})],
     )
     slim = slim_record(record, prompt_hash="sha256:abc", import_scope_key="manual:baicao-knowledge:daoyi-suyang")
     assert slim.processor is None
@@ -70,8 +71,9 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
         "quantity": ["3～10g"],
         "toxicity": ["有毒"],
         "snomed_id": "123456",
+        "cpm_id": "CPM00001",
     }
-    assert slim.edges[0].properties == {"dosage": "4g"}
+    assert slim.edges[0].properties == {"dosage": "4g", "dosage_ratio": "0.5"}
 
 
 def test_fill_if_empty_does_not_overwrite_pharmacopoeia():

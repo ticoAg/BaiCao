@@ -226,6 +226,42 @@
         "view": "sources/dragontcm/VIEW.md",
         "processed_dir": "sources/dragontcm/processed/latest/"
       }
+    },
+    {
+      "source_id": "tcm-mkg",
+      "title": "TCM-MKG V1.0",
+      "status": "cleaned_local",
+      "kind": "structured_multiontology_tcm_graph",
+      "publish": false,
+      "license_status": "restricted_noncommercial_sharealike_no_derivatives_upstream_rights_unverified",
+      "filter": {
+        "source_provider": "zenodo",
+        "dataset_name": "TCM-MKG V1.0",
+        "file_path": "D1-D7 + D18 TSV",
+        "import_scope_key": "zenodo:10.5281/zenodo.13763953@V1.0"
+      },
+      "planned": {
+        "unit": "consumed_table_rows",
+        "count": 213655,
+        "records": null
+      },
+      "completed": {
+        "unit": "consumed_table_rows",
+        "count": 213655,
+        "extracted_records": 19519,
+        "extracted_edges": 177672,
+        "accepted_icd11_codes": 2725,
+        "merged_tcmt_icd_exact_names": 10,
+        "quarantined_rows": 711,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "只消费 D1-D7 与 D18 主域表；D3/D5 临床关联降级为适用于或关联证候，不生成治疗病证。13 组方剂/饮片同名保持跨类型独立。Zenodo、WHO 术语和 ICD-11 条款不兼容 public 派生发布，固定 publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-mkg/SOURCE.md",
+        "view": "sources/tcm-mkg/VIEW.md",
+        "processed_dir": "sources/tcm-mkg/processed/latest/"
+      }
     }
   ]
 }

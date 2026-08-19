@@ -63,8 +63,13 @@ GRAPH_NODE_PROPS = {
     "entry_title",
     "evidence_id",
     "snomed_id",
+    "tcmt_id",
+    "cpm_id",
+    "chp_id",
+    "icd11_code",
+    "administration_route",
 }
-GRAPH_EDGE_PROPS = {"dosage", "evidence_ref"}
+GRAPH_EDGE_PROPS = {"dosage", "dosage_ratio", "evidence_ref"}
 PROTECTED_EXISTING_PROPS = {
     "name",
     "id",

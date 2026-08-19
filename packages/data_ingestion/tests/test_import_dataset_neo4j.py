@@ -124,9 +124,34 @@ def test_write_edges_persists_source_row_locator():
     assert slimmed.edges[0].properties["evidence_ref"] == params["evidence_ref"]
 
 
+def test_write_edges_persists_dosage_ratio():
+    tx = Tx()
+    record = DatasetRecord(
+        source_id="tcm-mkg",
+        batch_id="batch",
+        unit_id="方剂:测试方",
+        node_type="方剂",
+        node_name="测试方",
+        edges=[
+            DatasetEdge(
+                type="组成药材",
+                target="黄芪",
+                properties={"dosage_ratio": "0.5"},
+            )
+        ],
+    )
+
+    write_edges(tx, record, "测试方", Counter())
+
+    query, params = tx.calls[0]
+    assert "r.剂量比例" in query
+    assert params["dosage_ratio"] == "0.5"
+
+
 @pytest.mark.parametrize(
     ("edge_type", "target", "target_label"),
     [
+        ("适用于", "霍乱", "病证"),
         ("关联证候", "心经积热证", "病证"),
         ("关联症状", "口干", "症状"),
         ("关联药材", "仙茅", "药材"),

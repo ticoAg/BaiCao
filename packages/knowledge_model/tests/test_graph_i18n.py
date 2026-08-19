@@ -27,6 +27,8 @@ def test_property_and_status_are_chinese():
     assert props["导入源"] == "道医苏子阳"
     assert props["导入范围键"] == "人工:白草知识:道医苏子阳"
     assert to_graph_properties({"snomed_id": "123456"})["SNOMED 标识"] == "123456"
+    assert to_graph_properties({"cpm_id": "CPM00001"})["中成药标识"] == "CPM00001"
+    assert to_graph_properties({"dosage_ratio": "0.5"})["剂量比例"] == "0.5"
     assert to_graph_properties({"storage_text": "置于燥处"})["贮藏"] == "置干燥处。"
 
 

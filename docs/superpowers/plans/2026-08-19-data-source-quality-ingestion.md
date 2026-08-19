@@ -170,24 +170,40 @@ status: active
 
 ### 已确认事实
 
-- 本地只读副本位于 `tmp/qibo-datasets/TCM-MKG/`，持有 D1-D24、SD1、开放文档 PDF 和 369,912 行 `original_kg/nodes.tsv`。
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-MKG/`，持有 D1-D24、SD1、开放文档 PDF 和按标准 CSV 逻辑解析为 369,911 个记录的 `original_kg/nodes.tsv`；Dataset Card 的 369,912 与实际文件相差 1。
 - 48,849,793 行、约 5.64 GB 的 `original_kg/edges.tsv` 未下载；当前不得把完整图边写成已持有或已验证事实。
 - Hugging Face Dataset Card 声明它是 Zenodo TCM-MKG V1.0 的格式转换与再分发，标记 `CC-BY-4.0`，并要求引用原作者和 DOI `10.5281/zenodo.13763953`。
 - 数据跨越中医术语、中成药、饮片、药性、天然产物、靶点、疾病本体和预测关系；当前项目优先审计 D1-D7 的中医药主域实体及显式关系。
 
 ### Tasks
 
-- [ ] 用 AnySearch、Zenodo、Hugging Face 和各本体官方条款核实许可、署名与再分发边界
-- [ ] 完成三路 Grok 许可、关系契约与实体消歧独立审查
-- [ ] 审计 D1-D24、SD1 和 nodes.tsv 的 schema、行数、空值、重复、ID 与跨表端点
-- [ ] 限定 BaiCao 主域子图，区分源事实、标准本体映射、距离关系和 SD1 预测关系
-- [ ] 决定中成药/方剂、饮片/药材、疾病/症状/证候及中英文名称的实体合并门禁
-- [ ] 实现来源专用只读 parser/CLI，只消费许可与语义边界明确的主域表
-- [ ] 为 schema、ID 连接、关系方向、预测关系排除和跨类型不合并补最小测试
-- [ ] 生成本地 records/stats/质量报告，并按上游权利链结论设置发布门禁
-- [ ] 运行 importer dry-run 与隔离 Neo4j smoke
-- [ ] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
+- [x] 用 AnySearch、Zenodo、Hugging Face 和各本体官方条款核实许可、署名与再分发边界
+- [x] 完成三路 Grok 许可、关系契约与实体消歧独立审查
+- [x] 审计 D1-D24、SD1 和 nodes.tsv 的 schema、行数、空值、重复、ID 与跨表端点
+- [x] 限定 BaiCao 主域子图，区分源事实、标准本体映射、距离关系和 SD1 预测关系
+- [x] 决定中成药/方剂、饮片/药材、疾病/症状/证候及中英文名称的实体合并门禁
+- [x] 实现来源专用只读 parser/CLI，只消费许可与语义边界明确的主域表
+- [x] 为 schema、ID 连接、关系方向、预测关系排除和跨类型不合并补最小测试
+- [x] 生成本地 records/stats/质量报告，并按上游权利链结论设置发布门禁
+- [x] 运行 importer dry-run 与隔离 Neo4j smoke
+- [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
 - [ ] 独立提交 `CAND-04`，再把当前源切换为 `CAND-05`
+
+### 当前实现证据
+
+- 输出：19,519 records / 177,672 edges；方剂 8,977、饮片 6,207、病证 3,963、治法 349、性味 11、归经 12
+- 关系：`适用于=73,514`、`关联证候=2,032`、`采用治法=4,525`、`组成药材=74,084`、`具有性味=15,225`、`归于经脉=8,292`；`治疗病证=0`
+- 主域边界：只消费 D1-D7 和 D18；D8-D17、D19-D24、SD1、original graph 全部排除
+- 合并门禁：10 个 TCMT/ICD-11 同类型精确同名节点合并并保留双 ID；13 组方剂/饮片同名保持独立
+- 结构修复与隔离：D6 黄芪错位 1 行确定性修复；D5 chapter 21 隔离 13、chapter 22 隔离 421；D3 冗余 synonym 差异 982 行不覆盖 D1 真源
+- 发布门禁：Zenodo 为 `CC-BY-NC-4.0`，WHO 术语为 `CC-BY-NC-SA-3.0-IGO`，ICD-11 为 `CC-BY-ND-3.0-IGO`，其他聚合上游权利链未闭合，固定 `publish: false`
+
+### CAND-04 残余风险
+
+- D3/D5 的中成药关联已降级为中性 `适用于`，仍需专家抽样确认源表 indication 与目标病名是否挂接正确。
+- 10 个 TCMT/ICD-11 精确同名合并只依据同类型规范中文名；当前保留双 ID 和逐表证据，但尚未证明两个本体概念在所有语境完全等价。
+- D4 剂量比例和 D7 药性关系虽有稳定端点与逐行定位，仍需回到药典、WHO 术语或其他原始规范核实内容准确性。
+- `original_kg/edges.tsv` 未持有；当前只证明 D1-D7/D18 子图，不代表完整 TCM-MKG 已清洗或验收。
 
 ### 当前风险
 
@@ -200,10 +216,10 @@ status: active
 
 ```bash
 cd packages/data_ingestion
-uv run --with pytest pytest tests/test_shennong_tcm_kg.py -q
-uvx ruff check data_ingestion/shennong_tcm_kg.py \
-  data_ingestion/cli/shennong_tcm_kg_clean.py tests/test_shennong_tcm_kg.py
-uv run python -m data_ingestion.cli.shennong_tcm_kg_clean --help
+uv run --with pytest pytest tests/test_tcm_mkg.py -q
+uvx ruff check data_ingestion/tcm_mkg.py \
+  data_ingestion/cli/tcm_mkg_clean.py tests/test_tcm_mkg.py
+uv run python -m data_ingestion.cli.tcm_mkg_clean --help
 uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
   --records <processed/latest/records.jsonl> --dry-run
 ```
@@ -220,3 +236,6 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 6. [tcm-db](https://github.com/xiaogege6697/tcm-db)
 7. [MulanPSL-2.0](https://spdx.org/licenses/MulanPSL-2.0.html)
 8. [中医临床诊疗术语国家标准索引](https://std.samr.gov.cn/gb/search/gbDetailed?id=71F772D7B2C0D3A7E05397BE0A0AB82A)
+9. [Zenodo TCM-MKG V1.0](https://zenodo.org/records/13763953)
+10. [WHO TCM terminology](https://www.who.int/publications/i/item/9789240042322)
+11. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)

@@ -188,6 +188,7 @@ def write_edges(
         rel = to_neo4j_rel(edge.type)
         target_types = {
             "组成药材": ("药材", "饮片"),
+            "适用于": ("病证",),
             "使用方剂": ("方剂",),
             "取用穴位": ("穴位",),
             "采用治法": ("治法",),
@@ -233,6 +234,7 @@ def write_edges(
                 f"AND {target_where}"
             )
         dosage = (edge.properties or {}).get("dosage")
+        dosage_ratio = (edge.properties or {}).get("dosage_ratio")
         evidence_ref = (edge.properties or {}).get("evidence_ref")
         localized = to_graph_properties(
             {
@@ -242,6 +244,7 @@ def write_edges(
                 "import_scope_key": record.import_scope_key,
                 "prompt_hash": record.prompt_hash,
                 "dosage": dosage,
+                "dosage_ratio": dosage_ratio,
                 "evidence_ref": evidence_ref,
             }
         )
@@ -259,6 +262,9 @@ def write_edges(
             FOREACH (_ IN CASE WHEN $dosage IS NULL THEN [] ELSE [1] END |
               SET r.剂量 = $dosage
             )
+            FOREACH (_ IN CASE WHEN $dosage_ratio IS NULL THEN [] ELSE [1] END |
+              SET r.剂量比例 = $dosage_ratio
+            )
             FOREACH (_ IN CASE WHEN $evidence_ref IS NULL THEN [] ELSE [1] END |
               SET r.证据定位 = $evidence_ref
             )
@@ -275,6 +281,7 @@ def write_edges(
             unit_id=record.unit_id,
             prompt_hash=record.prompt_hash,
             dosage=dosage,
+            dosage_ratio=localized.get("剂量比例"),
             evidence_ref=localized.get("证据定位"),
         )
         if result.single() is None:

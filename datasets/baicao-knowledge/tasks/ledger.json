@@ -147,6 +147,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "Dataset Card 为 CC-BY-NC-4.0，且 American Dragon、书籍与 SNOMED CT 的完整上游权利链未闭合；保持 publish=false，未进入 public Parquet。"
+    },
+    {
+      "task_id": "tcm-mkg-structural-clean",
+      "source_id": "tcm-mkg",
+      "status": "done",
+      "unit": "consumed_table_rows",
+      "planned_units": 213655,
+      "completed_units": 213655,
+      "output_records": 19519,
+      "output_edges": 177672,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-mkg/processed/latest/stats.json",
+      "notes": "标准 CSV 解析 D1-D7/D18；主域映射得到方剂、饮片、病证、治法、性味和归经。D3/D5 只生成中性适用/证候关联，chapter 21/22 隔离，不生成治疗病证。"
+    },
+    {
+      "task_id": "tcm-mkg-public-release",
+      "source_id": "tcm-mkg",
+      "status": "blocked",
+      "unit": "sources",
+      "planned_units": 1,
+      "completed_units": 0,
+      "notes": "Zenodo V1.0 为 CC-BY-NC-4.0，WHO TCM terminology 为 CC-BY-NC-SA-3.0-IGO，ICD-11 为 CC-BY-ND-3.0-IGO，且其他聚合上游权利链未闭合；保持 publish=false。"
     }
   ]
 }

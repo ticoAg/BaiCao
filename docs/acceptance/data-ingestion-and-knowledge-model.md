@@ -551,3 +551,62 @@ changed-file ty: passed
 - 结果：结构清洗、实体消歧和隔离入图 `pass`；全部医学内容继续为 `pending`
 - clinical manifestations 可能同时包含症状与体征，当前只表达来源中性关联，不是因果、诊断标准或已验证分类
 - Dataset Card 为 `CC-BY-NC-4.0`，且 American Dragon、书籍和 SNOMED CT 的完整上游权利链未闭合；固定 `publish:false`
+
+## 15. 2026-08-19 TCM-MKG 主域子图保守清洗补充证据
+
+### 本轮范围
+
+- 使用标准 CSV TSV 解析器消费 D1-D7 与 D18，支持 quoted multiline，并严格校验 schema、稳定 ID 和跨表端点
+- 只映射方剂、饮片、病证、治法、性味、归经；化学、靶点、跨本体映射、SD1 预测关系和未持有的完整边文件全部排除
+- D3 传统医学疾病和 D5 indication 降级为中性 `适用于`，传统医学证候映射 `关联证候`；不生成 `治疗病证`
+- 同类型规范中文名精确且属性无冲突时才聚合；跨类型同名、拼音、英文、alias、编辑距离和 LLM 判断不参与合并
+
+### 结构与隔离结果
+
+- 输入：D1-D7/D18 共 213,655 个逻辑记录
+- 输出：19,519 节点记录、177,672 条关系
+- 节点：方剂 8,977、饮片 6,207、病证 3,963、治法 349、性味 11、归经 12
+- 关系：`适用于=73,514`、`关联证候=2,032`、`采用治法=4,525`、`组成药材=74,084`、`具有性味=15,225`、`归于经脉=8,292`
+- 隔离：D5 chapter 21 症状 13、chapter 22 损伤 421；D1/D3 病因、病机不进入当前契约
+- 合并门禁：10 个 TCMT/ICD-11 精确同名病证合并并保留双 ID；13 组方剂/饮片同名保持独立
+- 结构修复：D6 `CHP01717 黄芪` 一行固定错位模式修复；其他额外列仍失败
+
+### 隔离 Neo4j smoke
+
+使用无持久卷 `neo4j:5-community` 临时容器，未连接或修改现有图库。导入结果：
+
+```text
+created=19519
+edges=177672
+nodes=19519
+relationships=177672
+```
+
+Cypher 语义校验：
+
+- 六类关系 source/target 类型错误均为 0
+- `治疗病证=0`，缺失关系 `证据定位=0`
+- 节点/边 scope 错误均为 0，非 `待验证` 节点为 0
+- 稳定 ID：方剂 CPM 8,977、饮片 CHP 6,207、病证 TCMT 1,248、病证 ICD-11 2,725、治法 TCMT 349
+- 双 ID 病证 10；方剂/饮片跨类型同名 13 组
+- `CHP01717 黄芪` 落图为拼音 `huang qi`、分类 `Viridiplantae`
+
+验证后临时容器已停止并自动删除。
+
+### 回归证据
+
+```text
+data_ingestion: 108 passed, 2 skipped
+knowledge_model: 28 passed
+API non-integration: 293 passed, 4 deselected
+importer dry-run: 19519 records / 19519 graph_records
+changed-file Ruff: passed
+changed-file ty: passed
+```
+
+### 结论与边界
+
+- 结果：结构清洗、实体消歧、关系降级和隔离入图 `pass`；全部医学内容继续为 `pending`
+- `适用于` 只表达上游结构化 indication/疾病关联，不是已验证疗效、治疗建议或因果关系
+- 精确同名双 ID 合并只减少当前导入范围内的重复节点，不声明 TCMT 与 ICD-11 一般等价
+- Zenodo、WHO 术语、ICD-11 和其他聚合上游条款不能支持当前 public 派生发布；固定 `publish:false`
