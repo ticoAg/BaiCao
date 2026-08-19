@@ -7,6 +7,7 @@ from knowledge_model.constants import NodeType
 from data_ingestion.models import ExtractionCandidate
 from data_ingestion.organize_workflow import accept_agent_candidates
 from data_ingestion.tcmchat_case_units import dump_prepare, prepare_directory, redact_case_text, split_case_book
+from data_ingestion.tcmchat_textbooks import split_textbook
 
 
 def test_redact_and_split_case_book(tmp_path: Path):
@@ -83,3 +84,12 @@ def test_prepare_keeps_demographics_and_lexicon_hits(tmp_path: Path):
     names = {record.node_name for record in batch.records}
     assert {"感冒", "桂枝汤"} <= names
     assert any(edge.type == "记载于医案" for record in batch.records for edge in record.edges)
+
+
+def test_split_textbook_chapters(tmp_path: Path):
+    path = tmp_path / "中医基础理论.txt"
+    path.write_text("前言说明。\n第一章中医学概述\n正文甲。\n第二章阴阳\n正文乙。\n", encoding="utf-8")
+    units = split_textbook(path)
+    assert len(units) == 3
+    assert units[0].metadata["marker"] == "前言"
+    assert "第一章" in units[1].metadata["marker"]

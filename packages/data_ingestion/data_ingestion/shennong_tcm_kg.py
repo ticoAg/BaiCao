@@ -70,7 +70,7 @@ def repo_root() -> Path:
 
 
 DEFAULT_INPUT_PATH = (
-    repo_root() / "tmp/qibo-datasets/ShenNong-TCM-KG/TCM-KG_triples.txt"
+    repo_root() / ".cache/github/michael-wzhu/ShenNong-TCM-LLM/src/TCM-KG_triples.txt"
 )
 
 

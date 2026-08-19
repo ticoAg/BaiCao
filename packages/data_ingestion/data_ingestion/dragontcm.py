@@ -115,7 +115,7 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-DEFAULT_INPUT_DIR = repo_root() / "tmp/qibo-datasets/DragonTCM"
+DEFAULT_INPUT_DIR = repo_root() / ".cache/huggingface/f-galkin/DragonTCM"
 
 
 @dataclass

@@ -34,7 +34,7 @@ def repo_root() -> Path:
 
 
 DEFAULT_INPUT_PATH = (
-    repo_root() / "tmp/qibo-datasets/classical-tcm-canon/classical-tcm-canon.parquet"
+    repo_root() / ".cache/huggingface/wangekxy/classical-tcm-canon/classical-tcm-canon.parquet"
 )
 
 

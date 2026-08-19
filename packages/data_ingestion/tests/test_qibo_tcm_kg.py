@@ -308,11 +308,11 @@ def test_default_raw_paths_resolve_from_repo_root():
     root = repo_root()
     assert DEFAULT_ZHONGYAO_PATH == (
         root
-        / "tmp/qibo-datasets/Knowlegde_Graph_TCM/zhongyao/data_zhongyao/relations_zhongyao.json"
+        / ".cache/github/fengxi177/Knowlegde_Graph_TCM/zhongyao/data_zhongyao/relations_zhongyao.json"
     )
     assert DEFAULT_FANGJI_PATH == (
         root
-        / "tmp/qibo-datasets/Knowlegde_Graph_TCM/fangji/data_fangji/relations_fangji.json"
+        / ".cache/github/fengxi177/Knowlegde_Graph_TCM/fangji/data_fangji/relations_fangji.json"
     )
 
 

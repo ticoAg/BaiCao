@@ -40,7 +40,10 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-DEFAULT_INPUT_PATH = repo_root() / "tmp/qibo-datasets/TCM-Pretrain"
+DEFAULT_INPUT_PATH = (
+    repo_root()
+    / ".cache/huggingface/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain"
+)
 
 
 def _sha256(path: Path) -> str:

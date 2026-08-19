@@ -19,6 +19,11 @@ from data_ingestion.tcmchat_case_units import (
     prepare_directory,
     repo_root,
 )
+from data_ingestion.tcmchat_textbooks import (
+    DEFAULT_INPUT_PATH as TEXTBOOK_INPUT,
+    dump_prepare as dump_textbooks,
+    prepare_directory as prepare_textbooks,
+)
 
 
 def default_out_dir() -> Path:
@@ -82,6 +87,29 @@ def main(argv: list[str] | None = None) -> None:
         / "datasets/baicao-knowledge/sources/national-standard-terms/processed/latest/records.jsonl",
     )
     prepare.set_defaults(func=_prepare)
+    textbooks = sub.add_parser("prepare-textbooks")
+    textbooks.add_argument("--input", type=Path, default=TEXTBOOK_INPUT)
+    textbooks.add_argument(
+        "--out-dir",
+        type=Path,
+        default=repo_root() / "datasets/baicao-knowledge/sources/tcmchat-textbooks/processed/latest",
+    )
+    textbooks.add_argument(
+        "--lexicon",
+        type=Path,
+        default=repo_root()
+        / "datasets/baicao-knowledge/sources/national-standard-terms/processed/latest/records.jsonl",
+    )
+    textbooks.set_defaults(
+        func=lambda args: print(
+            json.dumps(
+                dump_textbooks(
+                    prepare_textbooks(args.input, lexicon_path=args.lexicon), args.out_dir
+                ),
+                ensure_ascii=False,
+            )
+        )
+    )
     accept = sub.add_parser("accept")
     accept.add_argument("--extractions", type=Path, required=True)
     accept.add_argument("--out-dir", type=Path, default=default_out_dir())

@@ -19,7 +19,7 @@ DEFAULT_BATCH_ID = "2026-08-19-kg-tcm-v1"
 PROCESSOR = "qibo_tcm_kg"
 PROMPT_HASH = prompt_hash_for(Path(__file__))
 
-_QIBO_RELATIVE_ROOT = Path("tmp/qibo-datasets/Knowlegde_Graph_TCM")
+_QIBO_RELATIVE_ROOT = Path(".cache/github/fengxi177/Knowlegde_Graph_TCM")
 _RELATION_KEYS = {"node_1", "relation", "node_2"}
 
 ALIASES_KEY = "aliases"

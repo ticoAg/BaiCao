@@ -33,7 +33,7 @@ def repo_root() -> Path:
 
 
 DEFAULT_INPUT_PATH = (
-    repo_root() / "tmp/qibo-datasets/fangji-extra/tcm-db/tcm_knowledge.db"
+    repo_root() / ".cache/github/xiaogege6697/tcm-db/tcm_knowledge.db"
 )
 
 ENTITY_SPECS: dict[str, tuple[NodeType, tuple[tuple[str, str], ...]]] = {

@@ -29,7 +29,7 @@ def repo_root() -> Path:
 
 DEFAULT_INPUT_PATH = (
     repo_root()
-    / "tmp/qibo-datasets/TCM-Pretrain/zybert-corpus/tcm_pretrain_corpus_a.rar"
+    / ".cache/dropbox/zybert/tcm_pretrain_corpus_a.rar"
 )
 
 

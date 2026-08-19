@@ -125,7 +125,7 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-DEFAULT_INPUT_DIR = repo_root() / "tmp/qibo-datasets/TCM-MKG"
+DEFAULT_INPUT_DIR = repo_root() / ".cache/huggingface/JX-Lab/TCM-MKG"
 
 
 @dataclass

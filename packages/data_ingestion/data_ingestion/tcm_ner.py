@@ -48,7 +48,7 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-DEFAULT_INPUT_PATH = repo_root() / "tmp/qibo-datasets/TCM-NER/DeepNER-raw"
+DEFAULT_INPUT_PATH = repo_root() / ".cache/github/z814081807/DeepNER/data/raw_data"
 
 
 def _sha256(path: Path) -> str:

@@ -76,7 +76,7 @@ cd packages/data_ingestion
 uv run python -m data_ingestion.cli.qibo_tcm_kg_clean
 ```
 
-默认只读 `tmp/qibo-datasets/Knowlegde_Graph_TCM/`，输出到对应 source 的 `processed/latest/`。上游无许可证，catalog 固定 `publish: false`；该命令只做本地结构清洗，不授权公开再发布。
+默认只读 `.cache/github/fengxi177/Knowlegde_Graph_TCM/`，输出到对应 source 的 `processed/latest/`。上游无许可证，catalog 固定 `publish: false`；该命令只做本地结构清洗，不授权公开再发布。
 
 ## 药典条目 LLM dry-run
 
