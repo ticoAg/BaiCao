@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-01 ShenNong TCM-KG`）
+**Status:** active（当前源：`CAND-02 tcm-db`）
 
 ## 全局门禁
 
@@ -55,7 +55,7 @@ status: active
 - [x] 生成本地 `records.jsonl`、`stats.json` 和质量报告，不加入 public 发布
 - [x] 运行 importer dry-run 与隔离 Neo4j smoke，验证无 dangling edge 和跨类型误合并
 - [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
-- [ ] 独立提交 `CAND-01`，再把当前源切换为 `CAND-02`
+- [x] 独立提交 `CAND-01`，再把当前源切换为 `CAND-02`
 
 ### 当前实现证据
 
@@ -64,6 +64,45 @@ status: active
 - 排除与隔离：化学关系 67,481，`TS_MS` 245，功能/临床类型冲突 337，证候自环 9
 - 合并门禁：只在同类型内按规范名精确聚合；不使用编辑距离、跨语言映射或 LLM 猜测
 - 发布门禁：两个上游仓库无许可证文件，ShenNong README 又限定仅供学术研究和禁止商业用途，固定 `publish: false`
+
+提交证据：`5188a09 feat: clean ShenNong TCM-KG source`
+
+### CAND-01 残余风险
+
+- 原始 head 没有疾病、症状或证候类型，当前只能保留为 `未分类临床概念`；source-labeled syndrome 也只保留为 `来源标注证候`，同名异实需后续标准标识或人工证据才能拆分。
+- 上游 `中药`、`治法`、`证候` 同时承担 tail label 和关系名，因此只映射为中性关联，不得作为治疗、诊断或因果事实。
+- `TS_MS` 和功能/临床冲突已隔离但尚未人工逐条复核，不参与当前图谱合并。
+- 许可不足以支持再发布；本地清洗结果和逐条派生关系不得进入 public dataset。
+
+## 当前源：CAND-02 tcm-db
+
+### 已确认事实
+
+- 本地仓库与远端 `main` 均固定在 commit `e29028be9a4b4a70a49a7adfaaf268e2f1b7999f`；SQLite SHA-256 为 `a9ff634e621ed47869c4ab2628e145b7da48afe922205bcf6f7983415a72966c`。
+- 目标主域表为 472 药材、234 方剂、727 症状、194 证候、119 治法；显式关系为 `formula_herbs=196`、`formula_syndromes=19`、`syndrome_symptoms=440`，无悬空外键。
+- `tcm-db` 本身和 6 个上游没有 GitHub 可识别许可证；仅 `9527qingfeng/hantang-nihaixia-follower` 为 MulanPSL-2.0，无法覆盖混合数据库中的其他来源。
+- 29 个唯一方剂行命中描述句或多方合并 warning；药材“白芷”两行同名但属性冲突；症状与证候存在乳癌、肾衰竭、胰脏癌 3 个跨类型同名。
+- 现有模型缺少独立 `症状` 节点；最小契约为新增 `症状` 与 `关联症状`，其余复用 `药材`、`方剂`、`病证`、`组成药材`、`关联证候`。
+
+### Tasks
+
+- [x] 用 AnySearch、GitHub 官方 API 和本地 commit 核实来源与许可链
+- [x] 完成三路 Grok 许可、关系契约与实体消歧独立审查
+- [x] 决定最小共享契约：新增 `症状` 节点和 `关联症状` 边
+- [x] 决定消歧门禁：异常方剂和属性冲突同名药材隔离，症状/证候跨类型同名保持独立
+- [ ] 实现只读 SQLite parser/CLI，只消费主域实体和三张显式关系表
+- [ ] 为 schema 门禁、关系方向、隔离统计和跨类型不合并补测试
+- [ ] 生成本地 records/stats/质量报告，固定 `publish: false`
+- [ ] 运行 importer dry-run 与隔离 Neo4j smoke
+- [ ] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
+- [ ] 独立提交 `CAND-02`，再把当前源切换为 `CAND-03`
+
+### 当前风险
+
+- 数据库是不可由现存脚本完整重建的权威产物，且缺少逐表/逐字段上游许可映射；不得发布整库或逐条派生 public 数据。
+- `indication`、`composition`、`representative_formulas` 和 `related_*` 是长文本或列表字段，不得直接提升为治疗、组成、诊断或因果关系。
+- `formula_herbs` 的 dosage 全空、role 全为“未知”；关系可保留成员事实，但不能伪造剂量或君臣佐使。
+- 临床医案存在来源身份键问题且不在本轮中医药/疾病/症状显式关系范围内，保持排除。
 
 ## Verification
 
@@ -79,13 +118,6 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 
 共享契约发生变化时，额外执行知识模型/API contract 测试、`pnpm --dir packages/shared typecheck` 和至少一条 web 消费检查。隔离 Neo4j smoke 必须使用无持久卷容器，不修改现有图库。
 
-## 当前风险
-
-- 原始 head 没有疾病、症状或证候类型，当前只能保留为 `未分类临床概念`；source-labeled syndrome 也只保留为 `来源标注证候`，同名异实需后续标准标识或人工证据才能拆分。
-- 上游 `中药`、`治法`、`证候` 同时承担 tail label 和关系名，因此只映射为中性关联，不得作为治疗、诊断或因果事实。
-- `TS_MS` 和功能/临床冲突已隔离但尚未人工逐条复核，不参与当前图谱合并。
-- 许可不足以支持再发布；本地清洗结果和逐条派生关系不得进入 public dataset。
-
 ## Citations
 
 1. [数据源与质量校验清单](../../architecture/data-sources.md)
@@ -93,3 +125,6 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 3. [ShenNong-TCM-LLM](https://github.com/michael-wzhu/ShenNong-TCM-LLM)
 4. [TCM_KG](https://github.com/ywjawmw/TCM_KG)
 5. [OKF v0.1 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+6. [tcm-db](https://github.com/xiaogege6697/tcm-db)
+7. [MulanPSL-2.0](https://spdx.org/licenses/MulanPSL-2.0.html)
+8. [中医临床诊疗术语国家标准索引](https://std.samr.gov.cn/gb/search/gbDetailed?id=71F772D7B2C0D3A7E05397BE0A0AB82A)
