@@ -336,6 +336,27 @@
       "planned_units": 1,
       "completed_units": 0,
       "notes": "公开面只允许后续脱敏结构，不含国标原文。"
+    },
+    {
+      "task_id": "tcmchat-cases-prepare",
+      "source_id": "tcmchat-medical-cases",
+      "status": "done",
+      "unit": "case_units",
+      "planned_units": 461,
+      "completed_units": 461,
+      "output_records": 0,
+      "output_edges": 0,
+      "evidence": "datasets/baicao-knowledge/sources/tcmchat-medical-cases/processed/latest/stats.json",
+      "notes": "规则切分并去标识。等待 agent 抽取后 accept。"
+    },
+    {
+      "task_id": "tcmchat-cases-accept",
+      "source_id": "tcmchat-medical-cases",
+      "status": "planned",
+      "unit": "extracted_records",
+      "planned_units": null,
+      "completed_units": 0,
+      "notes": "agent 产出必须经 organize accept 的身份门禁，不得直写 Neo4j。"
     }
   ]
 }

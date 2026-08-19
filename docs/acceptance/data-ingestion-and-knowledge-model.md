@@ -786,4 +786,18 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 未解析缺口：疾病 61、成方 759
 - `data_ingestion`：139 passed
 
+## 22. 2026-08-19 规则-agent 整理合同与验案切分
+
+### 本轮范围
+
+- 增加 `organize prepare/accept`，让规则、脚本、agent 和图库走同一合同
+- 对 18 本名医验案做去标识切分，生成 461 条 agent 队列
+
+### 结果
+
+- 姓氏病例已替换；agent 回写必须经 `entity_identity`
+- 本轮未跑 LLM，图记录仍为 0
+- `data_ingestion`：142 passed
+
+
 

@@ -185,19 +185,18 @@ flowchart LR
 
 ### 6.2 处理模式
 
-本项目支持“规则 + agent”的混合处理模式：
+本项目支持“规则 + agent”的混合处理模式，四层必须走同一条合同，而不是各写旁路：
 
-1. 规则优先  
-   对高确定性字段进行稳定抽取，例如固定表头、结构化条目、明确的章节分段。
+1. 业务规则  
+   图模型在 `packages/knowledge_model/`；身份与合并在 `data_ingestion/entity_identity.py`；隐私过滤去掉电话、证件、住院号、国药准字和品牌。
+2. 工作流程  
+   `organize prepare` 由规则切分并生成 `agent_queue.jsonl`；agent 只处理队列中的不确定抽取；`organize accept` 把 `ExtractionCandidate` 再送回同一套门禁。
+3. 脚本  
+   来源适配器可以定制，但只能输出 `WorkUnit` / `ExtractionCandidate` / `DatasetRecord`。
+4. 底层图库  
+   只有通过身份门禁的 `DatasetRecord` 才能进入 importer / Neo4j。agent 不得直接写库。
 
-2. agent 补充  
-   对半结构化或非结构化文本执行抽取、归并、补全、候选映射。
-
-3. 统一规范化  
-   无论上游来自规则还是 agent，输出都必须先进入统一中间格式。
-
-4. 收敛到唯一真源  
-   中间格式只有在通过共享知识结构定义校验后，才能进入正式导入链路。
+确定性高的国标术语继续走规则清洗；名医验案、教材等半结构文本走 prepare → agent → accept。
 
 ### 6.3 为什么允许定制脚本
 
