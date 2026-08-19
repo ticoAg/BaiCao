@@ -4,7 +4,7 @@
 
 - `source_id`: `sylvanl-tcm-pretrain`
 - Hugging Face：[SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain](https://huggingface.co/datasets/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain)
-- 本地只读入口：`tmp/qibo-datasets/TCM-Pretrain/` 中的 3 个 JSON
+- 本地只读入口：`.cache/huggingface/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain/` 中的 3 个 JSON
 - 未持有：4 个 `CPT_medicalRecord_*` 医案文件
 - 状态：`cleaned_local`；`publish: false`
 

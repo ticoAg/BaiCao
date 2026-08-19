@@ -48,6 +48,7 @@ class EntityDraft:
     evidence_refs: list[str] = field(default_factory=list)
     display_name: str = ""
     parent_name: str = ""
+    edges: list[tuple[str, str]] = field(default_factory=list)
 
 
 def name_key(name: str, node_type: NodeType | str | None = None) -> str:
@@ -128,4 +129,9 @@ def merge_same_identity(drafts: list[EntityDraft]) -> tuple[list[EntityDraft], i
                 raise IdentityError(
                     f"conflicting {field_name} for {draft.raw_name} {draft.stable_id}"
                 )
+        seen_edges = set(existing.edges)
+        for edge in draft.edges:
+            if edge not in seen_edges:
+                existing.edges.append(edge)
+                seen_edges.add(edge)
     return list(merged.values()), collapsed

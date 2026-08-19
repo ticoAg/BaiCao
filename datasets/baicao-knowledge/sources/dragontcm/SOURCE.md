@@ -4,7 +4,7 @@
 
 - `source_id`: `dragontcm`
 - 直接上游：[f-galkin/DragonTCM](https://huggingface.co/datasets/f-galkin/DragonTCM)
-- 本地只读入口：`tmp/qibo-datasets/DragonTCM/`
+- 本地只读入口：`.cache/huggingface/f-galkin/DragonTCM/`
 - 核对 revision：`57e19c6bb7aaf62feacbba97aa84d9baecd05582`
 - 输入：1,044 herbs、2,580 formulas、1,119 conditions、28,735 relations
 - 许可：Dataset Card 标记 `CC-BY-NC-4.0`；American Dragon 网站、Joel Penner 1994 年著作和 SNOMED CT 内容的完整上游授权链未得到证明

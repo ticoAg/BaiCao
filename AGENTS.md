@@ -42,7 +42,9 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 - **任务计划与实施颗粒度**：`docs/superpowers/plans/*.md`
 - **跨端共享协议入口**：`packages/shared/types/`
 - **后端领域模型 / API Schema / 服务真源**：`packages/api/app/models/`、`packages/api/app/schemas/`、`packages/api/app/services/`
+- **图模型（节点类型 / 关系类型 / 属性）真源**：`packages/knowledge_model/`（`constants.py`、节点/关系属性模型、`graph_i18n.py`）
 - **图谱与导入结构真源**：`packages/db/neo4j/`、`packages/db/import/`
+- **数据源 agent 工作目录**：`datasets/baicao-knowledge/sources/<source_id>/`（`SOURCE.md`、`VIEW.md`、`work/`、`processed/latest/`）
 - **前端消费与展示态适配真源**：`packages/web/src/services/`、`packages/web/src/pages/`
 - **运行编排与环境事实**：`infra/docker-compose.yml`、`infra/.env.example`
 - **长期维护文档**：`docs/architecture/`、`docs/acceptance/`
@@ -81,6 +83,17 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 系统安全策略 > 用户当轮指令 > 最近的 `AGENTS.md` > 根目录 `AGENTS.md` > `workflow.md` > `docs/` / `README.md`
 
 补充口径：判断“项目目标 / 阶段任务”时，以 `README.md` 与 `docs/superpowers/plans/` 为准；判断“当前已实现事实”时，以仓库代码、配置、脚本为准。
+
+## 图谱随数据进化
+
+BaiCao 的知识图谱不是一次性定死的模式，而是跟随具体数据集逐步进化。清洗新源时发现缺实体类型、关系类型或属性，是正常迭代，不是越权。
+
+每次迭代的约定：
+
+- 先改共享图模型真源 `packages/knowledge_model/`，再让来源适配器产出记录。
+- 来源适配器（`packages/data_ingestion/`）不得私自发明节点类型、关系类型或对外属性名。
+- 产出记录里的 `node_type` / `edge.type` 只能是真源枚举里已声明的值。
+- 每个数据源有一份结构一致的 agent 工作目录：`SOURCE.md`（身份）、`VIEW.md`（展示口径）、`work/`（队列与抽取中间态）、`processed/latest/`（可导入快照）。布局由 `data_ingestion.source_layout` 校验。
 
 ## Red Lines
 

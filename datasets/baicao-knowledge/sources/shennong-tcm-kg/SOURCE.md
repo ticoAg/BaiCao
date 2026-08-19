@@ -5,7 +5,7 @@
 - `source_id`: `shennong-tcm-kg`
 - 直接上游：[michael-wzhu/ShenNong-TCM-LLM](https://github.com/michael-wzhu/ShenNong-TCM-LLM) `src/TCM-KG_triples.txt`
 - 原始图谱上游：[ywjawmw/TCM_KG](https://github.com/ywjawmw/TCM_KG)
-- 本地只读入口：`tmp/qibo-datasets/ShenNong-TCM-KG/TCM-KG_triples.txt`
+- 本地只读入口：`.cache/github/michael-wzhu/ShenNong-TCM-LLM/src/TCM-KG_triples.txt`
 - 核对 commit：`dfa372736777c26fee022ff869a929a2ab8911db`
 - SHA-256：`e2b42d9e93da44203f526bd6f3f23a2275613ab02e5952381dfa943032fcfec4`
 - 许可：两个上游仓库均未提供 `LICENSE` / `COPYING` / `NOTICE`；ShenNong README 限定相关资源仅供学术研究且禁止商业用途

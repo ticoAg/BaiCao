@@ -354,13 +354,13 @@
       "completed": {
         "unit": "numbered_books",
         "count": 700,
-        "extracted_records": 0,
+        "extracted_records": 699,
         "extracted_edges": 0,
         "decodable_books": 699,
         "decode_errors": 1,
         "count_is_estimate": false,
         "as_of": "2026-08-19",
-        "note": "只做书目审计。全文、解码失败文件和未完成下载不入图。仓库无许可证，固定 publish=false。"
+        "note": "可解码编号书各一条来源节点。全文不进 public。"
       },
       "paths": {
         "source_doc": "sources/tcm-ancient-books/SOURCE.md",
@@ -415,12 +415,12 @@
       "completed": {
         "unit": "text_rows",
         "count": 177054,
-        "extracted_records": 0,
+        "extracted_records": 4962,
         "extracted_edges": 0,
         "mixed_pharmacology_rows": 1,
         "count_is_estimate": false,
         "as_of": "2026-08-19",
-        "note": "自由文本含西药与串文，医案文件未持有。不入图，publish=false。"
+        "note": "百科前缀条目：药材 3962、方剂 1000。注射用西药跳过。"
       },
       "paths": {
         "source_doc": "sources/sylvanl-tcm-pretrain/SOURCE.md",
@@ -480,7 +480,7 @@
         "identical_test_copies": 3,
         "count_is_estimate": false,
         "as_of": "2026-08-19",
-        "note": "整包盘点。药典已单独入图。国标术语/成方/教材/医案待按子集清洗并过滤品牌与个人标识。"
+        "note": "整包盘点，0 条整包图记录。药典已入图。国标术语/成方、教材、医案、daiy、ChatMed、knowledge.json 已分源清洗。已审计跳过、不独立登记：entity_extraction、sft/medical_case、recommend_*、choice_*、reading_comprehension、admet*、train_baichuan.json、2019_baidubaike.txt。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-600k/SOURCE.md",
@@ -574,6 +574,92 @@
         "source_doc": "sources/tcmchat-textbooks/SOURCE.md",
         "view": "sources/tcmchat-textbooks/VIEW.md",
         "processed_dir": "sources/tcmchat-textbooks/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcmchat-sft-knowledge",
+      "title": "TCMChat SFT knowledge",
+      "status": "cleaned_local",
+      "kind": "sft_knowledge_entries",
+      "publish": false,
+      "license_status": "apache-2.0_dataset_filter_brand_and_pii",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "sft/train/knowledge.json",
+        "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:sft/train/knowledge.json"
+      },
+      "planned": {"unit": "entries", "count": 6565, "records": null},
+      "completed": {
+        "unit": "entries",
+        "count": 6565,
+        "extracted_records": 7459,
+        "extracted_edges": 75949,
+        "mention_entries": 894,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "方剂 5906、药材 659、词表病证提及 894。注射剂名已丢。组成药材 50302、关联证候 10083、适用于 13069、关联药材 2495。不当已验证事实。"
+      },
+      "paths": {
+        "source_doc": "sources/tcmchat-sft-knowledge/SOURCE.md",
+        "view": "sources/tcmchat-sft-knowledge/VIEW.md",
+        "processed_dir": "sources/tcmchat-sft-knowledge/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcmchat-web",
+      "title": "TCMChat web 百科",
+      "status": "cleaned_local",
+      "kind": "encyclopedia_terms",
+      "publish": false,
+      "license_status": "apache-2.0_dataset_filter_brand_and_pii",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "pretrain/train/web/daiy_data.txt",
+        "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/web"
+      },
+      "planned": {"unit": "term_lines", "count": 2290, "records": null},
+      "completed": {
+        "unit": "term_lines",
+        "count": 2290,
+        "extracted_records": 2290,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "daiy 中医病名/病证名行。百度百科未整包入图。"
+      },
+      "paths": {
+        "source_doc": "sources/tcmchat-web/SOURCE.md",
+        "view": "sources/tcmchat-web/VIEW.md",
+        "processed_dir": "sources/tcmchat-web/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcmchat-chatmed",
+      "title": "TCMChat ChatMed",
+      "status": "cleaned_local",
+      "kind": "dialogue_mentions",
+      "publish": false,
+      "license_status": "apache-2.0_dataset_filter_brand_and_pii",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "ZJUFanLab/TCMChat-dataset-600k",
+        "file_path": "pretrain/train/opendata/ChatMed_TCM-v0.2_.txt",
+        "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/opendata"
+      },
+      "planned": {"unit": "mentions", "count": 133, "records": null},
+      "completed": {
+        "unit": "mentions",
+        "count": 133,
+        "extracted_records": 133,
+        "count_is_estimate": false,
+        "as_of": "2026-08-19",
+        "note": "前 8000 有效行词表提及；对话不当事实。"
+      },
+      "paths": {
+        "source_doc": "sources/tcmchat-chatmed/SOURCE.md",
+        "view": "sources/tcmchat-chatmed/VIEW.md",
+        "processed_dir": "sources/tcmchat-chatmed/processed/latest/"
       }
     }
   ]

@@ -11,7 +11,7 @@ from typing import Any
 
 from knowledge_model.constants import NodeType
 
-from data_ingestion.dataset_records import DatasetRecord
+from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.entity_identity import (
     EntityDraft,
     assign_display_names,
@@ -128,6 +128,10 @@ def finalize_drafts(
                 "import_unit_id": unit_id,
                 **draft.properties,
             },
+            edges=[
+                DatasetEdge(type=edge_type, target=target)
+                for edge_type, target in dict.fromkeys(draft.edges)
+            ],
         )
         record.validate_types()
         records.append(record)

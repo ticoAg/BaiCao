@@ -49,10 +49,13 @@ configs:
 | `classical-tcm-canon` | cleaned_local | 0 records / 0 edges | 115 部全文隔离；proprietary-commercial，`publish: false` |
 | `sylvanl-tcm-pretrain` | cleaned_local | 0 records / 0 edges | 自由文本含串文；医案未持有，`publish: false` |
 | `zybert-pretrain-corpus` | cleaned_local | 0 records / 0 edges | 只清单不解压，`publish: false` |
-| `tcmchat-600k` | cleaned_local | 0 整包 records | Apache-2.0 整包盘点；除药典外待按子集清洗，`publish: false` |
+| `tcmchat-600k` | cleaned_local | 0 整包 records | Apache-2.0 整包盘点；可入图子集已分源；剩余 SFT / 百科全文已审计跳过，`publish: false` |
 | `national-standard-terms` | cleaned_local | 5219 records / 0 edges | 国标疾病/证候/成方；痞气两条不合并，`publish: false` |
 | `tcmchat-medical-cases` | cleaned_local | 3989 records | 去姓氏留性别年龄；医案+词表提及，`publish: false` |
 | `tcmchat-textbooks` | cleaned_local | 7373 records | 7 本教材按章切分+词表提及，`publish: false` |
+| `tcmchat-sft-knowledge` | cleaned_local | 7459 records / 75949 edges | 方剂 5906、药材 659、病证提及 894；不当事实，`publish: false` |
+| `tcmchat-web` | cleaned_local | 2290 records | daiy 病名行；百科全文不独立登记，`publish: false` |
+| `tcmchat-chatmed` | cleaned_local | 133 records | 对话词表提及，不当事实，`publish: false` |
 
 ## Neo4j 筛选
 

@@ -806,6 +806,20 @@ cleaner CLI: 0 records / 0 edges, publish=false
 - 113 案解析到性别；importer dry-run 3989
 - `data_ingestion`：143 passed；`knowledge_model`：28 passed
 
+## 24. 2026-08-19 剩余可用源与工作目录
+
+- 每源 `work/{queue,extracts,notes}` + `processed/latest`
+- PEND-01/02/03/06/08 已出记录；PEND-04/05/07 与专有 canon 书面跳过
+
+## 25. 2026-08-19 TCMChat 剩余子集与 SFT 扩抽
+
+- `tmp/qibo-datasets` 只留指针；正文在 `.cache/{huggingface,github,dropbox}`
+- 剩余 SFT（recommend/choice/admet/baichuan/百科全文）已审计跳过，不独立登记
+- `knowledge.json` 扩抽：7,459 records / 75,949 edges（方剂 5,906、药材 659、病证提及 894）
+- 清理 `tmp/data/runs` 与 `packages/data_ingestion/tmp` 约 667 MB
+- `data_ingestion` 指定测试 11 passed（pending_extract + source_layout）
+
+
 
 
 

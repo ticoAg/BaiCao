@@ -4,7 +4,7 @@
 
 - `source_id`: `classical-tcm-canon`
 - Hugging Face：[wangekxy/classical-tcm-canon](https://huggingface.co/datasets/wangekxy/classical-tcm-canon)
-- 本地只读入口：`tmp/qibo-datasets/classical-tcm-canon/classical-tcm-canon.parquet`
+- 本地只读入口：`.cache/huggingface/wangekxy/classical-tcm-canon/classical-tcm-canon.parquet`
 - 状态：`cleaned_local`；`publish: false`
 
 Dataset Card 声明原作公版，但 `license: other` 且 `license_name: proprietary-commercial`。115 部、9,401,166 字与本地 Parquet 一致。本轮只做书目审计，不发布全文，也不把正文写入图谱。

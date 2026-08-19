@@ -4,7 +4,7 @@
 
 - `source_id`: `tcm-db`
 - 直接上游：[xiaogege6697/tcm-db](https://github.com/xiaogege6697/tcm-db)
-- 本地只读入口：`tmp/qibo-datasets/fangji-extra/tcm-db/tcm_knowledge.db`
+- 本地只读入口：`.cache/github/xiaogege6697/tcm-db/tcm_knowledge.db`
 - 核对 commit：`e29028be9a4b4a70a49a7adfaaf268e2f1b7999f`
 - SQLite SHA-256：`a9ff634e621ed47869c4ab2628e145b7da48afe922205bcf6f7983415a72966c`
 - 许可：tcm-db 本身和 6 个上游没有 GitHub 可识别许可证；仅 `9527qingfeng/hantang-nihaixia-follower` 为 MulanPSL-2.0，不能覆盖混合数据库中的其他来源

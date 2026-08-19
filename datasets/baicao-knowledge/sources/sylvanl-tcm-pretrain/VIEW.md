@@ -1,3 +1,3 @@
 # VIEW · SylvanL TCM Pretrain
 
-`records=0`，`edges=0`，`publish: false`。177,054 条自由文本与 4 个未持有医案文件全部隔离。串文证据：`CPT_tcmKnowledge_source2_12889.json` index 11949。generated_at `2026-08-19T13:18:25+00:00`。
+`records=4962`（药材 3962、方剂 1000），来自百科前缀条目。串文西药已跳过。`publish: false`。

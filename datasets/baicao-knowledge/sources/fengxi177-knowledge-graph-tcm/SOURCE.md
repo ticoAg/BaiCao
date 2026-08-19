@@ -4,7 +4,7 @@
 
 - `source_id`: `fengxi177-knowledge-graph-tcm`
 - 上游：<https://github.com/fengxi177/Knowlegde_Graph_TCM>
-- 本地只读入口：`tmp/qibo-datasets/Knowlegde_Graph_TCM/`
+- 本地只读入口：`.cache/github/fengxi177/Knowlegde_Graph_TCM/`
 - 核对 commit：`2ccba36d1cd79706ddd01fc887af2854ead120da`
 - 许可：上游 GitHub metadata `license=null`，仓库内无 `LICENSE` / `COPYING` / `NOTICE`
 - 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
