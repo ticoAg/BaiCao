@@ -357,6 +357,62 @@
       "planned_units": null,
       "completed_units": 0,
       "notes": "agent 产出必须经 organize accept 的身份门禁，不得直写 Neo4j。"
+    },
+    {
+      "task_id": "pend-01-tcmchat-chatmed",
+      "source_id": "tcmchat-chatmed",
+      "status": "done",
+      "unit": "mentions",
+      "planned_units": 133,
+      "completed_units": 133,
+      "output_records": 133,
+      "evidence": "datasets/baicao-knowledge/sources/tcmchat-chatmed/processed/latest/stats.json",
+      "notes": "前 8000 有效行词表提及；不当事实。"
+    },
+    {
+      "task_id": "pend-02-tcmchat-web",
+      "source_id": "tcmchat-web",
+      "status": "done",
+      "unit": "term_lines",
+      "planned_units": 2290,
+      "completed_units": 2290,
+      "output_records": 2290,
+      "evidence": "datasets/baicao-knowledge/sources/tcmchat-web/processed/latest/stats.json",
+      "notes": "daiy 中医病名/病证名；百度百科跳过。"
+    },
+    {
+      "task_id": "pend-03-sft-knowledge",
+      "source_id": "tcmchat-sft-knowledge",
+      "status": "done",
+      "unit": "entries",
+      "planned_units": 6565,
+      "completed_units": 6565,
+      "output_records": 7459,
+      "output_edges": 75949,
+      "evidence": "datasets/baicao-knowledge/sources/tcmchat-sft-knowledge/processed/latest/stats.json",
+      "notes": "方剂 5906、药材 659、病证提及 894。注射剂已丢。不当事实。"
+    },
+    {
+      "task_id": "pend-06-sylvanl-entries",
+      "source_id": "sylvanl-tcm-pretrain",
+      "status": "done",
+      "unit": "prefix_entries",
+      "planned_units": 4962,
+      "completed_units": 4962,
+      "output_records": 4962,
+      "evidence": "datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/processed/latest/stats.json",
+      "notes": "药名 3962、方剂 1000；注射用西药跳过。"
+    },
+    {
+      "task_id": "pend-08-ancient-sources",
+      "source_id": "tcm-ancient-books",
+      "status": "done",
+      "unit": "numbered_books",
+      "planned_units": 699,
+      "completed_units": 699,
+      "output_records": 699,
+      "evidence": "datasets/baicao-knowledge/sources/tcm-ancient-books/processed/latest/stats.json",
+      "notes": "可解码编号书各一条来源节点；全文不进 public。"
     }
   ]
 }

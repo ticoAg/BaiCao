@@ -86,11 +86,12 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 ## 图谱随数据进化
 
-BaiCao 的知识图谱不是一次性定死的模式，而是跟随具体数据集逐步进化。清洗新源时发现缺实体类型、关系类型或属性，是正常迭代，不是越权。
+BaiCao 的知识图谱跟随具体数据结构逐渐进化。清洗新源时增改实体类型、关系类型、属性是正常迭代。
 
-每次迭代的约定：
+每次迭代的真源：
 
-- 先改共享图模型真源 `packages/knowledge_model/`，再让来源适配器产出记录。
+- **实体类型、关系类型、属性** 的单一真源是 `packages/knowledge_model/`（`constants.py` 中的 `NodeType` / `EdgeType`、节点/关系属性模型、`graph_i18n.py`）。
+- 先改该共享图模型包，再让来源适配器产出记录。
 - 来源适配器（`packages/data_ingestion/`）不得私自发明节点类型、关系类型或对外属性名。
 - 产出记录里的 `node_type` / `edge.type` 只能是真源枚举里已声明的值。
 - 每个数据源有一份结构一致的 agent 工作目录：`SOURCE.md`（身份）、`VIEW.md`（展示口径）、`work/`（队列与抽取中间态）、`processed/latest/`（可导入快照）。布局由 `data_ingestion.source_layout` 校验。

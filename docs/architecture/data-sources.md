@@ -162,9 +162,9 @@ PEND-01 至 PEND-08 已清洗或书面跳过。本轮剩余 SFT / 百科全文�
 | `BC-07` | [TCM-MKG V1.0](../../datasets/baicao-knowledge/sources/tcm-mkg/SOURCE.md) | D1-D7/D18 共 213,655 行；19,519 records / 177,672 edges | `cleaned_local`；`publish: false` | Zenodo 为 `CC-BY-NC-4.0`；WHO 术语与 ICD-11 另有 NC-SA / ND 条款，其他聚合上游权利链未闭合 | 仅取方剂、饮片、病证、治法、性味、归经；D3/D5 降级为中性关联；13 组方剂/饮片同名隔离，10 个 TCMT/ICD 精确同名合并 | `blocked` |
 | `BC-08` | [TCM-SD / ZY-BERT](../../datasets/baicao-knowledge/sources/tcm-sd/SOURCE.md) | train/dev/test 共 54,152 条标注；148 records / 0 edges | `cleaned_local`；`publish: false` | 数据集为 `CC-BY-NC-SA-4.0`；仓库 MIT 只覆盖代码；论文脱敏声明被本地残留标识否定 | 只提升 148 个证候术语；病例原文、病名节点和 2,023 个病-证共现全部隔离 | `blocked` |
 | `BC-09` | [TCM-NER / DeepNER](../../datasets/baicao-knowledge/sources/tcm-ner/SOURCE.md) | train 850、dev 150、test 500、stack 1000；0 records / 0 edges | `cleaned_local`；`publish: false` | 仓库无许可证；天池/OpenKG 官方包未持有 | 17,757 条跨度与 260 个跨类型同名全部隔离；不把说明书共现当图事实 | `blocked` |
-| `BC-10` | [TCM-Ancient-Books](../../datasets/baicao-knowledge/sources/tcm-ancient-books/SOURCE.md) | 700 个编号 TXT + 1 个未编号现代医论；0 records / 0 edges | `cleaned_local`；`publish: false` | 仓库无许可证；数字整理版权未核实 | 699 本 GB18030 可解码；`203-婴童类萃` 解码失败；全文与未完成下载不入图 | `blocked` |
+| `BC-10` | [TCM-Ancient-Books](../../datasets/baicao-knowledge/sources/tcm-ancient-books/SOURCE.md) | 700 个编号 TXT；699 records / 0 edges | `cleaned_local`；`publish: false` | 仓库无许可证；数字整理版权未核实 | 699 条书目来源节点；`203-婴童类萃` 解码失败；全文不入图 | `blocked` |
 | `BC-11` | [classical-tcm-canon](../../datasets/baicao-knowledge/sources/classical-tcm-canon/SOURCE.md) | 115 部、9,401,166 字 Parquet；0 records / 0 edges | `cleaned_local`；`publish: false` | `license: other` / `proprietary-commercial`；原作公版声明不能覆盖数字整理本 | 标题与 id 唯一，全文隔离 | `blocked` |
-| `BC-12` | [SylvanL TCM Pretrain](../../datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/SOURCE.md) | 177,054 条 `{text}`；0 records / 0 edges | `cleaned_local`；`publish: false` | Card 为 Apache-2.0，但内容混杂且医案文件未持有 | 串文 `source2` index 11949；西药/美容/问答与中药条目并列 | `blocked` |
+| `BC-12` | [SylvanL TCM Pretrain](../../datasets/baicao-knowledge/sources/sylvanl-tcm-pretrain/SOURCE.md) | 177,054 条 `{text}`；4,962 records / 0 edges | `cleaned_local`；`publish: false` | Card 为 Apache-2.0，但内容混杂且医案文件未持有 | 可分源前缀 药材 3962、方剂 1000；串文与注射用西药跳过 | `blocked` |
 | `BC-13` | [ZY-BERT 预训练语料](../../datasets/baicao-knowledge/sources/zybert-pretrain-corpus/SOURCE.md) | RAR 218 MB，成员 1 个约 821 MB TXT；0 records / 0 edges | `cleaned_local`；`publish: false` | 许可不继承 TCM-SD；Dropbox 包未单独授权 | 只清单不解压 | `blocked` |
 | `BC-14` | [TCMChat-dataset-600k](../../datasets/baicao-knowledge/sources/tcmchat-600k/SOURCE.md) | 61 文件 / 1.57 GB；0 整包 records | `cleaned_local`；`publish: false` | Apache-2.0；公开面不含原文 | 药典已入图；国标/教材/医案/daiy/ChatMed 已分源；剩余 SFT 与百科全文已审计跳过 | `conditional` |
 | `BC-15` | [国标临床术语与成方](../../datasets/baicao-knowledge/sources/national-standard-terms/SOURCE.md) | 5,219 records / 0 edges | `cleaned_local`；`publish: false` | Apache-2.0；滤批准文号 | 病证 3,358、方剂 1,861；痞气两条按父类限定 | `conditional` |
@@ -270,7 +270,7 @@ TCMChat 可入图子集已分源清洗。剩余 `recommend_*` / `choice_*` / `ad
 | `BC-15` | 待填写 | 国标术语/成方 | Apache-2.0 | 已自动验证 | 待校验 | `conditional` | 痞气两条不合并；成方未解析 759 |
 | `BC-16` | 待填写 | 名医验案 | Apache-2.0 | 已去标识 | 待校验 | `conditional` | 词表提及；agent 可补抽 |
 | `BC-17` | 待填写 | 教材 7 种 | Apache-2.0 | 已切章 | 待校验 | `conditional` | 伤寒论歌诀摘录；药理学偏西药 |
-| `BC-18` | 待填写 | SFT knowledge | Apache-2.0 | 介绍类已抽；扩抽中 | 待校验 | `conditional` | 不当事实；产量见 processed |
+| `BC-18` | 待填写 | SFT knowledge | Apache-2.0 | 已清洗 7,459 records / 75,949 edges | 待校验 | `conditional` | 不当事实；注射剂名已丢 |
 | `BC-19` | 待填写 | daiy 病名 | Apache-2.0 | 已清洗 | 待校验 | `conditional` | 百科全文跳过 |
 | `BC-20` | 待填写 | ChatMed 提及 | Apache-2.0 | 已抽提及 | 待校验 | `conditional` | 对话不当事实 |
 
