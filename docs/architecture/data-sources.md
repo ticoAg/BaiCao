@@ -19,7 +19,7 @@ audience: developer, data-team
 
 - 已登记源状态、产量和发布开关：[`datasets/baicao-knowledge/catalog.json`](../../datasets/baicao-knowledge/catalog.json)
 - 每个已登记源的身份与边界：`datasets/baicao-knowledge/sources/*/SOURCE.md`
-- 原始候选文件：`tmp/qibo-datasets/` 与 `.cache/huggingface/`，只读、本地保留、不提交 Git
+- 原始候选文件：`.cache/{huggingface,github,dropbox}/`，只读、本地保留、不提交 Git。`tmp/qibo-datasets/` 仅留迁移说明。
 - 图模型与关系语义：[`packages/knowledge_model/`](../../packages/knowledge_model/)
 
 ## 状态口径
@@ -107,14 +107,29 @@ audience: developer, data-team
 | 国标药典（已是 `BC-01`） | 已入 | 仅脱敏结构 | 继续用 train 版；test 版差 100 字节，不用第二份 |
 | 中医临床诊疗术语·疾病 / 证候 | 是，已清洗为 `national-standard-terms` | 仅术语结构 | 3,358 个病证；两条痞气按父类限定，不合并 |
 | 中药成方制剂（临床用药须知 2015） | 是，已清洗 1,861 / 声称 2,620 | 仅结构 | 未解析缺口 759，不补猜 |
-| 教材 7 种 | 是，作证据后再抽 | 否 | `伤寒论.txt` 只有歌诀摘录；`药理学.txt` 偏西药 |
+| 教材 7 种 | 是，已切 232 章并词表提及 | 否 | `伤寒论.txt` 歌诀摘录；`药理学.txt` 偏西药；agent 可补抽 |
 | 名医验案 18 本 | 是，461 医案 + 词表提及 | 否 | 去姓氏、留性别年龄；agent 仍可补抽 |
-| ChatMed 问答 93 MB | 否作事实 | 否 | 模型生成文本，只抽候选 |
-| 百度百科 + daiy 词条 | 否作事实 | 否 | 网页抽取候选，滤品牌 |
-| SFT `knowledge.json` | 是，滤后作属性候选 | 仅结构 | 70,309 条介绍问答 |
+| ChatMed 问答 93 MB | 候选待处理 | 否 | 模型生成文本，只抽候选，已登记 |
+| 百度百科 + daiy 词条 | 候选待处理 | 否 | 网页抽取候选，滤品牌，已登记 |
+| SFT `knowledge.json` | 候选待处理 | 仅结构 | 70,309 条介绍问答，已登记 |
 | SFT `entity_extraction.json` | 否自动入图 | 否 | 说明书 NER，含国药准字和商品名 |
 | SFT `medical_case.json` | 否作事实 | 否 | 48,040 条，与 TCM-SD 病历叙述同源 |
 | 其余 SFT / Baichuan | 否 | 否 | 选择题、推荐、对话 |
+
+## 待处理候选
+
+已登记、原文已进 `.cache/`，但尚未完成结构清洗：
+
+| 候选 ID | 本地路径 | 判断 | 下一步 |
+|---|---|---|---|
+| `PEND-01` | `.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/opendata/ChatMed_TCM-v0.2_.txt` | 可用作抽取语料，不可当事实 | `organize` 切段后 agent 抽 |
+| `PEND-02` | `.cache/huggingface/.../web/2019_baidubaike.txt` + `daiy_data.txt` | 可用作百科抽取，滤品牌 | 按词条切分 |
+| `PEND-03` | `.cache/huggingface/.../sft/train/knowledge.json` | 可用，70,309 条介绍问答 | 滤后抽属性 |
+| `PEND-04` | `.cache/huggingface/.../sft/train/entity_extraction.json` | 可用作评测，不自动入图 | 说明书品牌过滤 |
+| `PEND-05` | `.cache/huggingface/.../sft/train/medical_case.json` | 与 TCM-SD 同源，只作评测 | 不去重入图 |
+| `PEND-06` | `.cache/huggingface/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain/` | 可抽，须先分源 | 已审，待切段 |
+| `PEND-07` | `.cache/dropbox/zybert/tcm_pretrain_corpus_a.rar` | 可解压后抽 | 不解压不入图 |
+| `PEND-08` | `.cache/github/xiaopangxia/TCM-Ancient-Books/` | 可作原文证据 | 已书目审计，待抽 |
 
 ## 正式登记源
 
@@ -140,7 +155,7 @@ audience: developer, data-team
 
 ## 本地候选源
 
-`tmp/qibo-datasets/` 中的独立候选已盘点。下一步优先清洗 TCMChat-600k 尚未入图的国标术语、成方制剂、教材和去标识医案，而不是再找新的外部仓。
+原始数据按平台放在 `.cache/`。下一步优先处理仍待清洗的 TCMChat 子集：ChatMed、百科网页、SFT knowledge。
 
 ## 重复目录与辅助材料
 
@@ -148,11 +163,11 @@ audience: developer, data-team
 
 | 路径 | 处理口径 |
 |---|---|
-| `tmp/qibo-datasets/Knowlegde_Graph_TCM/` | `BC-03` 的只读原始输入，不再作为候选源重复登记 |
-| `tmp/qibo-datasets/TCM_KG/` | 只有约 1.5 KB 示例三元组和建图脚本；完整图已登记为 `BC-04`，禁止重复导入 |
-| `tmp/qibo-datasets/TCM-SD-repo/` | `BC-08` 的上游仓库快照；实际 train/dev/test 使用 `TCM-SD/`，禁止双计数 |
-| `tmp/qibo-datasets/fangji-extra/` | 聚合目录；当前只把其中 `tcm-db` 作为 `BC-05` 的只读原始输入 |
-| `tmp/qibo-datasets/README.md`、`STATUS.json`、`USAGE.md` | 下载状态、来源说明和本地用法，不是业务数据 |
+| `.cache/github/fengxi177/Knowlegde_Graph_TCM/` | `BC-03` 只读输入 |
+| `.cache/github/ywjawmw/TCM_KG/` | 示例仓，完整图是 `BC-04` |
+| `.cache/github/Borororo/ZY-BERT/repo/` | `BC-08` 仓库快照，数据在 `TCM-SD/` |
+| `.cache/github/xiaogege6697/tcm-db/` | `BC-05` 只读输入 |
+| `.cache/README.md` | 平台目录说明 |
 
 ## 明确未持有或有意跳过
 

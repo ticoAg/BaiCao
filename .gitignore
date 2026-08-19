@@ -62,12 +62,13 @@ test-results/
 # pnpm
 .pnpm-store/
 
-.tmp
+.tmp/
 .tmp/neo4j-browser/
 .worktrees/
 .workflow/
-/tmp/data/
-/.cache/huggingface/
+/tmp
+/.cache/*
+!/.cache/README.md
 /packages/data_ingestion/tmp/
 /datasets/baicao-knowledge/sources/*/source/
 /datasets/baicao-knowledge/sources/*/processed/

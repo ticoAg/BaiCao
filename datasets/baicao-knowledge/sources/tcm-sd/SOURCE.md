@@ -5,8 +5,8 @@
 - `source_id`: `tcm-sd`
 - 上游仓库：[Borororo/ZY-BERT](https://github.com/Borororo/ZY-BERT)
 - 论文：[TCM-SD: A Benchmark for Probing Syndrome Differentiation via Natural Language Processing](https://aclanthology.org/2022.ccl-1.80/)（arXiv:2203.10839）
-- 本地只读入口：`tmp/qibo-datasets/TCM-SD/`
-- 上游仓库快照：`tmp/qibo-datasets/TCM-SD-repo/`，禁止与解压后的 `TCM-SD/` 双计数
+- 本地只读入口：`.cache/github/Borororo/ZY-BERT/TCM-SD/`
+- 上游仓库快照：`.cache/github/Borororo/ZY-BERT/repo/`，禁止与解压数据双计数
 - 天池 139034 官方包未持有
 - 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
 

@@ -4,7 +4,7 @@
 
 - `source_id`: `tcm-ancient-books`
 - 上游仓库：[xiaopangxia/TCM-Ancient-Books](https://github.com/xiaopangxia/TCM-Ancient-Books)
-- 本地只读入口：`tmp/qibo-datasets/TCM-Ancient-Books/`
+- 本地只读入口：`.cache/github/xiaopangxia/TCM-Ancient-Books/`
 - 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
 
 GitHub API 与本地仓库均无 LICENSE。原书多数可视为公版，但当前 TXT 是现代数字整理本，繁简、标点和切分版权未核实。因此只允许本地书目审计，不发布全文，也不把正文抽成图关系。

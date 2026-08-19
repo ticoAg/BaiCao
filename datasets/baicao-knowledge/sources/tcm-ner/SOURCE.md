@@ -5,7 +5,7 @@
 - `source_id`: `tcm-ner`
 - 本地镜像：[z814081807/DeepNER](https://github.com/z814081807/DeepNER) 的 `data/raw_data/`
 - 官方来源：天池竞赛 [531824](https://tianchi.aliyun.com/competition/entrance/531824/information) / 数据集 [86819](https://tianchi.aliyun.com/dataset/86819)；OpenKG `tcm-ner` 未取得
-- 本地只读入口：`tmp/qibo-datasets/TCM-NER/DeepNER-raw/`
+- 本地只读入口：`.cache/github/z814081807/DeepNER/data/raw_data/`
 - 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
 
 GitHub 仓库无 `license` 字段，也没有 LICENSE 文件。官方 brat 原包未持有。当前文件是竞赛冠军方案转换后的 JSON，不能把公开可见当成再发布授权。说明书正文含药品商品名和药厂名，也不得进入 public 导出。

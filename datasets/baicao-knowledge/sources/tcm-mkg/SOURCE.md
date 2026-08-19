@@ -5,7 +5,7 @@
 - `source_id`: `tcm-mkg`
 - 原始记录：[Zenodo 13763953](https://zenodo.org/records/13763953)
 - Hugging Face 镜像：[JX-Lab/TCM-MKG](https://huggingface.co/datasets/JX-Lab/TCM-MKG)
-- 本地只读入口：`tmp/qibo-datasets/TCM-MKG/`
+- 本地只读入口：`.cache/huggingface/JX-Lab/TCM-MKG/`
 - 固定版本：Zenodo `V1.0`，DOI `10.5281/zenodo.13763953`
 - 已持有：D1-D24、SD1、开放文档 PDF、`original_kg/nodes.tsv`
 - 未持有：`original_kg/edges.tsv`（上游说明为 48,849,793 条边、约 5.64 GB）
