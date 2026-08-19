@@ -79,6 +79,8 @@ class MedicalCaseNodeModel(BaseNodeModel):
     type: NodeType = Field(default=NodeType.MEDICAL_CASE, description="节点类型：医案")
     chief_complaint: str | None = Field(default=None, description="主诉")
     unit_id: str | None = Field(default=None, description="来源单元，如章节")
+    sex: str | None = Field(default=None, description="性别，如男/女")
+    age: str | None = Field(default=None, description="年龄原文，如22岁")
 
 
 class AcupointNodeModel(BaseNodeModel):

@@ -26,7 +26,7 @@ def default_out_dir() -> Path:
 
 
 def _prepare(args: argparse.Namespace) -> None:
-    batch = prepare_directory(args.input)
+    batch = prepare_directory(args.input, lexicon_path=args.lexicon)
     print(json.dumps(dump_prepare(batch, args.out_dir), ensure_ascii=False))
 
 
@@ -75,6 +75,12 @@ def main(argv: list[str] | None = None) -> None:
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--input", type=Path, default=DEFAULT_INPUT_PATH)
     prepare.add_argument("--out-dir", type=Path, default=default_out_dir())
+    prepare.add_argument(
+        "--lexicon",
+        type=Path,
+        default=repo_root()
+        / "datasets/baicao-knowledge/sources/national-standard-terms/processed/latest/records.jsonl",
+    )
     prepare.set_defaults(func=_prepare)
     accept = sub.add_parser("accept")
     accept.add_argument("--extractions", type=Path, required=True)

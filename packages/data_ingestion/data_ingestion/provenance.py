@@ -71,6 +71,9 @@ GRAPH_NODE_PROPS = {
     "term_code",
     "parent_term",
     "term_role",
+    "sex",
+    "age",
+    "chief_complaint",
 }
 GRAPH_EDGE_PROPS = {"dosage", "dosage_ratio", "evidence_ref"}
 PROTECTED_EXISTING_PROPS = {
