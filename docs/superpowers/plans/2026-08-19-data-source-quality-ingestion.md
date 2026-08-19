@@ -14,7 +14,7 @@ status: active
 
 **Architecture:** 原始文件保留在 `tmp/qibo-datasets/` 且只读。每个源单独完成许可核实、契约映射、实体消歧、清洗、测试和隔离 Neo4j smoke，再更新 `docs/architecture/data-sources.md` 与 dataset 台账。不同源不共用未经验证的别名字典或启发式分类结果。
 
-**Status:** active（当前源：`CAND-04 TCM-MKG`）
+**Status:** active（当前源：`CAND-05 TCM-SD / ZY-BERT`）
 
 ## 全局门禁
 
@@ -166,7 +166,7 @@ status: active
 
 提交证据：`713fe46 feat: clean DragonTCM source`
 
-## 当前源：CAND-04 TCM-MKG
+## 已完成源：CAND-04 TCM-MKG
 
 ### 已确认事实
 
@@ -187,7 +187,7 @@ status: active
 - [x] 生成本地 records/stats/质量报告，并按上游权利链结论设置发布门禁
 - [x] 运行 importer dry-run 与隔离 Neo4j smoke
 - [x] 更新 catalog/ledger、数据源清单、稳定架构与验收证据
-- [ ] 独立提交 `CAND-04`，再把当前源切换为 `CAND-05`
+- [x] 独立提交 `CAND-04`，再把当前源切换为 `CAND-05`
 
 ### 当前实现证据
 
@@ -205,12 +205,32 @@ status: active
 - D4 剂量比例和 D7 药性关系虽有稳定端点与逐行定位，仍需回到药典、WHO 术语或其他原始规范核实内容准确性。
 - `original_kg/edges.tsv` 未持有；当前只证明 D1-D7/D18 子图，不代表完整 TCM-MKG 已清洗或验收。
 
+提交证据：`0b8f0c6 feat: clean TCM-MKG source`
+
 ### 当前风险
 
 - Dataset Card 的 `CC-BY-4.0` 不能自动替代 ICD-11、MeSH、DOID、蛋白互作库等上游资源的独立条款；许可链未闭合前保持 `publish: false`。
 - D5/D18-D24 的疾病映射和 D11-D17 的化学/靶点标识可能是外部本体对齐，不等于中医临床治疗或因果事实。
 - SD1 明确是 predicted links，不得与 D1-D24 的来源表事实混合，也不得进入默认临床知识图。
 - 中成药、方剂、饮片、药材、病名、证候和症状必须按源类型与稳定 ID 区分；名称近似或跨语言 alias 不触发自动合并。
+
+## 当前源：CAND-05 TCM-SD / ZY-BERT
+
+### 已确认事实
+
+- 本地只读副本位于 `tmp/qibo-datasets/TCM-SD/`，包含 train 43,180、dev 5,486、test 5,486 条标注文本和 148 个证候标签。
+- 上游仓库为 `Borororo/ZY-BERT`，Dataset Card / 仓库声明 `CC-BY-NC-SA-4.0`；非商业和相同方式共享限制需要继续核实到具体文件。
+- 数据是疾病/临床文本到证候标签的监督学习语料；标签关联不等于治疗、因果、诊断标准或已验证患者事实。
+- train/dev/test 必须保持拆分，先检查重复、去标识化和标签一致性，再决定是否只作为抽取器评测集或生成中性候选关系。
+
+### Tasks
+
+- [ ] 用 AnySearch、上游仓库和数据文件核实许可、来源、去标识化与再利用边界
+- [ ] 用 Grok 独立审查疾病/症状/证候边界、标签语义和实体消歧门禁
+- [ ] 审计三份 split 的 schema、编码、重复、文本泄漏、标签分布和 148 个证候定义
+- [ ] 决定该源用于抽取器训练/评测，还是允许生成带逐行证据的中性病证-证候候选关系
+- [ ] 若允许结构清洗，实现来源专用 parser/CLI、最小测试、dry-run 和隔离 Neo4j smoke
+- [ ] 更新 SOURCE/VIEW、catalog/ledger、稳定架构与验收证据后独立提交
 
 ## Verification
 
@@ -239,3 +259,4 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
 9. [Zenodo TCM-MKG V1.0](https://zenodo.org/records/13763953)
 10. [WHO TCM terminology](https://www.who.int/publications/i/item/9789240042322)
 11. [WHO ICD-11 license](https://icd.who.int/docs/icd-api/license/)
+12. [ZY-BERT](https://github.com/Borororo/ZY-BERT)
