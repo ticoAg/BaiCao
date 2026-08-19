@@ -4,10 +4,12 @@ from pathlib import Path
 from knowledge_model.constants import EdgeType, NodeType
 
 from data_ingestion.pending_extract import (
+    extract_ancient_sources,
     extract_chatmed_mentions,
     extract_daiy_terms,
     extract_sft_knowledge,
     extract_sylvanl_entries,
+    list_decodable_numbered_books,
 )
 from data_ingestion.organize_workflow import finalize_drafts
 
@@ -218,6 +220,30 @@ def test_chatmed_hits_long_names(tmp_path: Path):
     assert "太阳病" in names
     assert "同仁堂乌鸡白凤丸" not in names
     assert extra["scanned_lines"] == 1
+
+
+def test_ancient_sources_emits_source_nodes_and_skips_bad_files(tmp_path: Path):
+    root = tmp_path / "TCM-Ancient-Books"
+    root.mkdir()
+    (root / "000-伤寒论.txt").write_bytes("伤寒论正文".encode("gb18030"))
+    (root / "001-本草纲目.txt").write_text("本草纲目正文\n", encoding="utf-8")
+    (root / "203-婴童类萃.txt").write_bytes(b"\xff\xfe\x00\x80bad")
+    (root / "700.李培生老中医经验集.txt").write_text("现代医论\n", encoding="utf-8")
+    books, listing = list_decodable_numbered_books(root)
+    skipped = {item["file"]: item["reason"] for item in listing["skipped"]}
+    assert skipped["203-婴童类萃.txt"] == "undecodable"
+    assert skipped["700.李培生老中医经验集.txt"] == "unnumbered"
+    assert [item["title"] for item in books] == ["伤寒论", "本草纲目"]
+    drafts = extract_ancient_sources(books)
+    records = _records(drafts)
+    assert {item.node_name: item.node_type for item in records} == {
+        "伤寒论": NodeType.SOURCE.value,
+        "本草纲目": NodeType.SOURCE.value,
+    }
+    assert all(item.source_id == "test" and item.batch_id == "b" for item in records)
+    assert {item.properties["term_code"] for item in records} == {"000", "001"}
+    assert all(item.properties["tcm_type"] == "来源古籍书目" for item in records)
+    assert all(item.edges == [] for item in records)
 
 
 def test_sylvanl_prefix_entries(tmp_path: Path):

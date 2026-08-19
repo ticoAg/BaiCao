@@ -12,6 +12,7 @@ from data_ingestion.pending_extract import (
     extract_daiy_terms,
     extract_sft_knowledge,
     extract_sylvanl_entries,
+    list_decodable_numbered_books,
     repo_root,
     write_source_outputs,
     _record_from_drafts,
@@ -106,21 +107,8 @@ def run_kind(kind: str, *, repo: Path, limit: int | None = None) -> dict:
         )
     if kind == "ancient-books":
         _, audit = audit_ancient(cache / "github/xiaopangxia/TCM-Ancient-Books")
-        # Re-read numbered files via audit quality is not enough; parse titles from isolated? 
-        # Use audit first/last only? Need titles list — extend by scanning directory here.
-        from data_ingestion.tcm_ancient_books import NUMBERED_RE, _decode
-
-        books = []
         root = cache / "github/xiaopangxia/TCM-Ancient-Books"
-        for file_path in sorted(root.glob("*.txt")):
-            match = NUMBERED_RE.match(file_path.name)
-            if not match:
-                continue
-            try:
-                _decode(file_path.read_bytes())
-            except Exception:
-                continue
-            books.append({"book_id": int(match.group(1)), "title": match.group(2), "file": file_path.name})
+        books, listing = list_decodable_numbered_books(root)
         drafts = extract_ancient_sources(books)
         records, report = _record_from_drafts(
             drafts,
@@ -133,6 +121,7 @@ def run_kind(kind: str, *, repo: Path, limit: int | None = None) -> dict:
             "book_count": audit.get("book_count"),
             "decode_errors": audit.get("quarantine_counts", {}).get("decode_errors"),
         }
+        report["listing"] = listing
         return write_source_outputs(
             repo=repo, source_id="tcm-ancient-books", records=records, report=report
         )

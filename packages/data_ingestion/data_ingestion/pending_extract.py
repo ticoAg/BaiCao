@@ -23,6 +23,7 @@ from data_ingestion.source_layout import (
     processed_latest_dir,
     work_dir,
 )
+from data_ingestion.tcm_ancient_books import NUMBERED_RE, _decode
 from data_ingestion.tcmchat_case_units import longest_lexicon_hits
 
 PROMPT_HASH = prompt_hash_for(Path(__file__))
@@ -373,6 +374,29 @@ def extract_sylvanl_entries(path: Path) -> tuple[list[EntityDraft], dict[str, An
             )
         )
     return drafts, {"source_rows": len(payload), "kept": len(drafts)}
+
+
+def list_decodable_numbered_books(root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    books: list[dict[str, Any]] = []
+    skipped: list[dict[str, str]] = []
+    for file_path in sorted(root.glob("*.txt")):
+        match = NUMBERED_RE.match(file_path.name)
+        if not match:
+            skipped.append({"file": file_path.name, "reason": "unnumbered"})
+            continue
+        try:
+            _decode(file_path.read_bytes())
+        except Exception:
+            skipped.append({"file": file_path.name, "reason": "undecodable"})
+            continue
+        books.append(
+            {
+                "book_id": int(match.group(1)),
+                "title": match.group(2),
+                "file": file_path.name,
+            }
+        )
+    return books, {"kept": len(books), "skipped": skipped}
 
 
 def extract_ancient_sources(books: Iterable[dict[str, Any]]) -> list[EntityDraft]:
