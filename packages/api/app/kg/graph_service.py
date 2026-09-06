@@ -639,8 +639,8 @@ class GraphService:
         depth: int = 1,
         limit: int = 20,
     ) -> Dict[str, Any]:
-        """按节点 ID 扩展一跳邻居子图，供前端双击节点展开。"""
-        bounded_depth = max(1, min(depth, 1))
+        """按节点 ID 扩展最多两跳邻居子图。Workbench HTTP 仍限制 depth=1；agent 可用 2 跳看证据来源。"""
+        bounded_depth = max(1, min(depth, 2))
         bounded_limit = max(1, min(limit, 50))
 
         record = await self._query_single(QUERY_GET_NODE_BY_ID, {"node_id": node_id})
@@ -1224,14 +1224,14 @@ class GraphService:
         if normalized_label:
             cypher = f"""
             MATCH (n:{normalized_label})
-            WHERE n.名称 CONTAINS $search_text
+            WHERE n.名称 CONTAINS $search_text OR n.标识 = $search_text
             RETURN n, labels(n) as labels
             LIMIT $limit
             """
         else:
             cypher = """
             MATCH (n)
-            WHERE n.名称 CONTAINS $search_text
+            WHERE n.名称 CONTAINS $search_text OR n.标识 = $search_text
             RETURN n, labels(n) as labels
             LIMIT $limit
             """

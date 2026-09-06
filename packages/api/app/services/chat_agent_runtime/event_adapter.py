@@ -109,7 +109,7 @@ def _coerce_dict_list(value: Any) -> list[dict[str, Any]]:
 
 
 def _node_id(node: dict[str, Any]) -> str | None:
-    for key in ("id", "name"):
+    for key in ("id", "标识", "name"):
         value = node.get(key)
         if isinstance(value, str) and value:
             return value
@@ -166,9 +166,15 @@ def _merge_graph_patch(
         graph_state["actual_depth"] = max(graph_state["actual_depth"], depth)
 
 
+def _items_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, dict) and isinstance(payload.get("items"), list):
+        return _coerce_dict_list(payload["items"])
+    return _coerce_dict_list(payload)
+
+
 def _patch_from_tool_payload(tool_name: str, payload: Any) -> dict[str, Any] | None:
     if tool_name in {"search_nodes", "lookup_nodes"}:
-        nodes = _coerce_dict_list(payload)
+        nodes = _items_from_payload(payload)
         if nodes:
             return {"nodes": nodes}
         return None
@@ -187,7 +193,7 @@ def _patch_from_tool_payload(tool_name: str, payload: Any) -> dict[str, Any] | N
         }
 
     if tool_name == "search_edges":
-        edges = _coerce_dict_list(payload)
+        edges = _items_from_payload(payload)
         nodes: list[dict[str, Any]] = []
         for edge in edges:
             for endpoint_key in ("source", "target"):
@@ -202,6 +208,16 @@ def _patch_from_tool_payload(tool_name: str, payload: Any) -> dict[str, Any] | N
 
 
 def _summarize_tool_payload(tool_name: str, payload: Any) -> str:
+    if isinstance(payload, dict) and isinstance(payload.get("count"), int):
+        if tool_name in {"search_nodes", "lookup_nodes"}:
+            return f"返回 {payload['count']} 个节点"
+        if tool_name == "search_edges":
+            return f"返回 {payload['count']} 条关系"
+        if tool_name == "expand_neighbors":
+            node_count = payload.get("node_count")
+            edge_count = payload.get("edge_count")
+            if isinstance(node_count, int) and isinstance(edge_count, int):
+                return f"返回 {node_count} 个节点、{edge_count} 条关系"
     if tool_name in {"search_nodes", "lookup_nodes"} and isinstance(payload, list):
         return f"返回 {len(payload)} 个节点"
     if tool_name == "search_edges" and isinstance(payload, list):

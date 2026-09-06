@@ -49,7 +49,7 @@ flowchart TD
 - 后端领域模型与业务逻辑真源：`packages/api/app/models/**`、`packages/api/app/services/**`
 - 图谱 Schema / Cypher / 导入样例真源：`packages/db/neo4j/**`、`packages/db/import/**`
 - 前端请求封装与展示态适配真源：`packages/web/src/services/**`
-- 运行编排与联调事实真源：`infra/docker-compose.yml`、`infra/.env.example`
+- 运行编排与联调事实真源：`infra/docker-compose.yml`、`infra/.env.schema`
 - 本地开发操作入口：`docs/local-development.md`
 - 长期维护文档真源：`docs/architecture/**`、`docs/acceptance/**`
 

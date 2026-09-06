@@ -10,7 +10,7 @@ from ..knowledge_mcp.handlers import KnowledgeMcpHandlers
 class SearchNodesArgs(BaseModel):
     query: str = Field(description="节点模糊查询关键词，优先用于定位锚点")
     label: str | None = Field(default=None, description="可选中文节点类型，如 方剂/医案/药材")
-    limit: int = Field(default=5, ge=1, le=20, description="候选节点上限")
+    limit: int = Field(default=10, ge=1, le=20, description="候选节点上限")
 
 
 def build_search_nodes_tool(
@@ -18,7 +18,7 @@ def build_search_nodes_tool(
 ) -> StructuredTool:
     handlers = KnowledgeMcpHandlers(backend_factory=backend_factory)
 
-    async def _search_nodes(query: str, label: str | None = None, limit: int = 5):
+    async def _search_nodes(query: str, label: str | None = None, limit: int = 10):
         return await handlers.search_nodes({"query": query, "label": label, "limit": limit})
 
     return StructuredTool.from_function(

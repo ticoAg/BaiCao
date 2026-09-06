@@ -16,7 +16,7 @@ audience: developer
 - 验收目标：验证问答页面、`/api/v1/chat/stream` 单入口、自然语言回答、agent 工具过程流和可展开依据子图形成完整闭环
 - 对应需求：图谱增强智能问答
 - 对应计划：`docs/superpowers/plans/archive/2026-04-20-chat-deepagents-graph-agent.md`
-- 当前版本 / 日期：OpenAI Agents Graph Agent / 2026-08-19
+- 当前版本 / 日期：pydantic-ai-slim Graph Agent / 2026-09-06
 
 ## 2. 验收范围
 
@@ -34,7 +34,7 @@ audience: developer
 
 ### 不包含
 
-- 跨进程 / 跨重启的持久化会话恢复（当前仅支持单进程内 `SQLiteSession` registry）
+- 跨进程 / 跨重启的持久化会话恢复（当前仅支持单进程内 `message_history` registry）
 
 ## 3. 前置条件
 
@@ -115,11 +115,11 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream \
 ### 实现证据
 
 - `packages/api/app/api/chat.py` — `/api/v1/chat/stream` 唯一入口
-- `packages/api/app/services/chat_agent_runtime/runtime.py` — OpenAI Agents SDK、`SQLiteSession` registry 与 MCP 接线真源
+- `packages/api/app/services/chat_agent_runtime/runtime.py` — pydantic-ai-slim、进程内图工具与 `message_history` 真源
 - `packages/api/app/services/chat_agent_runtime/session_memory.py` — TTL eviction callback 与同 session 串行锁
 - `packages/api/app/services/chat_agent_runtime/citations.py` — 从查询子图生成结构化 citation
 - `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — provider 原生 reasoning 透传
-- `packages/api/app/services/knowledge_mcp/server.py` — agent 可用的四个 structured graph tools
+- `packages/api/app/services/knowledge_mcp/server.py` — 外部 `/mcp` 的四个 structured graph tools 与 `graph://schema`
 - `packages/web/src/pages/ChatPage.tsx` — 页面入口
 - `packages/web/src/hooks/useChat.ts` — chat stream 事件消费与消息归一化
 - `packages/web/src/components/chat/GraphAgentBasisPanel.tsx` — 每轮回答的依据子图、provider reasoning、工具调用展示
@@ -147,7 +147,8 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: appli
 - 2026-08-19 fresh 自动验证：API 非集成 `293 passed, 4 deselected`；Web `61 passed`；citation 前端定向 `13 passed`；Web typecheck/build 与 API ruff/ty 通过
 - fresh-volume Neo4j integration：`4 passed, 293 deselected`；Playwright 主线 E2E：`1 passed`，覆盖首页、搜索、图谱、citation 展示、lineage 跳转和验证页
 - 真实 Fireworks + MCP + Neo4j smoke：药材 2 次工具调用 / 21 节点 / 19 边 / 2 citations；方剂 3 / 29 / 33 / 1；医案 2 / 5 / 5 / 1；穴位/治法 4 / 11 / 12 / 2
-- 运行时策略摘要：上下文由进程内 `SQLiteSession` registry 续接；单进程内 30 分钟未访问会话会从 registry 移除并关闭，应用退出关闭全部 session
+- 运行时策略摘要：上下文由进程内 `message_history` 续接；单进程内 30 分钟未访问会话会从 registry 移除，应用退出清空全部 session
+- 2026-09-06 runtime 收口：API 非集成 `296 passed, 4 deselected`；ruff/ty 通过。真实 Fireworks + Neo4j smoke 本轮未重跑
 
 ## 7. 风险与未覆盖项
 
@@ -160,5 +161,5 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: appli
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：OpenAI Agents 执行流、结构化 citation、MCP 图工具、进程内会话回收、真实 Neo4j/provider 与 E2E 主链均已通过
+- 结论一句话：pydantic-ai-slim 执行流、结构化 citation、进程内图工具、外部 MCP、进程内会话回收已由单测覆盖；真实 Neo4j/provider E2E 仍以 2026-08-19 证据为历史基线，本轮未重跑
 - 后续动作：多 worker 需求出现后再引入共享会话存储；用小型 golden set 持续评估回答与 citation 质量

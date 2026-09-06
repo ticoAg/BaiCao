@@ -78,7 +78,7 @@ test-results/
 
 # datasets/baicao-knowledge: metadata tracked, payloads ignored
 # Tracked: README.md, catalog.json, tasks/*, sources/*/SOURCE.md, sources/*/VIEW.md
-# Ignored: 原文、抽取中间态、可导入快照、发布表
+# Ignored: 原文、抽取中间态、可导入快照、data/public 与 data/restricted 发布表
 /datasets/baicao-knowledge/sources/*/source/
 /datasets/baicao-knowledge/sources/*/processed/
 /datasets/baicao-knowledge/sources/*/work/

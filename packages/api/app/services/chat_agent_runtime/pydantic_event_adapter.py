@@ -4,6 +4,15 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
+from pydantic_ai import (
+    AgentRunResultEvent,
+    FunctionToolCallEvent,
+    FunctionToolResultEvent,
+    PartDeltaEvent,
+    TextPartDelta,
+    ThinkingPartDelta,
+)
+
 from .citations import citations_from_graph_state
 from .event_adapter import (
     _base_final_payload,
@@ -15,46 +24,19 @@ from .event_adapter import (
 )
 
 
-def _message_output_text(item: Any) -> str:
-    try:
-        from agents import ItemHelpers
-
-        text = ItemHelpers.text_message_output(item)
-        if text:
-            return text
-    except Exception:
-        pass
-    raw = getattr(item, "raw_item", None)
-    content = getattr(raw, "content", None)
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts: list[str] = []
-        for block in content:
-            text = block.get("text") if isinstance(block, dict) else getattr(block, "text", None)
-            if isinstance(text, str):
-                parts.append(text)
-        return "".join(parts)
-    return ""
-
-
-def _tool_call_fields(item: Any) -> tuple[str, str, dict[str, Any]]:
-    raw = getattr(item, "raw_item", None)
-    name = getattr(raw, "name", None) or getattr(item, "_resolved_tool_name", None) or "tool"
-    call_id = getattr(raw, "call_id", None) or getattr(raw, "id", None) or f"{name}-1"
-    arguments = getattr(raw, "arguments", None) or {}
-    if isinstance(arguments, str):
+def _tool_args(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
         try:
-            parsed = json.loads(arguments)
-            arguments = parsed if isinstance(parsed, dict) else {}
+            parsed = json.loads(value)
         except json.JSONDecodeError:
-            arguments = {}
-    if not isinstance(arguments, dict):
-        arguments = {}
-    return str(call_id), str(name), arguments
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
 
 
-async def adapt_openai_stream(
+async def adapt_pydantic_stream(
     stream_events: AsyncIterator[Any],
     *,
     session_id: str,
@@ -69,45 +51,42 @@ async def adapt_openai_stream(
         "actual_depth": 0,
     }
     answer_chunks: list[str] = []
+    provider_reasoning: list[dict[str, str]] = []
 
     async for event in stream_events:
-        event_type = getattr(event, "type", None)
-        if event_type == "raw_response_event":
-            continue
-
-        if event_type != "run_item_stream_event":
-            continue
-
-        item = getattr(event, "item", None)
-        item_type = getattr(item, "type", None)
-        if item_type == "tool_call_item":
-            call_id, name, arguments = _tool_call_fields(item)
+        if isinstance(event, FunctionToolCallEvent):
+            part = event.part
+            call_id = event.tool_call_id or getattr(part, "tool_call_id", None) or f"{part.tool_name}-1"
+            arguments = _tool_args(getattr(part, "args", None))
             record = {
-                "call_id": call_id,
-                "tool_name": name,
+                "call_id": str(call_id),
+                "tool_name": str(part.tool_name),
                 "arguments": arguments,
                 "summary": "工具调用开始",
                 "result_summary": None,
                 "status": "running",
             }
             tool_calls.append(record)
-            tool_calls_by_id[call_id] = record
+            tool_calls_by_id[str(call_id)] = record
             yield {
                 "type": "tool_start",
-                "data": {"call_id": call_id, "tool_name": name, "arguments": arguments},
+                "data": {
+                    "call_id": str(call_id),
+                    "tool_name": str(part.tool_name),
+                    "arguments": arguments,
+                },
             }
-        elif item_type == "tool_call_output_item":
-            output = getattr(item, "output", None)
-            raw = getattr(item, "raw_item", None)
-            call_id = getattr(item, "call_id", None) or getattr(raw, "call_id", None) or getattr(raw, "id", None)
-            parsed = _parse_tool_payload(output)
-            record = tool_calls_by_id.get(str(call_id)) if call_id else None
+        elif isinstance(event, FunctionToolResultEvent):
+            part = event.part
+            call_id = str(event.tool_call_id or getattr(part, "tool_call_id", "") or "")
+            tool_name = str(getattr(part, "tool_name", None) or "tool")
+            parsed = _parse_tool_payload(event.content if event.content is not None else getattr(part, "content", None))
+            summary = _summarize_tool_payload(tool_name, parsed)
+            record = tool_calls_by_id.get(call_id)
             if record is None:
                 record = next((item for item in reversed(tool_calls) if item["status"] == "running"), None)
-            tool_name = record["tool_name"] if record else "tool"
-            summary = _summarize_tool_payload(tool_name, parsed)
             if record is None:
-                generated = str(call_id or f"{tool_name}-{len(tool_calls) + 1}")
+                generated = call_id or f"{tool_name}-{len(tool_calls) + 1}"
                 record = {
                     "call_id": generated,
                     "tool_name": tool_name,
@@ -121,6 +100,7 @@ async def adapt_openai_stream(
             else:
                 record["result_summary"] = summary
                 record["status"] = "completed"
+                tool_name = record["tool_name"]
             yield {
                 "type": "tool_result",
                 "data": {
@@ -132,24 +112,31 @@ async def adapt_openai_stream(
             }
             patch = _patch_from_tool_payload(tool_name, parsed)
             raw_arguments = record.get("arguments")
-            tool_arguments: dict[str, Any] | None = (
-                raw_arguments if isinstance(raw_arguments, dict) else None
-            )
             _merge_graph_patch(
                 graph_state,
                 patch,
-                tool_arguments=tool_arguments,
+                tool_arguments=raw_arguments if isinstance(raw_arguments, dict) else None,
             )
             if patch:
                 yield {"type": "subgraph_patch", "data": patch}
-        elif item_type == "message_output_item":
-            text = _message_output_text(item).strip()
-            if text:
-                answer_chunks = [text]
-                yield {"type": "answer_chunk", "data": {"text": text}}
+        elif isinstance(event, PartDeltaEvent):
+            delta = event.delta
+            if isinstance(delta, TextPartDelta) and delta.content_delta:
+                answer_chunks.append(delta.content_delta)
+                yield {"type": "answer_chunk", "data": {"text": delta.content_delta}}
+            elif isinstance(delta, ThinkingPartDelta) and delta.content_delta:
+                chunk = {"text": delta.content_delta}
+                provider_reasoning.append(chunk)
+                yield {"type": "provider_reasoning", "data": chunk}
+        elif isinstance(event, AgentRunResultEvent):
+            result = event.result
+            output = getattr(result, "output", None)
+            if isinstance(output, str) and output.strip() and not answer_chunks:
+                answer_chunks.append(output.strip())
 
     final_payload = _base_final_payload(session_id, turn_id)
     final_payload["answer"] = "".join(answer_chunks).strip()
+    final_payload["provider_reasoning"] = provider_reasoning
     final_payload["tool_calls"] = tool_calls
     final_payload["related_nodes"] = list(graph_state["nodes"].values())
     final_payload["related_edges"] = list(graph_state["edges"].values())

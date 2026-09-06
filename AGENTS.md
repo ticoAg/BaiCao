@@ -46,7 +46,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 - **图谱与导入结构真源**：`packages/db/neo4j/`、`packages/db/import/`
 - **数据源 agent 工作目录**：`datasets/baicao-knowledge/sources/<source_id>/`（`SOURCE.md`、`VIEW.md`、`work/`、`processed/latest/`）
 - **前端消费与展示态适配真源**：`packages/web/src/services/`、`packages/web/src/pages/`
-- **运行编排与环境事实**：`infra/docker-compose.yml`、`infra/.env.example`
+- **运行编排与环境事实**：`infra/docker-compose.yml`、`infra/.env.schema`
 - **长期维护文档**：`docs/architecture/`、`docs/acceptance/`
 - **草案与中间产物**：`docs/_dev/`、`docs/superpowers/`
 

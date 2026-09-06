@@ -32,7 +32,7 @@ class KnowledgeMcpHandlers:
         return await self._backend().search_nodes(
             query=str(args.get("query") or ""),
             label=args.get("label"),
-            limit=int(args.get("limit") or 5),
+            limit=int(args.get("limit") or 10),
         )
 
     async def search_edges(self, args: dict[str, Any]) -> Any:

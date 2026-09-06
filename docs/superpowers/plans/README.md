@@ -12,6 +12,8 @@
 
 dataset、可信问答与第三数据源结构清洗计划均已完成并归档；后续数据源统一进入当前 active plan，不恢复历史 checkbox。
 
+新的按日落盘执行计划改走 [`docs/plans/`](../../plans/README.md)。当前一篇：[问答 chat 走最新 MCP 并清适配](../../plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md)。
+
 数据集台账（计划/完成量）：[`../../../datasets/baicao-knowledge/`](../../../datasets/baicao-knowledge/)
 
 ## 已完成归档

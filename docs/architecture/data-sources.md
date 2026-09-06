@@ -68,7 +68,7 @@ audience: developer, data-team
 |---|---|---|
 | 纳入登记 | 是否在 catalog / 本清单跟踪 | 一般不动；30 个源已登记 |
 | 纳入图谱 | 实体/关系能否进本地 Neo4j | 抽检语义后确认或降级 |
-| 纳入 public | 能否进 `ticoAg/baicao-knowledge` | 只有许可 + 脱敏都过才改 `publish: true` |
+| 纳入 public 层 | 能否进 `data/public/`（同一 private HF 仓） | 只有许可 + 脱敏都过才改 `publish: true` / `release_tier=public` |
 
 `public` 不是质量结论。公开面只发脱敏结构化结果。当前 public 只有 `BC-01` 与 `BC-02`，共 `5,118 records / 11,202 edges`。
 

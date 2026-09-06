@@ -1182,6 +1182,24 @@ async def test_search_nodes_without_label(graph_service):
     result = await graph_service.search_nodes("Dang")
     assert len(result) == 1
     assert result[0]["labels"] == ["药材"]
+    query = session.run.await_args.args[0] if session.run.await_args else ""
+    assert "n.标识 = $search_text" in query
+    assert "n.名称 CONTAINS $search_text" in query
+
+
+@pytest.mark.unit
+async def test_expand_node_graph_allows_two_hop_depth(graph_service):
+    graph_service._query_single = AsyncMock(  # noqa: SLF001
+        return_value={"n": {"标识": "药材:乌梅", "名称": "乌梅"}, "labels": ["药材"]}
+    )
+    graph_service._expand_query_subgraph = AsyncMock(return_value=([], []))  # noqa: SLF001
+
+    await graph_service.expand_node_graph("药材:乌梅", depth=2, limit=20)
+
+    called = graph_service._expand_query_subgraph.await_args  # noqa: SLF001
+    assert called is not None
+    assert called.args[2] == 2
+
 
 
 @pytest.mark.unit

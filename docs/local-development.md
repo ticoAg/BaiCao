@@ -30,8 +30,8 @@ flowchart LR
 ## 推荐：`make`
 
 ```bash
-cp .env.example .env
-cp infra/.env.example infra/.env
+cp .env.schema .env
+cp infra/.env.schema infra/.env
 make deps up
 make stack up
 ```
@@ -78,7 +78,7 @@ make stack up API_PORT=8010 WEB_PORT=3010
 - `INFISICAL_TOKEN` 或 `INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET`：本地 `.env`
 - 切换环境：在 `.env` 里覆盖 `INFISICAL_ENV`
 
-最小做法：`cp .env.example .env`，补 token。字段说明在 `.env.example`。
+最小做法：`cp .env.schema .env`，补 token。字段说明在 `.env.schema`。
 
 根目录已配好 `infisical.defaults.env` / `.env`，或当前 shell 已导出 Infisical 变量时，`make` 不需要再包一层注入脚本。
 
@@ -87,7 +87,7 @@ make stack up API_PORT=8010 WEB_PORT=3010
 基础设施：
 
 ```bash
-cp infra/.env.example infra/.env
+cp infra/.env.schema infra/.env
 docker compose -f infra/docker-compose.yml up -d postgres neo4j redis minio
 ```
 

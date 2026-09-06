@@ -7,7 +7,13 @@ import json
 import os
 from pathlib import Path
 
-from data_ingestion.dataset_catalog import CatalogError, DEFAULT_DATASET_ID, load_catalog
+from data_ingestion.dataset_catalog import (
+    CatalogError,
+    DEFAULT_DATASET_ID,
+    RELEASE_PUBLIC,
+    RELEASE_RESTRICTED,
+    load_catalog,
+)
 
 METADATA_NAMES = {"README.md", "catalog.json", "SOURCE.md", "VIEW.md", "ledger.json"}
 
@@ -41,7 +47,8 @@ def plan_upload(dataset_root: Path) -> list[Path]:
         if "source" in parts and path.name != "SOURCE.md":
             continue
         if parts[0] == "data" and relative.suffix == ".parquet":
-            selected.append(path)
+            if len(parts) == 3 and parts[1] in {RELEASE_PUBLIC, RELEASE_RESTRICTED}:
+                selected.append(path)
             continue
         if path.name in METADATA_NAMES or (parts[0] == "tasks" and relative.suffix in {".md", ".json"}):
             selected.append(path)

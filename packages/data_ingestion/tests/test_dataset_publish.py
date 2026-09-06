@@ -58,9 +58,13 @@ def test_plan_upload_excludes_payloads(tmp_path: Path):
     processed = source_dir / "processed" / "latest"
     processed.mkdir(parents=True)
     (processed / "records.jsonl").write_text("{}\n", encoding="utf-8")
-    data_dir = tmp_path / "data"
-    data_dir.mkdir()
-    (data_dir / "records.parquet").write_bytes(b"PAR1")
+    data_public = tmp_path / "data" / "public"
+    data_public.mkdir(parents=True)
+    (data_public / "records.parquet").write_bytes(b"PAR1")
+    data_restricted = tmp_path / "data" / "restricted"
+    data_restricted.mkdir(parents=True)
+    (data_restricted / "records.parquet").write_bytes(b"PAR2")
+    (tmp_path / "data" / "legacy.parquet").write_bytes(b"OLD")
     (tmp_path / "exports").mkdir()
     (tmp_path / "exports" / "graph-zh-live.json").write_text("{}", encoding="utf-8")
 
@@ -71,7 +75,9 @@ def test_plan_upload_excludes_payloads(tmp_path: Path):
     assert "sources/daoyi-suyang/SOURCE.md" in relative
     assert "sources/daoyi-suyang/VIEW.md" in relative
     assert "tasks/ledger.json" in relative
-    assert "data/records.parquet" in relative
+    assert "data/public/records.parquet" in relative
+    assert "data/restricted/records.parquet" in relative
+    assert "data/legacy.parquet" not in relative
     assert not any(name.endswith(".jsonl") for name in relative)
     assert not any(
         "source/" in name and name.endswith(".md") and "SOURCE.md" not in name for name in relative

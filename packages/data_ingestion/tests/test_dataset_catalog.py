@@ -118,5 +118,8 @@ def test_ledger_tasks_must_reference_known_sources(tmp_path: Path):
 )
 def test_repo_catalog_matches_known_sources():
     catalog = load_catalog(REPO / "datasets/baicao-knowledge/catalog.json")
-    assert catalog.visibility == "public"
+    assert catalog.visibility == "private"
     assert catalog.dataset_id == "ticoAg/baicao-knowledge"
+    assert {source.release_tier for source in catalog.sources} == {"public", "restricted"}
+    assert all(source.license_status for source in catalog.sources)
+    assert all(source.release_tier == ("public" if source.publish else "restricted") for source in catalog.sources)

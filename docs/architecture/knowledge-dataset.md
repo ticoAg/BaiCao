@@ -32,9 +32,10 @@ audience: developer
 
 | 项 | 口径 |
 |----|------|
-| HF repo | `ticoAg/baicao-knowledge`（public，仅脱敏结构化结果） |
+| HF repo | `ticoAg/baicao-knowledge`（**private**） |
 | 本地 staging | `datasets/baicao-knowledge/`（元数据进 git，载荷 gitignore） |
 | 主存储格式 | **Apache Parquet**（HF Dataset Viewer 主路径） |
+| 分层 | `data/public/`（`release_tier=public`）与 `data/restricted/`（许可受限，仍进同一 private 仓） |
 | 辅助格式 | JSONL 仅作抽取中间态，不作为发布真源 |
 | 图模型版本 | catalog 钉死 `packages/knowledge_model` |
 
@@ -46,20 +47,21 @@ datasets/baicao-knowledge/
   catalog.json
   tasks/ledger.json
   data/
-    records.parquet      # 节点级宽表，含 source_id / batch_id
-    edges.parquet        # 边表，可按 source_id / batch_id 过滤
-  sources/<source_id>/
-    SOURCE.md
-    VIEW.md              # 数字必须由脚本生成
-    source/              # 原文
-    processed/latest/
-      records.jsonl      # 中间态
+    public/
       records.parquet
       edges.parquet
-      stats.json
+    restricted/
+      records.parquet
+      edges.parquet
+  sources/<source_id>/
+    SOURCE.md
+    VIEW.md
+    source/              # 原文
+    processed/latest/
+      records.jsonl      # 中间态，不上 HF
 ```
 
-Viewer 数据由 Dataset Card 分成 `records` / `edges` 两个 config，对应仓库根下两张不同 schema 的 Parquet。筛选列：`source_id`、`batch_id`、`unit_id`、`node_type`。
+Viewer 分成 `records` / `edges`（public 层）与 `restricted_records` / `restricted_edges`。筛选列：`source_id`、`batch_id`、`unit_id`、`node_type`、`release_tier`、`license_status`。
 
 ## 3. 记录信封
 
@@ -162,7 +164,7 @@ uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-产出 `data/records.parquet` 与 `data/edges.parquet`。只有 catalog 中显式 `publish: true` 的源会进入汇总，默认不发布。visibility 为 public 时，导出器还会清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
+产出 `data/public/*.parquet` 与 `data/restricted/*.parquet`。`publish: true` / `release_tier=public` 进 public 层；其余进 restricted 层。两层都上传到同一个 private Hugging Face 数据集 `ticoAg/baicao-knowledge`。导出一律清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`。行内带 `release_tier`、`license`、`license_status`。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
 
 ```bash
 uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
@@ -180,11 +182,32 @@ curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoAg/baicao-k
 curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoAg/baicao-knowledge"
 ```
 
-截至 2026-08-19，repo 已公开，匿名 `/is-valid`、`/splits` 和两张表的行读取均返回 200；发布行数为 `records=5,118`、`edges=11,202`。原文与含原文的本地 JSONL 不进入 allowlist。
+截至 2026-09-06，HF 仓改为 private；public 层与 restricted 层分目录上传。原文与含原文的本地 JSONL 不进入 allowlist。
 
-## 7. 相关文档
+## 7. 清洗完成后的本地保留
+
+catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，视为该源已清洗。此后本地只保留能再入图和再发布的产物，不长期堆原文。
+
+| 保留 | 路径 | 原因 |
+|---|---|---|
+| 身份与台账 | `SOURCE.md`、`VIEW.md`、`catalog.json`、`tasks/` | 进 Git；许可与产量真源 |
+| 可导入快照 | `sources/*/processed/latest/records.jsonl` | `import_dataset_neo4j` 仍读 JSONL，不读 HF parquet |
+| 发布表 | `data/public/`、`data/restricted/` | 可从 JSONL 再导出；HF private 仓已有副本 |
+| 缓存说明 | `.cache/README.md` | 路径约定 |
+
+| 可删 | 路径 | 原因 |
+|---|---|---|
+| 原始语料 | `.cache/{huggingface,github,dropbox}/` | 清洗输入；再抽需重新下载 |
+| 抽取中间态 | `sources/*/work/extracts*`、`work/queue` | 已被 `processed/latest` 取代 |
+| 少数源原文目录 | `sources/*/source/`（如苏子阳全文） | 不上 Git / HF；快照已在 JSONL |
+| 旧布局残留 | `data/records.parquet`、`data/edges.parquet`（根下） | 已迁到 `data/public/` 与 `data/restricted/` |
+
+不删：Neo4j 活图、`processed/latest/records.jsonl`、Git 跟踪的元数据。未购买的 wangekxy 全量本来就不在本机。
+
+## 8. 相关文档
 
 - 图模型真源：`packages/knowledge_model/knowledge_model/constants.py`
 - 抽取契约：`packages/data_ingestion/data_ingestion/EXTRACT_SUYANG.md`
 - 候选外源：`data-sources.md`
 - 历史计划：`docs/superpowers/plans/archive/`
+- 本机缓存指针：`.cache/README.md`

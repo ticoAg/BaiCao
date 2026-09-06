@@ -8,7 +8,7 @@ from .core import configure_logging, get_logger
 from .core.config import get_settings
 from .core.database import init_db
 from .kg.db import init_kg_db
-from .services.chat_agent_runtime import close_all_openai_sessions
+from .services.chat_agent_runtime import close_all_chat_sessions
 from .services.knowledge_mcp.agent_client import close_knowledge_mcp_server
 from .services.knowledge_mcp.server import knowledge_mcp
 from .api.herb import router as herb_router
@@ -37,7 +37,7 @@ async def lifespan(app: FastAPI):
         logger.info("应用依赖初始化完成")
         yield
     await close_knowledge_mcp_server()
-    close_all_openai_sessions()
+    close_all_chat_sessions()
 
 
 app = FastAPI(

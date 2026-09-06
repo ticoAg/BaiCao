@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 DEFAULT_DATASET_ID = "ticoAg/baicao-knowledge"
+RELEASE_PUBLIC = "public"
+RELEASE_RESTRICTED = "restricted"
+ReleaseTier = Literal["public", "restricted"]
 
 
 class CatalogError(ValueError):
@@ -29,10 +33,40 @@ class CatalogSource(BaseModel):
     status: str
     kind: str
     publish: bool = False
+    release_tier: ReleaseTier = RELEASE_RESTRICTED
+    license_status: str = "unverified"
+    license: str = "unknown"
     filter: SourceFilter
     planned: dict
     completed: dict
     paths: dict
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_tier_from_publish(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        publish = bool(data.get("publish", False))
+        data.setdefault("release_tier", RELEASE_PUBLIC if publish else RELEASE_RESTRICTED)
+        if publish:
+            data.setdefault("license_status", "redacted_structured_only")
+            data.setdefault("license", "other")
+        else:
+            data.setdefault("license_status", "unverified")
+            data.setdefault("license", "unknown")
+        return data
+
+    @model_validator(mode="after")
+    def release_tier_matches_publish(self) -> CatalogSource:
+        expected = RELEASE_PUBLIC if self.publish else RELEASE_RESTRICTED
+        if self.release_tier != expected:
+            raise CatalogError(
+                f"{self.source_id}: release_tier={self.release_tier!r} "
+                f"incompatible with publish={self.publish}"
+            )
+        if not self.license_status.strip():
+            raise CatalogError(f"{self.source_id}: license_status required")
+        return self
 
 
 class Catalog(BaseModel):
@@ -49,6 +83,9 @@ class Catalog(BaseModel):
             if item.source_id == source_id:
                 return item
         raise CatalogError(f"unknown source_id: {source_id}")
+
+    def sources_for_tier(self, tier: ReleaseTier) -> list[CatalogSource]:
+        return [item for item in self.sources if item.release_tier == tier]
 
 
 class LedgerTask(BaseModel):

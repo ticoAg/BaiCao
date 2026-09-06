@@ -17,7 +17,7 @@ def main() -> None:
         "--transport",
         choices=("stdio", "streamable-http", "sse"),
         default="stdio",
-        help="MCP transport. streamable-http 是现行 HTTP 传输；sse 已弃用。",
+        help="MCP transport. streamable-http 是现行 HTTP 传输；sse 已 Deprecated，不要用于新产品路径。",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)

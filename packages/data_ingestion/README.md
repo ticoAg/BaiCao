@@ -2,7 +2,7 @@
 
 `packages/data_ingestion/` 是 BaiCao 的数据采集边界包，负责把来源适配、原始材料整理、候选抽取这类“进入知识图谱之前”的工作收敛到一个最小可复用边界。
 
-处理后的源、结构化快照和产量台账进 `datasets/baicao-knowledge/`（HF 结构化发布面，public，id `ticoAg/baicao-knowledge`）。当前源与计划量见该目录 `catalog.json` / `tasks/ledger.json`。
+处理后的源、结构化快照和产量台账进 `datasets/baicao-knowledge/`（HF 结构化发布面，**private**，id `ticoAg/baicao-knowledge`）。当前源与计划量见该目录 `catalog.json` / `tasks/ledger.json`。
 
 ## 边界规则
 
@@ -42,7 +42,7 @@ uv run python -m data_ingestion.cli.compute_dataset_stats \
   --filter-key manual:baicao-knowledge:daoyi-suyang
 ```
 
-拼发布表：
+拼发布表（`data/public/` 与 `data/restricted/`）：
 
 ```bash
 cd packages/data_ingestion
@@ -59,7 +59,7 @@ uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dry-run
 ```
 
-实际上传使用当前 `hf auth` 身份，并按 catalog 的 `visibility` 建/更新 repo：
+实际上传使用当前 `hf auth` 身份，并按 catalog 的 `visibility` 建/更新 repo（当前为 private）：
 
 ```bash
 cd packages/data_ingestion
@@ -67,7 +67,7 @@ uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-只有 catalog 中显式 `publish: true` 的源会进入汇总 Parquet；默认值为 false。visibility 为 public 时，导出还会清空 `evidence_text`，并删除 `properties_json` 中的原文字段；发布前仍须检查 dry-run 的精确 allowlist。
+`release_tier=public` 的源进入 `data/public/`；其余进入 `data/restricted/`。两套 Parquet 都上传到同一个 private 数据集。导出一律清空 `evidence_text`，并从 `properties_json` 删除原文字段；发布前仍须检查 dry-run 的精确 allowlist。
 
 ## fengxi177/Knowlegde_Graph_TCM 结构清洗
 

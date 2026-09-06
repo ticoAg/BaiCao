@@ -14,7 +14,7 @@
 - `local-development.md`：本地起栈、Infisical、手动启动、样例数据与验证命令
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
-- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 OpenAI Agents SDK 执行流、MCP 图工具、进程内 `SQLiteSession` 与 SSE 事件适配
+- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源；目标是 pydantic-ai-slim loop + 官方 mcp v2 同进程客户端、会话 `message_history` 与 SSE 事件适配
 - `packages/graph_runtime/`：早期 graph runtime 研发产物与参考实现，不再作为 chat 主链真源
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
@@ -90,6 +90,7 @@ flowchart TB
 | [acceptance/](acceptance/README.md) | 验收与完成定义 | 可执行、可复现、可对照实现 | 验证功能是否完成、补齐验收脚本 |
 | [_dev/](_dev/README.md) | 草案与中间产物 | WIP、探索性、可能过期 | 回看分析过程、理解方案来源 |
 | [superpowers/README.md](superpowers/README.md) | agent 过程产物与任务系统 | spec / plan / 执行中间文档 | 追溯某轮实现的设计与拆解，并查看仓库级任务系统 |
+| [plans/](plans/README.md) | 按日落盘的执行计划 | 怎么落到现码、顺序、验收 | 设计已写进 `architecture/` 之后要动手时 |
 
 ## 当前文档现状
 
@@ -102,7 +103,8 @@ flowchart TB
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
 | `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
 | `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
-| `docs/superpowers/` | 任务系统在用 | 索引见 `superpowers/plans/README.md`；当前 active 为可信问答与运行时收口 plan |
+| `docs/superpowers/` | 历史任务拆解仍可回溯 | 索引见 `superpowers/plans/README.md`；已完成计划勿再执行 |
+| `docs/plans/` | 按日落盘的执行计划 | 新实施步骤写这里；当前：[问答 chat 走最新 MCP 并清适配](plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md)、[清洗完成后删除原文与中间态](plans/2026/09-06/清洗完成后删除原文与中间态-4fa3.md) |
 | `datasets/baicao-knowledge/` | 数据台账 staging | 源注册、VIEW、计划/完成量；载荷不进 git |
 
 ## 如何放置信息
@@ -151,9 +153,13 @@ flowchart TB
 
 ### 放进 `superpowers/`
 
-- agent 编写的设计 spec
-- agent 编写的实现计划、拆解和执行中间产物
-- 仅服务于某轮任务，但对回溯实现过程有价值的文档
+- 已完成任务的设计理由、拆解和过程回溯
+- 不要再往这里写新的按日执行计划
+
+### 放进 `docs/plans/`
+
+- 新的按日落盘实施步骤、顺序、验收命令
+- 用 `plan-docs` 脚本建档，不要手拼路径
 
 ### 放进 `datasets/baicao-knowledge/`
 
@@ -202,6 +208,7 @@ flowchart TB
 | [architecture/data-model.md](architecture/data-model.md) | 图模型与关系模型设计 |
 | [architecture/graph-workbench.md](architecture/graph-workbench.md) | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md) | 图模型唯一真源、中文知识结构定义、数据采集架构与 graph runtime / agent 边界 |
+| [architecture/chat-agent-mcp.md](architecture/chat-agent-mcp.md) | 问答 agent 轻量检索、MCP 工具/资源与规范对齐 |
 | [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md) | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [acceptance/README.md](acceptance/README.md) | 验收文档目录与基本原则 |
 | [acceptance/graph-workbench-mainline.md](acceptance/graph-workbench-mainline.md) | Graph Workbench `/graph` 主链路验收 |
@@ -212,7 +219,8 @@ flowchart TB
 | [acceptance/review-export-persistence-wave-2.md](acceptance/review-export-persistence-wave-2.md) | review/export 持久化验收 |
 | [architecture/data-sources.md](architecture/data-sources.md) | 数据源审核队列、各源仓库路径与人工质量校验清单 |
 | [architecture/knowledge-dataset.md](architecture/knowledge-dataset.md) | 自有 HF dataset 任务定义与 Parquet 发布 |
-| [superpowers/plans/README.md](superpowers/plans/README.md) | 实施计划状态索引 |
+| [plans/README.md](plans/README.md) | 按日归档的执行计划 |
+| [superpowers/plans/README.md](superpowers/plans/README.md) | 历史实施计划状态索引 |
 | [../datasets/baicao-knowledge/README.md](../datasets/baicao-knowledge/README.md) | 自有知识数据集 staging 与产量台账 |
 
 ### 草案与分析
@@ -277,7 +285,7 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 项目总入口：[../README.md](../README.md)
 - 本地开发：[local-development.md](local-development.md)
 - 项目入口与阶段信息：[../README.md](../README.md)、[superpowers/README.md](superpowers/README.md)
-- 任务真源：`superpowers/plans/*.md`
+- 任务真源：新执行计划 `docs/plans/`；历史拆解 `superpowers/plans/*.md`
 - 共享类型真源：`../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
 - Chat 主链 runtime 真源：`../packages/api/app/services/chat_agent_runtime/`
