@@ -7,7 +7,7 @@
 - 形态：389 章叙事文本（医案 / 诊疗过程），不是结构化药典
 - 本地入口：`/Users/ticoag/Downloads/道医苏子阳.md`（69423 行，3389883 bytes）
 - 原站目录页（收集时标注）：<https://www.biquge.tw/book/1270739/>
-- 许可：**未获公开转载授权**。原文只进本地 staging，不进 git、不上公开 HF；public 数据集只包含脱敏后的结构化结果
+- 许可：**未获公开转载授权**。全书只进本地 staging，不进 git；private HF 仓含结构化结果与证据短摘，不含全书
 - 状态：`imported`（v3 `2026-08-16-suyang-v3-*`，已进 `processed/latest` 并合并入 Neo4j）
 
 ## 筛选该源
@@ -30,4 +30,4 @@ RETURN n
 
 原文 → 按章切段 → 医案/对话块识别 → 专属抽取（禁止套用药典 prompt） → `GraphImportRecord` → Neo4j
 
-`方剂` / `医案` / `穴位` / `治法` 已进入共享 `knowledge_model`。public Parquet 导出会清空 `evidence_text` 并删除 properties 中的原文字段。
+`方剂` / `医案` / `穴位` / `治法` 已进入共享 `knowledge_model`。Parquet 保留入图用的 `evidence_text`（短摘），删除 properties 中的全书字段。

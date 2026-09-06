@@ -61,6 +61,6 @@ POST /api/v1/graph/query
 - HF：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)（public；2026-08-19 真实发布成功）
 - 远端清单：12 个允许文件 + `.gitattributes`；第三源只含 SOURCE/VIEW 元数据，无其 records；无原文、JSONL、`processed/latest`、work 或 exports
 - 远端 Parquet 直读：`records=5,118`，`edges=11,202`
-- public 导出脱敏：`evidence_text` 全空；`properties_json` 不含 `raw_text`、`evidence_text`、`source_text`、`content`、`text`
+- public 导出：保留 `evidence_text`；`properties_json` 不含全书字段 `raw_text`、`source_text`、`content`、`text`（2026-09-06 起；此前曾清空证据片段）
 - public Viewer：匿名 `/is-valid`、`/splits`、`records`/`edges` 首行读取均返回 200；总行数 5,118 / 11,202
 - 真实主链使用 `graph-zh-live.json` 导入 4,179 节点 / 12,673 关系；fresh-volume integration `4 passed, 293 deselected`

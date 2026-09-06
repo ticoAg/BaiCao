@@ -24,7 +24,7 @@ configs:
 
 白草自有中医药结构化知识数据集。HF id：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)（**private**）。图模型真源在仓库 `packages/knowledge_model/`，这里只放实例、统计、许可字段和溯源键。
 
-原文、JSONL、`processed/latest`、`work/` 和 Neo4j 导出**不上 Hugging Face**。Parquet 会清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`。
+原文、JSONL、`processed/latest`、`work/` 和 Neo4j 导出**不上 Hugging Face**。Parquet 保留入图用的 `evidence_text` 与边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`。用这两套表可以重建与本地 JSONL 入图一致的图。
 
 ## 分层
 
@@ -37,7 +37,7 @@ configs:
 
 筛选列：`source_id` · `batch_id` · `unit_id` · `node_type` · `prompt_hash` · `import_scope_key` · `release_tier` · `license_status`
 
-当前苏子阳抽取契约：`prompt_hash = sha256:0d397619b867`（`EXTRACT_SUYANG.md` v3）。苏子阳原文未获转载授权，public 层只有脱敏结构。
+当前苏子阳抽取契约：`prompt_hash = sha256:0d397619b867`（`EXTRACT_SUYANG.md` v3）。苏子阳全书不上 HF；public 层含结构化结果与证据短摘。
 
 ## public 源
 

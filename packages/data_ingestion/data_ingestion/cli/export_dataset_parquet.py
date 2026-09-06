@@ -17,7 +17,8 @@ from data_ingestion.dataset_catalog import (
     ReleaseTier,
     load_catalog,
 )
-from data_ingestion.dataset_records import DatasetRecord
+from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
+from data_ingestion.provenance import GRAPH_EDGE_PROPS
 
 # 全书/长正文键仍不进发布表；入图用的证据片段走顶栏 evidence_text。
 FULL_SOURCE_PROPERTY_KEYS = {
@@ -132,6 +133,12 @@ def data_dir_for(dataset_root: Path, tier: ReleaseTier) -> Path:
     return dataset_root / "data" / tier
 
 
+def _optional_str(value: object) -> str | None:
+    if value in (None, "", [], {}):
+        return None
+    return str(value)
+
+
 def to_tables(
     records: list[DatasetRecord],
     *,
@@ -147,7 +154,7 @@ def to_tables(
         license_name = meta.license if meta else ""
         properties = dict(record.properties or {})
         if redact_source_text:
-            for key in PUBLIC_REDACTED_PROPERTY_KEYS:
+            for key in FULL_SOURCE_PROPERTY_KEYS:
                 properties.pop(key, None)
         record_rows.append(
             {
@@ -158,8 +165,8 @@ def to_tables(
                 "node_name": record.node_name,
                 "prompt_hash": record.prompt_hash,
                 "import_scope_key": record.import_scope_key,
-                "evidence_refs": record.evidence_refs,
-                "evidence_text": None if redact_source_text else record.evidence_text,
+                "evidence_refs": list(record.evidence_refs or []),
+                "evidence_text": record.evidence_text or None,
                 "properties_json": json.dumps(properties, ensure_ascii=False),
                 "release_tier": release_tier,
                 "license_status": license_status,
@@ -167,6 +174,7 @@ def to_tables(
             }
         )
         for edge in record.edges:
+            edge_props = dict(edge.properties or {})
             edge_rows.append(
                 {
                     "source_id": record.source_id,
@@ -178,7 +186,9 @@ def to_tables(
                     "target": edge.target,
                     "prompt_hash": record.prompt_hash,
                     "import_scope_key": record.import_scope_key,
-                    "dosage": None if (edge.properties or {}).get("dosage") in (None, "") else str((edge.properties or {}).get("dosage")),
+                    "dosage": _optional_str(edge_props.get("dosage")),
+                    "dosage_ratio": _optional_str(edge_props.get("dosage_ratio")),
+                    "evidence_ref": _optional_str(edge_props.get("evidence_ref")),
                     "release_tier": release_tier,
                     "license_status": license_status,
                     "license": license_name,
@@ -187,6 +197,63 @@ def to_tables(
     return pa.Table.from_pylist(record_rows or [EMPTY_RECORD_ROW], schema=RECORD_SCHEMA), pa.Table.from_pylist(
         edge_rows or [EMPTY_EDGE_ROW], schema=EDGE_SCHEMA
     )
+
+
+def records_from_tables(record_table: pa.Table, edge_table: pa.Table) -> list[DatasetRecord]:
+    """把发布表拼回 DatasetRecord，字段覆盖 slim_record / 入图所用的全部键。"""
+    edges_by_key: dict[tuple[str, str, str, str, str], list[DatasetEdge]] = {}
+    for row in edge_table.to_pylist():
+        source_id = row.get("source_id") or ""
+        if not source_id:
+            continue
+        key = (
+            source_id,
+            row.get("batch_id") or "",
+            row.get("unit_id") or "",
+            row.get("from_node_type") or "",
+            row.get("from_node_name") or "",
+        )
+        properties = {
+            name: value
+            for name in GRAPH_EDGE_PROPS
+            if (value := _optional_str(row.get(name))) is not None
+        }
+        edges_by_key.setdefault(key, []).append(
+            DatasetEdge(type=row["edge_type"], target=row["target"], properties=properties)
+        )
+    records: list[DatasetRecord] = []
+    for row in record_table.to_pylist():
+        source_id = row.get("source_id") or ""
+        if not source_id:
+            continue
+        properties = json.loads(row.get("properties_json") or "{}")
+        if not isinstance(properties, dict):
+            properties = {}
+        record = DatasetRecord(
+            source_id=source_id,
+            batch_id=row.get("batch_id") or "",
+            unit_id=row.get("unit_id") or "",
+            node_type=row["node_type"],
+            node_name=row["node_name"],
+            evidence_refs=list(row.get("evidence_refs") or []),
+            evidence_text=row.get("evidence_text") or None,
+            prompt_hash=row.get("prompt_hash") or None,
+            import_scope_key=row.get("import_scope_key") or None,
+            properties=properties,
+            edges=edges_by_key.get(
+                (
+                    source_id,
+                    row.get("batch_id") or "",
+                    row.get("unit_id") or "",
+                    row.get("node_type") or "",
+                    row.get("node_name") or "",
+                ),
+                [],
+            ),
+        )
+        record.validate_types()
+        records.append(record)
+    return records
 
 
 def _write_tier(

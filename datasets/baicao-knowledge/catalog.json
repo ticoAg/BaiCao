@@ -12,6 +12,7 @@
     "records_restricted": 251841,
     "viewer_status": "private",
     "source_text_redacted": true,
+    "evidence_text_included": true,
     "layout": [
       "data/public",
       "data/restricted"

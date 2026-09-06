@@ -21,7 +21,6 @@ from data_ingestion.provenance import (
     is_skip_record,
     lookup_names,
     prompt_hash_for,
-    scope_key_for,
     slim_record,
     DEFAULT_PROMPT_FILES,
 )
@@ -35,6 +34,77 @@ def load_jsonl(path: Path) -> list[DatasetRecord]:
             record.validate_types()
             records.append(record)
     return records
+
+
+def load_parquet_records(records_path: Path, edges_path: Path | None = None) -> list[DatasetRecord]:
+    import pyarrow.parquet as pq
+
+    from data_ingestion.cli.export_dataset_parquet import records_from_tables
+
+    edge_file = edges_path or records_path.with_name("edges.parquet")
+    if not edge_file.is_file():
+        raise SystemExit(f"parquet import needs edges file: {edge_file}")
+    return records_from_tables(pq.read_table(records_path), pq.read_table(edge_file))
+
+
+def load_dataset_parquet(dataset_root: Path, *, tier: str = "all") -> list[DatasetRecord]:
+    from data_ingestion.dataset_catalog import RELEASE_PUBLIC, RELEASE_RESTRICTED
+
+    if tier == "all":
+        tiers = (RELEASE_PUBLIC, RELEASE_RESTRICTED)
+    else:
+        tiers = (tier,)
+    records: list[DatasetRecord] = []
+    for name in tiers:
+        path = dataset_root / "data" / name / "records.parquet"
+        if path.is_file():
+            records.extend(load_parquet_records(path))
+    return records
+
+
+def load_import_records(
+    *,
+    records_path: Path | None = None,
+    edges_path: Path | None = None,
+    dataset_root: Path | None = None,
+    tier: str = "all",
+) -> list[DatasetRecord]:
+    if dataset_root is not None:
+        return load_dataset_parquet(dataset_root, tier=tier)
+    if records_path is None:
+        raise SystemExit("pass --records or --dataset-root")
+    if records_path.suffix == ".parquet":
+        return load_parquet_records(records_path, edges_path)
+    return load_jsonl(records_path)
+
+
+def prepare_import_records(
+    records: list[DatasetRecord], *, prompt_file: Path | None = None
+) -> list[DatasetRecord]:
+    fallback_by_source: dict[str, str] = {}
+    source_ids = {record.source_id for record in records}
+
+    def prompt_hash_for_record(record: DatasetRecord) -> str:
+        if record.prompt_hash:
+            return record.prompt_hash
+        if record.source_id not in fallback_by_source:
+            path = prompt_file if len(source_ids) == 1 else None
+            path = path or DEFAULT_PROMPT_FILES.get(record.source_id)
+            if path is None or not path.is_file():
+                raise SystemExit(
+                    f"records missing prompt_hash for {record.source_id}; pass --prompt-file"
+                )
+            fallback_by_source[record.source_id] = prompt_hash_for(path)
+        return fallback_by_source[record.source_id]
+
+    return [
+        slim_record(
+            record,
+            prompt_hash=prompt_hash_for_record(record),
+            import_scope_key=record.import_scope_key,
+        )
+        for record in records
+    ]
 
 
 _LOOKUP_KEYS = ("名称", "name", "别名", "alias", "拼音", "pinyin_name", "拉丁名", "latin_name")
@@ -447,7 +517,11 @@ def import_records(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--records", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--records", type=Path)
+    source.add_argument("--dataset-root", type=Path)
+    parser.add_argument("--edges", type=Path)
+    parser.add_argument("--tier", choices=("public", "restricted", "all"), default="all")
     parser.add_argument("--uri", default=os.environ.get("NEO4J_URI", "bolt://localhost:17687"))
     parser.add_argument("--user", default=os.environ.get("NEO4J_USERNAME", "neo4j"))
     parser.add_argument("--password", default=os.environ.get("NEO4J_PASSWORD", "neo4j_password"))
@@ -455,18 +529,15 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--batch-size", type=int, default=100)
     args = parser.parse_args()
-    records = load_jsonl(args.records)
+    records = load_import_records(
+        records_path=args.records,
+        edges_path=args.edges,
+        dataset_root=args.dataset_root,
+        tier=args.tier,
+    )
     if not records:
-        raise SystemExit(f"no records in {args.records}")
-    source_id = records[0].source_id
-    prompt_file = args.prompt_file or DEFAULT_PROMPT_FILES.get(source_id)
-    prompt_hash = records[0].prompt_hash
-    if not prompt_hash:
-        if prompt_file is None or not prompt_file.is_file():
-            raise SystemExit("records missing prompt_hash; pass --prompt-file")
-        prompt_hash = prompt_hash_for(prompt_file)
-    scope = records[0].import_scope_key or scope_key_for(source_id)
-    stamped = [slim_record(record, prompt_hash=prompt_hash, import_scope_key=scope) for record in records]
+        raise SystemExit("no records in import source")
+    stamped = prepare_import_records(records, prompt_file=args.prompt_file)
     if args.dry_run:
         print(
             json.dumps(
@@ -474,8 +545,7 @@ def main() -> None:
                     "dry_run": True,
                     "records": len(stamped),
                     "graph_records": sum(1 for record in stamped if not is_skip_record(record)),
-                    "prompt_hash": prompt_hash,
-                    "import_scope_key": scope,
+                    "sources": sorted({record.source_id for record in stamped}),
                 },
                 ensure_ascii=False,
             )
@@ -491,7 +561,7 @@ def main() -> None:
         stats = import_records(stamped, driver, batch_size=args.batch_size)
     finally:
         driver.close()
-    print(json.dumps({"ok": True, "prompt_hash": prompt_hash, **stats}, ensure_ascii=False))
+    print(json.dumps({"ok": True, **stats}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

@@ -108,6 +108,8 @@ RETURN type(r), count(*)
 cd packages/data_ingestion
 uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
   --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
+uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge --dry-run
 ```
 
 ## 4. 苏子阳抽取任务定义
@@ -164,7 +166,16 @@ uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-产出 `data/public/*.parquet` 与 `data/restricted/*.parquet`。`publish: true` / `release_tier=public` 进 public 层；其余进 restricted 层。两层都上传到同一个 private Hugging Face 数据集 `ticoAg/baicao-knowledge`。导出一律清空 `evidence_text`，并从 `properties_json` 删除 `raw_text`、`evidence_text`、`source_text`、`content`、`text`。行内带 `release_tier`、`license`、`license_status`。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
+产出 `data/public/*.parquet` 与 `data/restricted/*.parquet`。`publish: true` / `release_tier=public` 进 public 层；其余进 restricted 层。两层都上传到同一个 private Hugging Face 数据集 `ticoAg/baicao-knowledge`。导出会保留入图所需的 `evidence_text` 以及边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`（这些键本就不会进入 `slim_record`）。行内带 `release_tier`、`license`、`license_status`。从 HF / 本地 parquet 重建图与 JSONL 入图走同一套 `slim_record`：
+
+```bash
+uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge --dry-run
+uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge
+```
+
+仍可用 `--records path/to/records.jsonl` 或 `--records path/to/records.parquet`（同目录需有 `edges.parquet`）。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
 
 ```bash
 uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
@@ -182,7 +193,7 @@ curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoAg/baicao-k
 curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoAg/baicao-knowledge"
 ```
 
-截至 2026-09-06，HF 仓改为 private；public 层与 restricted 层分目录上传。原文与含原文的本地 JSONL 不进入 allowlist。
+截至 2026-09-06，HF 仓为 private；public 层与 restricted 层分目录上传。全书原文与本地 JSONL 不进入 allowlist；parquet 含证据片段，可重建与 JSONL 入图一致的图。
 
 ## 7. 清洗完成后的本地保留
 
@@ -191,7 +202,7 @@ catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，
 | 保留 | 路径 | 原因 |
 |---|---|---|
 | 身份与台账 | `SOURCE.md`、`VIEW.md`、`catalog.json`、`tasks/` | 进 Git；许可与产量真源 |
-| 可导入快照 | `sources/*/processed/latest/records.jsonl` | `import_dataset_neo4j` 仍读 JSONL，不读 HF parquet |
+| 可导入快照 | `sources/*/processed/latest/records.jsonl` 或 `data/{public,restricted}/*.parquet` | 入图 CLI 两者等价；parquet 已含证据片段与边属性 |
 | 发布表 | `data/public/`、`data/restricted/` | 可从 JSONL 再导出；HF private 仓已有副本 |
 | 缓存说明 | `.cache/README.md` | 路径约定 |
 

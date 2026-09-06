@@ -187,6 +187,35 @@ def test_write_related_edges_restrict_target_labels(edge_type, target, target_la
     assert stats["edges"] == 1
 
 
+def test_prepare_import_records_keeps_per_source_scope_and_hash():
+    records = [
+        DatasetRecord(
+            source_id="daoyi-suyang",
+            batch_id="b1",
+            unit_id="chapter-001",
+            node_type="来源",
+            node_name="道医苏子阳",
+            prompt_hash="sha256:suyang",
+            import_scope_key="人工:白草知识:道医苏子阳",
+        ),
+        DatasetRecord(
+            source_id="tcm-mkg",
+            batch_id="b1",
+            unit_id="方剂:测试方",
+            node_type="方剂",
+            node_name="测试方",
+            prompt_hash="sha256:mkg",
+            import_scope_key="开放仓储:TCM-MKG",
+        ),
+    ]
+    stamped = importer.prepare_import_records(records)
+    assert [record.import_scope_key for record in stamped] == [
+        "人工:白草知识:道医苏子阳",
+        "开放仓储:TCM-MKG",
+    ]
+    assert [record.prompt_hash for record in stamped] == ["sha256:suyang", "sha256:mkg"]
+
+
 def test_import_records_batches_node_and_edge_transactions(monkeypatch):
     class Session:
         def __init__(self):

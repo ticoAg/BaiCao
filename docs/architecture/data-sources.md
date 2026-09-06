@@ -70,7 +70,7 @@ audience: developer, data-team
 | 纳入图谱 | 实体/关系能否进本地 Neo4j | 抽检语义后确认或降级 |
 | 纳入 public 层 | 能否进 `data/public/`（同一 private HF 仓） | 只有许可 + 脱敏都过才改 `publish: true` / `release_tier=public` |
 
-`public` 不是质量结论。公开面只发脱敏结构化结果。当前 public 只有 `BC-01` 与 `BC-02`，共 `5,118 records / 11,202 edges`。
+`public` 不是质量结论。公开面发结构化结果与证据片段，全书仍不上仓。当前 public 只有 `BC-01` 与 `BC-02`，共 `5,118 records / 11,202 edges`。
 
 2026-08-20 已按**数据质量**把可用清洗结果写入本地 Neo4j（许可 / public 仍后置）。wangekxy 剩余 9 个专题公开 sample 入图后全图约 **132,117 节点 / 630,601 边**。原先因许可隔离的已持有源（NER、古典医籍、TCM-SD 病历、TCMChat 剩余结构化文件、方书样本）以及本草/医案/针灸等专题 sample 已按非商用本地入图。版权过滤后置。`BC-18` 有 3,267 条悬空边。
 

@@ -67,7 +67,14 @@ uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-`release_tier=public` 的源进入 `data/public/`；其余进入 `data/restricted/`。两套 Parquet 都上传到同一个 private 数据集。导出一律清空 `evidence_text`，并从 `properties_json` 删除原文字段；发布前仍须检查 dry-run 的精确 allowlist。
+`release_tier=public` 的源进入 `data/public/`；其余进入 `data/restricted/`。两套 Parquet 都上传到同一个 private 数据集。导出保留 `evidence_text` 与边属性，删除 `properties_json` 里的全书字段。从发布表入图：
+
+```bash
+uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge --dry-run
+```
+
+发布前仍须检查 dry-run 的精确 allowlist。
 
 ## fengxi177/Knowlegde_Graph_TCM 结构清洗
 
