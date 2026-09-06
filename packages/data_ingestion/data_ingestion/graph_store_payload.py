@@ -198,7 +198,7 @@ def write_admin_csvs(
                     keys.append(key)
         path = nodes_dir / f"{label}.csv"
         _write_csv(path, keys, rows)
-        node_files.append(f"--nodes={path}")
+        node_files.append(f'--nodes="${{ROOT}}/{path.relative_to(output_dir).as_posix()}"')
 
     rel_files: list[str] = []
     grouped_edges: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -237,10 +237,12 @@ def write_admin_csvs(
                     keys.append(key)
         path = rels_dir / f"{source_label}-{rel}-{target_label}.csv"
         _write_csv(path, keys, rows)
-        rel_files.append(f"--relationships={path}")
+        rel_files.append(
+            f'--relationships="${{ROOT}}/{path.relative_to(output_dir).as_posix()}"'
+        )
 
     command = [
-        "neo4j-admin",
+        "/var/lib/neo4j/bin/neo4j-admin",
         "database",
         "import",
         "full",
@@ -251,10 +253,18 @@ def write_admin_csvs(
         *node_files,
         *rel_files,
     ]
-    (output_dir / "neo4j-admin.sh").write_text(
-        "#!/bin/sh\nset -eu\n" + " \\\n  ".join(command) + "\n",
+    script_path = output_dir / "neo4j-admin.sh"
+    script_path.write_text(
+        "#!/bin/sh\n"
+        "set -eu\n"
+        "# 停 Neo4j 后把本目录挂到容器 /import，用 neo4j:5-community 执行本脚本。\n"
+        "# 命令见 docs/architecture/knowledge-dataset.md\n"
+        'ROOT="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"\n'
+        + " \\\n  ".join(command)
+        + "\n",
         encoding="utf-8",
     )
+    script_path.chmod(0o755)
     stats["dangling_edges"] = dangling
     stats["node_files"] = len(node_files)
     stats["rel_files"] = len(rel_files)

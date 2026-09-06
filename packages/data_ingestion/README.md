@@ -67,14 +67,7 @@ uv run --with huggingface_hub python -m data_ingestion.cli.dataset_publish \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-`release_tier=public` 的源进入 `data/public/`；其余进入 `data/restricted/`。两套 Parquet 都上传到同一个 private 数据集。导出保留 `evidence_text` 与边属性，删除 `properties_json` 里的全书字段。从发布表入图：
-
-```bash
-uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
-  --dataset-root ../../datasets/baicao-knowledge --dry-run
-```
-
-发布前仍须检查 dry-run 的精确 allowlist。
+`release_tier=public` 的源进入 `data/public/`；其余进入 `data/restricted/`。两套 Parquet 都上传到同一个 private 数据集。导出保留 `evidence_text` 与边属性，删除 `properties_json` 里的全书字段。发布前仍须检查 dry-run 的精确 allowlist。生产图谱从 parquet 入图走 `neo4j-admin`，步骤见 [knowledge-dataset.md §3.1](../../docs/architecture/knowledge-dataset.md#31-入图标准路径)。
 
 ## fengxi177/Knowlegde_Graph_TCM 结构清洗
 
@@ -181,20 +174,23 @@ python3 scripts/infisical_env.py run -- \
 
 - `graph_import_records.jsonl`：后续可直接交给 `packages/api` 导入 Neo4j 的统一快照
 
-## 将数据集快照合并导入 Neo4j
+## 将数据集快照导入 Neo4j
 
-苏子阳等自有数据集不要走 `SET n += props` 的 `app.importers.cli --neo4j`，以免盖掉药典同名节点。用启发式合并：
+苏子阳等自有数据集不要走 `SET n += props` 的 `app.importers.cli --neo4j`，以免盖掉药典同名节点。知识图默认路径是身份折叠 → CSV → `neo4j-admin database import`（CLI 默认 `--mode admin`），不要把 Bolt `UNWIND` 当全量入口。完整命令与 Docker 挂载见 [knowledge-dataset.md §3.1](../../docs/architecture/knowledge-dataset.md#31-入图标准路径)。
 
 ```bash
 cd packages/data_ingestion
 uv run python -m data_ingestion.cli.stamp_dataset_records \
   --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl \
   --out ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
-uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
-  --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
+uv run --with pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge --dry-run
+uv run --with pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge \
+  --admin-dir ../../tmp/neo4j-admin-import
 ```
 
-同类型且名称/别名命中已有节点时复用实体，只补空属性并追加 `import_source_ids` / `prompt_hashes`。
+同类型且名称/别名命中时在 Python 里折叠，只补空属性并追加 `import_source_ids` / `prompt_hashes`。`tmp/neo4j-admin-import/` 导入后可删。
 
 ## 合并近重复文本
 
@@ -208,23 +204,11 @@ uv run --with neo4j python -m data_ingestion.cli.merge_near_duplicates --apply
 
 ## 清空属性键目录幽灵
 
-`CALL db.propertyKeys()` / Neo4j Browser 会列出历史上出现过、现已不用的英文键。`neo4j-admin dump` 和 APOC rename 都清不掉。要重建空库再导活图：
-
-```bash
-cd packages/data_ingestion
-uv run --with neo4j python -m data_ingestion.cli.recreate_graph_store export \
-  --file ../../datasets/baicao-knowledge/exports/graph-zh-live.json
-cd ../../infra
-docker compose stop neo4j && docker compose rm -f neo4j && docker volume rm baicao_neo4j_data
-docker compose up -d neo4j
-cd ../packages/data_ingestion
-uv run --with neo4j python -m data_ingestion.cli.recreate_graph_store import \
-  --file ../../datasets/baicao-knowledge/exports/graph-zh-live.json
-```
+`CALL db.propertyKeys()` / Neo4j Browser 会列出历史上出现过、现已不用的英文键。`neo4j-admin dump`、APOC rename 和 `recreate_graph_store` 回灌旧活图都清不掉（或会把拼音/拉丁带回来）。做法：删 `baicao_neo4j_data`，从清洗 parquet 按 [§3.1](../../docs/architecture/knowledge-dataset.md#31-入图标准路径) 做 `neo4j-admin database import`。不要用 `exports/graph-zh-live.json`。
 
 ## 将快照导入 Neo4j
 
-拿到 `graph_import_records.jsonl` 后，可以复用 `packages/api` 现有导入 CLI 直接写图谱：
+药典 ingest 产物 `graph_import_records.jsonl` 仍可走 `packages/api` 的 importer。**baicao-knowledge 知识图不要走这条 `SET n += props` 路径**，用上一节的 `neo4j-admin`。
 
 ```bash
 cd packages/api

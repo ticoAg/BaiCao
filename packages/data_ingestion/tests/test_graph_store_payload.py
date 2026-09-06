@@ -109,8 +109,9 @@ def test_write_admin_csvs_omits_origin_edges(tmp_path):
     assert "来源于" not in rel_text
     assert "人参白术" not in (tmp_path / "nodes" / "方剂.csv").read_text(encoding="utf-8")
     script = (tmp_path / "neo4j-admin.sh").read_text(encoding="utf-8")
-    assert "neo4j-admin" in script
+    assert "/var/lib/neo4j/bin/neo4j-admin" in script
     assert "--overwrite-destination=true" in script
+    assert '"${ROOT}/nodes/' in script
     assert stats["source_edges"] == 1
     assert stats["dangling_edges"] == 0
 

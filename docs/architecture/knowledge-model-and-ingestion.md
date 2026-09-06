@@ -118,7 +118,8 @@ flowchart LR
     end
 
     subgraph Consumers[下游消费者]
-        Importer[导入器 / 导出器]
+        Importer[import_dataset_neo4j CSV]
+        Admin[neo4j-admin]
         API[API / 服务层]
         Graph[Neo4j 图谱]
         QA[问答 / 溯源 / 验证]
@@ -137,7 +138,8 @@ flowchart LR
     Normalize --> KM
     KM --> Importer
     KM --> API
-    Importer --> Graph
+    Importer --> Admin
+    Admin --> Graph
     API --> QA
     API --> Web
     Graph --> QA
@@ -263,7 +265,7 @@ flowchart LR
 
 ### 7.3 生产图谱存储
 
-Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、`具有性味`、`名称`、`待验证`）。API DTO 仍可通过 `graph_i18n.PROPERTY_ZH_TO_EN` 映回英文。`db.propertyKeys()` 会残留历史英文键，清目录只能导出活图后重建空库（`recreate_graph_store`），不能靠 `neo4j-admin dump`。近重复文本只合标点/OCR，见 `knowledge-dataset.md`。
+Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、`具有性味`、`名称`、`待验证`）。API DTO 仍可通过 `graph_i18n.PROPERTY_ZH_TO_EN` 映回英文。`db.propertyKeys()` 会残留历史英文键；清目录只能空 volume 后从清洗 parquet 做 `neo4j-admin database import`，不能靠 `neo4j-admin dump` 或 `recreate_graph_store` 回灌旧活图。生产入图步骤见 [knowledge-dataset.md §3.1](knowledge-dataset.md#31-入图标准路径)。近重复文本只合标点/OCR，见同一文档。
 
 当来源只用 relation 给 tail 标注药材、治法或证候、但未给 head 提供疾病或症状类型时，head 继续使用 `病证` + `中医类型=未分类临床概念`，并按来源方向使用 `关联药材`、`关联治法` 或 `关联证候` 指向带来源类型的 tail。来源若以独立表明确区分证候和症状，则分别使用 `病证`、`症状`，以 `关联症状` 连接；跨类型同名仍保留为不同节点，不据名称建立等价或合并关系。未经独立核实的证候 tail 使用 `中医类型=来源标注证候`，这些中性关系和来源类型都不等于治疗、诊断、因果、语义等价或已验证分类。只有显式类型或可信标准标识才能进一步拆分疾病、症状与证候；名称后缀、编辑距离、跨语言候选和 LLM 猜测不得触发自动拆分或合并。
 

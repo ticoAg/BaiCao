@@ -145,13 +145,15 @@ Neo4j 初始化脚本和样例：
 - 陈皮样例：`packages/db/neo4j/seed_chenpi.cql`
 - 导入样例：`packages/db/import/herbs.csv`、`packages/db/import/herbs.jsonl`
 
-只验证导入解析：
+只验证导入解析（陈皮样例，不是知识图全量路径）：
 
 ```bash
 cd packages/api
 uv run python -m app.importers.cli ../db/import/herbs.csv --dry-run
 uv run python -m app.importers.cli ../db/import/herbs.jsonl --dry-run
 ```
+
+知识图全量从 `datasets/baicao-knowledge` parquet 走 `neo4j-admin`，见 [architecture/knowledge-dataset.md §3.1](architecture/knowledge-dataset.md#31-入图标准路径)。
 
 ## 验证
 

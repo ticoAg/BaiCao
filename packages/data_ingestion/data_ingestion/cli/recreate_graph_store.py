@@ -1,4 +1,8 @@
-"""导出活图并导入空库。neo4j-admin dump 会保留 db.propertyKeys() 幽灵英文键，不能用来清目录。"""
+"""遗留：导出/回灌活图。重建图谱不要走这里。
+
+从清洗 parquet 做 neo4j-admin database import（见 knowledge-dataset.md §3.1）。
+neo4j-admin dump 会保留 db.propertyKeys() 幽灵英文键；本工具回灌旧 dump 还会带回拼音/拉丁。
+"""
 
 from __future__ import annotations
 
@@ -109,7 +113,9 @@ def connect(uri: str, user: str, password: str) -> Any:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="遗留活图 dump。重建图谱请用 import_dataset_neo4j --mode admin，不要回灌 exports/graph-zh-live.json。"
+    )
     parser.add_argument("action", choices=["export", "import"])
     parser.add_argument("--file", required=True)
     parser.add_argument("--uri", default=os.environ.get("NEO4J_URI", "bolt://localhost:17687"))

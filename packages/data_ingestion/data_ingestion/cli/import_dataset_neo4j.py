@@ -1,4 +1,9 @@
-"""把数据集 latest 按同名/别名启发式合并写入 Neo4j。已有节点只补空属性，不覆盖药典字段。"""
+"""把数据集折叠成规范名 CSV，默认交给 neo4j-admin 空库导入。
+
+`--mode admin`（默认）不连库，只写 CSV 与 neo4j-admin.sh。
+`--mode bolt` 才对运行中的库 UNWIND，仅用于增量。
+`--mode indexes` 只给已有库补名称索引。
+"""
 
 from __future__ import annotations
 
@@ -808,7 +813,7 @@ def import_records(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    source = parser.add_mutually_exclusive_group(required=True)
+    source = parser.add_mutually_exclusive_group(required=False)
     source.add_argument("--records", type=Path)
     source.add_argument("--dataset-root", type=Path)
     parser.add_argument("--edges", type=Path)
@@ -831,12 +836,26 @@ def main() -> None:
     )
     parser.add_argument(
         "--mode",
-        choices=("bolt", "admin"),
-        default="bolt",
-        help="bolt: UNWIND into a running DB. admin: collapse to CSV for neo4j-admin database import",
+        choices=("admin", "bolt", "indexes"),
+        default="admin",
+        help="admin: 默认，折叠 CSV 供 neo4j-admin。indexes: 只给运行中的库建名称索引。bolt: 仅增量 UNWIND",
     )
     parser.add_argument("--admin-dir", type=Path, default=Path("tmp/neo4j-admin-import"))
     args = parser.parse_args()
+    if args.mode == "indexes":
+        from neo4j import GraphDatabase
+
+        driver = GraphDatabase.driver(args.uri, auth=(args.user, args.password))
+        driver.verify_connectivity()
+        try:
+            with driver.session(database="neo4j") as session:
+                labels = ensure_name_indexes(session)
+        finally:
+            driver.close()
+        print(json.dumps({"ok": True, "mode": "indexes", "labels": labels}, ensure_ascii=False))
+        return
+    if args.records is None and args.dataset_root is None:
+        raise SystemExit("need --records or --dataset-root")
     try:
         batch_size = clamp_batch_size(args.batch_size)
     except ValueError as exc:

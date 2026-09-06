@@ -83,7 +83,7 @@ Viewer 分成 `records` / `edges`（public 层）与 `restricted_records` / `res
 - 标签用 `药材`/`方剂`/`医案` 等，不用 `Herb`
 - 属性键用 `名称`/`来源`/`导入源`/`抽取契约哈希` 等
 - 状态值用 `待验证`/`已验证`/`已拒绝`
-- Neo4j Browser 侧边栏读的是 `db.propertyKeys()` 目录。APOC 改名不会删除旧英文键；要清幽灵英文键，只能导出活图、清空 `baicao_neo4j_data` 后用 `data_ingestion.cli.recreate_graph_store` 重导。不要用 `neo4j-admin dump`，它会把目录幽灵一并带回去。
+- Neo4j Browser 侧边栏读的是 `db.propertyKeys()` 目录。APOC 改名和 `neo4j-admin dump` 都清不掉幽灵英文键；要清目录，只能空 volume 后按 [§3.1](#31-入图标准路径) 从 parquet 做 `neo4j-admin database import`。不要从旧 `exports/graph-zh-live.json` 或 `recreate_graph_store` 回灌。
 
 同类型且 `名称` / 含汉字的 `别名` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。不再用 `拼音` / `拉丁名` 做查找或发布，见 [entity-resolution.md](entity-resolution.md)。
 
@@ -102,17 +102,97 @@ WHERE r.导入范围键 = '人工:白草知识:道医苏子阳'
 RETURN type(r), count(*)
 ```
 
-合并导入（不要用会 `SET n += props` 的 `app.importers.cli --neo4j`）。数据集可含 `来源于` 与 `evidence_text`；入图默认丢掉这两类，溯源用 `导入源`。空库重建：Python 消歧成规范名 CSV，再 `neo4j-admin database import`。增量仍可用 Bolt `UNWIND`（默认每批 2000 行，`--batch-size` 最大 10000）：
+### 3.1 入图标准路径
+
+生产图谱**一律**走 Python 身份折叠 → 规范名 CSV → `neo4j-admin database import full`。不要用会 `SET n += props` 的 `app.importers.cli --neo4j`，也不要把 Bolt `UNWIND` 当默认入图。`--mode bolt` 只留给已有活图上追加极小批次；新源、全量、清幽灵键、换身份规则之后，都空库重建。
+
+数据集（JSONL / Parquet / HF）可以保留 `来源于` 和 `evidence_text`。**写入图谱时默认不加**：不建 `来源于` 边、不写 `来源` 节点、不把原文片段写成节点属性。活图溯源看 `导入源` / `导入源列表`。需要证据链入图时才加 `--include-source-graph`。
+
+```mermaid
+flowchart TB
+    subgraph Dataset["数据集"]
+        PQ[parquet / JSONL]
+        Keep[来源于 / evidence_text 可留在表里]
+    end
+
+    subgraph Collapse["Python 折叠"]
+        Ident[identity_key]
+        Drop[丢掉来源于、来源节点、片段字段]
+        CSV[规范名 CSV]
+    end
+
+    subgraph Admin["neo4j-admin"]
+        Stop[停库 / 空 volume]
+        Load[database import full]
+        Up[启动 Neo4j]
+        Idx[名称索引]
+    end
+
+    Live[(活图：知识节点与知识边)]
+
+    PQ --> Ident
+    Keep -.-> Drop
+    Ident --> Drop
+    Drop --> CSV
+    CSV --> Stop
+    Stop --> Load
+    Load --> Up
+    Up --> Idx
+    Idx --> Live
+```
+
+折叠时同类型 + 规范中文名 + 可选稳定 ID 并成一个节点。CSV `:ID` 是 `标签:名称` 或 `标签:名称:稳定ID`，所以**同显示名可以是两个节点**。导入后只建 `名称` 索引，不要强行 `UNIQUE`。
+
+本机 Docker（compose 项目名 `baicao`，镜像 `neo4j:5-community`）：
 
 ```bash
 cd packages/data_ingestion
-uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
-  --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
-uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+uv run --with pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
   --dataset-root ../../datasets/baicao-knowledge --dry-run
-uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
-  --dataset-root ../../datasets/baicao-knowledge --mode admin --admin-dir ../../tmp/neo4j-admin-import
-# 停库后执行 admin-dir/neo4j-admin.sh，需要原文链时再加 --include-source-graph
+uv run --with pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge \
+  --admin-dir ../../tmp/neo4j-admin-import
+
+cd ../../infra
+docker compose stop neo4j
+docker compose rm -f neo4j
+docker volume rm baicao_neo4j_data   # 仅全量重建时删
+
+docker run --rm \
+  --volume baicao_neo4j_data:/data \
+  --volume "$PWD/../tmp/neo4j-admin-import:/import:ro" \
+  --entrypoint /bin/sh \
+  neo4j:5-community \
+  /import/neo4j-admin.sh
+
+docker compose up -d neo4j
+
+cd ../packages/data_ingestion
+uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j --mode indexes
+```
+
+`neo4j-admin.sh` 用 `$ROOT` 解析 CSV，必须把目录挂到容器的 `/import`。不要在宿主机直接跑这份脚本，也不要给 `docker run` 加 `--user`：镜像里的 `neo4j-admin` 不在默认 `PATH`，脚本已写绝对路径 `/var/lib/neo4j/bin/neo4j-admin`。生成的 CSV 在 `tmp/neo4j-admin-import/`，导入后可删。
+
+仍可用 `--records path/to/records.jsonl` 或单层 parquet 作为折叠输入；默认 `--mode admin`。`--mode bolt` 按标签 `UNWIND`（默认 2000 行，证据 1000，上限 10000），只用于活图上的小增量。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant CLI as import_dataset_neo4j
+    participant CSV as tmp/neo4j-admin-import
+    participant Admin as neo4j-admin 容器
+    participant Vol as baicao_neo4j_data
+    participant DB as 运行中 Neo4j
+
+    CLI->>CSV: 折叠身份并写 nodes/rels
+    Note over CSV: 默认不含来源于与原文片段
+    DB->>Admin: compose stop
+    opt 全量重建
+        Admin->>Vol: 删除 volume
+    end
+    Admin->>Vol: database import full
+    Admin->>DB: compose up
+    CLI->>DB: --mode indexes
 ```
 
 ## 4. 苏子阳抽取任务定义
@@ -169,13 +249,11 @@ uv run --with pyarrow python -m data_ingestion.cli.export_dataset_parquet \
   --dataset-root ../../datasets/baicao-knowledge
 ```
 
-产出 `data/public/*.parquet` 与 `data/restricted/*.parquet`。`publish: true` / `release_tier=public` 进 public 层；其余进 restricted 层。两层都上传到同一个 private Hugging Face 数据集 `ticoAg/baicao-knowledge`。导出会保留入图所需的 `evidence_text` 以及边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`（这些键本就不会进入 `slim_record`）。行内带 `release_tier`、`license`、`license_status`。从 HF / 本地 parquet 重建图与 JSONL 入图走同一套 `slim_record`：
+产出 `data/public/*.parquet` 与 `data/restricted/*.parquet`。`publish: true` / `release_tier=public` 进 public 层；其余进 restricted 层。两层都上传到同一个 private Hugging Face 数据集 `ticoAg/baicao-knowledge`。导出会保留入图所需的 `evidence_text` 以及边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`（这些键本就不会进入 `slim_record`）。行内带 `release_tier`、`license`、`license_status`。从 HF / 本地 parquet 重建图与 JSONL 走同一套 `slim_record`，再按 [§3.1](#31-入图标准路径) 做 `neo4j-admin` 导入；不要省略 `--dry-run` 直接 Bolt 写入。
 
 ```bash
-uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+uv run --with pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
   --dataset-root ../../datasets/baicao-knowledge --dry-run
-uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
-  --dataset-root ../../datasets/baicao-knowledge
 ```
 
 仍可用 `--records path/to/records.jsonl` 或 `--records path/to/records.parquet`（同目录需有 `edges.parquet`）。上传统一走 allowlist CLI；每次发布会删除远端非允许文件，但保留 Hugging Face 管理的 `.gitattributes`：
@@ -196,7 +274,7 @@ curl -s "https://datasets-server.huggingface.co/is-valid?dataset=ticoAg/baicao-k
 curl -s "https://datasets-server.huggingface.co/splits?dataset=ticoAg/baicao-knowledge"
 ```
 
-截至 2026-09-06，HF 仓为 private；public 层与 restricted 层分目录上传。全书原文与本地 JSONL 不进入 allowlist；parquet 含证据片段，可重建与 JSONL 入图一致的图。
+截至 2026-09-06，HF 仓为 private；public 层与 restricted 层分目录上传。全书原文与本地 JSONL 不进入 allowlist；parquet 含证据片段，可重建数据集。活图默认不含 `来源于` 与原文片段。
 
 ## 7. 清洗完成后的本地保留
 
@@ -205,7 +283,7 @@ catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，
 | 保留 | 路径 | 原因 |
 |---|---|---|
 | 身份与台账 | `SOURCE.md`、`VIEW.md`、`catalog.json`、`tasks/` | 进 Git；许可与产量真源 |
-| 可导入快照 | `sources/*/processed/latest/records.jsonl` 或 `data/{public,restricted}/*.parquet` | 入图 CLI 两者等价；parquet 已含证据片段与边属性 |
+| 可导入快照 | `sources/*/processed/latest/records.jsonl` 或 `data/{public,restricted}/*.parquet` | 整库重建读 parquet；JSONL 仅增量 Bolt |
 | 发布表 | `data/public/`、`data/restricted/` | 可从 JSONL 再导出；HF private 仓已有副本 |
 | 缓存说明 | `.cache/README.md` | 路径约定 |
 
@@ -214,7 +292,8 @@ catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，
 | 原始语料 | `.cache/{huggingface,github,dropbox}/` | 清洗输入；再抽需重新下载 |
 | 抽取中间态 | `sources/*/work/extracts*`、`work/queue` | 已被 `processed/latest` 取代 |
 | 少数源原文目录 | `sources/*/source/`（如苏子阳全文） | 不上 Git / HF；快照已在 JSONL |
-| 旧布局残留 | `data/records.parquet`、`data/edges.parquet`（根下） | 已迁到 `data/public/` 与 `data/restricted/` |
+| 入图临时 CSV | `tmp/neo4j-admin-import/` | 一次性产物，导入后可删 |
+| 旧活图 dump | `exports/graph-zh-live.json` | 禁止回灌；会把拼音/拉丁和幽灵键带回来 |
 
 不删：Neo4j 活图、`processed/latest/records.jsonl`、Git 跟踪的元数据。未购买的 wangekxy 全量本来就不在本机。
 

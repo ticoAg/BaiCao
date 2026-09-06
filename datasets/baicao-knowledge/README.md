@@ -24,7 +24,7 @@ configs:
 
 白草自有中医药结构化知识数据集。HF id：[`ticoAg/baicao-knowledge`](https://huggingface.co/datasets/ticoAg/baicao-knowledge)（**private**）。图模型真源在仓库 `packages/knowledge_model/`，这里只放实例、统计、许可字段和溯源键。
 
-原文、JSONL、`processed/latest`、`work/` 和 Neo4j 导出**不上 Hugging Face**。Parquet 保留入图用的 `evidence_text` 与边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`。用这两套表可以重建与本地 JSONL 入图一致的图。
+原文、JSONL、`processed/latest`、`work/` 和 Neo4j 导出**不上 Hugging Face**。Parquet 保留入图用的 `evidence_text` 与边属性 `dosage` / `dosage_ratio` / `evidence_ref`，并从 `properties_json` 删除全书字段 `raw_text`、`source_text`、`content`、`text`。用这两套表可以重建与本地 JSONL 一致的折叠结果；**写入 Neo4j 默认丢掉 `来源于` 与原文片段**，走 `neo4j-admin database import`（见仓库 `docs/architecture/knowledge-dataset.md` §3.1）。
 
 ## 分层
 
@@ -96,4 +96,4 @@ WHERE r.导入范围键 = '人工:白草知识:道医苏子阳'
 RETURN type(r), count(*)
 ```
 
-同名药材（如 `人参`、`桔梗`）复用药典节点：`来源` / `拉丁名` 不覆盖，只追加 `导入源列表` 与 `抽取契约哈希列表`。
+同名药材（如 `人参`、`桔梗`）复用药典节点：已有非空中文属性不覆盖，只追加 `导入源列表` 与 `抽取契约哈希列表`。

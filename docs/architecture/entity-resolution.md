@@ -12,14 +12,16 @@ audience: developer
 
 图上的人读字段只保留中文。身份判定、消歧和合并走同一套规则模块，新源入库不得再各写一套启发式。
 
-JSONL、发布 parquet 已剥离 `pinyin_name` / `latin_name` / `拼音` / `拉丁名`；入图查找不再用这两键。活图须用清洗后的 parquet **空库重建**，不要从旧 `exports/graph-zh-live.json` 回灌。细节见执行计划。
+JSONL、发布 parquet 已剥离 `pinyin_name` / `latin_name` / `拼音` / `拉丁名`；入图查找不再用这两键。活图须用清洗后的 parquet **空库 + neo4j-admin** 重建，不要从旧 `exports/graph-zh-live.json` 回灌。命令见 [knowledge-dataset.md §3.1](knowledge-dataset.md#31-入图标准路径)。
 
 ```mermaid
 flowchart LR
     Extract[来源抽取] --> Sanitize[剥离拼音拉丁]
     Sanitize --> Identity[身份模块]
-    Identity --> Graph[(Neo4j)]
     Identity --> Parquet[HF parquet]
+    Identity --> CSV[规范名 CSV]
+    CSV --> Admin[neo4j-admin]
+    Admin --> Graph[(Neo4j)]
 ```
 
 ## 1. 为什么这样切
@@ -145,16 +147,15 @@ sequenceDiagram
     Ident->>PQ: 导出无拼音拉丁的表
     PQ->>CSV: 折叠同身份 默认丢掉来源于与原文片段
     CSV->>Neo: neo4j-admin database import
+    Note over Neo: 停库、挂 /import、导入后再 --mode indexes
     Note over Neo: 活图只留知识节点与知识边
 ```
 
 数据集（JSONL / Parquet / HF）可以保留 `来源于` 和 `evidence_text`。**写入图谱时默认不加**：不建 `来源于` 边、不写 `来源` 节点、不把原文片段写成节点属性。溯源看节点上的 `导入源` / `导入源列表`。需要证据链入图时加 `--include-source-graph`。
 
-空库重建走 Python 消歧 → CSV → `neo4j-admin database import full`（`--mode admin`）。增量补源仍可用 Bolt `UNWIND`。身份折叠与 CSV 生成若成为瓶颈，再把 `identity_key` / `canonicalize_name` 抽成 Rust 扩展；先不要提前写。
+之后入图只走这一条：Python 消歧 → CSV → `neo4j-admin database import full`（CLI 默认 `--mode admin`）。Docker 命令、volume 挂载和导入后 `--mode indexes` 见 [knowledge-dataset.md §3.1](knowledge-dataset.md#31-入图标准路径)。`--mode bolt` 不是标准路径，只留给已有活图上的极小增量。身份折叠若成为瓶颈，再把 `identity_key` / `canonicalize_name` 抽成 Rust 扩展；先不要提前写。
 
-新源不要直接 `SET n += props`。只走 `import_dataset_neo4j`（JSONL 或 `--dataset-root` parquet）。Bolt 写入按标签 `UNWIND`（默认 2000 行，证据降到 1000，上限 10000），并先给各中文标签的 `名称` 建唯一约束。拼音/拉丁剥离后，**不要**在旧图上只删属性：查找键变了，必须用清洗后的发布表重建或按源重导，否则会留下靠拉丁名并上的历史节点。
-
-推荐：剥离 JSONL → 重导 parquet → 发布 HF → 空库 `--mode admin` 入图。
+新源不要直接 `SET n += props`，也不要 `recreate_graph_store` 回灌旧 dump。只把 JSONL 或 `--dataset-root` parquet 交给 `import_dataset_neo4j` 生成 CSV。拼音/拉丁剥离后，**不要**在旧图上只删属性：查找键变了，必须用清洗后的发布表空库重建，否则会留下靠拉丁名并上的历史节点。
 
 ## 6. 明确不做
 
@@ -172,6 +173,7 @@ sequenceDiagram
 | JSONL / Parquet | 已剥离 `pinyin_name` / `latin_name` | 保持剥离 |
 | Neo4j | 无 `拼音` / `拉丁名`；只按中文名/汉字别名查找 | 同左 |
 | 活图载荷 | 默认不写 `来源于` 与 `evidence_text` | 同左；`--include-source-graph` 才写入 |
+| 入图路径 | parquet → CSV → `neo4j-admin database import` | 同左；Bolt UNWIND 仅小增量 |
 | HF | `ticoAg/baicao-knowledge` 已重发，抽查无拼音/拉丁键 | 同左 |
 
 ## 8. 相关文档

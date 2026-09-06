@@ -13,6 +13,7 @@
 - 架构模式：Modular Monolith
 - 核心能力闭环：问答 -> 图谱 -> 溯源 -> 审查 -> 状态回流
 - 存储分工：Neo4j 负责知识图谱，PostgreSQL 负责结构化事务数据，Redis 负责缓存与后续异步演进预留
+- 生产图谱加载：parquet 经身份折叠写成 CSV，再用 `neo4j-admin database import` 空库导入；Bolt UNWIND 不是默认路径
 
 ## 推荐阅读顺序
 
@@ -25,7 +26,7 @@
 | 5 | [chat-agent-mcp.md](chat-agent-mcp.md) | 理解问答 agent 检索面 | 看轻量 agent 边界、四个图工具、prompt 与 MCP 规范对齐 |
 | 6 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
 | 7 | [data-sources.md](data-sources.md) | 校验数据源质量 | 审核队列、各源仓库路径、许可边界与人工审阅记录 |
-| 8 | [knowledge-dataset.md](knowledge-dataset.md) | 维护 HF 数据集 | 任务定义、信封、Parquet、苏子阳抽取验收 |
+| 8 | [knowledge-dataset.md](knowledge-dataset.md) | 维护 HF 数据集 | 任务定义、信封、Parquet、neo4j-admin 入图 |
 | 9 | [entity-resolution.md](entity-resolution.md) | 入库消歧与中文属性 | 拼音/拉丁剥离、身份键、合并策略 |
 
 ## 文档索引
@@ -39,8 +40,8 @@
 | [chat-agent-mcp.md](chat-agent-mcp.md) | stable | 问答与 Cursor 共用官方 mcp v2 知识 server；pydantic-ai 只做 loop |
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [data-sources.md](data-sources.md) | review | 审核队列、各源仓库路径、许可边界与人工质量校验清单 |
-| [knowledge-dataset.md](knowledge-dataset.md) | stable | 自有 HF dataset 任务定义、Parquet 发布、源/批次筛选 |
-| [entity-resolution.md](entity-resolution.md) | stable | 中文名称属性、身份键、消歧与合并策略（目标形态） |
+| [knowledge-dataset.md](knowledge-dataset.md) | stable | 自有 HF dataset 任务定义、Parquet 发布、neo4j-admin 入图 |
+| [entity-resolution.md](entity-resolution.md) | stable | 中文名称属性、身份键、消歧与合并；活图走 neo4j-admin |
 
 ## 架构主线
 
