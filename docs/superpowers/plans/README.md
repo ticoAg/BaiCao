@@ -6,7 +6,9 @@
 
 ## 当前入口
 
-- [2026-08-19-data-source-quality-ingestion.md](2026-08-19-data-source-quality-ingestion.md)：逐个处理现有候选源；本地已收录源已全部审计完毕。
+- [2026-08-20-remaining-held-extract.md](2026-08-20-remaining-held-extract.md)：剩余已持有原文词表抽取。`Status: done`。古籍全文、ChatMed 全量提及、ZY-BERT 非索引已入本地图。
+- [2026-08-20-wangekxy-hf-samples.md](2026-08-20-wangekxy-hf-samples.md)：wangekxy 13 源 roadmap。`Status: done`。
+- [2026-08-19-data-source-quality-ingestion.md](2026-08-19-data-source-quality-ingestion.md)：既有候选源审计。`Status: done`，不要再执行其 checkbox。
 
 dataset、可信问答与第三数据源结构清洗计划均已完成并归档；后续数据源统一进入当前 active plan，不恢复历史 checkbox。
 

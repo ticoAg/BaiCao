@@ -17,9 +17,12 @@ from data_ingestion.sylvanl_tcm_pretrain import (
     write_clean_outputs as write_pretrain,
 )
 from data_ingestion.zybert_pretrain import (
+    CORPUS_SOURCE_NAME,
     ZybertPretrainError,
     clean_file as clean_rar,
+    extract_remaining_mentions,
     parse_bsdtar_listing,
+    parse_formula_index_lines,
 )
 
 
@@ -51,19 +54,21 @@ CANON_ROW = {
 }
 
 
-def test_canon_emits_no_records(tmp_path: Path):
+def test_canon_emits_source_nodes(tmp_path: Path):
     path = tmp_path / "classical-tcm-canon.parquet"
     second = dict(CANON_ROW)
     second.update({"id": "canon-内经-0001", "work_family": "黄帝内经", "title": "素问", "char_count": 3, "text": "内经。"})
     write_parquet(path, [CANON_ROW, second])
     records, report = clean_canon(path)
-    assert records == []
+    sources = [record for record in records if record.node_type == "来源"]
+    assert {record.node_name for record in sources} == {"伤寒论", "素问"}
     assert report["work_count"] == 2
     assert report["char_count_sum"] == 7
     assert report["publish"] is False
     result = write_canon(records, report, tmp_path / "out")
-    assert result["record_count"] == 0
-    assert "太阳病" not in (tmp_path / "out" / "records.jsonl").read_text(encoding="utf-8")
+    assert result["record_count"] >= 2
+    dumped = (tmp_path / "out" / "records.jsonl").read_text(encoding="utf-8")
+    assert "伤寒论" in dumped
 
 
 def test_canon_duplicate_title_fails(tmp_path: Path):
@@ -121,3 +126,34 @@ def test_rar_listing_parser_and_magic():
     ]
     with pytest.raises(ZybertPretrainError, match="not a RAR"):
         clean_rar(Path(__file__))
+
+
+def test_formula_index_keeps_book_citations_not_dosages():
+    text = """
+一贯煎(《柳州医话》) 沙参 麦冬 当归 生地黄 枸杞子 川楝子
+甘草(一两) 应当忽略
+二陈汤(《太平惠民和剂局方》) 法半夏 橘红 白茯苓 炙甘草
+注射用青霉素(《药典》) 青霉素
+"""
+    rows = parse_formula_index_lines(text)
+    names = {item["name"] for item in rows}
+    assert names == {"一贯煎", "二陈汤"}
+    assert rows[0]["herbs"][:2] == ["沙参", "麦冬"]
+
+
+def test_zybert_remaining_mentions_skip_index_lines(tmp_path: Path):
+    path = tmp_path / "tcm_pretrain_corpus_a.txt"
+    path.write_text(
+        "一贯煎(《柳州医话》) 沙参 麦冬\n这段语料提到人参补气。\n",
+        encoding="utf-8",
+    )
+    lexicon = tmp_path / "lex.jsonl"
+    lexicon.write_text('{"node_type":"药材","node_name":"人参"}\n', encoding="utf-8")
+    records, report = extract_remaining_mentions(path, lexicon_path=lexicon)
+    names = {(record.node_type, record.node_name) for record in records}
+    assert ("来源", CORPUS_SOURCE_NAME) in names
+    assert ("药材", "人参") in names
+    assert "一贯煎" not in {record.node_name for record in records}
+    assert report["publish"] is False
+    assert report["skipped_index_lines"] == 1
+    assert report["scanned_non_index_lines"] == 1

@@ -9,10 +9,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import NodeType
+from knowledge_model.constants import EdgeType, NodeType
 from knowledge_model.text_normalize import canonicalize_name
 
-from data_ingestion.dataset_records import DatasetRecord, compute_stats
+from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.provenance import prompt_hash_for
 
 SOURCE_ID = "tcm-sd"
@@ -290,6 +290,75 @@ def clean_directory(
         for name, line_no in vocab_index.items()
     ]
     records.sort(key=lambda record: record.node_name)
+    seen_diseases = {record.node_name for record in records}
+    for lcd_name in sorted(name_to_ids):
+        if lcd_name in seen_diseases:
+            continue
+        unit_id = f"{NodeType.DISEASE.value}:{lcd_name}"
+        disease = DatasetRecord(
+            source_id=source_id,
+            batch_id=batch_id,
+            unit_id=unit_id,
+            unit_title=lcd_name,
+            processor=PROCESSOR,
+            node_type=NodeType.DISEASE.value,
+            node_name=lcd_name,
+            source=source_id,
+            status="pending",
+            evidence_refs=["TCM-SD:lcd_name"],
+            prompt_hash=PROMPT_HASH,
+            import_scope_key=import_scope_key,
+            properties={
+                "import_source_id": source_id,
+                "import_batch_id": batch_id,
+                "import_unit_id": unit_id,
+                "tcm_type": "来源病名",
+            },
+        )
+        disease.validate_types()
+        records.append(disease)
+        seen_diseases.add(lcd_name)
+    for split, rows in split_rows.items():
+        for row in rows:
+            lcd_name = canonicalize_name(
+                str(row.get("lcd_name") or ""), NodeType.DISEASE.value
+            )
+            syn = canonicalize_name(
+                str(row.get("norm_syndrome") or ""), NodeType.DISEASE.value
+            )
+            case_name = f"{lcd_name}-{row.get('lcd_id')}-{split}-{row['_line']}"
+            unit_id = f"{NodeType.MEDICAL_CASE.value}:{case_name}"
+            case = DatasetRecord(
+                source_id=source_id,
+                batch_id=batch_id,
+                unit_id=unit_id,
+                unit_title=case_name,
+                processor=PROCESSOR,
+                node_type=NodeType.MEDICAL_CASE.value,
+                node_name=case_name,
+                source=source_id,
+                status="pending",
+                evidence_refs=[f"{split}.json:{row['_line']}"],
+                prompt_hash=PROMPT_HASH,
+                import_scope_key=import_scope_key,
+                properties={
+                    "import_source_id": source_id,
+                    "import_batch_id": batch_id,
+                    "import_unit_id": unit_id,
+                    "tcm_type": "来源病历",
+                },
+                edges=[
+                    DatasetEdge(type=EdgeType.RELATED_SYNDROME.value, target=syn),
+                    DatasetEdge(type=EdgeType.RELATED_SYNDROME.value, target=lcd_name),
+                ]
+                if lcd_name != syn
+                else [DatasetEdge(type=EdgeType.RELATED_SYNDROME.value, target=syn)],
+            )
+            case.validate_types()
+            leaked = FORBIDDEN_RECORD_KEYS & set(case.properties)
+            if leaked or case.evidence_text:
+                raise TcmSdError(f"clinical payload leaked into case {case_name}: {leaked}")
+            records.append(case)
 
     disease_names = set(name_to_ids)
     syndrome_names = set(vocab)

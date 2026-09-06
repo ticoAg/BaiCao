@@ -10,10 +10,10 @@ from itertools import batched
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import to_neo4j_label, to_neo4j_rel
+from knowledge_model.constants import NodeType, to_neo4j_label, to_neo4j_rel
 from knowledge_model.graph_i18n import to_graph_properties
 
-from data_ingestion.dataset_records import DatasetRecord
+from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.provenance import (
     append_unique,
     fill_if_empty,
@@ -35,6 +35,71 @@ def load_jsonl(path: Path) -> list[DatasetRecord]:
             record.validate_types()
             records.append(record)
     return records
+
+
+_LOOKUP_KEYS = ("名称", "name", "别名", "alias", "拼音", "pinyin_name", "拉丁名", "latin_name")
+
+
+def _lookup_values(props: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for key in _LOOKUP_KEYS:
+        value = props.get(key)
+        if isinstance(value, list):
+            values.extend(str(item) for item in value if item not in (None, ""))
+        elif value not in (None, "", [], {}):
+            values.append(str(value))
+    return values
+
+
+class NodeCache:
+    """预加载已有节点，避免每条记录两次全表扫描。不在事务内写入，以免重试留下脏 elementId。"""
+
+    def __init__(self) -> None:
+        self.by_label_name: dict[tuple[str, str], dict[str, Any]] = {}
+        self.by_label_alias: dict[tuple[str, str], str] = {}
+
+    def load(self, session: Any, labels: set[str]) -> None:
+        for label in labels:
+            rows = session.run(
+                f"MATCH (n:{label}) RETURN elementId(n) AS eid, properties(n) AS props"
+            )
+            for row in rows:
+                props = dict(row["props"] or {})
+                name = props.get("名称") or props.get("name")
+                if not name:
+                    continue
+                self.by_label_name[(label, str(name))] = {
+                    "eid": row["eid"],
+                    "props": props,
+                }
+                for alias in _lookup_values(props):
+                    self.by_label_alias.setdefault((label, alias), str(name))
+
+    def find(
+        self, label: str, names: list[str], *, include_aliases: bool
+    ) -> dict[str, Any] | None:
+        for name in names:
+            hit = self.by_label_name.get((label, name))
+            if hit:
+                return hit
+        if not include_aliases:
+            return None
+        for name in names:
+            canonical = self.by_label_alias.get((label, name))
+            if canonical:
+                hit = self.by_label_name.get((label, canonical))
+                if hit:
+                    return hit
+        return None
+
+
+def ensure_name_indexes(session: Any) -> list[str]:
+    created: list[str] = []
+    for node_type in NodeType:
+        label = to_neo4j_label(node_type)
+        session.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{label}) ON (n.名称)")
+        created.append(label)
+    return created
 
 
 def find_existing(
@@ -85,12 +150,17 @@ def write_node(
     stats: Counter,
     *,
     include_aliases: bool = True,
+    cache: NodeCache | None = None,
 ) -> str:
     label = to_neo4j_label(record.node_type)
     names = lookup_names(record.node_type, record.node_name)
     if alias := (record.properties or {}).get("alias"):
         names = append_unique(names, str(alias))
-    existing = find_existing(tx, label, names, include_aliases=include_aliases)
+    existing = (
+        cache.find(label, names, include_aliases=include_aliases)
+        if cache is not None
+        else find_existing(tx, label, names, include_aliases=include_aliases)
+    )
     if existing:
         existing_en = {
             **existing["props"],
@@ -205,6 +275,8 @@ def write_edges(
             "具有性味": ("性味",),
             "归于经脉": ("归经",),
             "具有饮片": ("饮片",),
+            "相似于": ("药材", "方剂", "病证"),
+            "包含成分": ("成分",),
         }.get(edge.type)
         if target_types is None:
             raise ValueError(f"unsupported import edge type: {edge.type}")
@@ -294,6 +366,7 @@ def _write_node_batch(
     tx: Any,
     records: tuple[DatasetRecord, ...],
     preexisting_labels: set[str],
+    cache: NodeCache | None = None,
 ) -> tuple[list[tuple[DatasetRecord, str]], Counter]:
     stats: Counter = Counter()
     resolved = [
@@ -304,6 +377,7 @@ def _write_node_batch(
                 record,
                 stats,
                 include_aliases=to_neo4j_label(record.node_type) in preexisting_labels,
+                cache=cache,
             ),
         )
         for record in records
@@ -313,12 +387,18 @@ def _write_node_batch(
 
 def _write_edge_batch(
     tx: Any,
-    resolved: tuple[tuple[DatasetRecord, str], ...],
+    resolved: tuple[tuple[DatasetRecord, str] | tuple[DatasetRecord, str, DatasetEdge], ...],
     resolved_targets: dict[tuple[str, str], str],
 ) -> Counter:
     stats: Counter = Counter()
-    for record, name in resolved:
-        write_edges(tx, record, name, stats, resolved_targets=resolved_targets)
+    for item in resolved:
+        if len(item) == 3:
+            record, name, edge = item
+            slim = record.model_copy(update={"edges": [edge]})
+            write_edges(tx, slim, name, stats, resolved_targets=resolved_targets)
+        else:
+            record, name = item
+            write_edges(tx, record, name, stats, resolved_targets=resolved_targets)
     return stats
 
 
@@ -342,17 +422,23 @@ def import_records(
     resolved: list[tuple[DatasetRecord, str]] = []
     with driver.session(database="neo4j") as session:
         preexisting_labels = _preexisting_labels(session, graph_records)
+        cache = NodeCache()
+        cache.load(session, {to_neo4j_label(record.node_type) for record in graph_records})
         for batch in batched(graph_records, batch_size):
             batch_resolved, batch_stats = session.execute_write(
-                _write_node_batch, batch, preexisting_labels
+                _write_node_batch, batch, preexisting_labels, cache
             )
             resolved.extend(batch_resolved)
             stats.update(batch_stats)
         resolved_targets = {
             (record.node_type, record.node_name): name for record, name in resolved
         }
-        edge_records = [item for item in resolved if item[0].edges]
-        for batch in batched(edge_records, batch_size):
+        flat_edges = [
+            (record, name, edge)
+            for record, name in resolved
+            for edge in record.edges
+        ]
+        for batch in batched(flat_edges, batch_size):
             stats.update(
                 session.execute_write(_write_edge_batch, batch, resolved_targets)
             )
@@ -367,6 +453,7 @@ def main() -> None:
     parser.add_argument("--password", default=os.environ.get("NEO4J_PASSWORD", "neo4j_password"))
     parser.add_argument("--prompt-file", type=Path)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--batch-size", type=int, default=100)
     args = parser.parse_args()
     records = load_jsonl(args.records)
     if not records:
@@ -399,7 +486,9 @@ def main() -> None:
     driver = GraphDatabase.driver(args.uri, auth=(args.user, args.password))
     driver.verify_connectivity()
     try:
-        stats = import_records(stamped, driver)
+        with driver.session(database="neo4j") as session:
+            ensure_name_indexes(session)
+        stats = import_records(stamped, driver, batch_size=args.batch_size)
     finally:
         driver.close()
     print(json.dumps({"ok": True, "prompt_hash": prompt_hash, **stats}, ensure_ascii=False))

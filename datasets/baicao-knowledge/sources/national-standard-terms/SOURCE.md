@@ -6,7 +6,8 @@
 - 载体：`ZJUFanLab/TCMChat-dataset-600k` 的 `pretrain/train/books/national_standard/`
 - 消费：`中医临床诊疗术语疾病.txt`、`中医临床诊疗术语证候.txt`、`中药成方制剂.txt`
 - 药典文件仍只属于 `BC-01`，本源不重复消费
-- 状态：`cleaned_local`；`publish: false`（公开面只允许后续脱敏结构，不含原文）
+- 状态：`imported`（已入本地图）；`publish: false`（公开面只允许后续脱敏结构，不含原文）
+- 成方：TXT 各论 `【药物组成】` 1869 条已全部解析（含 8 条多剂型括注）。前言声称 2620 种，文件缺 751 条，不补猜。
 
 整包 Dataset Card 为 Apache-2.0。整理时过滤电话、证件、住院号和国药准字。
 

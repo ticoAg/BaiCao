@@ -6,7 +6,7 @@
 - Hugging Face：[SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain](https://huggingface.co/datasets/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain)
 - 本地只读入口：`.cache/huggingface/SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain/` 中的 3 个 JSON
 - 未持有：4 个 `CPT_medicalRecord_*` 医案文件
-- 状态：`cleaned_local`；`publish: false`
+- 状态：`imported`（已入本地图，仅可分源词条）；`publish: false`
 
 Dataset Card 为 `apache-2.0`，但本地三份都是 `{text}` 自由文本，混有西药、医疗美容、保健问答。`CPT_tcmKnowledge_source2_12889.json` 第 11949 条把「注射用亚锡葡庚糖酸钠Ⅰ」的药理段落串入氨苄西林/舒巴坦。不能整包当中医知识图。
 

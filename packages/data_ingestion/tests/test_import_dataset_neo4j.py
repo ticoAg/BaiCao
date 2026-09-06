@@ -3,7 +3,7 @@ from collections import Counter
 import pytest
 
 from data_ingestion.cli import import_dataset_neo4j as importer
-from data_ingestion.cli.import_dataset_neo4j import find_existing, write_edges
+from data_ingestion.cli.import_dataset_neo4j import NodeCache, find_existing, write_edges
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.provenance import slim_record
 
@@ -26,6 +26,16 @@ class Tx:
     def run(self, query, **params):
         self.calls.append((query, params))
         return Result()
+
+
+def test_node_cache_finds_exact_name_and_alias():
+    cache = NodeCache()
+    cache.by_label_name[("药材", "人参")] = {"eid": "e1", "props": {"名称": "人参", "别名": "棒槌"}}
+    cache.by_label_alias[("药材", "棒槌")] = "人参"
+    assert cache.find("药材", ["人参"], include_aliases=False)["eid"] == "e1"
+    assert cache.find("药材", ["棒槌"], include_aliases=False) is None
+    assert cache.find("药材", ["棒槌"], include_aliases=True)["eid"] == "e1"
+    assert cache.find("药材", ["黄芪"], include_aliases=True) is None
 
 
 def test_find_existing_does_not_merge_from_ambiguous_alias_lists():
@@ -188,6 +198,9 @@ def test_import_records_batches_node_and_edge_transactions(monkeypatch):
         def __exit__(self, *_args):
             return None
 
+        def run(self, query, **params):
+            return []
+
         def execute_write(self, func, batch, *args):
             self.calls.append((func.__name__, len(batch)))
             return func(None, batch, *args)
@@ -200,13 +213,13 @@ def test_import_records_batches_node_and_edge_transactions(monkeypatch):
             assert database == "neo4j"
             return self.session_instance
 
-    def write_node_batch(_tx, batch, _preexisting_labels):
+    def write_node_batch(_tx, batch, _preexisting_labels, _cache=None):
         return [(record, record.node_name) for record in batch], Counter(
             created=len(batch)
         )
 
     def write_edge_batch(_tx, batch, _resolved_targets):
-        return Counter(edges=sum(len(record.edges) for record, _name in batch))
+        return Counter(edges=len(batch))
 
     monkeypatch.setattr(importer, "_write_node_batch", write_node_batch)
     monkeypatch.setattr(importer, "_write_edge_batch", write_edge_batch)

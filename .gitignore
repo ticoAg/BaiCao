@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Build
 dist/
@@ -15,6 +16,7 @@ __pycache__/
 .venv/
 .eggs/
 *.egg
+.ruff_cache/
 
 # IDE
 .idea/
@@ -22,7 +24,7 @@ __pycache__/
 *.swp
 *.swo
 
-# Environment
+# Environment (keep *.example tracked)
 .env
 .env.local
 .env.*.local
@@ -48,30 +50,39 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Test
+# Test / coverage
 .coverage
+coverage.xml
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+.hypothesis/
 playwright-report/
 test-results/
 
 # Turborepo
 .turbo/
 
-# pnpm
-.pnpm-store/
-
+# Local scratch
 .tmp/
-.tmp/neo4j-browser/
 .worktrees/
 .workflow/
-/tmp
+/packages/data_ingestion/tmp/
+
+# Raw corpus cache: only the pointer README is tracked
 /.cache/*
 !/.cache/README.md
-/packages/data_ingestion/tmp/
+
+# Local download notes / scratch (not code, not current docs)
+/tmp
+
+# datasets/baicao-knowledge: metadata tracked, payloads ignored
+# Tracked: README.md, catalog.json, tasks/*, sources/*/SOURCE.md, sources/*/VIEW.md
+# Ignored: 原文、抽取中间态、可导入快照、发布表
 /datasets/baicao-knowledge/sources/*/source/
 /datasets/baicao-knowledge/sources/*/processed/
 /datasets/baicao-knowledge/sources/*/work/
 /datasets/baicao-knowledge/data/
 /datasets/baicao-knowledge/exports/
+/datasets/baicao-knowledge/**/*.jsonl
+/datasets/baicao-knowledge/**/*.parquet

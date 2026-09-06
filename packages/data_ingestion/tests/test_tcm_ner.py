@@ -62,11 +62,13 @@ def make_dataset(root: Path) -> None:
     )
 
 
-def test_clean_directory_emits_no_records_and_isolates_spans(tmp_path: Path):
+def test_clean_directory_emits_mapped_spans_and_isolates_unlabeled(tmp_path: Path):
     root = tmp_path / "DeepNER-raw"
     make_dataset(root)
     records, report = clean_directory(root)
-    assert records == []
+    names = {record.node_name for record in records}
+    assert "补气养血" in names
+    assert "气血两亏" in names
     assert report["publish"] is False
     assert report["labeled_docs"] == 3
     assert report["labeled_spans"] == 5
@@ -127,9 +129,8 @@ def test_write_outputs_rejects_records_and_keeps_publish_false(tmp_path: Path):
     result = write_clean_outputs(records, report, tmp_path / "out")
     stats = json.loads((tmp_path / "out" / "stats.json").read_text(encoding="utf-8"))
     dumped = (tmp_path / "out" / "records.jsonl").read_text(encoding="utf-8")
-    assert result["record_count"] == 0
+    assert result["record_count"] >= 1
     assert result["publish"] is False
-    assert dumped == ""
-    assert stats["record_count"] == 0
-    assert "补气养血" not in dumped
+    assert "补气养血" in dumped
     assert "北京同仁堂" not in dumped
+    assert stats["publish"] is False

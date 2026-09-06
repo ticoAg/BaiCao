@@ -54,6 +54,18 @@ ShandongEjiaoGao
 TongrentangWujiBaifengWan
 【药物组成】乌鸡。
 【功能与主治】补气养血。
+银翘解毒丸
+(颗粒、片、胶囊、合剂、蜜丸、浓缩丸、液)
+YinqiaojieduWan(Keli,Pian,Jiaonang.
+Heji.Miwan.Nongsuowan.Ye)
+【药物组成】金银花、连翘。
+【功能与主治】疏风解表。
+芩暴红止咳片(颗粒、
+口服液、胶囊、糖浆)
+QinbaohongZhikePian
+(Keli,Koufuye,Jiaonang,Tangjiang)
+【药物组成】满山红、黄芩、暴马子皮。
+【功能与主治】清热化痰。
 """,
     )
 
@@ -63,7 +75,16 @@ def test_clean_qualifies_collision_and_quarantines_brand(tmp_path: Path):
     make_dataset(root)
     records, report = clean_directory(root)
     names = {record.node_name for record in records}
-    assert names >= {"痞气〔12.4.13.1〕", "痞气〔18.1.5〕", "感冒", "表寒证", "表实感冒颗粒"}
+    assert names >= {
+        "痞气〔12.4.13.1〕",
+        "痞气〔18.1.5〕",
+        "感冒",
+        "表寒证",
+        "表实感冒颗粒",
+        "银翘解毒丸",
+        "芩暴红止咳片",
+    }
+    assert report["quarantine_counts"]["file_composition_headers"] == 5
     pi_qi = [record for record in records if record.node_name.startswith("痞气")]
     assert {record.properties["term_code"] for record in pi_qi} == {"12.4.13.1", "18.1.5"}
     assert "同仁堂乌鸡白凤丸" in report["brand_quarantine"]

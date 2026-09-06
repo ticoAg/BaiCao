@@ -3,7 +3,7 @@
   "visibility": "public",
   "hf_url": "https://huggingface.co/datasets/ticoAg/baicao-knowledge",
   "knowledge_model": "packages/knowledge_model",
-  "updated_at": "2026-08-19",
+  "updated_at": "2026-08-20",
   "publication": {
     "status": "published",
     "published_at": "2026-08-19",
@@ -87,7 +87,7 @@
     {
       "source_id": "fengxi177-knowledge-graph-tcm",
       "title": "Knowlegde_Graph_TCM",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "structured_graph_relations",
       "publish": false,
       "license_status": "unlicensed_upstream",
@@ -111,8 +111,8 @@
         "dosage_edges": 5784,
         "safe_source_edges": 436,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "结构清洗完成，全部记录为 pending；上游无 LICENSE，禁止进入 public Parquet。"
+        "as_of": "2026-08-20",
+        "note": "结构清洗完成，全部记录为 pending；上游无 LICENSE，禁止进入 public Parquet。；本地图 created 4137 / merged 859 / edges 11445；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/fengxi177-knowledge-graph-tcm/SOURCE.md",
@@ -124,7 +124,7 @@
     {
       "source_id": "shennong-tcm-kg",
       "title": "ShenNong TCM-KG",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "structured_graph_relations",
       "publish": false,
       "license_status": "restricted_no_redistribution_grant",
@@ -148,8 +148,8 @@
         "quarantined_external_mappings": 245,
         "quarantined_semantic_conflicts": 337,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "保守结构清洗完成；中药/治法/证候只保留中性关联，病证 head 未强制拆分疾病/症状/证候，来源标注证候 3278。上游无许可证且声明仅供学术研究，禁止进入 public Parquet。"
+        "as_of": "2026-08-20",
+        "note": "保守结构清洗完成；中药/治法/证候只保留中性关联，病证 head 未强制拆分疾病/症状/证候，来源标注证候 3278。上游无许可证且声明仅供学术研究，禁止进入 public Parquet。；本地图 created 14951 / merged 4115 / edges 52247；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/shennong-tcm-kg/SOURCE.md",
@@ -160,7 +160,7 @@
     {
       "source_id": "tcm-db",
       "title": "tcm-db",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "structured_tcm_database",
       "publish": false,
       "license_status": "mixed_unlicensed_upstreams",
@@ -183,8 +183,8 @@
         "quarantined_entity_rows": 31,
         "quarantined_edges": 1,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "只读消费 5 个实体表和 3 个显式关系表；隔离 29 个异常方剂、2 条冲突白芷和 1 条同名跨类型边。混合上游许可不完整，禁止进入 public Parquet。"
+        "as_of": "2026-08-20",
+        "note": "只读消费 5 个实体表和 3 个显式关系表；隔离 29 个异常方剂、2 条冲突白芷和 1 条同名跨类型边。混合上游许可不完整，禁止进入 public Parquet。；本地图 created 1432 / merged 283 / edges 654；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/tcm-db/SOURCE.md",
@@ -195,7 +195,7 @@
     {
       "source_id": "dragontcm",
       "title": "DragonTCM",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "structured_tcm_database",
       "publish": false,
       "license_status": "restricted_noncommercial_upstream_rights_unverified",
@@ -218,8 +218,8 @@
         "quarantined_condition_rows": 316,
         "quarantined_relations": 11930,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "只接受 SNOMED disorder 为病证；condition-herb treats 降级为中性关联，condition-formula treats 隔离；clinical manifestations 仅作可追溯关联症状。CC-BY-NC-4.0 且上游权利链未闭合，禁止进入 public Parquet。"
+        "as_of": "2026-08-20",
+        "note": "只接受 SNOMED disorder 为病证；condition-herb treats 降级为中性关联，condition-formula treats 隔离；clinical manifestations 仅作可追溯关联症状。CC-BY-NC-4.0 且上游权利链未闭合，禁止进入 public Parquet。；本地图 created 11598 / edges 46666；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/dragontcm/SOURCE.md",
@@ -230,7 +230,7 @@
     {
       "source_id": "tcm-mkg",
       "title": "TCM-MKG V1.0",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "structured_multiontology_tcm_graph",
       "publish": false,
       "license_status": "restricted_noncommercial_sharealike_no_derivatives_upstream_rights_unverified",
@@ -254,8 +254,8 @@
         "merged_tcmt_icd_exact_names": 10,
         "quarantined_rows": 711,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "只消费 D1-D7 与 D18 主域表；D3/D5 临床关联降级为适用于或关联证候，不生成治疗病证。13 组方剂/饮片同名保持跨类型独立。Zenodo、WHO 术语和 ICD-11 条款不兼容 public 派生发布，固定 publish=false。"
+        "as_of": "2026-08-20",
+        "note": "只消费 D1-D7 与 D18 主域表；D3/D5 临床关联降级为适用于或关联证候，不生成治疗病证。13 组方剂/饮片同名保持跨类型独立。Zenodo、WHO 术语和 ICD-11 条款不兼容 public 派生发布，固定 publish=false。；本地图 created 16808 / merged 2711 / edges 177672；publish 仍 false；original_kg 与 D8–D17/D19–D24/SD1 化学边 2026-08-20 本机已删除。"
       },
       "paths": {
         "source_doc": "sources/tcm-mkg/SOURCE.md",
@@ -266,7 +266,7 @@
     {
       "source_id": "tcm-sd",
       "title": "TCM-SD / ZY-BERT",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "syndrome_differentiation_benchmark",
       "publish": false,
       "license_status": "cc_by_nc_sa_4_0_dataset_mit_code_residual_phi",
@@ -284,13 +284,13 @@
       "completed": {
         "unit": "labeled_rows",
         "count": 54152,
-        "extracted_records": 148,
-        "extracted_edges": 0,
+        "extracted_records": 54750,
+        "extracted_edges": 108301,
         "unique_syndrome_labels": 148,
         "quarantined_case_pairs": 2023,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "只提升 148 个证候术语。病例原文、病名节点、病-证共现和知识库定义全部隔离。CC-BY-NC-SA-4.0 且存在残留病历标识，禁止进入 public Parquet。"
+        "as_of": "2026-08-20",
+        "note": "只提升 148 个证候术语。病例原文、病名节点、病-证共现和知识库定义全部隔离。CC-BY-NC-SA-4.0 且存在残留病历标识，禁止进入 public Parquet。；本地图 created 36 / merged 112；publish 仍 false；148 证候 + 病名 + 病历医案已入本地图，不含原文。"
       },
       "paths": {
         "source_doc": "sources/tcm-sd/SOURCE.md",
@@ -301,7 +301,7 @@
     {
       "source_id": "tcm-ner",
       "title": "TCM-NER / DeepNER",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "package_insert_ner_benchmark",
       "publish": false,
       "license_status": "unverified_competition_mirror_unlicensed_repo",
@@ -319,13 +319,13 @@
       "completed": {
         "unit": "labeled_docs",
         "count": 1000,
-        "extracted_records": 0,
+        "extracted_records": 2961,
         "extracted_edges": 0,
         "labeled_spans": 17757,
         "cross_type_surfaces": 260,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "竞赛镜像无许可证，官方包未持有。NER 跨度与 260 个跨类型同名全部隔离，不生成图节点或共现边。固定 publish=false。"
+        "as_of": "2026-08-20",
+        "note": "竞赛镜像无许可证，官方包未持有。NER 跨度与 260 个跨类型同名全部隔离，不生成图节点或共现边。固定 publish=false。；说明书跨度按可映射类型入图，跨类型/品牌跳过。"
       },
       "paths": {
         "source_doc": "sources/tcm-ner/SOURCE.md",
@@ -336,7 +336,7 @@
     {
       "source_id": "tcm-ancient-books",
       "title": "TCM-Ancient-Books",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "ancient_book_plaintext",
       "publish": false,
       "license_status": "unlicensed_upstream_digital_edition_unverified",
@@ -354,13 +354,13 @@
       "completed": {
         "unit": "numbered_books",
         "count": 700,
-        "extracted_records": 699,
-        "extracted_edges": 0,
-        "decodable_books": 699,
-        "decode_errors": 1,
+        "extracted_records": 9188,
+        "extracted_edges": 464834,
+        "decodable_books": 700,
+        "decode_errors": 0,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "可解码编号书各一条来源节点。全文不进 public。"
+        "as_of": "2026-08-20",
+        "note": "700 本编号书 + 李培生医论：来源 701、词表提及入图 merged 9188 / 来源于 464834。203 婴童类萃替换解码。publish 仍 false。"
       },
       "paths": {
         "source_doc": "sources/tcm-ancient-books/SOURCE.md",
@@ -371,7 +371,7 @@
     {
       "source_id": "classical-tcm-canon",
       "title": "classical-tcm-canon",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "classical_fulltext_canon",
       "publish": false,
       "license_status": "other_proprietary_commercial_pd_claim",
@@ -381,16 +381,20 @@
         "file_path": "classical-tcm-canon.parquet",
         "import_scope_key": "huggingface:wangekxy/classical-tcm-canon"
       },
-      "planned": {"unit": "works", "count": 115, "records": null},
+      "planned": {
+        "unit": "works",
+        "count": 115,
+        "records": null
+      },
       "completed": {
         "unit": "works",
         "count": 115,
-        "extracted_records": 0,
-        "extracted_edges": 0,
+        "extracted_records": 4100,
+        "extracted_edges": 48602,
         "char_count_sum": 9401166,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "115 部全文隔离。Dataset Card 为 proprietary-commercial，固定 publish=false。"
+        "as_of": "2026-08-20",
+        "note": "115 部全文隔离。Dataset Card 为 proprietary-commercial，固定 publish=false。；115 部来源节点+词表提及已入本地图。"
       },
       "paths": {
         "source_doc": "sources/classical-tcm-canon/SOURCE.md",
@@ -399,9 +403,339 @@
       }
     },
     {
+      "source_id": "tcm-formulary",
+      "title": "中医方书样本",
+      "status": "imported",
+      "kind": "classical_formulary_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-formulary",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-formulary"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 494,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "全量 91 部未购买；3 部公开样本按非商用本地入图。；3 部公开样本已入本地图；全量 91 部未购买。",
+        "extracted_edges": 600
+      },
+      "paths": {
+        "source_doc": "sources/tcm-formulary/SOURCE.md",
+        "view": "sources/tcm-formulary/VIEW.md",
+        "processed_dir": "sources/tcm-formulary/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-materia-medica",
+      "title": "中医本草样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-materia-medica",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-materia-medica"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 705,
+        "extracted_edges": 790,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（石药尔雅、易牙遗意、药性歌括）；全量 59 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-materia-medica/SOURCE.md",
+        "view": "sources/tcm-materia-medica/VIEW.md",
+        "processed_dir": "sources/tcm-materia-medica/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-case-records",
+      "title": "中医医案古籍样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-case-records",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-case-records"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 482,
+        "extracted_edges": 605,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（一瓢医案、许氏医案、曹仁伯医案论）；不建整书医案节点；全量 33 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-case-records/SOURCE.md",
+        "view": "sources/tcm-case-records/VIEW.md",
+        "processed_dir": "sources/tcm-case-records/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-acupuncture-classics",
+      "title": "针灸古籍样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-acupuncture-classics",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-acupuncture-classics"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 197,
+        "extracted_edges": 231,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（炙膏肓腧穴法、针经节要、黄庭内景五藏六府图）；全量 33 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-acupuncture-classics/SOURCE.md",
+        "view": "sources/tcm-acupuncture-classics/VIEW.md",
+        "processed_dir": "sources/tcm-acupuncture-classics/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-diagnostics",
+      "title": "中医诊法样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-diagnostics",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-diagnostics"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 410,
+        "extracted_edges": 449,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（察舌辨症新法、脉象统类、咽喉脉证通论）；不发明脉象/舌象节点；全量 42 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-diagnostics/SOURCE.md",
+        "view": "sources/tcm-diagnostics/VIEW.md",
+        "processed_dir": "sources/tcm-diagnostics/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-gynecology-pediatrics",
+      "title": "中医妇幼样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-gynecology-pediatrics",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-gynecology-pediatrics"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 435,
+        "extracted_edges": 512,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（鬻婴提要说、张氏妇科、颅囟经）；全量 69 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-gynecology-pediatrics/SOURCE.md",
+        "view": "sources/tcm-gynecology-pediatrics/VIEW.md",
+        "processed_dir": "sources/tcm-gynecology-pediatrics/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-external-surgical",
+      "title": "中医外科样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-external-surgical",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-external-surgical"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 432,
+        "extracted_edges": 470,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（走马急疳真方、幼科种痘心法要旨、脏腑虚实标本用药式）；全量 50 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-external-surgical/SOURCE.md",
+        "view": "sources/tcm-external-surgical/VIEW.md",
+        "processed_dir": "sources/tcm-external-surgical/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-collected-works",
+      "title": "中医医论样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-collected-works",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-collected-works"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 411,
+        "extracted_edges": 475,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（医学举要、上池杂说、三消论）；医论不当事实；全量 171 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-collected-works/SOURCE.md",
+        "view": "sources/tcm-collected-works/VIEW.md",
+        "processed_dir": "sources/tcm-collected-works/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-health-cultivation",
+      "title": "中医养生样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-health-cultivation",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-health-cultivation"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 99,
+        "extracted_edges": 103,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 部公开样本（万氏家传养生四要、养生肤语、陆地仙经）；不发明导引类型；全量 18 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-health-cultivation/SOURCE.md",
+        "view": "sources/tcm-health-cultivation/VIEW.md",
+        "processed_dir": "sources/tcm-health-cultivation/processed/latest/"
+      }
+    },
+    {
+      "source_id": "tcm-reference-compendia",
+      "title": "医部类书样本",
+      "status": "imported",
+      "kind": "classical_topic_sample",
+      "publish": false,
+      "license_status": "commercial_sample_only_full_set_not_held",
+      "filter": {
+        "source_provider": "huggingface",
+        "dataset_name": "wangekxy/tcm-reference-compendia",
+        "file_path": "sample.jsonl",
+        "import_scope_key": "huggingface:wangekxy/tcm-reference-compendia"
+      },
+      "planned": {
+        "unit": "works",
+        "count": 3,
+        "records": null
+      },
+      "completed": {
+        "unit": "works",
+        "count": 3,
+        "extracted_records": 465,
+        "extracted_edges": 645,
+        "count_is_estimate": false,
+        "as_of": "2026-08-20",
+        "note": "3 卷切片（医部全录肩/腋/懊憹门）；全量 14 部未购买。；公开样本已清洗，publish=false。"
+      },
+      "paths": {
+        "source_doc": "sources/tcm-reference-compendia/SOURCE.md",
+        "view": "sources/tcm-reference-compendia/VIEW.md",
+        "processed_dir": "sources/tcm-reference-compendia/processed/latest/"
+      }
+    },
+    {
       "source_id": "sylvanl-tcm-pretrain",
       "title": "SylvanL TCM Pretrain",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "unstructured_pretrain_text",
       "publish": false,
       "license_status": "apache-2.0_card_mixed_unstructured_content",
@@ -411,7 +745,11 @@
         "file_path": "CPT_tcmBooks_source1_146244.json + 2 knowledge JSON",
         "import_scope_key": "huggingface:SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain"
       },
-      "planned": {"unit": "text_rows", "count": 177054, "records": null},
+      "planned": {
+        "unit": "text_rows",
+        "count": 177054,
+        "records": null
+      },
       "completed": {
         "unit": "text_rows",
         "count": 177054,
@@ -419,8 +757,8 @@
         "extracted_edges": 0,
         "mixed_pharmacology_rows": 1,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "百科前缀条目：药材 3962、方剂 1000。注射用西药跳过。"
+        "as_of": "2026-08-20",
+        "note": "百科前缀条目：药材 3962、方剂 1000。注射用西药跳过。；本地图 created 4559 / merged 403；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/sylvanl-tcm-pretrain/SOURCE.md",
@@ -431,7 +769,7 @@
     {
       "source_id": "zybert-pretrain-corpus",
       "title": "ZY-BERT 预训练语料",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "unlabeled_pretrain_archive",
       "publish": false,
       "license_status": "unverified_dropbox_archive_not_inherited_from_tcm_sd",
@@ -441,16 +779,20 @@
         "file_path": "tcm_pretrain_corpus_a.rar",
         "import_scope_key": "dropbox:zybert:tcm_pretrain_corpus_a.rar"
       },
-      "planned": {"unit": "archives", "count": 1, "records": null},
+      "planned": {
+        "unit": "archives",
+        "count": 1,
+        "records": null
+      },
       "completed": {
         "unit": "archives",
         "count": 1,
-        "extracted_records": 0,
-        "extracted_edges": 0,
+        "extracted_records": 11920,
+        "extracted_edges": 20441,
         "members": 1,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "只清单不解压。不能继承 TCM-SD 许可。不入图，publish=false。"
+        "as_of": "2026-08-20",
+        "note": "方剂索引 + 非索引行唯一词表提及。11920 records；来源于 11365、组成药材 9076。publish 仍 false。"
       },
       "paths": {
         "source_doc": "sources/zybert-pretrain-corpus/SOURCE.md",
@@ -461,7 +803,7 @@
     {
       "source_id": "tcmchat-600k",
       "title": "TCMChat-dataset-600k",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "mixed_pretrain_sft_corpus",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -471,16 +813,20 @@
         "file_path": "pretrain/ + sft/",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k"
       },
-      "planned": {"unit": "content_files", "count": 61, "records": null},
+      "planned": {
+        "unit": "content_files",
+        "count": 61,
+        "records": null
+      },
       "completed": {
         "unit": "content_files",
         "count": 61,
-        "extracted_records": 0,
+        "extracted_records": 16894,
         "extracted_edges": 0,
         "identical_test_copies": 3,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "整包盘点，0 条整包图记录。药典已入图。国标术语/成方、教材、医案、daiy、ChatMed、knowledge.json 已分源清洗。已审计跳过、不独立登记：entity_extraction、sft/medical_case、recommend_*、choice_*、reading_comprehension、admet*、train_baichuan.json、2019_baidubaike.txt。"
+        "as_of": "2026-08-20",
+        "note": "整包盘点，0 条整包图记录。药典已入图。国标术语/成方、教材、医案、daiy、ChatMed、knowledge.json 已分源清洗。entity_extraction + recommend_herb 相似 + papers/百科词表提及已入本地图。2026-08-20 本机已删除：train_baichuan、recommend_disease/formula、choice/RC/ADMET、sft/medical_case、sft/test、pretrain/test。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-600k/SOURCE.md",
@@ -491,7 +837,7 @@
     {
       "source_id": "national-standard-terms",
       "title": "国标临床术语与成方制剂",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "national_standard_terms",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -501,16 +847,20 @@
         "file_path": "pretrain/train/books/national_standard/{疾病,证候,成方制剂}.txt",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/national_standard"
       },
-      "planned": {"unit": "terms_and_formulas", "count": 5219, "records": null},
+      "planned": {
+        "unit": "terms_and_formulas",
+        "count": 5219,
+        "records": null
+      },
       "completed": {
         "unit": "terms_and_formulas",
         "count": 5219,
-        "extracted_records": 5219,
+        "extracted_records": 5227,
         "extracted_edges": 0,
         "qualified_name_pairs": 1,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "疾病 1308、证候 2050、成方 1861。痞气两条按父类限定。不重复消费药典。"
+        "as_of": "2026-08-20",
+        "note": "疾病 1308、证候 2050、成方 1861。痞气两条按父类限定。不重复消费药典。；本地图 created 5119 / merged 100；publish 仍 false；成方 TXT 各论 1869/1869 已解析（含 8 条多剂型括注）；前言 2620 缺 751 不在文件里。本地图 created 5 / merged 5222。"
       },
       "paths": {
         "source_doc": "sources/national-standard-terms/SOURCE.md",
@@ -521,7 +871,7 @@
     {
       "source_id": "tcmchat-medical-cases",
       "title": "TCMChat 名医验案",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "agent_organized_medical_cases",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -531,15 +881,19 @@
         "file_path": "pretrain/train/books/medical_case",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/medical_case"
       },
-      "planned": {"unit": "case_units", "count": 461, "records": null},
+      "planned": {
+        "unit": "case_units",
+        "count": 461,
+        "records": null
+      },
       "completed": {
         "unit": "case_units",
         "count": 461,
-        "extracted_records": 3989,
-        "extracted_edges": 3528,
+        "extracted_records": 28604,
+        "extracted_edges": 28143,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "去姓氏、留性别年龄。医案 461 + 国标词表提及。agent 仍可补抽。"
+        "as_of": "2026-08-20",
+        "note": "去姓氏、留性别年龄。医案 461 + 国标词表提及。agent 仍可补抽。；本地图 created 461 / merged 3528 / edges 3528；publish 仍 false；扩词表补抽后 28604 records / 28143 边已入本地图。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-medical-cases/SOURCE.md",
@@ -550,7 +904,7 @@
     {
       "source_id": "tcmchat-textbooks",
       "title": "TCMChat 教材",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "textbook_chapters",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -560,15 +914,19 @@
         "file_path": "pretrain/train/books/textbook",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/textbook"
       },
-      "planned": {"unit": "chapters", "count": 232, "records": null},
+      "planned": {
+        "unit": "chapters",
+        "count": 232,
+        "records": null
+      },
       "completed": {
         "unit": "chapters",
         "count": 232,
-        "extracted_records": 7373,
-        "extracted_edges": 7141,
+        "extracted_records": 41419,
+        "extracted_edges": 41187,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "7 本教材按章切分，国标词表最长匹配。agent 可补抽。"
+        "as_of": "2026-08-20",
+        "note": "7 本教材按章切分，国标词表最长匹配。agent 可补抽。；本地图 created 232 / merged 7141 / edges 7141；publish 仍 false；扩词表补抽后 41419 records / 41187 边已入本地图。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-textbooks/SOURCE.md",
@@ -579,7 +937,7 @@
     {
       "source_id": "tcmchat-sft-knowledge",
       "title": "TCMChat SFT knowledge",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "sft_knowledge_entries",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -589,7 +947,11 @@
         "file_path": "sft/train/knowledge.json",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:sft/train/knowledge.json"
       },
-      "planned": {"unit": "entries", "count": 6565, "records": null},
+      "planned": {
+        "unit": "entries",
+        "count": 6565,
+        "records": null
+      },
       "completed": {
         "unit": "entries",
         "count": 6565,
@@ -597,8 +959,8 @@
         "extracted_edges": 75949,
         "mention_entries": 894,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "方剂 5906、药材 659、词表病证提及 894。注射剂名已丢。组成药材 50302、关联证候 10083、适用于 13069、关联药材 2495。不当已验证事实。"
+        "as_of": "2026-08-20",
+        "note": "方剂 5906、药材 659、词表病证提及 894。注射剂名已丢。组成药材 50302、关联证候 10083、适用于 13069、关联药材 2495。不当已验证事实。；本地图 created 1095 / merged 6364 / edges 72682 / dangling 3267；不当事实；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/tcmchat-sft-knowledge/SOURCE.md",
@@ -609,7 +971,7 @@
     {
       "source_id": "tcmchat-web",
       "title": "TCMChat web 百科",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "encyclopedia_terms",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -619,14 +981,18 @@
         "file_path": "pretrain/train/web/daiy_data.txt",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/web"
       },
-      "planned": {"unit": "term_lines", "count": 2290, "records": null},
+      "planned": {
+        "unit": "term_lines",
+        "count": 2290,
+        "records": null
+      },
       "completed": {
         "unit": "term_lines",
         "count": 2290,
         "extracted_records": 2290,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "daiy 中医病名/病证名行。百度百科未整包入图。"
+        "as_of": "2026-08-20",
+        "note": "daiy 中医病名/病证名行。百度百科未整包入图。；本地图 created 759 / merged 1531；publish 仍 false"
       },
       "paths": {
         "source_doc": "sources/tcmchat-web/SOURCE.md",
@@ -637,7 +1003,7 @@
     {
       "source_id": "tcmchat-chatmed",
       "title": "TCMChat ChatMed",
-      "status": "cleaned_local",
+      "status": "imported",
       "kind": "dialogue_mentions",
       "publish": false,
       "license_status": "apache-2.0_dataset_filter_brand_and_pii",
@@ -647,14 +1013,18 @@
         "file_path": "pretrain/train/opendata/ChatMed_TCM-v0.2_.txt",
         "import_scope_key": "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/opendata"
       },
-      "planned": {"unit": "mentions", "count": 133, "records": null},
-      "completed": {
+      "planned": {
         "unit": "mentions",
         "count": 133,
-        "extracted_records": 133,
+        "records": null
+      },
+      "completed": {
+        "unit": "mentions",
+        "count": 1043,
+        "extracted_records": 1043,
         "count_is_estimate": false,
-        "as_of": "2026-08-19",
-        "note": "前 8000 有效行词表提及；对话不当事实。"
+        "as_of": "2026-08-20",
+        "note": "全量 535240 有效行唯一词表提及 1043；对话不当事实。publish 仍 false。"
       },
       "paths": {
         "source_doc": "sources/tcmchat-chatmed/SOURCE.md",

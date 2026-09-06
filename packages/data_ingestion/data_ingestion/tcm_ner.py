@@ -8,7 +8,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from knowledge_model.constants import NodeType
+
 from data_ingestion.dataset_records import DatasetRecord, compute_stats
+from data_ingestion.entity_identity import EntityDraft, contains_brand
+from data_ingestion.organize_workflow import finalize_drafts
 from data_ingestion.provenance import prompt_hash_for
 
 SOURCE_ID = "tcm-ner"
@@ -38,6 +42,23 @@ KNOWN_LABEL_TYPES = frozenset(
     }
 )
 MANUFACTURER_MARKERS = ("有限公司", "制药厂", "药业股份")
+LABEL_TO_NODE = {
+    "DISEASE": NodeType.DISEASE,
+    "DISEASE_GROUP": NodeType.DISEASE,
+    "SYNDROME": NodeType.DISEASE,
+    "SYMPTOM": NodeType.SYMPTOM,
+    "DRUG": NodeType.HERB,
+    "DRUG_INGREDIENT": NodeType.HERB,
+    "DRUG_EFFICACY": NodeType.EFFICACY,
+    "DRUG_TASTE": NodeType.FLAVOR,
+}
+SKIP_LABELS = {
+    "DRUG_DOSAGE",
+    "DRUG_GROUP",
+    "FOOD",
+    "FOOD_GROUP",
+    "PERSON_GROUP",
+}
 
 
 class TcmNerError(ValueError):
@@ -174,7 +195,41 @@ def clean_directory(
         for surface, types in type_by_surface.items()
         if len(types) > 1
     }
-    records: list[DatasetRecord] = []
+    drafts: list[EntityDraft] = []
+    skipped_cross = 0
+    skipped_noise = 0
+    mapped_surfaces: dict[str, NodeType] = {}
+    for surface, types in type_by_surface.items():
+        name = surface.strip()
+        if len(name) < 2 or contains_brand(name) or any(marker in name for marker in MANUFACTURER_MARKERS):
+            skipped_noise += 1
+            continue
+        mapped = {LABEL_TO_NODE[typ] for typ in types if typ in LABEL_TO_NODE}
+        if not mapped:
+            skipped_noise += 1
+            continue
+        if len(mapped) > 1:
+            skipped_cross += 1
+            continue
+        mapped_surfaces[name] = next(iter(mapped))
+    for name, node_type in mapped_surfaces.items():
+        drafts.append(
+            EntityDraft(
+                node_type=node_type,
+                raw_name=name,
+                role="说明书跨度",
+                stable_id=name,
+                evidence_refs=["DeepNER:span"],
+                properties={"tcm_type": "来源说明书跨度"},
+            )
+        )
+    records, quarantined, identity = finalize_drafts(
+        drafts,
+        source_id=source_id,
+        batch_id=batch_id,
+        import_scope_key=import_scope_key,
+        processor=PROCESSOR,
+    )
     report = {
         "publish": False,
         "license_status": "unverified_competition_mirror_unlicensed_repo",
@@ -214,6 +269,10 @@ def clean_directory(
         "import_scope_key": import_scope_key,
         "processor": PROCESSOR,
         "prompt_hash": PROMPT_HASH,
+        "skipped_cross_type": skipped_cross,
+        "skipped_noise": skipped_noise,
+        **identity,
+        "quarantined": quarantined[:20],
     }
     return records, report
 
@@ -221,12 +280,13 @@ def clean_directory(
 def write_clean_outputs(
     records: list[DatasetRecord], report: dict[str, Any], out_dir: Path
 ) -> dict[str, Any]:
-    if records:
-        raise TcmNerError("TCM-NER must not emit graph records")
     out_dir.mkdir(parents=True, exist_ok=True)
     records_path = out_dir / "records.jsonl"
     stats_path = out_dir / "stats.json"
-    records_path.write_text("", encoding="utf-8")
+    records_path.write_text(
+        "".join(record.model_dump_json(exclude_none=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
     stats = {**compute_stats(records), **report}
     stats_path.write_text(
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
@@ -234,7 +294,7 @@ def write_clean_outputs(
     return {
         "records": str(records_path),
         "stats": str(stats_path),
-        "record_count": 0,
-        "edge_count": 0,
+        "record_count": len(records),
+        "edge_count": sum(len(record.edges) for record in records),
         "publish": False,
     }

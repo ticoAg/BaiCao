@@ -4,7 +4,7 @@
 
 - `source_id`: `tcmchat-sft-knowledge`
 - 载体：`.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/sft/train/knowledge.json`（70,309 条指令）
-- 状态：`cleaned_local`；结构化介绍/处方/证候等已扩抽
+- 状态：`imported`（已入本地图，不当已验证事实）；结构化介绍/处方/证候等已扩抽
 - `publish: false`；不当已验证临床事实
 
 ## 抽取口径

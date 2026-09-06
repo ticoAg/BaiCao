@@ -8,7 +8,7 @@
 - 本地只读入口：`.cache/github/Borororo/ZY-BERT/TCM-SD/`
 - 上游仓库快照：`.cache/github/Borororo/ZY-BERT/repo/`，禁止与解压数据双计数
 - 天池 139034 官方包未持有
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 状态：`imported`（证候术语 + 病名 + 病历医案已入本地图，不含原文）；`publish: false`，不得进入 public Hugging Face Parquet
 
 GitHub 仓库 `LICENSE` 与 API 标记为 MIT，但正文只覆盖 Software。README 单独声明数据集为 `CC BY-NC-SA 4.0`。论文本身为 `CC BY-NC-ND 4.0`，不能替代数据集许可。`CAND-10` 预训练语料不得继承本源条款。
 

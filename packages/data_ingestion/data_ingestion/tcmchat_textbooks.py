@@ -87,7 +87,7 @@ def split_textbook(path: Path) -> list[WorkUnit]:
     return units
 
 
-def prepare_directory(path: Path, *, lexicon_path: Path | None = None) -> OrganizeBatch:
+def prepare_directory(path: Path, *, lexicon_path: Path | list[Path] | None = None) -> OrganizeBatch:
     if not path.is_dir():
         raise TcmChatTextbookError(f"input is not a directory: {path}")
     files = sorted(item for item in path.glob("*.txt") if item.is_file())
@@ -98,7 +98,7 @@ def prepare_directory(path: Path, *, lexicon_path: Path | None = None) -> Organi
     for file_path in files:
         units.extend(split_textbook(file_path))
     records: list[DatasetRecord] = []
-    mention_counts = {"病证": 0, "方剂": 0}
+    mention_counts = {"病证": 0, "方剂": 0, "药材": 0, "治法": 0}
     for unit in units:
         source_name = f"{unit.metadata['book']}-{unit.metadata['marker']}"[:80]
         source = DatasetRecord(

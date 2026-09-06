@@ -347,7 +347,7 @@ uvx ruff check data_ingestion/classical_tcm_canon.py \
 2. [共享知识模型与数据采集边界](../../architecture/knowledge-model-and-ingestion.md)
 3. [ShenNong-TCM-LLM](https://github.com/michael-wzhu/ShenNong-TCM-LLM)
 4. [TCM_KG](https://github.com/ywjawmw/TCM_KG)
-5. [OKF v0.1 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+5. [OKF v0.2 specification](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/main/SPEC.md)
 6. [tcm-db](https://github.com/xiaogege6697/tcm-db)
 7. [MulanPSL-2.0](https://spdx.org/licenses/MulanPSL-2.0.html)
 8. [中医临床诊疗术语国家标准索引](https://std.samr.gov.cn/gb/search/gbDetailed?id=71F772D7B2C0D3A7E05397BE0A0AB82A)

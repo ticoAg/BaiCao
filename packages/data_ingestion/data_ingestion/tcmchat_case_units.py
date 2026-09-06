@@ -58,18 +58,39 @@ def parse_sex_age(text: str) -> tuple[str | None, str | None]:
     return match.group("sex"), match.group("age")
 
 
-def load_lexicon(records_path: Path | None) -> dict[str, str]:
+LEXICON_TYPES = {
+    NodeType.DISEASE.value,
+    NodeType.FORMULA.value,
+    NodeType.HERB.value,
+    NodeType.TREATMENT_METHOD.value,
+}
+
+
+def default_lexicon_paths(root: Path | None = None) -> list[Path]:
+    base = (root or repo_root()) / "datasets/baicao-knowledge/sources"
+    return [
+        base / "national-standard-2022-pharmacopoeia/processed/latest/records.jsonl",
+        base / "fengxi177-knowledge-graph-tcm/processed/latest/records.jsonl",
+        base / "tcm-db/processed/latest/records.jsonl",
+        base / "national-standard-terms/processed/latest/records.jsonl",
+        base / "zybert-pretrain-corpus/processed/latest/records.jsonl",
+    ]
+
+
+def load_lexicon(records_path: Path | list[Path] | None) -> dict[str, str]:
     lexicon: dict[str, str] = {}
-    if records_path is None or not records_path.is_file():
-        return lexicon
-    for line in records_path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
+    paths = records_path if isinstance(records_path, list) else [records_path]
+    for path in paths:
+        if path is None or not path.is_file():
             continue
-        payload = json.loads(line)
-        name = str(payload.get("node_name") or "")
-        node_type = str(payload.get("node_type") or "")
-        if node_type in {NodeType.DISEASE.value, NodeType.FORMULA.value} and len(name) >= 2:
-            lexicon[name] = node_type
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            payload = json.loads(line)
+            name = str(payload.get("node_name") or "")
+            node_type = str(payload.get("node_type") or "")
+            if node_type in LEXICON_TYPES and 2 <= len(name) <= 20 and name not in lexicon:
+                lexicon[name] = node_type
     return lexicon
 
 
@@ -209,7 +230,7 @@ def _mention_record(name: str, node_type: str, case_name: str, locator: str) -> 
     return record
 
 
-def prepare_directory(path: Path, *, lexicon_path: Path | None = None) -> OrganizeBatch:
+def prepare_directory(path: Path, *, lexicon_path: Path | list[Path] | None = None) -> OrganizeBatch:
     if not path.is_dir():
         raise TcmChatCaseError(f"input is not a directory: {path}")
     files = sorted(item for item in path.glob("*.txt") if item.is_file())
@@ -220,14 +241,13 @@ def prepare_directory(path: Path, *, lexicon_path: Path | None = None) -> Organi
     for file_path in files:
         units.extend(split_case_book(file_path))
     records: list[DatasetRecord] = []
-    mention_counts = {"病证": 0, "方剂": 0}
+    mention_counts = {"病证": 0, "方剂": 0, "药材": 0, "治法": 0}
     for unit in units:
         case = _case_record(unit)
         records.append(case)
         for name, node_type in longest_lexicon_hits(unit.text, lexicon):
             records.append(_mention_record(name, node_type, case.node_name, unit.locator))
-            if node_type in mention_counts:
-                mention_counts[node_type] += 1
+            mention_counts[node_type] = mention_counts.get(node_type, 0) + 1
     queue = [
         AgentTask(
             unit_id=unit.unit_id,

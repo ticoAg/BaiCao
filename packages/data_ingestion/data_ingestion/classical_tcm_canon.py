@@ -1,4 +1,4 @@
-"""只读审计 classical-tcm-canon：书目统计，不把全文写入图谱。"""
+"""清洗 classical-tcm-canon：每部书一个来源节点，正文做词表提及。"""
 
 from __future__ import annotations
 
@@ -8,8 +8,13 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from knowledge_model.constants import EdgeType, NodeType
+
 from data_ingestion.dataset_records import DatasetRecord, compute_stats
+from data_ingestion.entity_identity import EntityDraft
+from data_ingestion.organize_workflow import finalize_drafts
 from data_ingestion.provenance import prompt_hash_for
+from data_ingestion.tcmchat_case_units import default_lexicon_paths, load_lexicon, longest_lexicon_hits
 
 SOURCE_ID = "classical-tcm-canon"
 IMPORT_SCOPE_KEY = "huggingface:wangekxy/classical-tcm-canon"
@@ -85,7 +90,44 @@ def clean_file(
 
     families = Counter(str(value) for value in columns.get("work_family", []))
     ship = Counter(str(value) for value in columns.get("ship_tier", []))
-    records: list[DatasetRecord] = []
+    lexicon = load_lexicon(default_lexicon_paths())
+    drafts: list[EntityDraft] = []
+    mention_count = 0
+    for index, title in enumerate(titles):
+        drafts.append(
+            EntityDraft(
+                node_type=NodeType.SOURCE,
+                raw_name=title,
+                role="古籍",
+                stable_id=str(columns["id"][index]),
+                evidence_refs=[f"{path.name}:{columns['id'][index]}"],
+                properties={
+                    "tcm_type": "来源古典医籍",
+                    "source_book": title,
+                },
+            )
+        )
+        body = str(columns["text"][index] or "")
+        for name, node_type in longest_lexicon_hits(body, lexicon):
+            mention_count += 1
+            drafts.append(
+                EntityDraft(
+                    node_type=NodeType(node_type),
+                    raw_name=name,
+                    role="古籍提及",
+                    stable_id=name,
+                    evidence_refs=[f"{path.name}:{columns['id'][index]}:{name}"],
+                    properties={"tcm_type": "来源古典医籍提及"},
+                    edges=[(EdgeType.ORIGINATED_FROM.value, title)],
+                )
+            )
+    records, quarantined, identity = finalize_drafts(
+        drafts,
+        source_id=source_id,
+        batch_id=batch_id,
+        import_scope_key=import_scope_key,
+        processor=PROCESSOR,
+    )
     report = {
         "publish": False,
         "license_status": "other_proprietary_commercial_pd_claim",
@@ -95,6 +137,8 @@ def clean_file(
         "char_count_sum": char_sum,
         "work_family_counts": dict(sorted(families.items())),
         "ship_tier_counts": dict(sorted(ship.items())),
+        "lexicon_size": len(lexicon),
+        "raw_mention_hits": mention_count,
         "mapped_relation_counts": {},
         "quarantine_counts": {"full_text_works": row_count},
         "quality_samples": {
@@ -106,6 +150,8 @@ def clean_file(
         "import_scope_key": import_scope_key,
         "processor": PROCESSOR,
         "prompt_hash": PROMPT_HASH,
+        **identity,
+        "quarantined": quarantined[:20],
     }
     return records, report
 
@@ -113,18 +159,19 @@ def clean_file(
 def write_clean_outputs(
     records: list[DatasetRecord], report: dict[str, Any], out_dir: Path
 ) -> dict[str, Any]:
-    if records:
-        raise ClassicalTcmCanonError("classical-tcm-canon must not emit graph records")
     out_dir.mkdir(parents=True, exist_ok=True)
     records_path = out_dir / "records.jsonl"
     stats_path = out_dir / "stats.json"
-    records_path.write_text("", encoding="utf-8")
+    records_path.write_text(
+        "".join(record.model_dump_json(exclude_none=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
     stats = {**compute_stats(records), **report}
     stats_path.write_text(json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return {
         "records": str(records_path),
         "stats": str(stats_path),
-        "record_count": 0,
-        "edge_count": 0,
+        "record_count": len(records),
+        "edge_count": sum(len(record.edges) for record in records),
         "publish": False,
     }

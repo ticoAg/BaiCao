@@ -38,24 +38,34 @@ configs:
 |-----------|------|------|------|
 | `national-standard-2022-pharmacopoeia` | imported | 3431 / 605 条 | 药典 2022，entry_key 全成功 |
 | `daoyi-suyang` | imported | 1687 / 389 章 | v3 宁缺毋滥；skip 262；已合并入 Neo4j |
-| `fengxi177-knowledge-graph-tcm` | cleaned_local | 4996 / 19923 条关系 | 仅本地 records；上游无许可证，`publish: false` |
-| `shennong-tcm-kg` | cleaned_local | 19066 / 123358 条三元组 | 仅本地 records；许可限制，`publish: false` |
-| `tcm-db` | cleaned_local | 1715 records / 654 edges | 仅本地 records；混合上游许可不完整，`publish: false` |
-| `dragontcm` | cleaned_local | 11598 records / 46666 edges | 仅本地 records；非商业限制且上游权利链未闭合，`publish: false` |
-| `tcm-mkg` | cleaned_local | 19519 records / 177672 edges | 仅本地 records；聚合许可与 WHO 上游条款冲突，`publish: false` |
-| `tcm-sd` | cleaned_local | 148 records / 0 edges | 仅本地证候词表；CC-BY-NC-SA-4.0 且残留病历标识，`publish: false` |
-| `tcm-ner` | cleaned_local | 0 records / 0 edges | 仅本地审计；竞赛镜像无许可证，跨度不入图，`publish: false` |
-| `tcm-ancient-books` | cleaned_local | 0 records / 0 edges | 仅书目审计；无许可证且全文不入图，`publish: false` |
-| `classical-tcm-canon` | cleaned_local | 0 records / 0 edges | 115 部全文隔离；proprietary-commercial，`publish: false` |
-| `sylvanl-tcm-pretrain` | cleaned_local | 0 records / 0 edges | 自由文本含串文；医案未持有，`publish: false` |
-| `zybert-pretrain-corpus` | cleaned_local | 0 records / 0 edges | 只清单不解压，`publish: false` |
-| `tcmchat-600k` | cleaned_local | 0 整包 records | Apache-2.0 整包盘点；可入图子集已分源；剩余 SFT / 百科全文已审计跳过，`publish: false` |
-| `national-standard-terms` | cleaned_local | 5219 records / 0 edges | 国标疾病/证候/成方；痞气两条不合并，`publish: false` |
-| `tcmchat-medical-cases` | cleaned_local | 3989 records | 去姓氏留性别年龄；医案+词表提及，`publish: false` |
-| `tcmchat-textbooks` | cleaned_local | 7373 records | 7 本教材按章切分+词表提及，`publish: false` |
-| `tcmchat-sft-knowledge` | cleaned_local | 7459 records / 75949 edges | 方剂 5906、药材 659、病证提及 894；不当事实，`publish: false` |
-| `tcmchat-web` | cleaned_local | 2290 records | daiy 病名行；百科全文不独立登记，`publish: false` |
-| `tcmchat-chatmed` | cleaned_local | 133 records | 对话词表提及，不当事实，`publish: false` |
+| `fengxi177-knowledge-graph-tcm` | imported | 4996 / 11445 边 | 已入本地图；上游无许可证，`publish: false` |
+| `shennong-tcm-kg` | imported | 19066 / 52247 边 | 已入本地图；许可限制，`publish: false` |
+| `tcm-db` | imported | 1715 records / 654 edges | 已入本地图；混合上游许可不完整，`publish: false` |
+| `dragontcm` | imported | 11598 records / 46666 edges | 已入本地图；非商业限制且上游权利链未闭合，`publish: false` |
+| `tcm-mkg` | imported | 19519 records / 177672 edges | 已入本地图；聚合许可与 WHO 上游条款冲突，`publish: false` |
+| `tcm-sd` | imported | 148 records / 0 edges | 已入本地图（证候术语）；CC-BY-NC-SA-4.0 且残留病历标识，`publish: false` |
+| `tcm-ner` | imported | 2961 records | 说明书跨度已入本地图，`publish: false` |
+| `tcm-ancient-books` | imported | 9188 records / 464834 边 | 700 本正文词表提及 + 李培生医论；`publish: false` |
+| `classical-tcm-canon` | imported | 4100 records / 48602 边 | 115 部来源+词表提及已入本地图，`publish: false` |
+| `sylvanl-tcm-pretrain` | imported | 4962 records / 0 edges | 已入本地图（可分源词条）；`publish: false` |
+| `zybert-pretrain-corpus` | imported | 11920 records / 20441 边 | 方剂索引 + 非索引词表提及，`publish: false` |
+| `tcmchat-600k` | imported | 16894 records / 21620 边 | 说明书抽取+相似药材+论文/百科提及，`publish: false` |
+| `tcm-formulary` | imported | 494 records / 600 边 | HF 公开 3 部样本；全量 91 部未购买，`publish: false` |
+| `national-standard-terms` | imported | 5227 records / 0 edges | 成方 TXT 1869 已解析；前言 2620 缺 751，`publish: false` |
+| `tcmchat-medical-cases` | imported | 28604 records / 28143 边 | 扩词表补抽已入本地图，`publish: false` |
+| `tcmchat-textbooks` | imported | 41419 records / 41187 边 | 扩词表补抽已入本地图，`publish: false` |
+| `tcmchat-sft-knowledge` | imported | 7459 records / 75949 edges | 已入本地图（72682 边落地，3267 悬空）；不当事实，`publish: false` |
+| `tcmchat-web` | imported | 2290 records | 已入本地图；daiy 病名行，`publish: false` |
+| `tcmchat-chatmed` | imported | 1043 records | 全量对话词表提及，不当事实，`publish: false` |
+| `tcm-materia-medica` | imported | 705 records / 790 边 | HF 公开 3 部本草样本；全量 59 部未购买，`publish: false` |
+| `tcm-case-records` | imported | 482 records / 605 边 | HF 公开 3 部医案样本；不建整书医案节点，`publish: false` |
+| `tcm-acupuncture-classics` | imported | 197 records / 231 边 | HF 公开 3 部针灸样本；全量 33 部未购买，`publish: false` |
+| `tcm-diagnostics` | imported | 410 records / 449 边 | HF 公开 3 部诊法样本；不发明脉象节点，`publish: false` |
+| `tcm-gynecology-pediatrics` | imported | 435 records / 512 边 | HF 公开 3 部妇幼样本；全量 69 部未购买，`publish: false` |
+| `tcm-external-surgical` | imported | 432 records / 470 边 | HF 公开 3 部外科样本；全量 50 部未购买，`publish: false` |
+| `tcm-collected-works` | imported | 411 records / 475 边 | HF 公开 3 部医论样本；不当事实，`publish: false` |
+| `tcm-health-cultivation` | imported | 99 records / 103 边 | HF 公开 3 部养生样本；不发明导引，`publish: false` |
+| `tcm-reference-compendia` | imported | 465 records / 645 边 | HF 公开 3 卷类书切片；全量 14 部未购买，`publish: false` |
 
 ## Neo4j 筛选
 

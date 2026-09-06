@@ -6,7 +6,7 @@
 - 消费：`.cache/huggingface/ZJUFanLab/TCMChat-dataset-600k/pretrain/train/web/daiy_data.txt`
 - 跳过：同目录 `2019_baidubaike.txt`（约 285 MB，无稳定词条边界）
 - 上游：[ZJUFanLab/TCMChat-dataset-600k](https://huggingface.co/datasets/ZJUFanLab/TCMChat-dataset-600k)
-- 状态：`cleaned_local`；`publish: false`
+- 状态：`imported`（已入本地图，仅 daiy 病名）；`publish: false`
 - 许可：整包 Apache-2.0；百科原文不进 public
 
 只取 daiy 中「中医病名 / 中医病证名」行作为病证术语。百度百科全文不整包入图，也不独立登记。

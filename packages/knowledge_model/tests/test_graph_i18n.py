@@ -29,6 +29,25 @@ def test_property_and_status_are_chinese():
     assert to_graph_properties({"snomed_id": "123456"})["SNOMED 标识"] == "123456"
     assert to_graph_properties({"cpm_id": "CPM00001"})["中成药标识"] == "CPM00001"
     assert to_graph_properties({"dosage_ratio": "0.5"})["剂量比例"] == "0.5"
+    assert to_graph_properties({"term_code": "B01.001"})["术语编号"] == "B01.001"
+    assert to_graph_properties({"parent_term": "痞病", "term_role": "疾病"})["父类名"] == "痞病"
+    assert (
+        to_graph_properties({"import_source_id": "national-standard-terms"})["导入源"]
+        == "国标临床术语与成方"
+    )
+    assert (
+        to_graph_properties({"import_source_id": "tcm-materia-medica"})["导入源"]
+        == "中医本草样本"
+    )
+    assert (
+        to_graph_properties(
+            {"import_scope_key": "huggingface:wangekxy/tcm-acupuncture-classics"}
+        )["导入范围键"]
+        == "抱抱脸:针灸古籍样本"
+    )
+    assert to_graph_properties(
+        {"import_source_ids": ["tcm-mkg", "shennong-tcm-kg"]}
+    )["导入源列表"] == ["TCM-MKG", "神农中药知识图谱"]
     assert to_graph_properties({"storage_text": "置于燥处"})["贮藏"] == "置干燥处。"
 
 

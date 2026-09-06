@@ -28,8 +28,14 @@ PROCESSOR = "national_standard_terms"
 PROMPT_HASH = prompt_hash_for(Path(__file__))
 
 CODE_ONLY_RE = re.compile(r"^(\d+(?:\.\d+)+)$")
-PINYIN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9(),.\[\]-]*$")
+PINYIN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9(),.\[\]\-)]*$")
 COMPOSITION_RE = re.compile(r"^【药物组成】")
+FORM_ONLY_RE = re.compile(
+    r"^[（(].*"
+    r"|^(口服液|软胶囊|糖浆|片剂|胶囊|颗粒|蜜丸|浓缩丸)"
+)
+CLAIMED_FORMULA_COUNT = 2620
+CLAIMED_DISEASE_COUNT = 1369
 
 
 class NationalStandardTermsError(ValueError):
@@ -143,23 +149,48 @@ def _term_drafts(
     return drafts
 
 
-def parse_patent_formulas(path: Path) -> list[dict[str, Any]]:
+def _is_formula_skip_line(text: str) -> bool:
+    if not text or text.startswith("【"):
+        return True
+    if PINYIN_RE.fullmatch(text) or FORM_ONLY_RE.match(text):
+        return True
+    return False
+
+
+def _formula_display_name(raw: str) -> str:
+    return re.sub(r"[（(][^）)]*$", "", raw).strip()
+
+
+def parse_patent_formulas(path: Path) -> tuple[list[dict[str, Any]], int]:
     lines = _lines(path)
     try:
         start = next(index for index, line in enumerate(lines) if line.strip() == "各论")
     except StopIteration as exc:
         raise NationalStandardTermsError("成方制剂 missing 各论") from exc
     products: list[dict[str, Any]] = []
+    composition_headers = 0
     for index in range(start, len(lines)):
         if not COMPOSITION_RE.match(lines[index].strip()):
             continue
+        composition_headers += 1
         cursor = index - 1
         pinyin_parts: list[str] = []
-        while cursor > start and PINYIN_RE.fullmatch(lines[cursor].strip()):
-            pinyin_parts.append(lines[cursor].strip())
-            cursor -= 1
-        name = lines[cursor].strip() if cursor > start else ""
-        if not name or name.startswith("【") or name.startswith("一、") or name.startswith("("):
+        while cursor > start:
+            current = lines[cursor].strip()
+            if not current:
+                cursor -= 1
+                continue
+            if PINYIN_RE.fullmatch(current):
+                pinyin_parts.append(current)
+                cursor -= 1
+                continue
+            if FORM_ONLY_RE.match(current):
+                cursor -= 1
+                continue
+            break
+        raw_name = lines[cursor].strip() if cursor > start else ""
+        name = _formula_display_name(raw_name)
+        if not name or name.startswith("【") or name.startswith("一、"):
             continue
         pinyin = "".join(reversed(pinyin_parts))
         composition = lines[index].strip().removeprefix("【药物组成】")
@@ -177,7 +208,7 @@ def parse_patent_formulas(path: Path) -> list[dict[str, Any]]:
                 "line": index + 1,
             }
         )
-    return products
+    return products, composition_headers
 
 
 def _formula_drafts(products: list[dict[str, Any]], *, file_name: str) -> list[EntityDraft]:
@@ -257,7 +288,7 @@ def clean_directory(
 
     diseases = parse_numbered_terms(disease_path)
     syndromes = parse_numbered_terms(syndrome_path)
-    formulas = parse_patent_formulas(formula_path)
+    formulas, composition_headers = parse_patent_formulas(formula_path)
     drafts = (
         _term_drafts(diseases, role="疾病", file_name=disease_path.name)
         + _term_drafts(syndromes, role="证候", file_name=syndrome_path.name)
@@ -292,8 +323,10 @@ def clean_directory(
         "mapped_relation_counts": {},
         "quarantine_counts": {
             "brand_names": len(brand_quarantine),
-            "unparsed_formula_gap": max(0, 2620 - len(formulas)),
-            "unparsed_disease_gap": max(0, 1369 - len(diseases)),
+            "unparsed_formula_gap": max(0, CLAIMED_FORMULA_COUNT - len(formulas)),
+            "unparsed_disease_gap": max(0, CLAIMED_DISEASE_COUNT - len(diseases)),
+            "file_composition_headers": composition_headers,
+            "absent_from_file": max(0, CLAIMED_FORMULA_COUNT - composition_headers),
         },
         "quality_samples": {
             "qualified_display_names": qualified[:20],

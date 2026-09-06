@@ -8,7 +8,7 @@
 - 核对 commit：`e29028be9a4b4a70a49a7adfaaf268e2f1b7999f`
 - SQLite SHA-256：`a9ff634e621ed47869c4ab2628e145b7da48afe922205bcf6f7983415a72966c`
 - 许可：tcm-db 本身和 6 个上游没有 GitHub 可识别许可证；仅 `9527qingfeng/hantang-nihaixia-follower` 为 MulanPSL-2.0，不能覆盖混合数据库中的其他来源
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 状态：`imported`（已入本地图）；`publish: false`，不得进入 public Hugging Face Parquet
 
 公开可见不等于允许复制、派生或再发布。本源只在本地做结构清洗、质量评估和隔离入图验证；取得全部上游明确授权前，不发布数据库、逐条派生记录或关系。
 

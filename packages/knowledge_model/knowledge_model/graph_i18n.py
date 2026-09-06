@@ -59,6 +59,9 @@ PROPERTY_EN_TO_ZH: dict[str, str] = {
     "cpm_id": "中成药标识",
     "chp_id": "饮片标识",
     "icd11_code": "ICD-11 编码",
+    "term_code": "术语编号",
+    "parent_term": "父类名",
+    "term_role": "术语角色",
     "administration_route": "给药途径",
     "line_start": "起始行",
     "line_end": "结束行",
@@ -188,17 +191,72 @@ SOURCE_VALUE_EN_TO_ZH: dict[str, str] = {
     "huggingface": "2022年中药药典",
     "daoyi-suyang": "道医苏子阳",
     "national-standard-2022-pharmacopoeia": "2022年中药药典",
+    "fengxi177-knowledge-graph-tcm": "中药方剂知识图谱",
+    "shennong-tcm-kg": "神农中药知识图谱",
+    "tcm-db": "tcm-db",
+    "dragontcm": "DragonTCM",
+    "tcm-mkg": "TCM-MKG",
+    "tcm-sd": "TCM-SD",
+    "tcm-ner": "TCM-NER",
+    "tcm-ancient-books": "中医古籍书目",
+    "classical-tcm-canon": "古典医籍全文",
+    "sylvanl-tcm-pretrain": "SylvanL 预训练词条",
+    "zybert-pretrain-corpus": "ZY-BERT 预训练语料",
+    "tcmchat-600k": "TCMChat-600k",
+    "national-standard-terms": "国标临床术语与成方",
+    "tcmchat-medical-cases": "TCMChat 名医验案",
+    "tcmchat-textbooks": "TCMChat 教材",
+    "tcmchat-sft-knowledge": "TCMChat SFT knowledge",
+    "tcmchat-web": "TCMChat web",
+    "tcmchat-chatmed": "TCMChat ChatMed",
+    "tcm-formulary": "中医方书样本",
+    "tcm-materia-medica": "中医本草样本",
+    "tcm-case-records": "中医医案古籍样本",
+    "tcm-acupuncture-classics": "针灸古籍样本",
+    "tcm-diagnostics": "中医诊法样本",
+    "tcm-gynecology-pediatrics": "中医妇幼样本",
+    "tcm-external-surgical": "中医外科样本",
+    "tcm-collected-works": "中医医论样本",
+    "tcm-health-cultivation": "中医养生样本",
+    "tcm-reference-compendia": "医部类书样本",
 }
 
 SCOPE_VALUE_EN_TO_ZH: dict[str, str] = {
     "manual:baicao-knowledge:daoyi-suyang": "人工:白草知识:道医苏子阳",
     "huggingface|ZJUFanLab/TCMChat-dataset-600k|pretrain/train/books/national_standard/2022年中药药典.txt": "抱抱脸:中药药典2022",
     "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/national_standard/2022年中药药典.txt": "抱抱脸:中药药典2022",
+    "github:fengxi177/Knowlegde_Graph_TCM": "代码仓库:中药方剂知识图谱",
+    "github:michael-wzhu/ShenNong-TCM-LLM:src/TCM-KG_triples.txt": "代码仓库:神农中药知识图谱",
+    "github:xiaogege6697/tcm-db:tcm_knowledge.db": "代码仓库:tcm-db",
+    "huggingface:f-galkin/DragonTCM@57e19c6bb7aaf62feacbba97aa84d9baecd05582": "抱抱脸:DragonTCM",
+    "zenodo:10.5281/zenodo.13763953@V1.0": "开放仓储:TCM-MKG",
+    "github:Borororo/ZY-BERT:TCM-SD": "代码仓库:TCM-SD",
+    "github:xiaopangxia/TCM-Ancient-Books": "代码仓库:中医古籍书目",
+    "huggingface:SylvanL/Traditional-Chinese-Medicine-Dataset-Pretrain": "抱抱脸:SylvanL预训练",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/national_standard": "抱抱脸:国标临床术语与成方",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/medical_case": "抱抱脸:TCMChat名医验案",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/books/textbook": "抱抱脸:TCMChat教材",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:sft/train/knowledge.json": "抱抱脸:TCMChat-SFT-knowledge",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/web": "抱抱脸:TCMChat-web",
+    "huggingface:ZJUFanLab/TCMChat-dataset-600k:pretrain/train/opendata": "抱抱脸:TCMChat-ChatMed",
+    "huggingface:wangekxy/tcm-formulary": "抱抱脸:中医方书样本",
+    "huggingface:wangekxy/tcm-materia-medica": "抱抱脸:中医本草样本",
+    "huggingface:wangekxy/tcm-case-records": "抱抱脸:中医医案古籍样本",
+    "huggingface:wangekxy/tcm-acupuncture-classics": "抱抱脸:针灸古籍样本",
+    "huggingface:wangekxy/tcm-diagnostics": "抱抱脸:中医诊法样本",
+    "huggingface:wangekxy/tcm-gynecology-pediatrics": "抱抱脸:中医妇幼样本",
+    "huggingface:wangekxy/tcm-external-surgical": "抱抱脸:中医外科样本",
+    "huggingface:wangekxy/tcm-collected-works": "抱抱脸:中医医论样本",
+    "huggingface:wangekxy/tcm-health-cultivation": "抱抱脸:中医养生样本",
+    "huggingface:wangekxy/tcm-reference-compendia": "抱抱脸:医部类书样本",
 }
 
 PROVIDER_VALUE_EN_TO_ZH: dict[str, str] = {
     "huggingface": "抱抱脸",
     "manual": "人工",
+    "github": "代码仓库",
+    "zenodo": "开放仓储",
+    "dropbox": "网盘",
 }
 
 
@@ -229,7 +287,14 @@ def localize_value(key: str, value: object) -> object:
         return value
     if key in {"status", "状态"}:
         return STATUS_EN_TO_ZH.get(value, value)
-    if key in {"source", "来源", "import_source_id", "导入源"}:
+    if key in {
+        "source",
+        "来源",
+        "import_source_id",
+        "导入源",
+        "import_source_ids",
+        "导入源列表",
+    }:
         return SOURCE_VALUE_EN_TO_ZH.get(value, value)
     if key in {"import_scope_key", "导入范围键"}:
         return SCOPE_VALUE_EN_TO_ZH.get(value, value)

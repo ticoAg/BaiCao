@@ -8,7 +8,7 @@
 - 核对 revision：`57e19c6bb7aaf62feacbba97aa84d9baecd05582`
 - 输入：1,044 herbs、2,580 formulas、1,119 conditions、28,735 relations
 - 许可：Dataset Card 标记 `CC-BY-NC-4.0`；American Dragon 网站、Joel Penner 1994 年著作和 SNOMED CT 内容的完整上游授权链未得到证明
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 状态：`imported`（已入本地图）；`publish: false`，不得进入 public Hugging Face Parquet
 
 `CC-BY-NC-4.0` 本身限制商业使用，也不能自动覆盖上游网站、书籍或 SNOMED CT 的独立权利。当前只允许本地清洗、质量评估和隔离入图验证；取得完整上游授权并单独核实 SNOMED 发布要求前，不公开逐条派生内容。
 

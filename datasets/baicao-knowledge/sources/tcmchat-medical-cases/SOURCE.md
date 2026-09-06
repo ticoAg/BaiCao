@@ -4,7 +4,7 @@
 
 - `source_id`: `tcmchat-medical-cases`
 - 载体：`pretrain/train/books/medical_case/` 18 本 TXT
-- 状态：`cleaned_local`（规则层已出图记录，agent 仍可补抽）
+- 状态：`imported`（已入本地图；agent 仍可补抽）；`publish: false`
 - `publish: false`
 
 ## 过滤

@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-19",
-  "repo_plan": "docs/superpowers/plans/2026-08-19-data-source-quality-ingestion.md",
+  "updated_at": "2026-08-20",
+  "repo_plan": "docs/superpowers/plans/2026-08-20-wangekxy-hf-samples.md",
   "tasks": [
     {
       "task_id": "pharmacopoeia-segment-605",
@@ -413,6 +413,37 @@
       "output_records": 699,
       "evidence": "datasets/baicao-knowledge/sources/tcm-ancient-books/processed/latest/stats.json",
       "notes": "可解码编号书各一条来源节点；全文不进 public。"
+    },
+    {
+      "task_id": "local-graph-quality-import-2026-08-20",
+      "source_id": "catalog",
+      "status": "done",
+      "unit": "sources",
+      "planned_units": 14,
+      "completed_units": 14,
+      "as_of": "2026-08-20",
+      "notes": "按数据质量把已清洗记录写入本地 Neo4j，不改 publish。入图 14 源；跳过 tcm-ner / classical-tcm-canon / zybert-pretrain-corpus / tcmchat-600k（无可用图记录）。全图 65671 节点 / 383868 边。SFT dangling_edges=3267。"
+    },
+    {
+      "task_id": "remaining-held-sources-2026-08-20",
+      "source_id": "catalog",
+      "status": "done",
+      "unit": "sources",
+      "planned_units": 6,
+      "completed_units": 6,
+      "as_of": "2026-08-20",
+      "notes": "ZY-BERT 解压并抽方剂索引入图；成方多剂型 8 条补解析；医案/教材扩词表补抽；TCM-MKG edges.tsv 与 TCMChat papers 已下载但不把化学边/论文摘要当图事实。"
+    },
+    {
+      "task_id": "wangekxy-hf-samples-2026-08-20",
+      "source_id": "catalog",
+      "status": "done",
+      "unit": "sources",
+      "planned_units": 9,
+      "completed_units": 9,
+      "as_of": "2026-08-20",
+      "notes": "wangekxy 剩余 9 个专题 HF sample 经章节判定 go 后清洗；NLP 两集与 unpaid 全量跳过。publish=false。",
+      "evidence": "datasets/baicao-knowledge/tasks/wangekxy-skip.md"
     }
   ]
 }

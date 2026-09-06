@@ -7,9 +7,9 @@
 - Hugging Face 镜像：[JX-Lab/TCM-MKG](https://huggingface.co/datasets/JX-Lab/TCM-MKG)
 - 本地只读入口：`.cache/huggingface/JX-Lab/TCM-MKG/`
 - 固定版本：Zenodo `V1.0`，DOI `10.5281/zenodo.13763953`
-- 已持有：D1-D24、SD1、开放文档 PDF、`original_kg/nodes.tsv`
-- 未持有：`original_kg/edges.tsv`（上游说明为 48,849,793 条边、约 5.64 GB）
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 已持有：D1–D7、D18、开放文档 PDF
+- 2026-08-20 本机已删除：`original_kg/edges.tsv`、`original_kg/nodes.tsv`、D8–D17、D19–D24、SD1（基因/PPI/化合物/预测边，不入图）
+- 状态：`imported`（已入本地图）；`publish: false`，不得进入 public Hugging Face Parquet
 
 Zenodo API 对 V1.0 声明 `CC-BY-NC-4.0`，而 Hugging Face Dataset Card 标记为 `CC-BY-4.0`。本项目采用更严格的原始记录条款。D1/D3 引用的 WHO 中医术语另受 `CC-BY-NC-SA-3.0-IGO` 约束，D5/D18 的 ICD-11 内容另受 `CC-BY-ND-3.0-IGO` 约束；D2-D7 还引用中国药典 2020 与 dayi.org.cn 等上游。聚合记录的许可不能覆盖这些独立权利，因此只允许本地质量清洗和隔离入图验证。
 
@@ -24,7 +24,7 @@ D1-D7 + D18 TSV（只读）
   -> processed/latest/records.jsonl + stats.json
 ```
 
-`original_kg/nodes.tsv` 用标准 CSV 逻辑解析为 369,911 个逻辑记录；Dataset Card 的 369,912 与实际文件相差 1。不能按物理行拆分 TSV，因为源文件含带换行的 quoted 字段。
+`original_kg` 与 D8–D17 / D19–D24 / SD1 已从本机删除，不再作为输入。历史盘点：`nodes.tsv` 用标准 CSV 逻辑解析为 369,911 个逻辑记录；`edges.tsv` 约 4,800 万条化学/靶点边。中医主域只消费 D1–D7 + D18 分表。
 
 ## 消费表与主域映射
 
@@ -39,7 +39,7 @@ D1-D7 + D18 TSV（只读）
 | D7 medicinal properties | 23,517 | 饮片到性味、归经 |
 | D18 ICD-11 | 18,444 | 为 D5 端点提供规范病名、代码和 chapter |
 
-D8-D17、D19-D24、SD1 以及两个 `original_kg` 文件不进入本轮输出。化学成分、天然产物、靶点和跨本体映射超出当前中医药/疾病/症状主域；SD1 明确是预测关系；完整边文件又未持有，均不得写成已验证事实。
+D8–D17、D19–D24、SD1 以及两个 `original_kg` 文件不进入输出，并已从本机删除。化学成分、天然产物、靶点和跨本体映射超出当前中医药主域；SD1 是预测关系，不得写成已验证事实。
 
 ## 实体与消歧门禁
 

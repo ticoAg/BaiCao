@@ -4,10 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from knowledge_model.constants import EdgeType, NodeType
+
 from data_ingestion.tcm_ancient_books import (
     TcmAncientBooksError,
     clean_directory,
+    extract_directory,
     write_clean_outputs,
+    write_extract_outputs,
 )
 
 
@@ -64,6 +68,89 @@ def test_undecodable_numbered_file_is_isolated(tmp_path: Path):
     assert records == []
     assert report["book_count"] == 2
     assert {"file": "002-无法解码.txt", "reason": "decode_error"} in report["isolated_files"]
+
+
+def test_extract_directory_emits_source_and_lexicon_mentions(tmp_path: Path):
+    root = tmp_path / "TCM-Ancient-Books"
+    make_dataset(root)
+    lexicon = tmp_path / "lex.jsonl"
+    lexicon.write_text('{"node_type":"药材","node_name":"甘草"}\n', encoding="utf-8")
+    write_gb18030(root / "000-神农本草经.txt", "<书名>神农本草经\n甘草。\n")
+    records, report = extract_directory(
+        root,
+        lexicon_path=lexicon,
+        min_id=0,
+        max_id=1,
+    )
+    names = {(record.node_type, record.node_name) for record in records}
+    assert ("来源", "神农本草经") in names
+    assert ("药材", "甘草") in names
+    assert all(record.node_type in {item.value for item in NodeType} for record in records)
+    assert all(
+        edge.type in {item.value for item in EdgeType} for record in records for edge in record.edges
+    )
+    assert report["publish"] is False
+    result = write_extract_outputs(records, report, tmp_path / "out")
+    assert result["record_count"] >= 2
+    assert result["publish"] is False
+
+
+def test_extract_lossy_decode_and_unnumbered(tmp_path: Path):
+    root = tmp_path / "TCM-Ancient-Books"
+    make_dataset(root)
+    (root / "002-婴童类萃.txt").write_bytes("甘草".encode("gb18030") + b"\xb5" + "正文".encode("gb18030"))
+    lexicon = tmp_path / "lex.jsonl"
+    lexicon.write_text('{"node_type":"药材","node_name":"甘草"}\n', encoding="utf-8")
+    records, report = extract_directory(
+        root,
+        lexicon_path=lexicon,
+        min_id=2,
+        max_id=2,
+        include_unnumbered=True,
+    )
+    names = {record.node_name for record in records}
+    assert "婴童类萃" in names
+    assert "甘草" in names
+    assert report["lossy_decode_files"]
+    unnumbered, unnumbered_report = extract_directory(
+        root,
+        lexicon_path=[],
+        min_id=900,
+        max_id=900,
+        include_unnumbered=True,
+    )
+    assert any(record.node_name.startswith("700") for record in unnumbered)
+    assert unnumbered_report["include_unnumbered"] is True
+
+
+def test_extract_merges_mentions_across_numbered_and_unnumbered(tmp_path: Path):
+    root = tmp_path / "TCM-Ancient-Books"
+    make_dataset(root)
+    lexicon = tmp_path / "lex.jsonl"
+    lexicon.write_text('{"node_type":"药材","node_name":"甘草"}\n', encoding="utf-8")
+    write_gb18030(root / "000-神农本草经.txt", "甘草。\n")
+    write_gb18030(root / "700.李培生老中医经验集.txt", "甘草\n")
+    records, report = extract_directory(
+        root,
+        lexicon_path=lexicon,
+        min_id=0,
+        max_id=0,
+        include_unnumbered=True,
+    )
+    herbs = [record for record in records if record.node_name == "甘草"]
+    assert len(herbs) == 1
+    assert herbs[0].properties["tcm_type"] == "来源古籍书目提及"
+    origins = {edge.target for edge in herbs[0].edges}
+    assert "神农本草经" in origins
+    assert any("李培生" in target for target in origins)
+    sources = {
+        record.node_name: record.properties.get("tcm_type")
+        for record in records
+        if record.node_type == NodeType.SOURCE.value
+    }
+    assert sources["神农本草经"] == "来源古籍书目"
+    assert any(name.startswith("700") and value == "来源现代医论" for name, value in sources.items())
+    assert report["include_unnumbered"] is True
 
 
 def test_write_outputs_keeps_empty_records(tmp_path: Path):

@@ -7,7 +7,7 @@
 - 本地只读入口：`.cache/github/fengxi177/Knowlegde_Graph_TCM/`
 - 核对 commit：`2ccba36d1cd79706ddd01fc887af2854ead120da`
 - 许可：上游 GitHub metadata `license=null`，仓库内无 `LICENSE` / `COPYING` / `NOTICE`
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 状态：`imported`（已入本地图）；`publish: false`，不得进入 public Hugging Face Parquet
 
 GitHub 公开可见不等于授予再发布许可。本源可以在本地完成结构清洗与内部质量评估，但不能把原始 JSON 或逐条派生关系追加到 public dataset。
 

@@ -9,7 +9,7 @@
 - 核对 commit：`dfa372736777c26fee022ff869a929a2ab8911db`
 - SHA-256：`e2b42d9e93da44203f526bd6f3f23a2275613ab02e5952381dfa943032fcfec4`
 - 许可：两个上游仓库均未提供 `LICENSE` / `COPYING` / `NOTICE`；ShenNong README 限定相关资源仅供学术研究且禁止商业用途
-- 状态：`cleaned_local`；`publish: false`，不得进入 public Hugging Face Parquet
+- 状态：`imported`（已入本地图）；`publish: false`，不得进入 public Hugging Face Parquet
 
 公开可见和“开源”表述不构成明确的复制、派生或再发布许可。本源只在本地完成结构清洗、质量评估和隔离入图验证；取得明确授权前，不发布原始三元组或逐条派生记录。
 

@@ -8,13 +8,20 @@ import re
 from pathlib import Path
 from typing import Any
 
+from knowledge_model.constants import EdgeType, NodeType
+
 from data_ingestion.dataset_records import DatasetRecord, compute_stats
+from data_ingestion.entity_identity import EntityDraft
+from data_ingestion.organize_workflow import finalize_drafts
 from data_ingestion.provenance import prompt_hash_for
+from data_ingestion.tcmchat_case_units import default_lexicon_paths, load_lexicon, longest_lexicon_hits
 
 SOURCE_ID = "tcm-ancient-books"
 IMPORT_SCOPE_KEY = "github:xiaopangxia/TCM-Ancient-Books"
 DEFAULT_BATCH_ID = "2026-08-19-tcm-ancient-books-v1"
+MENTION_BATCH_ID = "2026-08-20-ancient-mentions-v1"
 PROCESSOR = "tcm_ancient_books"
+MENTION_PROCESSOR = "tcm_ancient_books_mentions"
 PROMPT_HASH = prompt_hash_for(Path(__file__))
 NUMBERED_RE = re.compile(r"^(\d{3})-(.+)\.txt$")
 PREFERRED_ENCODINGS = ("utf-8", "gb18030")
@@ -42,6 +49,15 @@ def _decode(raw: bytes) -> tuple[str, str]:
         except UnicodeDecodeError:
             continue
     raise TcmAncientBooksError("cannot decode book with utf-8 or gb18030")
+
+
+def decode_book_bytes(raw: bytes) -> tuple[str, str, int]:
+    try:
+        text, encoding = _decode(raw)
+        return text, encoding, 0
+    except TcmAncientBooksError:
+        text = raw.decode("gb18030", errors="replace")
+        return text, "gb18030-replace", text.count("\ufffd")
 
 
 def clean_directory(
@@ -160,6 +176,144 @@ def clean_directory(
         "prompt_hash": PROMPT_HASH,
     }
     return records, report
+
+
+def extract_directory(
+    path: Path,
+    *,
+    source_id: str = SOURCE_ID,
+    batch_id: str = MENTION_BATCH_ID,
+    import_scope_key: str = IMPORT_SCOPE_KEY,
+    min_id: int = 0,
+    max_id: int = 999,
+    include_unnumbered: bool = False,
+    lexicon_path: Path | list[Path] | None = None,
+) -> tuple[list[DatasetRecord], dict[str, Any]]:
+    if not path.is_dir():
+        raise TcmAncientBooksError(f"input is not a directory: {path}")
+    lexicon = load_lexicon(lexicon_path if lexicon_path is not None else default_lexicon_paths())
+    drafts: list[EntityDraft] = []
+    mention_count = 0
+    books: list[dict[str, Any]] = []
+    for file_path in sorted(path.iterdir(), key=lambda item: item.name):
+        if not file_path.is_file():
+            continue
+        name = file_path.name
+        if name.endswith(".downloading") or name.endswith(".downloading.cfg"):
+            continue
+        match = NUMBERED_RE.match(name)
+        raw = file_path.read_bytes()
+        if not raw:
+            continue
+        if match:
+            book_id = int(match.group(1))
+            if book_id < min_id or book_id > max_id:
+                continue
+            title = match.group(2).strip()
+            text, encoding, replacements = decode_book_bytes(raw)
+            role = "古籍"
+            tcm_type = "来源古籍书目"
+            stable_id = f"{book_id:03d}"
+            term_code = f"{book_id:03d}"
+        elif include_unnumbered and name.endswith(".txt") and name not in {"README.txt"}:
+            title = Path(name).stem
+            text, encoding, replacements = decode_book_bytes(raw)
+            role = "现代医论"
+            tcm_type = "来源现代医论"
+            stable_id = title
+            term_code = ""
+            book_id = None
+        else:
+            continue
+        books.append(
+            {
+                "file": name,
+                "title": title,
+                "encoding": encoding,
+                "replacements": replacements,
+                "chars": len(text),
+            }
+        )
+        properties = {
+            "tcm_type": tcm_type,
+            "source_book": title,
+        }
+        if term_code:
+            properties["term_code"] = term_code
+        drafts.append(
+            EntityDraft(
+                node_type=NodeType.SOURCE,
+                raw_name=title,
+                role=role,
+                stable_id=stable_id,
+                evidence_refs=[name],
+                properties=properties,
+            )
+        )
+        for hit_name, node_type in longest_lexicon_hits(text, lexicon):
+            mention_count += 1
+            drafts.append(
+                EntityDraft(
+                    node_type=NodeType(node_type),
+                    raw_name=hit_name,
+                    role=f"{role}提及",
+                    stable_id=hit_name,
+                    evidence_refs=[f"{name}:{hit_name}"],
+                    # Mentions merge by name across 古籍/现代医论; keep tcm_type stable.
+                    properties={"tcm_type": "来源古籍书目提及"},
+                    edges=[(EdgeType.ORIGINATED_FROM.value, title)],
+                )
+            )
+    if not drafts:
+        raise TcmAncientBooksError("no books in id range")
+    records, quarantined, identity = finalize_drafts(
+        drafts,
+        source_id=source_id,
+        batch_id=batch_id,
+        import_scope_key=import_scope_key,
+        processor=MENTION_PROCESSOR,
+    )
+    report = {
+        "publish": False,
+        "license_status": "unlicensed_upstream_digital_edition_unverified",
+        "book_count": len(books),
+        "min_id": min_id,
+        "max_id": max_id,
+        "include_unnumbered": include_unnumbered,
+        "lexicon_size": len(lexicon),
+        "raw_mention_hits": mention_count,
+        "titles": [item["title"] for item in books],
+        "lossy_decode_files": [item["file"] for item in books if item["replacements"]],
+        "source_id": source_id,
+        "batch_id": batch_id,
+        "import_scope_key": import_scope_key,
+        "processor": MENTION_PROCESSOR,
+        "prompt_hash": PROMPT_HASH,
+        **identity,
+        "quarantined": quarantined[:20],
+    }
+    return records, report
+
+
+def write_extract_outputs(
+    records: list[DatasetRecord], report: dict[str, Any], out_dir: Path
+) -> dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    records_path = out_dir / "records.jsonl"
+    stats_path = out_dir / "stats.json"
+    records_path.write_text(
+        "".join(record.model_dump_json(exclude_none=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+    stats = {**compute_stats(records), **report}
+    stats_path.write_text(json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {
+        "records": str(records_path),
+        "stats": str(stats_path),
+        "record_count": len(records),
+        "edge_count": sum(len(record.edges) for record in records),
+        "publish": False,
+    }
 
 
 def write_clean_outputs(
