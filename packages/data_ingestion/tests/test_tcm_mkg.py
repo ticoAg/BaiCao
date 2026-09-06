@@ -165,11 +165,8 @@ def test_clean_directory_maps_only_main_domain_facts(tmp_path: Path):
     assert "D5_CPM_ICD11.tsv" in formula_edges[("适用于", "霍乱")].properties["evidence_ref"]
     herb_edges = {(edge.type, edge.target) for edge in indexed[("饮片", "黄芪")].edges}
     assert herb_edges == {("具有性味", "寒"), ("归于经脉", "肺")}
-    assert indexed[("饮片", "黄芪")].properties["pinyin_name"] == "huang qi"
-    assert indexed[("饮片", "黄芪")].properties["aliases"] == [
-        "膜荚黄芪",
-        "root of Membranous Milkvetch",
-    ]
+    assert "pinyin_name" not in indexed[("饮片", "黄芪")].properties
+    assert indexed[("饮片", "黄芪")].properties["aliases"] == ["膜荚黄芪"]
     assert indexed[("病证", "霍乱")].properties["tcmt_id"] == "TCMT00001"
     assert indexed[("病证", "霍乱")].properties["icd11_code"] == "1A00"
     assert report["repair_counts"] == {

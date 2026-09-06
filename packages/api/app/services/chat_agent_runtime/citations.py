@@ -32,6 +32,10 @@ def citations_from_graph_state(graph_state: Mapping[str, Any] | None) -> list[di
     for entity_id, evidence_id in pairs:
         citation = dict(pairs[(entity_id, evidence_id)])
         origin = source_by_from_id.get(entity_id) or source_by_from_id.get(evidence_id)
+        if origin is None:
+            origin = _origin_from_props(nodes_by_id.get(entity_id)) or _origin_from_props(
+                nodes_by_id.get(evidence_id)
+            )
         if origin is not None:
             citation["source_id"] = origin[0]
             if origin[1]:
@@ -152,7 +156,7 @@ def _collect_supported(
 
     if evidence_node is None:
         return
-    snippet = _snippet(evidence_node)
+    snippet = _snippet(evidence_node) or _display_name(evidence_node)
     if not snippet:
         return
     key = (entity_id, evidence_id)
@@ -187,3 +191,19 @@ def _collect_origin(
     if from_id in source_by_from_id:
         return
     source_by_from_id[from_id] = (origin_id, _display_name(origin_node))
+
+
+def _origin_from_props(node: Mapping[str, Any] | None) -> tuple[str, str] | None:
+    if not isinstance(node, Mapping):
+        return None
+    for key in ("导入源", "import_source_id"):
+        value = node.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip(), value.strip()
+    for key in ("导入源列表", "import_source_ids"):
+        value = node.get(key)
+        if isinstance(value, list) and value:
+            first = value[0]
+            if isinstance(first, str) and first.strip():
+                return first.strip(), first.strip()
+    return None

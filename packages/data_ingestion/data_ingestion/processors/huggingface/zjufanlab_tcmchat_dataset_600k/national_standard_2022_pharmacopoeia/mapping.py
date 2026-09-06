@@ -153,8 +153,6 @@ def build_import_records(
             evidence_refs=[evidence.id],
             properties={
                 **scope_properties,
-                "pinyin_name": extraction.herb.pinyin_name,
-                "latin_name": extraction.herb.latin_name,
                 "base_description": extraction.herb.base_description,
                 "indications": extraction.herb.indications,
                 "usage_text": extraction.herb.usage_text,

@@ -219,7 +219,7 @@ erDiagram
     EVIDENCE ||--o{ SOURCE : 来源于
 ```
 
-`标识` 是 `expand_neighbors` / `lookup_nodes` 的输入。`名称` 只用于 `search_nodes`。citation 继续只从已查询子图的「由证据支持」「来源于」生成，见 `chat_agent_runtime/citations.py`。
+`标识` 是 `expand_neighbors` / `lookup_nodes` 的输入。`名称` 只用于 `search_nodes`。活图默认不写入 `来源于` 与原文片段；citation 优先用已查询子图的「由证据支持」，出处回落到节点 `导入源`。若图上仍有「来源于」边则继续用。见 `chat_agent_runtime/citations.py`。
 
 ## Configuration
 

@@ -224,7 +224,6 @@ def _formula_drafts(products: list[dict[str, Any]], *, file_name: str) -> list[E
                 properties={
                     "tcm_type": "来源国标成方",
                     "term_role": "中成药",
-                    "pinyin_name": item["pinyin"],
                     "composition_text": item["composition"],
                     "indications": item["indications"],
                     "source_provider": "huggingface",

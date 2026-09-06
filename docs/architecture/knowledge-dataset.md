@@ -85,7 +85,7 @@ Viewer 分成 `records` / `edges`（public 层）与 `restricted_records` / `res
 - 状态值用 `待验证`/`已验证`/`已拒绝`
 - Neo4j Browser 侧边栏读的是 `db.propertyKeys()` 目录。APOC 改名不会删除旧英文键；要清幽灵英文键，只能导出活图、清空 `baicao_neo4j_data` 后用 `data_ingestion.cli.recreate_graph_store` 重导。不要用 `neo4j-admin dump`，它会把目录幽灵一并带回去。
 
-同类型且 `名称` / `别名` / `拼音` / `拉丁名` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。
+同类型且 `名称` / 含汉字的 `别名` 命中已有节点时复用，只补空属性、挂新边。穴位额外对齐「太溪 / 太溪穴」。不再用 `拼音` / `拉丁名` 做查找或发布，见 [entity-resolution.md](entity-resolution.md)。
 
 近重复文本只合标点、空白、书名号和白名单 OCR（如 `置于燥处`→`置干燥处`，性味 `成`→`咸`），不合「置干燥处」与「置阴凉防蛀」这类条件差。共享词条（功效/性味/归经/病证/治法/穴位/工艺）同名表面键才并节点；药材/饮片/方剂/医案不按文本合并。命令：`python -m data_ingestion.cli.merge_near_duplicates --apply`。
 
@@ -102,7 +102,7 @@ WHERE r.导入范围键 = '人工:白草知识:道医苏子阳'
 RETURN type(r), count(*)
 ```
 
-合并导入（不要用会 `SET n += props` 的 `app.importers.cli --neo4j`）：
+合并导入（不要用会 `SET n += props` 的 `app.importers.cli --neo4j`）。数据集可含 `来源于` 与 `evidence_text`；入图默认丢掉这两类，溯源用 `导入源`。空库重建：Python 消歧成规范名 CSV，再 `neo4j-admin database import`。增量仍可用 Bolt `UNWIND`（默认每批 2000 行，`--batch-size` 最大 10000）：
 
 ```bash
 cd packages/data_ingestion
@@ -110,6 +110,9 @@ uv run --with neo4j python -m data_ingestion.cli.import_dataset_neo4j \
   --records ../../datasets/baicao-knowledge/sources/daoyi-suyang/processed/latest/records.jsonl
 uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
   --dataset-root ../../datasets/baicao-knowledge --dry-run
+uv run --with neo4j,pyarrow python -m data_ingestion.cli.import_dataset_neo4j \
+  --dataset-root ../../datasets/baicao-knowledge --mode admin --admin-dir ../../tmp/neo4j-admin-import
+# 停库后执行 admin-dir/neo4j-admin.sh，需要原文链时再加 --include-source-graph
 ```
 
 ## 4. 苏子阳抽取任务定义

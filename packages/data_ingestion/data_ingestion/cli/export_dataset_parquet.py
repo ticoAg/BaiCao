@@ -18,6 +18,7 @@ from data_ingestion.dataset_catalog import (
     load_catalog,
 )
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
+from data_ingestion.entity_identity import sanitize_record
 from data_ingestion.provenance import GRAPH_EDGE_PROPS
 
 # 全书/长正文键仍不进发布表；入图用的证据片段走顶栏 evidence_text。
@@ -148,6 +149,7 @@ def to_tables(
     record_rows = []
     edge_rows = []
     for record in records:
+        record = sanitize_record(record)
         meta = (source_meta or {}).get(record.source_id)
         release_tier = meta.release_tier if meta else ""
         license_status = meta.license_status if meta else ""

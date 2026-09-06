@@ -18,11 +18,11 @@ def _sample_record() -> DatasetRecord:
         unit_id="方剂:测试方",
         node_type="方剂",
         node_name="测试方",
-        evidence_text="黄芪30g",
+        evidence_text="人参\nYizhihuanghua\n本品为根。",
         evidence_refs=["证据:tcm-mkg:1"],
         prompt_hash="sha256:abc",
         import_scope_key="zenodo:tcm-mkg",
-        properties={"raw_text": "full source", "latin_name": "GINSENG"},
+        properties={"raw_text": "full source", "latin_name": "GINSENG", "usage_text": "3～9g"},
         edges=[
             DatasetEdge(
                 type="组成药材",
@@ -38,8 +38,8 @@ def test_export_keeps_evidence_and_edge_props_but_strips_full_source():
     row = records.to_pylist()[0]
     edge = edges.to_pylist()[0]
 
-    assert row["evidence_text"] == "黄芪30g"
-    assert json.loads(row["properties_json"]) == {"latin_name": "GINSENG"}
+    assert row["evidence_text"] == "人参\n本品为根。"
+    assert json.loads(row["properties_json"]) == {"usage_text": "3～9g"}
     assert edge["dosage"] == "30g"
     assert edge["dosage_ratio"] == "0.5"
     assert edge["evidence_ref"] == "row:1"

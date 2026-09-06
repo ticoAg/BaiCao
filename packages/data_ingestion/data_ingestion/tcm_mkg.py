@@ -17,6 +17,7 @@ from knowledge_model.constants import EdgeType, NodeType
 from knowledge_model.text_normalize import nfkc_strip
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
+from data_ingestion.entity_identity import has_han
 from data_ingestion.provenance import prompt_hash_for
 
 SOURCE_ID = "tcm-mkg"
@@ -205,7 +206,7 @@ def _aliases(*values: str) -> list[str]:
     items: list[str] = []
     for value in values:
         items.extend(_ALIAS_SPLIT_RE.split(value or ""))
-    return _dedupe(items)
+    return [item for item in _dedupe(items) if has_han(item)]
 
 
 def _read_table(
@@ -396,7 +397,6 @@ def clean_directory(
             _properties(
                 tcmt_id=tcmt_id,
                 aliases=aliases,
-                pinyin_name=row["Pinyin_term"],
                 description=row["English_definition_description"],
                 tcm_type=group,
             ),
@@ -412,7 +412,6 @@ def clean_directory(
             row["Chinese_patent_medicine"],
             _properties(
                 cpm_id=cpm_id,
-                pinyin_name=row["Pinyin_term"],
                 category="中成药",
                 administration_route=row["Routes_of_administration"],
             ),
@@ -431,7 +430,6 @@ def clean_directory(
             _properties(
                 chp_id=chp_id,
                 aliases=aliases,
-                pinyin_name=row["Pinyin_term"],
                 category=row["Sources"],
             ),
             evidence_ref,

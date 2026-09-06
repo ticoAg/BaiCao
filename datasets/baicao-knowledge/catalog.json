@@ -6,13 +6,14 @@
   "updated_at": "2026-09-06",
   "publication": {
     "status": "published",
-    "published_at": "2026-09-06",
+    "published_at": "2026-09-06T18:00:00+00:00",
     "allowed_file_count": 70,
     "records_public": 5118,
     "records_restricted": 251841,
     "viewer_status": "private",
     "source_text_redacted": true,
     "evidence_text_included": true,
+    "latin_names_stripped": true,
     "layout": [
       "data/public",
       "data/restricted"

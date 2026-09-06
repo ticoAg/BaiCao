@@ -189,6 +189,43 @@ def test_citations_ignore_unrelated_nodes_edges_and_disconnected_evidence():
     assert citations == []
 
 
+def test_citations_use_import_source_when_origin_edge_and_snippet_missing():
+    citations = citations_from_graph_state(
+        _graph_state(
+            nodes=[
+                {
+                    "id": "药材:乌梅",
+                    "name": "乌梅",
+                    "labels": ["药材"],
+                    "导入源": "道医苏子阳",
+                },
+                {
+                    "id": "证据:suyang-002",
+                    "name": "证据:suyang-002",
+                    "labels": ["证据"],
+                },
+            ],
+            edges=[
+                {
+                    "rel_type": "由证据支持",
+                    "source": {"id": "药材:乌梅"},
+                    "target": {"id": "证据:suyang-002"},
+                }
+            ],
+        )
+    )
+
+    assert citations == [
+        {
+            "entity_id": "药材:乌梅",
+            "evidence_id": "证据:suyang-002",
+            "snippet": "证据:suyang-002",
+            "source_id": "道医苏子阳",
+            "source_name": "道医苏子阳",
+        }
+    ]
+
+
 def test_citations_skip_dangling_or_unidentified_nodes():
     citations = citations_from_graph_state(
         _graph_state(

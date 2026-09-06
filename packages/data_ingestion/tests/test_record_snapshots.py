@@ -42,7 +42,7 @@ def test_write_graph_import_records_jsonl_persists_shared_record_schema(tmp_path
             node_type=NodeType.HERB,
             node_name="丁公藤",
             source="huggingface",
-            properties={"latin_name": "ERYCIBAE CAULIS"},
+            properties={"usage_text": "3～9g"},
         )
     ]
 
@@ -53,4 +53,4 @@ def test_write_graph_import_records_jsonl_persists_shared_record_schema(tmp_path
     payload = json.loads(lines[0])
     assert payload["node_type"] == "药材"
     assert payload["node_name"] == "丁公藤"
-    assert payload["properties"]["latin_name"] == "ERYCIBAE CAULIS"
+    assert payload["properties"]["usage_text"] == "3～9g"

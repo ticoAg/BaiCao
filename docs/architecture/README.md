@@ -26,6 +26,7 @@
 | 6 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
 | 7 | [data-sources.md](data-sources.md) | 校验数据源质量 | 审核队列、各源仓库路径、许可边界与人工审阅记录 |
 | 8 | [knowledge-dataset.md](knowledge-dataset.md) | 维护 HF 数据集 | 任务定义、信封、Parquet、苏子阳抽取验收 |
+| 9 | [entity-resolution.md](entity-resolution.md) | 入库消歧与中文属性 | 拼音/拉丁剥离、身份键、合并策略 |
 
 ## 文档索引
 
@@ -39,6 +40,7 @@
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [data-sources.md](data-sources.md) | review | 审核队列、各源仓库路径、许可边界与人工质量校验清单 |
 | [knowledge-dataset.md](knowledge-dataset.md) | stable | 自有 HF dataset 任务定义、Parquet 发布、源/批次筛选 |
+| [entity-resolution.md](entity-resolution.md) | stable | 中文名称属性、身份键、消歧与合并策略（目标形态） |
 
 ## 架构主线
 

@@ -43,7 +43,7 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "import_source_id": "daoyi-suyang",
             "import_batch_id": "2026-08-16-suyang-v3-b01",
             "composition_text": "桔梗4g",
-            "aliases": ["止咳散"],
+            "aliases": ["止咳散", "Zhisousan"],
             "origin": ["华北"],
             "formula_name": "止嗽散",
             "tcm_type": "证候",
@@ -52,6 +52,8 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
             "toxicity": ["有毒"],
             "snomed_id": "123456",
             "cpm_id": "CPM00001",
+            "latin_name": "GINSENG",
+            "pinyin_name": "renshen",
             "note": "drop me",
         },
         edges=[DatasetEdge(type="组成药材", target="桔梗", properties={"dosage": "4g", "dosage_ratio": "0.5", "junk": 1})],
@@ -77,8 +79,8 @@ def test_slim_record_drops_run_metadata_and_keeps_graph_fields():
 
 
 def test_fill_if_empty_does_not_overwrite_pharmacopoeia():
-    existing = {"name": "人参", "source": "huggingface", "latin_name": "GINSENGRADIXETRHIZOMA", "composition_text": None}
-    incoming = {"latin_name": "should-not-win", "composition_text": "人参 10g", "source": "daoyi-suyang"}
+    existing = {"name": "人参", "source": "huggingface", "description": "药典描述", "composition_text": None}
+    incoming = {"description": "should-not-win", "composition_text": "人参 10g", "source": "daoyi-suyang"}
     assert fill_if_empty(existing, incoming) == {"composition_text": "人参 10g"}
 
 

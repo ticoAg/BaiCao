@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
+from data_ingestion.entity_identity import sanitize_record
 
 GRAPH_NODE_PROPS = {
     "bencao_raw",
@@ -45,8 +46,6 @@ GRAPH_NODE_PROPS = {
     "origin",
     "formula_name",
     "skip_reason",
-    "latin_name",
-    "pinyin_name",
     "base_description",
     "indications",
     "tcm_type",
@@ -80,8 +79,6 @@ PROTECTED_EXISTING_PROPS = {
     "name",
     "id",
     "source",
-    "latin_name",
-    "pinyin_name",
     "status",
     "type",
     "dataset",
@@ -150,6 +147,7 @@ def slim_record(
     prompt_hash: str,
     import_scope_key: str | None = None,
 ) -> DatasetRecord:
+    record = sanitize_record(record)
     scope = import_scope_key or record.import_scope_key or scope_key_for(record.source_id)
     properties = slim_properties(record.properties)
     if (record.properties or {}).get("skip_reason"):

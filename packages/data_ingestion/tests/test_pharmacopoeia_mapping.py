@@ -80,6 +80,9 @@ def test_mapping_builds_herb_piece_evidence_bundle():
     herb_record = next(record for record in bundle.records if record.node_name == "一枝黄花")
     piece_record = next(record for record in bundle.records if record.node_name == "一枝黄花饮片")
 
+    assert "pinyin_name" not in herb_record.properties
+    assert "latin_name" not in herb_record.properties
+
     assert any(edge.type == EdgeType.HAS_PREPARED_FORM and edge.target == "一枝黄花饮片" for edge in herb_record.edges)
     assert any(edge.type == EdgeType.SUPPORTED_BY and edge.target == "一枝黄花条目证据" for edge in piece_record.edges)
     assert any(edge.type == EdgeType.HAS_FLAVOR and edge.target == "辛" for edge in piece_record.edges)

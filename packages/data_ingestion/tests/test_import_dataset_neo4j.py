@@ -3,8 +3,16 @@ from collections import Counter
 import pytest
 
 from data_ingestion.cli import import_dataset_neo4j as importer
-from data_ingestion.cli.import_dataset_neo4j import NodeCache, find_existing, write_edges
+from data_ingestion.cli.import_dataset_neo4j import (
+    NodeCache,
+    clamp_batch_size,
+    find_existing,
+    plan_edge_writes,
+    plan_node_writes,
+    write_edges,
+)
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
+from data_ingestion.entity_identity import GRAPH_FIND_KEYS
 from data_ingestion.provenance import slim_record
 
 
@@ -44,15 +52,7 @@ def test_find_existing_does_not_merge_from_ambiguous_alias_lists():
     assert "n.名称 IN $names" in tx.calls[0][0]
     assert "n.aliases" not in tx.calls[1][0]
     assert "properties(n)[key]" in tx.calls[1][0]
-    assert set(tx.calls[1][1]["lookup_keys"]) == {
-        "name",
-        "别名",
-        "alias",
-        "拼音",
-        "pinyin_name",
-        "拉丁名",
-        "latin_name",
-    }
+    assert set(tx.calls[1][1]["lookup_keys"]) == set(GRAPH_FIND_KEYS)
 
     exact_only = Tx()
     assert find_existing(exact_only, "药材", ["白芍"], include_aliases=False) is None
@@ -75,8 +75,10 @@ def test_write_edges_restricts_same_name_target_to_contract_labels():
     write_edges(tx, record, "鳖甲", stats)
 
     query, params = tx.calls[0]
-    assert "labels(target)" in query
-    assert "properties(target)[key]" in query
+    assert "MATCH (target:药材)" in query
+    assert "MATCH (target:饮片)" in query
+    assert "UNION" in query
+    assert "MATCH (target)\n" not in query
     assert set(params["target_labels"]) == {"药材", "饮片"}
     assert stats["edges"] == 1
 
@@ -242,12 +244,16 @@ def test_import_records_batches_node_and_edge_transactions(monkeypatch):
             assert database == "neo4j"
             return self.session_instance
 
-    def write_node_batch(_tx, batch, _preexisting_labels, _cache=None):
-        return [(record, record.node_name) for record in batch], Counter(
-            created=len(batch)
+    def write_node_batch(_tx, batch, _preexisting_labels, _cache=None, _batch_size=2000):
+        return (
+            [(record, record.node_name) for record in batch],
+            Counter(created=len(batch)),
+            [],
         )
 
-    def write_edge_batch(_tx, batch, _resolved_targets):
+    def write_edge_batch(
+        _tx, batch, _resolved_targets, _cache=None, _preexisting=None, _batch_size=2000
+    ):
         return Counter(edges=len(batch))
 
     monkeypatch.setattr(importer, "_write_node_batch", write_node_batch)
@@ -279,4 +285,167 @@ def test_import_records_batches_node_and_edge_transactions(monkeypatch):
         ("write_edge_batch", 2),
         ("write_edge_batch", 2),
     ]
-    assert stats == {"skipped_records": 0, "created": 5, "edges": 4}
+    assert stats["created"] == 5
+    assert stats["edges"] == 4
+    assert stats["skipped_records"] == 0
+    assert stats["dropped_source_edges"] == 0
+
+
+def test_node_cache_does_not_match_latin_or_pinyin():
+    cache = NodeCache()
+    cache.by_label_name[("药材", "人参")] = {
+        "eid": "n1",
+        "props": {"名称": "人参", "拉丁名": "GINSENG", "拼音": "Renshen", "别名": "棒槌"},
+    }
+    for alias in importer._lookup_values(cache.by_label_name[("药材", "人参")]["props"]):
+        cache.by_label_alias.setdefault(("药材", alias), "人参")
+    assert cache.find("药材", ["GINSENG", "Renshen"], include_aliases=True) is None
+    assert cache.find("药材", ["棒槌"], include_aliases=True)["eid"] == "n1"
+    assert cache.find("药材", ["人参"], include_aliases=False)["eid"] == "n1"
+
+
+def test_clamp_batch_size_caps_at_10000():
+    assert importer.clamp_batch_size(2000) == 2000
+    assert importer.clamp_batch_size(50000) == 10000
+    with pytest.raises(ValueError):
+        clamp_batch_size(0)
+
+
+def test_ensure_name_indexes_creates_unique_constraints():
+    session = Tx()
+    labels = importer.ensure_name_indexes(session)
+    assert "药材" in labels
+    queries = [query for query, _params in session.calls]
+    assert any("CREATE CONSTRAINT baicao_HERB_name IF NOT EXISTS" in query for query in queries)
+    assert any("FOR (n:药材) REQUIRE n.名称 IS UNIQUE" in query for query in queries)
+
+
+def test_plan_node_writes_unwinds_creates_and_merges():
+    cache = NodeCache()
+    cache.remember("病证", "腹痛", eid="e1", props={"名称": "腹痛"})
+    records = [
+        DatasetRecord(
+            source_id="source",
+            batch_id="batch",
+            unit_id="病证:腹痛",
+            node_type="病证",
+            node_name="腹痛",
+            prompt_hash="sha256:test",
+            import_scope_key="scope",
+        ),
+        DatasetRecord(
+            source_id="source",
+            batch_id="batch",
+            unit_id="病证:霍乱",
+            node_type="病证",
+            node_name="霍乱",
+            prompt_hash="sha256:test",
+            import_scope_key="scope",
+        ),
+        DatasetRecord(
+            source_id="source",
+            batch_id="batch",
+            unit_id="病证:霍乱-2",
+            node_type="病证",
+            node_name="霍乱",
+            prompt_hash="sha256:test",
+            import_scope_key="scope",
+        ),
+    ]
+    plan = plan_node_writes(tuple(records), cache, preexisting_labels={"病证"})
+    assert plan.stats["merged"] == 2
+    assert plan.stats["created"] == 1
+    assert len(plan.updates["病证"]) == 1
+    assert len(plan.creates["病证"]) == 1
+    tx = Tx()
+    importer._run_node_unwinds(tx, plan, batch_size=2000)
+    queries = [query for query, _params in tx.calls]
+    assert any("UNWIND $rows AS row" in query and "elementId(n) = row.eid" in query for query in queries)
+    assert any("UNWIND $rows AS row" in query and "MERGE (n:病证 {名称: row.name})" in query for query in queries)
+
+
+def test_write_node_batch_uses_unwind_not_per_record_merge():
+    records = tuple(
+        DatasetRecord(
+            source_id="source",
+            batch_id="batch",
+            unit_id=f"药材:{name}",
+            node_type="药材",
+            node_name=name,
+            prompt_hash="sha256:test",
+            import_scope_key="scope",
+        )
+        for name in ("人参", "黄芪")
+    )
+    tx = Tx()
+    resolved, stats, _remember = importer._write_node_batch(tx, records, set(), NodeCache(), 2000)
+    assert [name for _record, name in resolved] == ["人参", "黄芪"]
+    assert stats["created"] == 2
+    assert len(tx.calls) == 1
+    query, params = tx.calls[0]
+    assert "UNWIND $rows AS row" in query
+    assert [row["name"] for row in params["rows"]] == ["人参", "黄芪"]
+
+
+def test_plan_edge_writes_matches_resolved_target_name():
+    items = [
+        (
+            DatasetRecord(
+                source_id="source",
+                batch_id="batch",
+                unit_id="病证:测试证",
+                node_type="病证",
+                node_name="测试证",
+                prompt_hash="sha256:test",
+                import_scope_key="scope",
+                edges=[DatasetEdge(type="关联药材", target="白芍")],
+            ),
+            "测试证",
+            DatasetEdge(type="关联药材", target="白芍"),
+        )
+    ]
+    grouped, dangling = plan_edge_writes(
+        items,
+        {("药材", "白芍"): "芍药"},
+        NodeCache(),
+        set(),
+    )
+    assert dangling == 0
+    rows = grouped[("病证", "关联药材", "药材")]
+    assert rows[0]["target_name"] == "芍药"
+    assert rows[0]["source_name"] == "测试证"
+
+
+def test_write_edge_batch_unwinds_by_label_and_rel():
+    record = DatasetRecord(
+        source_id="source",
+        batch_id="batch",
+        unit_id="病证:测试证",
+        node_type="病证",
+        node_name="测试证",
+        prompt_hash="sha256:test",
+        import_scope_key="scope",
+        edges=[
+            DatasetEdge(type="关联药材", target="白芍"),
+            DatasetEdge(type="关联症状", target="口干"),
+        ],
+    )
+    tx = Tx()
+    importer._write_edge_batch(
+        tx,
+        (
+            (record, "测试证", record.edges[0]),
+            (record, "测试证", record.edges[1]),
+        ),
+        {("药材", "白芍"): "白芍", ("症状", "口干"): "口干"},
+        NodeCache(),
+        set(),
+        2000,
+    )
+    queries = [query for query, _params in tx.calls]
+    assert len(tx.calls) == 2
+    assert any("UNWIND $rows AS row" in query and "MATCH (source:病证 {名称: row.source_name})" in query for query in queries)
+    assert any("MATCH (target:药材 {名称: row.target_name})" in query for query in queries)
+    assert any("MATCH (target:症状 {名称: row.target_name})" in query for query in queries)
+    assert all("properties(target)[key]" not in query for query in queries)
+
