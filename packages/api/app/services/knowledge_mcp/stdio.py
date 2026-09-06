@@ -15,17 +15,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="BaiCao knowledge MCP server")
     parser.add_argument(
         "--transport",
-        choices=("stdio", "streamable-http", "sse"),
+        choices=("stdio", "streamable-http"),
         default="stdio",
-        help="MCP transport. streamable-http 是现行 HTTP 传输；sse 已 Deprecated，不要用于新产品路径。",
+        help="MCP transport. streamable-http 是现行 HTTP 传输。",
     )
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
     if args.transport == "streamable-http":
-        knowledge_mcp.settings.host = args.host
-        knowledge_mcp.settings.port = args.port
-    knowledge_mcp.run(transport=args.transport)
+        knowledge_mcp.run(
+            transport="streamable-http",
+            host=args.host,
+            port=args.port,
+            streamable_http_path="/",
+            stateless_http=True,
+        )
+        return
+    knowledge_mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,6 @@
 // API Service - 与后端通信
 import axios from "axios";
-import type {
-  ReasoningStep,
-  Source,
-  ChatResponse,
-  GraphAgentResponse,
-  ChatAgentSSECallbacks,
-} from "../types/chat";
+import type { ChatAgentSSECallbacks } from "../types/chat";
 import type {
   GraphData,
   GraphNode,
@@ -29,13 +23,7 @@ export type {
   GraphQueryResponse,
   PathResult,
 } from "../types/graph";
-export type {
-  ReasoningStep,
-  Source,
-  ChatResponse,
-  GraphAgentResponse,
-  ChatAgentSSECallbacks,
-} from "../types/chat";
+export type { ChatAgentSSECallbacks } from "../types/chat";
 export type { VerificationStatus } from "../types/index";
 
 const API_BASE = "/api/v1";
@@ -215,16 +203,7 @@ export const herbApi = {
 // ============ Chat API ============
 
 export const chatApi = {
-  // 同步提问
-  ask: async (question: string, sessionId?: string): Promise<ChatResponse> => {
-    const { data } = await api.post("/chat/question", {
-      question,
-      session_id: sessionId,
-    });
-    return data;
-  },
-
-  // SSE 流式提问 - 返回 ReadableStream
+  // SSE 流式提问
   stream: (
     question: string,
     sessionId?: string,
@@ -304,20 +283,6 @@ export const chatApi = {
       });
 
     return controller;
-  },
-
-  // 创建会话
-  createSession: async (userId?: string): Promise<{ id: string }> => {
-    const { data } = await api.post("/chat/session", null, {
-      params: { user_id: userId },
-    });
-    return data;
-  },
-
-  // 获取会话
-  getSession: async (sessionId: string): Promise<{ id: string; messages: unknown[]; created_at?: string }> => {
-    const { data } = await api.get(`/chat/session/${sessionId}`);
-    return data;
   },
 };
 

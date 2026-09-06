@@ -1,13 +1,10 @@
 import json
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.database import get_db
-from ..services.chat_service import ChatService
 from ..services.chat_agent_runtime import stream_turn as stream_chat_turn
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -18,39 +15,12 @@ class AskQuestionRequest(BaseModel):
     session_id: Optional[str] = Field(default=None, description="会话标识")
 
 
-@router.post("/question")
-async def ask_question(
-    payload: Optional[AskQuestionRequest] = Body(None),
-    question: Optional[str] = Query(None),
-    session_id: Optional[str] = Query(None),
-    db: AsyncSession = Depends(get_db)
-):
-    """同步问答接口 - 返回完整响应"""
-    resolved_question = payload.question if payload else question
-    resolved_session_id = payload.session_id if payload else session_id
-
-    if not resolved_question:
-        raise HTTPException(status_code=422, detail="question is required")
-
-    chat_service = ChatService(db)
-    result = await chat_service.answer_question(resolved_question, resolved_session_id)
-    return result
-
-
 @router.post("/stream")
-async def stream_answer(
-    payload: AskQuestionRequest,
-    db: AsyncSession = Depends(get_db)
-):
+async def stream_answer(payload: AskQuestionRequest):
     """SSE 流式问答接口
 
-    返回 Server-Sent Events 流，事件类型:
-    - session: {session_id}
-    - reasoning: {reasoning_chain}
-    - sources: {sources}
-    - token: {token}  (逐 token 流式)
-    - done: {}
-    - error: {message}
+    事件类型：session、tool_start、tool_result、subgraph_patch、
+    answer_chunk、provider_reasoning、final、error。
     """
     async def event_generator():
         async for event in stream_chat_turn(payload.question, payload.session_id):
@@ -67,24 +37,3 @@ async def stream_answer(
             "X-Accel-Buffering": "no",
         },
     )
-
-
-@router.get("/session/{session_id}")
-async def get_session(session_id: str, db: AsyncSession = Depends(get_db)):
-    """获取聊天会话"""
-    chat_service = ChatService(db)
-    session = await chat_service.get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return session
-
-
-@router.post("/session")
-async def create_session(
-    user_id: Optional[str] = Query(None),
-    db: AsyncSession = Depends(get_db)
-):
-    """创建新的聊天会话"""
-    chat_service = ChatService(db)
-    session = await chat_service.create_session(user_id)
-    return session

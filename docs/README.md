@@ -14,8 +14,7 @@
 - `local-development.md`：本地起栈、Infisical、手动启动、样例数据与验证命令
 - `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
 - `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
-- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源；目标是 pydantic-ai-slim loop + 官方 mcp v2 同进程客户端、会话 `message_history` 与 SSE 事件适配
-- `packages/graph_runtime/`：早期 graph runtime 研发产物与参考实现，不再作为 chat 主链真源
+- `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 pydantic-ai-slim loop、官方 mcp v2 同进程客户端、会话 `message_history` 与 SSE 事件适配
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
 ## 推荐阅读路径
@@ -104,7 +103,7 @@ flowchart TB
 | `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
 | `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
 | `docs/superpowers/` | 历史任务拆解仍可回溯 | 索引见 `superpowers/plans/README.md`；已完成计划勿再执行 |
-| `docs/plans/` | 按日落盘的执行计划 | 新实施步骤写这里；当前：[问答 chat 走最新 MCP 并清适配](plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md)、[清洗完成后删除原文与中间态](plans/2026/09-06/清洗完成后删除原文与中间态-4fa3.md) |
+| `docs/plans/` | 按日落盘的执行计划 | 新实施步骤写这里；当前：[问答 chat 走最新 MCP 并清适配](plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md)、[中文属性与实体消歧合并](plans/2026/09-06/中文属性与实体消歧合并-94ae.md)、[清洗完成后删除原文与中间态](plans/2026/09-06/清洗完成后删除原文与中间态-4fa3.md) |
 | `datasets/baicao-knowledge/` | 数据台账 staging | 源注册、VIEW、计划/完成量；载荷不进 git |
 
 ## 如何放置信息
@@ -219,6 +218,7 @@ flowchart TB
 | [acceptance/review-export-persistence-wave-2.md](acceptance/review-export-persistence-wave-2.md) | review/export 持久化验收 |
 | [architecture/data-sources.md](architecture/data-sources.md) | 数据源审核队列、各源仓库路径与人工质量校验清单 |
 | [architecture/knowledge-dataset.md](architecture/knowledge-dataset.md) | 自有 HF dataset 任务定义与 Parquet 发布 |
+| [architecture/entity-resolution.md](architecture/entity-resolution.md) | 中文属性、身份键、消歧与合并策略 |
 | [plans/README.md](plans/README.md) | 按日归档的执行计划 |
 | [superpowers/plans/README.md](superpowers/plans/README.md) | 历史实施计划状态索引 |
 | [../datasets/baicao-knowledge/README.md](../datasets/baicao-knowledge/README.md) | 自有知识数据集 staging 与产量台账 |
@@ -289,5 +289,4 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 共享类型真源：`../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
 - Chat 主链 runtime 真源：`../packages/api/app/services/chat_agent_runtime/`
-- 早期 graph runtime 研发产物：`../packages/graph_runtime/`
 - 运行编排事实：`../infra/docker-compose.yml`

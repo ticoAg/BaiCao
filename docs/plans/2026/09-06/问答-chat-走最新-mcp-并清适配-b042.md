@@ -86,32 +86,32 @@ P1 不绿之前不要接 chat 客户端。P3 必须在 P2 能跑通之后再删�
 
 ## PR1 mcp v2 server
 
-- [ ] `packages/api` 依赖改为 `mcp>=2,<3` 并 `uv lock`；不要加 `pydantic-ai-slim[mcp]`。
-- [ ] `server.py` / `stdio.py` / `main.py` 按迁移指南改：`MCPServer`、传输参数离开构造器、挂载 `/mcp` 仍可用。删除 `--transport sse`。
-- [ ] `tests/services/test_knowledge_mcp.py` 用 `Client(server)` 覆盖 `list_tools`、空结果信封、`graph://schema`；不再依赖 v1 `FastMCP` 测试 API。
-- [ ] 删除 `handlers.read_cypher`（仅 LangChain `graph_tools` 在用）；MCP 面本来就没有这个 tool。
+- [x] `packages/api` 依赖改为 `mcp>=2,<3` 并 `uv lock`；不要加 `pydantic-ai-slim[mcp]`。
+- [x] `server.py` / `stdio.py` / `main.py` 按迁移指南改：`MCPServer`、传输参数离开构造器、挂载 `/mcp` 仍可用。删除 `--transport sse`。
+- [x] `tests/services/test_knowledge_mcp.py` 用 `Client(server)` 覆盖 `list_tools`、空结果信封、`graph://schema`；不再依赖 v1 `FastMCP` 测试 API。
+- [x] 删除 `handlers.read_cypher`（仅 LangChain `graph_tools` 在用）；MCP 面本来就没有这个 tool。
 
 验收：`cd packages/api && uv run pytest tests/services/test_knowledge_mcp.py -q` 通过。`from mcp.server.fastmcp` 在 `packages/api/app` 为零命中。stdio 与 `/mcp` 仍是同一 `knowledge_mcp` 实例。
 
 ## PR2 chat 同进程客户端
 
-- [ ] `runtime.py`：`async with Client(knowledge_mcp)`（或进程内长生命周期 Client）把 MCP tools 交给 pydantic-ai Agent；开场 `read_resource("graph://schema")`，不要再 `dumps(build_graph_schema())`。
-- [ ] 删除 `graph_agent_tools.py` 及其引用。允许一份极薄的「list_tools → pydantic-ai Tool」胶水，禁止再实现 search/expand/lookup。
-- [ ] 重写 `tests/services/test_chat_agent_runtime.py`：断言走 MCP Client（可用假 Client / 录制 list_tools），覆盖历史续接、TTL、shutdown；SSE 形状对照 [chat-mainline](../../../acceptance/chat-mainline.md)。[^accept]
+- [x] `runtime.py`：`async with Client(knowledge_mcp)`（或进程内长生命周期 Client）把 MCP tools 交给 pydantic-ai Agent；开场 `read_resource("graph://schema")`，不要再 `dumps(build_graph_schema())`。
+- [x] 删除 `graph_agent_tools.py` 及其引用。允许一份极薄的「list_tools → pydantic-ai Tool」胶水，禁止再实现 search/expand/lookup。
+- [x] 重写 `tests/services/test_chat_agent_runtime.py`：断言走 MCP Client（可用假 Client / 录制 list_tools），覆盖历史续接、TTL、shutdown；SSE 形状对照 [chat-mainline](../../../acceptance/chat-mainline.md)。[^accept]
 
 验收：一次 `/chat/stream` 进程列表里没有新的 `python -m app.services.knowledge_mcp`。模型可见的 tool 名仍是四个图 tool。schema 来自 Resource。
 
 ## PR3 删遗留适配
 
-- [ ] 删除 `packages/api/app/services/graph_tools/` 与 `tests/services/test_graph_tools.py`；清掉 `test_knowledge_mcp.py` 对 `build_read_cypher_tool` 的引用。
-- [ ] 删除 `event_adapter.adapt_agent_events` 及 LangGraph/LangChain message 依赖。把 pydantic SSE 仍需要的 helper 留在 `pydantic_event_adapter.py`（或同目录一个无 LangChain 的小模块）。
-- [ ] 删除 `close_all_openai_sessions` 别名、空的 `agent_client.close_knowledge_mcp_server` 若已无调用。pipeline 的 LangChain Chat 调用不动。
+- [x] 删除 `packages/api/app/services/graph_tools/` 与 `tests/services/test_graph_tools.py`；清掉 `test_knowledge_mcp.py` 对 `build_read_cypher_tool` 的引用。
+- [x] 删除 `event_adapter.adapt_agent_events` 及 LangGraph/LangChain message 依赖。把 pydantic SSE 仍需要的 helper 留在 `pydantic_event_adapter.py`（或同目录一个无 LangChain 的小模块）。
+- [x] 删除 `close_all_openai_sessions` 别名、空的 `agent_client.close_knowledge_mcp_server` 若已无调用。pipeline 的 LangChain Chat 调用不动。
 
 验收：`rg "adapt_agent_events|graph_agent_tools|close_all_openai_sessions|build_graph_tools" packages/api` 无业务命中。`cd packages/api && uv run pytest -m "not integration" -q` 通过。
 
 ## PR4 验证
 
-- [ ] `cd packages/api && uv run ruff check app tests && uv run ty check && uv run pytest -m "not integration" -q`
+- [x] `cd packages/api && uv run ruff check app tests && uv run ty check && uv run pytest -m "not integration" -q`
 - [ ] 若有 Fireworks + Neo4j：同一条「组方 + 出处」问题看 tool 名来自 MCP、depth=2 能否接到「来源于」。没有真实环境则在回复里标未验证。
 
 验收：结构化工具、citation、SSE 不回退。真实 smoke 缺环境不算本计划失败，但必须写明。
@@ -127,6 +127,15 @@ P1 不绿之前不要接 chat 客户端。P3 必须在 P2 能跑通之后再删�
 ## 不做
 
 见 [轻量边界](../../../architecture/chat-agent-mcp.md#轻量边界)。[^mcp-arch] 本轮尤其不要：装 `pydantic-ai-slim[mcp]`、chat HTTP 打本机 `/mcp`、chat 再开 stdio 子进程、把 Cypher 还给模型、卸 pipeline LangChain。
+
+## PR5 清问答 agent 用不到的包
+
+- [x] 从 `packages/api` 卸 `langgraph`、`langchain-neo4j`、`bai-cao-graph-runtime`（`app/` 已无 import）。
+- [x] 删除 `packages/graph_runtime/`；裁掉 `ApiGraphRuntimeBackend` 上 MCP 用不到的 `get_node` / `find_path` / `execute_readonly_cypher` / `get_schema_summary`。
+- [x] 同步架构入口，避免把已删包写成当前事实。
+- [x] 删除 `ChatService`、`POST /chat/question`、`/chat/session`；前端只留 `chatApi.stream`。
+
+保留：pipeline 抽取用的 `langchain`。
 
 [^mcp-arch]: 问答 Agent 检索与 MCP 边界
 [^overview]: 系统架构概览

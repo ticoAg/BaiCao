@@ -56,16 +56,6 @@ def assert_list_response(data: dict, *, min_items: int = 0):
     assert len(data["items"]) >= min_items
 
 
-def assert_qa_response(data: dict):
-    """Assert that a QA/chat answer response has the expected structure."""
-    assert_json_keys(data, {"answer", "reasoning_chain", "sources", "graph_data", "session_id"})
-    assert isinstance(data["answer"], str)
-    assert isinstance(data["reasoning_chain"], list)
-    assert isinstance(data["sources"], list)
-    assert isinstance(data["graph_data"], dict)
-    assert isinstance(data["session_id"], str)
-
-
 # ===========================================================================
 # Refactoring 3: Consistent mock fixtures
 # ===========================================================================
@@ -90,36 +80,6 @@ class MockHerb:
 def make_herb(**kwargs) -> MockHerb:
     """Build a MockHerb instance."""
     return MockHerb(**kwargs)
-
-
-def make_answer_response(session_id: str | None = None) -> dict:
-    """Build a standard ChatService.answer_question return value."""
-    return {
-        "answer": "Test answer about herbs",
-        "reasoning_chain": [
-            {
-                "step": 1,
-                "description": "step desc",
-                "entities": ["herb"],
-                "relations": [],
-                "confidence": 0.9,
-            }
-        ],
-        "sources": [{"id": "src-1", "name": "source", "citation": "cite"}],
-        "graph_data": {"center": None, "nodes": [], "edges": []},
-        "session_id": session_id or str(uuid4()),
-    }
-
-
-def make_session_data(session_id: str | None = None) -> dict:
-    """Build a standard session dict."""
-    sid = session_id or str(uuid4())
-    return {
-        "id": sid,
-        "user_id": None,
-        "messages": [],
-        "created_at": "now",
-    }
 
 
 def make_herb_graph(name: str = "ginseng") -> dict:

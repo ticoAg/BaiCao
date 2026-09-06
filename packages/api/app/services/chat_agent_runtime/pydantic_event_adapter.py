@@ -14,13 +14,13 @@ from pydantic_ai import (
 )
 
 from .citations import citations_from_graph_state
-from .event_adapter import (
-    _base_final_payload,
-    _merge_graph_patch,
-    _parse_tool_payload,
-    _patch_from_tool_payload,
-    _payload_preview,
-    _summarize_tool_payload,
+from .sse_payloads import (
+    base_final_payload,
+    merge_graph_patch,
+    parse_tool_payload,
+    patch_from_tool_payload,
+    payload_preview,
+    summarize_tool_payload,
 )
 
 
@@ -80,8 +80,8 @@ async def adapt_pydantic_stream(
             part = event.part
             call_id = str(event.tool_call_id or getattr(part, "tool_call_id", "") or "")
             tool_name = str(getattr(part, "tool_name", None) or "tool")
-            parsed = _parse_tool_payload(event.content if event.content is not None else getattr(part, "content", None))
-            summary = _summarize_tool_payload(tool_name, parsed)
+            parsed = parse_tool_payload(event.content if event.content is not None else getattr(part, "content", None))
+            summary = summarize_tool_payload(tool_name, parsed)
             record = tool_calls_by_id.get(call_id)
             if record is None:
                 record = next((item for item in reversed(tool_calls) if item["status"] == "running"), None)
@@ -107,12 +107,12 @@ async def adapt_pydantic_stream(
                     "call_id": record["call_id"],
                     "tool_name": tool_name,
                     "result_summary": summary,
-                    "payload_preview": _payload_preview(parsed) if isinstance(parsed, dict) else None,
+                    "payload_preview": payload_preview(parsed) if isinstance(parsed, dict) else None,
                 },
             }
-            patch = _patch_from_tool_payload(tool_name, parsed)
+            patch = patch_from_tool_payload(tool_name, parsed)
             raw_arguments = record.get("arguments")
-            _merge_graph_patch(
+            merge_graph_patch(
                 graph_state,
                 patch,
                 tool_arguments=raw_arguments if isinstance(raw_arguments, dict) else None,
@@ -134,7 +134,7 @@ async def adapt_pydantic_stream(
             if isinstance(output, str) and output.strip() and not answer_chunks:
                 answer_chunks.append(output.strip())
 
-    final_payload = _base_final_payload(session_id, turn_id)
+    final_payload = base_final_payload(session_id, turn_id)
     final_payload["answer"] = "".join(answer_chunks).strip()
     final_payload["provider_reasoning"] = provider_reasoning
     final_payload["tool_calls"] = tool_calls

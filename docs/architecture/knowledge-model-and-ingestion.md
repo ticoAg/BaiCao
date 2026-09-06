@@ -32,7 +32,6 @@ audience: developer
 - 导入器 / 导出器
 - API schema 与服务层
 - 图谱查询、问答、溯源与验证工作流
-- `packages/graph_runtime/` 中面向 agent 的图谱 primitives、planner、agent 与 CLI 薄壳
 - 后续新增的多级子项目
 
 ## 3. 术语口径
@@ -148,18 +147,16 @@ flowchart LR
 
 ### 5.1 Graph Runtime / Agent 运行边界
 
-当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。目标是 pydantic-ai-slim 做 loop，经官方 mcp v2 同进程客户端调用 Knowledge MCP，并用 `message_history` 续接会话。`/mcp` 是同一台 server 的外部入口。轻量检索边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
+当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。pydantic-ai-slim 做 loop，经官方 mcp v2 同进程客户端调用 Knowledge MCP，并用 `message_history` 续接会话。`/mcp` 是同一台 server 的外部入口。轻量检索边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
 
-`packages/graph_runtime/` 仍保留为早期 graph runtime 研发产物与参考实现，但不再是当前 chat 主链的稳定入口。`packages/api/` 现在既承担 HTTP 接线，也承载当前稳定的 chat agent runtime 与图工具注册层。
+早期 `packages/graph_runtime/` 已从仓库删除；图读能力在 `packages/api/` 的 `graph_service` 与 Knowledge MCP。不要再恢复那套 planner / CLI / graph-agent。
 
 ```mermaid
 flowchart LR
-    User[用户 / Agent] --> CLI[graph CLI / 早期 runtime 参考]
-    User --> API[packages/api<br/>HTTP 接线层 + chat runtime]
-    CLI --> LegacyRuntime[packages/graph_runtime<br/>研发产物 / 参考实现]
+    User[用户 / Cursor] --> API[packages/api<br/>HTTP 接线层 + chat runtime]
     API --> Runtime[chat_agent_runtime<br/>pydantic-ai-slim]
     Runtime --> Mcp[Knowledge MCP]
-    Mcp --> Backend[GraphRuntimeBackend 协议]
+    Mcp --> Backend[ApiGraphRuntimeBackend]
     Backend --> GraphService[graph_service / graph_metadata_service]
     GraphService --> Neo4j[(Neo4j 图谱)]
 ```
@@ -365,5 +362,6 @@ flowchart LR
 - 项目整体定位：见 [../../README.md](../../README.md)
 - 图谱与数据模型基础：见 [data-model.md](data-model.md)
 - 数据处理工作台架构：见 [data-pipeline-workbench.md](data-pipeline-workbench.md)
+- 身份、消歧与中文属性：见 [entity-resolution.md](entity-resolution.md)
 - 本轮设计 spec：见 `docs/superpowers/specs/`
 - 本轮实施计划：见 `docs/superpowers/plans/`

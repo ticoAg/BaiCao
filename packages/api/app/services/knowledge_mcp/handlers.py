@@ -1,21 +1,9 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Callable
 from typing import Any
 
 from ...graph_runtime_backend import ApiGraphRuntimeBackend
-
-_WRITE_CYPHER = re.compile(
-    r"\b(create|merge|delete|set|drop|remove|detach|foreach|load\s+csv)\b",
-    re.IGNORECASE,
-)
-
-
-def reject_write_cypher(query: str) -> str | None:
-    if _WRITE_CYPHER.search(query or ""):
-        return "read_cypher 只允许只读查询，禁止 CREATE/MERGE/DELETE/SET/DROP/REMOVE"
-    return None
 
 
 class KnowledgeMcpHandlers:
@@ -55,11 +43,3 @@ class KnowledgeMcpHandlers:
         if isinstance(node_ids, str):
             node_ids = [node_ids]
         return await self._backend().lookup_nodes([str(item) for item in node_ids])
-
-    async def read_cypher(self, args: dict[str, Any]) -> Any:
-        # graph_tools.read_cypher 仍走此内部入口；agent MCP 不再注册该工具。
-        query = str(args.get("query") or "")
-        blocked = reject_write_cypher(query)
-        if blocked:
-            return {"error": blocked}
-        return await self._backend().execute_readonly_cypher(query)

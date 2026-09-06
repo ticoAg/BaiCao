@@ -1,13 +1,12 @@
 """BaiCao 知识图谱 MCP server。
 
-实现官方 Python MCP SDK（stdio + Streamable HTTP）。
-Streamable HTTP 是现行 MCP 传输（取代 HTTP+SSE）。
-chat 主链不再当 MCP 客户端；本 server 给 Cursor / `/mcp` 外部调用。
+官方 Python MCP SDK v2（stdio + Streamable HTTP）。
+产品 chat 与 Cursor 共用这一台 MCPServer。
 """
 
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .handlers import KnowledgeMcpHandlers
 from .payloads import wrap_edge_items, wrap_expand_subgraph, wrap_node_items
@@ -18,15 +17,14 @@ KNOWLEDGE_MCP_INSTRUCTIONS = (
     "lookup_nodes 按「标识」回看属性。读 graph://schema 了解标签与关系。不要编写或执行 Cypher。"
 )
 
-_handlers = KnowledgeMcpHandlers()
 
-
-def create_knowledge_mcp() -> FastMCP:
-    mcp = FastMCP(
+def create_knowledge_mcp(
+    handlers: KnowledgeMcpHandlers | None = None,
+) -> MCPServer:
+    graph = handlers or KnowledgeMcpHandlers()
+    mcp = MCPServer(
         "baicao-knowledge",
         instructions=KNOWLEDGE_MCP_INSTRUCTIONS,
-        streamable_http_path="/",
-        stateless_http=True,
     )
 
     @mcp.resource("graph://schema", mime_type="application/json")
@@ -43,7 +41,7 @@ def create_knowledge_mcp() -> FastMCP:
         limit: 候选上限，默认 10。
         """
         return wrap_node_items(
-            await _handlers.search_nodes({"query": query, "label": label, "limit": limit})
+            await graph.search_nodes({"query": query, "label": label, "limit": limit})
         )
 
     @mcp.tool()
@@ -59,7 +57,7 @@ def create_knowledge_mcp() -> FastMCP:
         source_label / target_label: 可选中文节点类型。
         """
         return wrap_edge_items(
-            await _handlers.search_edges(
+            await graph.search_edges(
                 {
                     "rel_query": rel_query,
                     "source_label": source_label,
@@ -77,15 +75,22 @@ def create_knowledge_mcp() -> FastMCP:
         limit: 子图节点上限。
         """
         return wrap_expand_subgraph(
-            await _handlers.expand_neighbors({"node_id": node_id, "depth": depth, "limit": limit})
+            await graph.expand_neighbors({"node_id": node_id, "depth": depth, "limit": limit})
         )
 
     @mcp.tool()
     async def lookup_nodes(node_ids: list[str]) -> dict:
         """按节点「标识」精确读取详情。已有候选后回看属性，不要再模糊搜索。"""
-        return wrap_node_items(await _handlers.lookup_nodes({"node_ids": node_ids}))
+        return wrap_node_items(await graph.lookup_nodes({"node_ids": node_ids}))
 
     return mcp
 
 
 knowledge_mcp = create_knowledge_mcp()
+
+
+def streamable_http_app():
+    return knowledge_mcp.streamable_http_app(
+        streamable_http_path="/",
+        stateless_http=True,
+    )

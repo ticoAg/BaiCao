@@ -22,4 +22,4 @@ dataset、可信问答与第三数据源结构清洗计划均已完成并归档�
 
 ## 明确不在当前主链
 
-- `packages/graph_runtime/`：早期 graph runtime 探索，已被 `packages/api/app/services/chat_agent_runtime/` 取代。不要按旧 graph-agent / graph-runtime plan 继续加功能。
+- 早期 `packages/graph_runtime/` 已删除。不要按旧 graph-agent / graph-runtime plan 恢复该包或把它接回 chat。

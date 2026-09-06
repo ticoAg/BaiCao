@@ -1,6 +1,6 @@
 // 聊天相关类型定义
 
-import type { GraphData, GraphNode, GraphEdge } from "./graph";
+import type { GraphNode, GraphEdge } from "./graph";
 import type { WorkbenchFrame } from "./workbench";
 
 export interface ReasoningStep {
@@ -21,16 +21,6 @@ export interface Entity {
   name: string;
   type: string;
   id?: string;
-}
-
-export interface ChatResponse {
-  answer: string;
-  reasoning_chain: ReasoningStep[];
-  sources: Source[];
-  graph_data: GraphData;
-  session_id: string;
-  entities?: Entity[];
-  workbench_frames?: WorkbenchFrame[];
 }
 
 export interface GraphAgentEvidence {

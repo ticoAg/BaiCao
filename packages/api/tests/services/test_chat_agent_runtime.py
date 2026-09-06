@@ -3,8 +3,6 @@ from typing import Any, cast
 from unittest.mock import AsyncMock
 
 import pytest
-from langchain_core.messages import AIMessage, ToolMessage
-from langgraph.types import Command
 from pydantic_ai import (
     AgentRunResultEvent,
     FunctionToolCallEvent,
@@ -14,118 +12,12 @@ from pydantic_ai import (
 )
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 
-from app.services.chat_agent_runtime.event_adapter import adapt_agent_events
 from app.services.chat_agent_runtime.pydantic_event_adapter import adapt_pydantic_stream
 
 
 async def _iter_events(events: list):
     for event in events:
         yield event
-
-
-@pytest.mark.asyncio
-async def test_adapt_agent_events_maps_langgraph_stream_to_sse_protocol():
-    raw_events = [
-        {
-            "event": "on_chat_model_stream",
-            "name": "ChatOpenAI",
-            "data": {
-                "chunk": AIMessage(
-                    content=[
-                        {
-                            "type": "reasoning",
-                            "id": "rs-1",
-                            "summary": [{"type": "summary_text", "text": "先定位病证锚点"}],
-                        }
-                    ]
-                )
-            },
-        },
-        {
-            "event": "on_chain_end",
-            "name": "model",
-            "data": {
-                "output": [
-                    Command(
-                        update={
-                            "messages": [
-                                AIMessage(
-                                    content=[
-                                        {
-                                            "type": "function_call",
-                                            "name": "search_nodes",
-                                            "arguments": '{"query": "感冒"}',
-                                            "call_id": "call-1",
-                                            "id": "fc-1",
-                                            "index": 0,
-                                        }
-                                    ],
-                                    tool_calls=[
-                                        {
-                                            "name": "search_nodes",
-                                            "args": {"query": "感冒"},
-                                            "id": "call-1",
-                                            "type": "tool_call",
-                                        }
-                                    ],
-                                )
-                            ]
-                        }
-                    )
-                ]
-            },
-        },
-        {
-            "event": "on_tool_start",
-            "name": "search_nodes",
-            "data": {"input": {"query": "感冒"}},
-        },
-        {
-            "event": "on_tool_end",
-            "name": "search_nodes",
-            "data": {
-                "output": ToolMessage(
-                    content='[{"id":"药材:桂枝","name":"桂枝","labels":["Herb"],"status":"verified"}]',
-                    name="search_nodes",
-                    tool_call_id="call-1",
-                )
-            },
-        },
-        {
-            "event": "on_chat_model_stream",
-            "name": "ChatOpenAI",
-            "data": {"chunk": AIMessage(content=[{"type": "text", "text": "可考虑桂枝。"}])},
-        },
-        {
-            "event": "on_chain_end",
-            "name": "LangGraph",
-            "data": {
-                "output": {
-                    "messages": [
-                        AIMessage(content=[{"type": "text", "text": "可考虑桂枝。"}]),
-                    ]
-                }
-            },
-        },
-    ]
-
-    events = [
-        event
-        async for event in adapt_agent_events(
-            _iter_events(raw_events),
-            session_id="sid-1",
-            turn_id="turn-1",
-        )
-    ]
-
-    assert [event["type"] for event in events] == [
-        "provider_reasoning",
-        "tool_start",
-        "tool_result",
-        "subgraph_patch",
-        "answer_chunk",
-        "final",
-    ]
 
 
 @pytest.mark.asyncio
@@ -258,9 +150,8 @@ def _ready_settings():
 
 def _patch_runtime(monkeypatch, runtime, captured: dict):
     monkeypatch.setattr(runtime, "get_settings", _ready_settings)
-    monkeypatch.setattr(runtime, "build_graph_schema", AsyncMock(return_value={"id_field": "标识"}))
 
-    async def fake_build(settings=None):
+    async def fake_build(client, settings=None):
         return _FakeAgent(captured)
 
     monkeypatch.setattr(runtime, "build_graph_agent", fake_build)
@@ -340,8 +231,7 @@ async def test_app_shutdown_closes_chat_sessions(monkeypatch):
 
     monkeypatch.setattr(main, "init_db", AsyncMock())
     monkeypatch.setattr(main, "init_kg_db", AsyncMock())
-    monkeypatch.setattr(main, "close_knowledge_mcp_server", AsyncMock())
-    monkeypatch.setattr(main.knowledge_mcp, "streamable_http_app", lambda: None)
+    monkeypatch.setattr(main, "streamable_http_app", lambda: None)
 
     @asynccontextmanager
     async def fake_run():
@@ -356,3 +246,49 @@ async def test_app_shutdown_closes_chat_sessions(monkeypatch):
         assert isolated["sid-app-shutdown"] == ["m"]
 
     assert isolated == {}
+
+
+@pytest.mark.asyncio
+async def test_stream_turn_passes_mcp_client_to_agent_builder(monkeypatch):
+    from mcp.client import Client
+
+    from app.services.chat_agent_runtime import runtime
+
+    captured: dict = {}
+    _patch_runtime(monkeypatch, runtime, captured)
+    runtime._MESSAGE_HISTORIES.clear()
+
+    seen: list = []
+
+    async def fake_build(client, settings=None):
+        seen.append(client)
+        return _FakeAgent(captured)
+
+    monkeypatch.setattr(runtime, "build_graph_agent", fake_build)
+    async for _ in runtime.stream_turn("问", session_id="sid-mcp-client"):
+        pass
+
+    assert seen
+    assert isinstance(seen[0], Client)
+
+
+@pytest.mark.asyncio
+async def test_tools_from_mcp_client_wraps_list_tools_and_call():
+    from mcp.client import Client
+
+    from app.services.chat_agent_runtime.mcp_agent_tools import tools_from_mcp_client
+    from app.services.knowledge_mcp.handlers import KnowledgeMcpHandlers
+    from app.services.knowledge_mcp.server import create_knowledge_mcp
+
+    backend = AsyncMock()
+    backend.search_nodes = AsyncMock(return_value=[])
+    mcp = create_knowledge_mcp(KnowledgeMcpHandlers(backend_factory=lambda: backend))
+    async with Client(mcp) as client:
+        tools = await tools_from_mcp_client(client)
+        names = {tool.name for tool in tools}
+        assert names == {"search_nodes", "search_edges", "expand_neighbors", "lookup_nodes"}
+        search = next(tool for tool in tools if tool.name == "search_nodes")
+        payload = await search.function(query="不存在的实体")
+    assert payload["count"] == 0
+    assert "标识" in payload["hint"]
+    backend.search_nodes.assert_awaited()

@@ -90,7 +90,7 @@
 - 已落地 dataset spec：`specs/archive/README.md`
 - 数据台账：`../../datasets/baicao-knowledge/`
 
-已完成 plan / spec 保留回溯，不要再执行。`packages/graph_runtime/` 不是 chat 主链。
+已完成 plan / spec 保留回溯，不要再执行。不要恢复已删除的 `packages/graph_runtime/`。
 
 ## 当前关系
 

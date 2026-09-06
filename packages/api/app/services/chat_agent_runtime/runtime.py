@@ -1,14 +1,14 @@
 from collections.abc import AsyncIterator
-from json import dumps
 from uuid import uuid4
 
+from mcp.client import Client
 from pydantic_ai import Agent, AgentRunResultEvent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from ...core.config import get_settings
-from ..knowledge_mcp.schema import build_graph_schema
-from .graph_agent_tools import build_graph_agent_tools
+from ..knowledge_mcp.server import knowledge_mcp
+from .mcp_agent_tools import schema_json_from_client, tools_from_mcp_client
 from .pydantic_event_adapter import adapt_pydantic_stream
 from .session_memory import InMemorySessionManager
 from .system_prompt import build_graph_specialist_system_prompt
@@ -38,17 +38,17 @@ def _chat_model(settings) -> OpenAIChatModel:
     )
 
 
-async def build_graph_agent(settings=None) -> Agent:
+async def build_graph_agent(client: Client, settings=None) -> Agent:
     current = settings or get_settings()
-    schema = await build_graph_schema()
+    schema = await schema_json_from_client(client)
     return Agent(
         _chat_model(current),
         name="BaiCao Graph Specialist",
         instructions=[
             build_graph_specialist_system_prompt(),
-            "当前图谱 schema（JSON）：\n" + dumps(schema, ensure_ascii=False, default=str),
+            "当前图谱 schema（JSON）：\n" + schema,
         ],
-        tools=build_graph_agent_tools(),
+        tools=await tools_from_mcp_client(client),
     )
 
 
@@ -58,9 +58,6 @@ def _history_for(session_id: str) -> list:
 
 def close_all_chat_sessions() -> None:
     _MESSAGE_HISTORIES.clear()
-
-
-close_all_openai_sessions = close_all_chat_sessions
 
 
 async def stream_turn(question: str, session_id: str | None = None) -> AsyncIterator[dict]:
@@ -80,24 +77,27 @@ async def stream_turn(question: str, session_id: str | None = None) -> AsyncIter
             return
 
         try:
-            agent = await build_graph_agent(settings)
-            history = _history_for(sid)
+            async with Client(knowledge_mcp) as client:
+                agent = await build_graph_agent(client, settings)
+                history = _history_for(sid)
 
-            async with agent.run_stream_events(question, message_history=history or None) as events:
+                async with agent.run_stream_events(
+                    question, message_history=history or None
+                ) as events:
 
-                async def _forward() -> AsyncIterator:
-                    async for event in events:
-                        if isinstance(event, AgentRunResultEvent):
-                            all_messages = getattr(event.result, "all_messages", None)
-                            if callable(all_messages):
-                                _MESSAGE_HISTORIES[sid] = list(all_messages())
+                    async def _forward() -> AsyncIterator:
+                        async for event in events:
+                            if isinstance(event, AgentRunResultEvent):
+                                all_messages = getattr(event.result, "all_messages", None)
+                                if callable(all_messages):
+                                    _MESSAGE_HISTORIES[sid] = list(all_messages())
+                            yield event
+
+                    async for event in adapt_pydantic_stream(
+                        _forward(),
+                        session_id=sid,
+                        turn_id=turn_id,
+                    ):
                         yield event
-
-                async for event in adapt_pydantic_stream(
-                    _forward(),
-                    session_id=sid,
-                    turn_id=turn_id,
-                ):
-                    yield event
         except Exception as exc:
             yield {"type": "error", "data": {"message": str(exc)}}

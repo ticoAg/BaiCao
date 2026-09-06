@@ -1,19 +1,13 @@
-from typing import Any
+from json import loads
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from mcp.client import Client
 
-from app.services.graph_tools.read_cypher import build_read_cypher_tool
-from app.services.knowledge_mcp.handlers import KnowledgeMcpHandlers, reject_write_cypher
+from app.services.knowledge_mcp.handlers import KnowledgeMcpHandlers
 from app.services.knowledge_mcp.payloads import wrap_expand_subgraph, wrap_node_items
 from app.services.knowledge_mcp.schema import build_graph_schema
 from app.services.knowledge_mcp.server import KNOWLEDGE_MCP_INSTRUCTIONS, create_knowledge_mcp
-
-
-def test_reject_write_cypher():
-    assert reject_write_cypher("MATCH (n:方剂) RETURN n.名称") is None
-    assert reject_write_cypher("CREATE (n:药材 {名称:'x'})") is not None
-    assert reject_write_cypher("MATCH (n) SET n.状态 = '已验证'") is not None
 
 
 @pytest.mark.asyncio
@@ -31,8 +25,9 @@ async def test_search_nodes_handler_forwards_to_backend():
 @pytest.mark.asyncio
 async def test_knowledge_mcp_lists_graph_tools():
     mcp = create_knowledge_mcp()
-    tools = await mcp.list_tools()
-    by_name = {tool.name: tool for tool in tools}
+    async with Client(mcp) as client:
+        listed = await client.list_tools()
+    by_name = {tool.name: tool for tool in listed.tools}
     assert set(by_name) == {
         "search_nodes",
         "search_edges",
@@ -49,9 +44,29 @@ async def test_knowledge_mcp_lists_graph_tools():
 @pytest.mark.asyncio
 async def test_knowledge_mcp_exposes_schema_resource():
     mcp = create_knowledge_mcp()
-    resources = await mcp.list_resources()
-    uris = {str(resource.uri) for resource in resources}
+    async with Client(mcp) as client:
+        resources = await client.list_resources()
+        schema = await client.read_resource("graph://schema")
+    uris = {str(resource.uri) for resource in resources.resources}
     assert "graph://schema" in uris
+    assert schema.contents
+
+
+@pytest.mark.asyncio
+async def test_knowledge_mcp_empty_search_returns_hint_envelope():
+    backend = AsyncMock()
+    backend.search_nodes = AsyncMock(return_value=[])
+    mcp = create_knowledge_mcp(KnowledgeMcpHandlers(backend_factory=lambda: backend))
+    async with Client(mcp) as client:
+        result = await client.call_tool("search_nodes", {"query": "不存在的实体"})
+    payload = result.structured_content
+    if payload is None:
+        first = result.content[0] if result.content else None
+        text = getattr(first, "text", None) or "{}"
+        payload = loads(text)
+    assert payload["count"] == 0
+    assert payload["items"] == []
+    assert "标识" in payload["hint"]
 
 
 def test_knowledge_mcp_instructions_omit_raw_cypher():
@@ -88,11 +103,3 @@ async def test_build_graph_schema_falls_back_to_knowledge_model():
     rels = {item["name"] for item in schema["relationship_types"]}
     assert "组成药材" in rels
     assert "由证据支持" in rels
-
-
-@pytest.mark.asyncio
-async def test_read_cypher_tool_uses_mcp_write_guard():
-    tool = build_read_cypher_tool()
-    payload: Any = {"query": "CREATE (n:药材 {名称:'x'})"}
-    result = await tool.ainvoke(payload)
-    assert "只允许只读" in result["error"]

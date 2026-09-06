@@ -331,6 +331,8 @@ uv run --extra dev pytest tests/unit/pipeline/test_processor_runtime.py tests/un
 
 ## 11. 2026-04-20 Graph Runtime / Agent Wave 1 补充证据
 
+> 历史证据。`packages/graph_runtime/` 已于 2026-09-06 从仓库删除；当前问答走 `chat_agent_runtime` + Knowledge MCP，不要再跑本节命令。
+
 ### 本轮新增范围
 
 - 新增 `packages/graph_runtime/`，提供 contracts、backend 协议、facade、traversal primitives、schema-aware planner、默认 graph exploration agent 与 CLI 薄壳

@@ -1,6 +1,5 @@
 from typing import Any
 
-from .kg.graph_metadata_service import graph_metadata_service
 from .kg.graph_service import graph_service
 
 
@@ -44,18 +43,6 @@ class ApiGraphRuntimeBackend:
             if isinstance(node, dict):
                 nodes.append(node)
         return nodes
-
-    async def get_node(self, node_id: str) -> dict[str, Any] | None:
-        return await graph_service.get_node(node_id)
-
-    async def find_path(self, from_name: str, to_name: str, max_depth: int = 4) -> list[dict]:
-        return await graph_service.find_path(from_name, to_name, max_depth=max_depth)
-
-    async def execute_readonly_cypher(self, query: str) -> list[dict[str, Any]]:
-        return await graph_service.execute_readonly_cypher(query)
-
-    async def get_schema_summary(self) -> dict[str, Any]:
-        return await graph_metadata_service.get_summary()
 
     def _normalize_search_result(self, result: dict[str, Any]) -> dict[str, Any]:
         node = result.get("node")

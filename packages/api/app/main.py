@@ -9,8 +9,7 @@ from .core.config import get_settings
 from .core.database import init_db
 from .kg.db import init_kg_db
 from .services.chat_agent_runtime import close_all_chat_sessions
-from .services.knowledge_mcp.agent_client import close_knowledge_mcp_server
-from .services.knowledge_mcp.server import knowledge_mcp
+from .services.knowledge_mcp.server import knowledge_mcp, streamable_http_app
 from .api.herb import router as herb_router
 from .api.graph import router as graph_router
 from .api.workbench import router as workbench_router
@@ -32,11 +31,10 @@ async def lifespan(app: FastAPI):
     logger.info("初始化应用依赖")
     await init_db()
     await init_kg_db()
-    knowledge_mcp.streamable_http_app()
+    streamable_http_app()
     async with knowledge_mcp.session_manager.run():
         logger.info("应用依赖初始化完成")
         yield
-    await close_knowledge_mcp_server()
     close_all_chat_sessions()
 
 
@@ -64,7 +62,7 @@ app.include_router(notification_router, prefix=settings.api_prefix)
 app.include_router(pipeline_router, prefix=settings.api_prefix)
 app.include_router(pipeline_review_router, prefix=settings.api_prefix)
 app.include_router(pipeline_export_router, prefix=settings.api_prefix)
-app.mount("/mcp", knowledge_mcp.streamable_http_app())
+app.mount("/mcp", streamable_http_app())
 
 
 @app.get("/health")

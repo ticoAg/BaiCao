@@ -48,9 +48,9 @@ flowchart LR
 
 ## Architecture
 
-### 当前代码（待迁）
+### 当前代码
 
-chat 仍用 pydantic-ai 进程内 `graph_agent_tools` 直调 `KnowledgeMcpHandlers`；MCP 停在 SDK 1.x `FastMCP`，只给 `/mcp` 与 stdio。旁边还留着 LangChain `graph_tools`、LangGraph `event_adapter.adapt_agent_events`、`close_all_openai_sessions` 别名。这些都是要删的遗留适配。
+产品 chat 用 `mcp.client.Client(knowledge_mcp)` 同进程调用官方 mcp v2 `MCPServer`。`/mcp` 与 stdio 是同一台 server 的外部入口。pydantic-ai 只做 loop；MCP tools 经 `mcp_agent_tools.tools_from_mcp_client` 暴露，不再复制 handler。
 
 ### 目标拓扑
 
@@ -189,13 +189,14 @@ pydantic-ai 只替代 agent loop 与流式事件。MCP 客户端用官方 SDK，
 
 - 原始 Cypher 给模型；顺手删掉仅给 LangChain 用的 `read_cypher` handler
 - 本机文件 / 向量 RAG / 第二套知识库
-- LangGraph / LangChain `graph_tools` / `packages/graph_runtime` 回流 chat
+- LangGraph / LangChain `graph_tools` 回流 chat
+- 把已删除的 `packages/graph_runtime` 接回 chat
 - MCP Prompts、Apps、Tasks、subscriptions
 - pydantic-ai Harness、WebSearch、第二套 FastMCP 客户端
 - 为「更聪明」继续堆 tool
 - chat 再拉 stdio 子进程，或 HTTP 打本机 `/mcp`
 
-pipeline 抽取仍可用 LangChain Chat 模型；那不是问答检索面。不要把 `langchain` / `langgraph` 从仓库卸掉，只删问答侧的 graph tool 包装和 LangGraph SSE 适配。
+pipeline 抽取仍可用 LangChain Chat 模型；那不是问答检索面。不要把 pipeline 用的 `langchain` / `langchain-openai` 从仓库卸掉。问答侧不要再装 `langgraph` 或 `langchain-neo4j`。
 
 ## Data Model
 
@@ -222,7 +223,7 @@ erDiagram
 
 ## Configuration
 
-| 项 | 目标事实 |
+| 项 | 当前事实 |
 |----|----------|
 | Agent loop | `pydantic-ai-slim[openai]` |
 | MCP 依赖 | `mcp>=2,<3` |

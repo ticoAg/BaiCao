@@ -115,7 +115,7 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream \
 ### 实现证据
 
 - `packages/api/app/api/chat.py` — `/api/v1/chat/stream` 唯一入口
-- `packages/api/app/services/chat_agent_runtime/runtime.py` — pydantic-ai-slim、进程内图工具与 `message_history` 真源
+- `packages/api/app/services/chat_agent_runtime/runtime.py` — pydantic-ai-slim、同进程 MCP Client 与 `message_history` 真源
 - `packages/api/app/services/chat_agent_runtime/session_memory.py` — TTL eviction callback 与同 session 串行锁
 - `packages/api/app/services/chat_agent_runtime/citations.py` — 从查询子图生成结构化 citation
 - `packages/api/app/services/chat_agent_runtime/provider_reasoning.py` — provider 原生 reasoning 透传
@@ -161,5 +161,5 @@ curl -N -X POST http://localhost:8000/api/v1/chat/stream -H 'Content-Type: appli
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：pydantic-ai-slim 执行流、结构化 citation、进程内图工具、外部 MCP、进程内会话回收已由单测覆盖；真实 Neo4j/provider E2E 仍以 2026-08-19 证据为历史基线，本轮未重跑
+- 结论一句话：pydantic-ai-slim 执行流、结构化 citation、同进程 MCP 图工具、外部 `/mcp`、进程内会话回收已由单测覆盖；真实 Neo4j/provider E2E 仍以 2026-08-19 证据为历史基线，本轮未重跑
 - 后续动作：多 worker 需求出现后再引入共享会话存储；用小型 golden set 持续评估回答与 citation 质量
