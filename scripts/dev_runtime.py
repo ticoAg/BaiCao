@@ -371,7 +371,16 @@ def _infisical_triggered(env: dict[str, str]) -> bool:
 def _infisical_command_prefix(ctx: RuntimeContext) -> list[str] | None:
     if not _infisical_triggered(ctx.env):
         return None
-    return [sys.executable, str(INFISICAL_ENV_SCRIPT), "run"]
+    # uv 提供 api 项目里的 infisicalsdk。不要调用 Infisical CLI。
+    return [
+        "uv",
+        "run",
+        "--directory",
+        str(API_DIR),
+        "python",
+        str(INFISICAL_ENV_SCRIPT),
+        "run",
+    ]
 
 
 def _wrap_external_command_with_infisical(

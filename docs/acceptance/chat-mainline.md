@@ -27,6 +27,7 @@ audience: developer
 - 每轮回答自然语言展示
 - provider 原生 reasoning（若 provider 返回）
 - agent 工具调用、参数、结果摘要流式展示
+- 配置了 TypeSafe 时，工具时间线中出现 `judge`；判定标准来自服务端固定问题，不来自模型临场编写
 - 每轮回答可展开依据子图
 - 结构化 citation、证据来源、推理轨迹和工具调用展示
 - citation 以实体 ID 打开 lineage，并分别预填实体、来源和证据摘录到验证申请
@@ -44,6 +45,7 @@ audience: developer
 - 依赖服务：FastAPI、Neo4j、PostgreSQL、Vite
 - 样例数据：demo 用户、来源和”人参”图谱
 - LLM 配置（必需）：需要提供可用的 `LLM_PROVIDER` 与对应 API key；当前 chat 主链不再降级到旧规则问答链
+- 结构化判定（可选）：`TYPESAFE_API_KEY` 与 `TYPESAFE_BASE_URL`。未配置时问答仍只走图工具
 
 ### 启动命令
 

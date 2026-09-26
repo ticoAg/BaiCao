@@ -30,7 +30,7 @@ export OBJECT_STORAGE_BUCKET="${OBJECT_STORAGE_BUCKET:-baicao-pipeline-exports}"
 export OBJECT_STORAGE_SECURE="${OBJECT_STORAGE_SECURE:-false}"
 
 run_with_infisical() {
-  python3 "$ROOT/scripts/infisical_env.py" run -- "$@"
+  uv run --directory "$ROOT/packages/api" python "$ROOT/scripts/infisical_env.py" run -- "$@"
 }
 
 has_integration_tests() {

@@ -159,7 +159,7 @@ uv run python -m data_ingestion.cli.pharmacopoeia_ingest \
 如果希望直接吃 Infisical 中的模型配置，建议从仓库根目录执行：
 
 ```bash
-python3 scripts/infisical_env.py run -- \
+uv run --directory packages/api python scripts/infisical_env.py run -- \
   bash -lc 'ROOT="$PWD"; cd packages/data_ingestion && uv run python -m data_ingestion.cli.pharmacopoeia_ingest \
     --dataset ZJUFanLab/TCMChat-dataset-600k \
     --file-path pretrain/train/books/national_standard/2022年中药药典.txt \
@@ -220,7 +220,7 @@ uv run python -m app.importers.cli \
 同样，如果 Neo4j 连接配置也来自 Infisical，推荐从仓库根目录执行：
 
 ```bash
-python3 scripts/infisical_env.py run -- \
+uv run --directory packages/api python scripts/infisical_env.py run -- \
   bash -lc 'cd packages/api && uv run python -m app.importers.cli \
     ../data_ingestion/tmp/pharmacopoeia-ingestion/full-run/manual-run/graph_import_records.jsonl \
     --neo4j'

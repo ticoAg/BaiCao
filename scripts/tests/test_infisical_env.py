@@ -1,11 +1,8 @@
 import importlib.util
-import json
 import ssl
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
-from urllib import error as urllib_error
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -19,113 +16,140 @@ def load_module():
     return module
 
 
-class FakeResponse:
-    def __init__(self, payload: object, status: int = 200):
-        self.status = status
-        self._body = json.dumps(payload).encode("utf-8")
+class _Secret:
+    def __init__(self, key: str, value: str):
+        self.secretKey = key
+        self.secretValue = value
 
-    def read(self) -> bytes:
-        return self._body
 
-    def __enter__(self):
-        return self
+class _Listed:
+    def __init__(self, secrets: list[_Secret]):
+        self.secrets = secrets
+        self.imports = []
 
-    def __exit__(self, *args) -> bool:
-        return False
+
+class _SecretsApi:
+    def __init__(self, secrets: list[_Secret]):
+        self._secrets = secrets
+        self.kwargs: dict | None = None
+
+    def list_secrets(self, **kwargs):
+        self.kwargs = kwargs
+        return _Listed(self._secrets)
+
+
+class _UniversalAuth:
+    def __init__(self):
+        self.logged: list[tuple[str, str]] = []
+
+    def login(self, client_id: str, client_secret: str):
+        self.logged.append((client_id, client_secret))
+
+
+class _Auth:
+    def __init__(self):
+        self.universal_auth = _UniversalAuth()
+
+
+class FakeClient:
+    def __init__(self, host: str, token: str | None = None, cache_ttl: int = 60):
+        self.host = host
+        self.token = token
+        self.cache_ttl = cache_ttl
+        self.auth = _Auth()
+        self.secrets = _SecretsApi([_Secret("OPENAI_API_KEY", "from-sdk")])
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class InfisicalEnvTests(unittest.TestCase):
     def setUp(self):
         self.mod = load_module()
 
-    def test_fetch_secrets_with_token_injects_missing_keys_only(self):
-        calls: list[str] = []
+    def test_token_client_injects_missing_keys_only(self):
+        created: list[FakeClient] = []
 
-        def fake_urlopen(req, timeout=30, context=None):
-            del timeout, context
-            calls.append(req.full_url)
-            self.assertEqual(req.get_header("Authorization"), "Bearer st.example")
-            return FakeResponse(
-                {
-                    "secrets": [
-                        {"secretName": "OPENAI_API_KEY", "secretValue": "from-infisical"},
-                        {"secretName": "DATABASE_URL", "secretValue": "should-not-win"},
-                    ]
-                }
-            )
+        def factory(**kwargs):
+            client = FakeClient(**kwargs)
+            created.append(client)
+            return client
 
-        with mock.patch.object(self.mod.urllib_request, "urlopen", side_effect=fake_urlopen):
-            merged = self.mod.build_injected_env(
-                {
-                    "INFISICAL_TOKEN": "st.example",
-                    "INFISICAL_API_URL": "https://infisical.example",
-                    "INFISICAL_PROJECT_ID": "proj-1",
-                    "INFISICAL_ENV": "dev",
-                    "DATABASE_URL": "postgres://local",
-                }
-            )
+        merged = self.mod.build_injected_env(
+            {
+                "INFISICAL_TOKEN": "st.example",
+                "INFISICAL_API_URL": "https://app.infisical.com",
+                "INFISICAL_PROJECT_ID": "proj-1",
+                "INFISICAL_ENV": "dev",
+                "INFISICAL_SECRET_PATH": "/baicao",
+                "DATABASE_URL": "postgres://local",
+            },
+            client_factory=factory,
+        )
 
-        self.assertEqual(merged["OPENAI_API_KEY"], "from-infisical")
+        self.assertEqual(merged["OPENAI_API_KEY"], "from-sdk")
         self.assertEqual(merged["DATABASE_URL"], "postgres://local")
-        self.assertIn("viewSecretValue=true", calls[0])
-        self.assertIn("projectId=proj-1", calls[0])
+        self.assertEqual(merged["INFISICAL_SECRETS_LOADED"], "1")
+        self.assertEqual(created[0].token, "st.example")
+        self.assertEqual(created[0].auth.universal_auth.logged, [])
+        self.assertEqual(created[0].secrets.kwargs["project_id"], "proj-1")
+        self.assertEqual(created[0].secrets.kwargs["secret_path"], "/baicao")
+        self.assertTrue(created[0].closed)
 
     def test_universal_auth_then_list_secrets(self):
-        calls: list[tuple[str, str]] = []
+        created: list[FakeClient] = []
 
-        def fake_urlopen(req, timeout=30, context=None):
-            del timeout, context
-            method = req.get_method()
-            calls.append((method, req.full_url))
-            if req.full_url.endswith("/api/v1/auth/universal-auth/login"):
-                return FakeResponse({"accessToken": "jwt-token", "expiresIn": 3600})
-            self.assertEqual(req.get_header("Authorization"), "Bearer jwt-token")
-            return FakeResponse({"secrets": [{"secretKey": "REDIS_URL", "secretValue": "redis://secret"}]})
+        def factory(**kwargs):
+            client = FakeClient(**kwargs)
+            client.secrets = _SecretsApi([_Secret("REDIS_URL", "redis://secret")])
+            created.append(client)
+            return client
 
-        with mock.patch.object(self.mod.urllib_request, "urlopen", side_effect=fake_urlopen):
-            merged = self.mod.build_injected_env(
-                {
-                    "INFISICAL_CLIENT_ID": "client",
-                    "INFISICAL_CLIENT_SECRET": "secret",
-                    "INFISICAL_API_URL": "https://infisical.example",
-                    "INFISICAL_PROJECT_ID": "proj-1",
-                }
-            )
+        merged = self.mod.build_injected_env(
+            {
+                "INFISICAL_CLIENT_ID": "client",
+                "INFISICAL_CLIENT_SECRET": "secret",
+                "INFISICAL_API_URL": "https://app.infisical.com",
+                "INFISICAL_PROJECT_ID": "proj-1",
+            },
+            client_factory=factory,
+        )
 
         self.assertEqual(merged["REDIS_URL"], "redis://secret")
-        self.assertEqual(calls[0][0], "POST")
-        self.assertIn("/api/v4/secrets", calls[1][1])
+        self.assertIsNone(created[0].token)
+        self.assertEqual(created[0].auth.universal_auth.logged, [("client", "secret")])
 
     def test_missing_project_id_fails(self):
         with self.assertRaises(self.mod.InfisicalEnvError) as raised:
             self.mod.build_injected_env(
                 {
                     "INFISICAL_TOKEN": "st.example",
-                    "INFISICAL_API_URL": "https://infisical.example",
+                    "INFISICAL_API_URL": "https://app.infisical.com",
                 }
             )
         self.assertIn("INFISICAL_PROJECT_ID", str(raised.exception))
 
     def test_pass_through_without_auth(self):
-        env = {"DATABASE_URL": "postgres://local", "INFISICAL_API_URL": "https://infisical.example"}
+        env = {"DATABASE_URL": "postgres://local", "INFISICAL_API_URL": "https://app.infisical.com"}
         self.assertEqual(self.mod.build_injected_env(env)["DATABASE_URL"], "postgres://local")
+        self.assertNotIn("INFISICAL_SECRETS_LOADED", self.mod.build_injected_env(env))
 
     def test_tls_error_is_visible(self):
-        def fake_urlopen(req, timeout=30, context=None):
-            del req, timeout, context
-            raise urllib_error.URLError(ssl.SSLCertVerificationError("certificate has expired"))
+        def factory(**kwargs):
+            del kwargs
+            raise ssl.SSLCertVerificationError("certificate has expired")
 
-        with mock.patch.object(self.mod.urllib_request, "urlopen", side_effect=fake_urlopen):
-            with self.assertRaises(self.mod.InfisicalEnvError) as raised:
-                self.mod.build_injected_env(
-                    {
-                        "INFISICAL_TOKEN": "st.example",
-                        "INFISICAL_API_URL": "https://infisical.example",
-                        "INFISICAL_PROJECT_ID": "proj-1",
-                    }
-                )
+        with self.assertRaises(self.mod.InfisicalEnvError) as raised:
+            self.mod.build_injected_env(
+                {
+                    "INFISICAL_TOKEN": "st.example",
+                    "INFISICAL_API_URL": "https://app.infisical.com",
+                    "INFISICAL_PROJECT_ID": "proj-1",
+                },
+                client_factory=factory,
+            )
         self.assertIn("TLS", str(raised.exception))
-        self.assertIn("infisical.example", str(raised.exception))
 
     def test_load_repo_env_files(self):
         with tempfile.TemporaryDirectory() as tmp:

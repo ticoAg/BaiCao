@@ -1,7 +1,12 @@
+import os
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime, timezone
+
+# 单测不访问 Infisical。业务变量仍来自进程环境或 packages/api/.env。
+os.environ.setdefault("INFISICAL_SECRETS_LOADED", "1")
 
 
 class MockVerification:

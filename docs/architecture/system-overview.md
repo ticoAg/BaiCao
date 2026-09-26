@@ -63,6 +63,7 @@ flowchart TB
     PV <--> PG
     API <--> Redis[(Redis)]
     QA --> LLM[pydantic-ai / OpenAI-compatible]
+    QA --> SystemOne[TypeSafe system_one]
 ```
 
 ### 4.1 分层职责
@@ -162,6 +163,7 @@ sequenceDiagram
 - pydantic-ai graph specialist 的上下文真源是进程内 `message_history`；应用层不再手动回放完整 thread 历史。
 - 当前进程内会话策略为：30 分钟未访问即从 registry 移除历史；同一 `session_id` 的并发请求串行执行，不同 session 可并发；应用退出会清空全部会话。
 - 四个图操作只在 Knowledge MCP 实现一次：chat 用同进程 `Client(server)`，`/mcp` 给外部客户端。原始 Cypher 在独立 Neo4j READ-only 身份落地前保持禁用。检索边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
+- 执行中的选项、是/否和分档判定走 TypeSafe `system_one`（`judge` 工具）。未配置 `TYPESAFE_API_KEY` 时不注册该工具，问答仍只走四个图工具。
 - provider 原生 reasoning 仅在模型提供时透传到页面；若 provider 不返回 reasoning，页面不会伪造该内容。
 
 ### 6.2 知识可信度闭环

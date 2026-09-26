@@ -149,7 +149,7 @@ flowchart LR
 
 ### 5.1 Graph Runtime / Agent 运行边界
 
-当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。pydantic-ai-slim 做 loop，经官方 mcp v2 同进程客户端调用 Knowledge MCP，并用 `message_history` 续接会话。`/mcp` 是同一台 server 的外部入口。轻量检索边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
+当前 chat 主链的 agent runtime 已收敛到 `packages/api/app/services/chat_agent_runtime/`。pydantic-ai-slim 做 loop，经官方 mcp v2 同进程客户端调用 Knowledge MCP，并用 `message_history` 续接会话。循环中的结构化判定调用 TypeSafe `system_one`，不把判定标准交给问答模型现写。`/mcp` 是同一台 server 的外部入口。轻量检索边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
 
 早期 `packages/graph_runtime/` 已从仓库删除；图读能力在 `packages/api/` 的 `graph_service` 与 Knowledge MCP。不要再恢复那套 planner / CLI / graph-agent。
 

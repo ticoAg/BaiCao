@@ -207,7 +207,7 @@ flowchart TB
 | [architecture/data-model.md](architecture/data-model.md) | 图模型与关系模型设计 |
 | [architecture/graph-workbench.md](architecture/graph-workbench.md) | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md) | 图模型唯一真源、中文知识结构定义、数据采集架构与 graph runtime / agent 边界 |
-| [architecture/chat-agent-mcp.md](architecture/chat-agent-mcp.md) | 问答 agent 轻量检索、MCP 工具/资源与规范对齐 |
+| [architecture/chat-agent-mcp.md](architecture/chat-agent-mcp.md) | 问答 agent 轻量检索、执行中的 system_one 判定、MCP 工具/资源与规范对齐 |
 | [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md) | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [acceptance/README.md](acceptance/README.md) | 验收文档目录与基本原则 |
 | [acceptance/graph-workbench-mainline.md](acceptance/graph-workbench-mainline.md) | Graph Workbench `/graph` 主链路验收 |

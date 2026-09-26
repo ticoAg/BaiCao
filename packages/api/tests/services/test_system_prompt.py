@@ -1,4 +1,7 @@
-from app.services.chat_agent_runtime.system_prompt import build_graph_specialist_system_prompt
+from app.services.chat_agent_runtime.system_prompt import (
+    build_graph_specialist_system_prompt,
+    build_judge_instructions,
+)
 
 
 def test_system_prompt_requires_structured_tools_and_omits_raw_cypher():
@@ -17,3 +20,13 @@ def test_system_prompt_requires_structured_tools_and_omits_raw_cypher():
     assert "depth=2" in prompt
     assert "组成药材" not in prompt
     assert "使用方剂" not in prompt
+    assert "judge" not in prompt
+
+
+def test_judge_instructions_require_profiles_and_follow():
+    text = build_judge_instructions()
+    assert "profile=intake" in text
+    assert "profile=evidence" in text
+    assert "profile=claim" in text
+    assert "follow" in text
+    assert "不要自己编写选项或评分标准" in text

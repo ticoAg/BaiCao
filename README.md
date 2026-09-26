@@ -38,7 +38,7 @@ make deps up
 make stack up
 ```
 
-`.env` 里补 `INFISICAL_TOKEN`（或 Universal Auth）。不用 Infisical、改端口、手动起进程、样例数据和验证命令见 [docs/local-development.md](docs/local-development.md)。
+`.env` 里补 Universal Auth（`INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET`）。API 用官方 Python SDK 拉 secret，不需要安装 Infisical CLI。不用 Infisical、改端口、手动起进程、样例数据和验证命令见 [docs/local-development.md](docs/local-development.md)。
 
 - Web: <http://localhost:3000>
 - API: <http://localhost:8000>

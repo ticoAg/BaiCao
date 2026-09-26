@@ -33,7 +33,7 @@ export NEO4J_PASSWORD="${NEO4J_PASSWORD:-neo4j_password}"
 export REDIS_URL="${REDIS_URL:-redis://localhost:16380}"
 
 run_with_infisical() {
-  python3 "$ROOT/scripts/infisical_env.py" run -- "$@"
+  uv run --directory "$ROOT/packages/api" python "$ROOT/scripts/infisical_env.py" run -- "$@"
 }
 
 wait_for_url() {

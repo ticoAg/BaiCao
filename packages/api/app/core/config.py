@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -34,6 +35,12 @@ class Settings(BaseSettings):
     openai_base_url: str = ""
     llm_temperature: float = 0.7
 
+    # 问答循环中的结构化判定。留空则不注册 judge。
+    typesafe_api_key: str = ""
+    typesafe_base_url: str = ""
+    typesafe_model: str = "decision-model-preview"
+    typesafe_timeout_seconds: float = 60
+
     # Redis (optional)
     redis_url: str = "redis://localhost:6379"
     redis_enabled: bool = False
@@ -51,4 +58,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    if not os.environ.get("INFISICAL_SECRETS_LOADED"):
+        from .infisical_secrets import apply_to_process_env
+
+        apply_to_process_env()
     return Settings()

@@ -28,6 +28,8 @@ dependencies = [
     "minio>=7.2.18",
     "mcp>=2,<3",
     "pydantic-ai-slim[openai]>=2.31.1",
+    "typesafe-sdk>=0.7.1",
+    "infisicalsdk>=1.0.17",
 ]
 
 [tool.hatch.build.targets.wheel]

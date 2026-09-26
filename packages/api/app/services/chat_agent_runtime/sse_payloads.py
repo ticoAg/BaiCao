@@ -160,6 +160,12 @@ def patch_from_tool_payload(tool_name: str, payload: Any) -> dict[str, Any] | No
 
 
 def summarize_tool_payload(tool_name: str, payload: Any) -> str:
+    if tool_name == "judge" and isinstance(payload, dict):
+        profile = payload.get("profile") or "判定"
+        follow = payload.get("follow")
+        if isinstance(follow, str) and follow.strip():
+            return f"{profile}：{follow.strip()[:80]}"
+        return f"{profile} 判定完成"
     if isinstance(payload, dict) and isinstance(payload.get("count"), int):
         if tool_name in {"search_nodes", "lookup_nodes"}:
             return f"返回 {payload['count']} 个节点"

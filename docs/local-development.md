@@ -70,9 +70,9 @@ make stack up API_PORT=8010 WEB_PORT=3010
 
 ## Infisical
 
-`make deps/api/web/stack` 和仓库测试脚本通过 `scripts/infisical_env.py` 调 HTTP API 拉 secret，注入子进程。不需要 Infisical CLI。已经出现在进程环境里的变量不会被覆盖。
+API 进程启动时用官方 Python SDK `infisicalsdk` 读取 `/baicao`。`make`、集成测试和 E2E 用 `uv run` 执行 `scripts/infisical_env.py`，给 Compose 和前端注入同一批 secret。不需要安装 Infisical CLI。已经出现在进程环境里的变量不会被覆盖。
 
-本地只放鉴权信息；`DATABASE_URL`、`OPENAI_API_KEY`、`NEO4J_PASSWORD` 等业务变量放 Infisical。运行时会读仓库根目录的 `infisical.defaults.env`、`.env`、`.env.local`：
+本地只放鉴权信息；`DATABASE_URL`、`OPENAI_API_KEY`、`NEO4J_PASSWORD` 等业务变量放 Infisical Cloud 项目的 `/baicao`。`dev` 用本机映射端口，`staging` 和 `prod` 用 Compose 网络里的服务名。运行时会读仓库根目录的 `infisical.defaults.env`、`.env`、`.env.local`：
 
 - 固定默认项：仓库跟踪的 `infisical.defaults.env`
 - `INFISICAL_TOKEN` 或 `INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET`：本地 `.env`
@@ -100,6 +100,10 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=neo4j_password
 REDIS_URL=redis://localhost:16380
 OPENAI_API_KEY=your_api_key_here
+# 可选。配齐后，问答循环中的判定才会调用 TypeSafe system_one。
+# TYPESAFE_API_KEY=
+# TYPESAFE_BASE_URL=
+# TYPESAFE_MODEL=decision-model-preview
 ```
 
 后端：
@@ -113,7 +117,7 @@ uv run uvicorn app.main:app --reload --port 8000
 手动模式也走 Infisical 时，从仓库根目录：
 
 ```bash
-python3 scripts/infisical_env.py run -- \
+uv run --directory packages/api python scripts/infisical_env.py run -- \
   bash -lc 'cd packages/api && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000'
 ```
 
@@ -131,7 +135,7 @@ pnpm exec vp dev --host 0.0.0.0 --port 3000
 前端走 Infisical 时，从仓库根目录：
 
 ```bash
-python3 scripts/infisical_env.py run -- \
+uv run --directory packages/api python scripts/infisical_env.py run -- \
   bash -lc 'cd packages/web && pnpm install && pnpm exec vp dev --host 0.0.0.0 --port 3000'
 ```
 

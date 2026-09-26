@@ -8,10 +8,12 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 from ...core.config import get_settings
 from ..knowledge_mcp.server import knowledge_mcp
+from ..system_one import SystemOneJudge, typesafe_ready
 from .mcp_agent_tools import schema_json_from_client, tools_from_mcp_client
 from .pydantic_event_adapter import adapt_pydantic_stream
 from .session_memory import InMemorySessionManager
-from .system_prompt import build_graph_specialist_system_prompt
+from .system_prompt import build_graph_specialist_system_prompt, build_judge_instructions
+from .turn_judgment import make_judge_tool
 
 _MESSAGE_HISTORIES: dict[str, list] = {}
 
@@ -38,17 +40,32 @@ def _chat_model(settings) -> OpenAIChatModel:
     )
 
 
-async def build_graph_agent(client: Client, settings=None) -> Agent:
+def agent_instructions(schema_json: str, *, with_judge: bool) -> list[str]:
+    instructions = [
+        build_graph_specialist_system_prompt(),
+        "当前图谱 schema（JSON）：\n" + schema_json,
+    ]
+    if with_judge:
+        instructions.append(build_judge_instructions())
+    return instructions
+
+
+async def build_graph_agent(
+    client: Client,
+    settings=None,
+    *,
+    judge: SystemOneJudge | None = None,
+) -> Agent:
     current = settings or get_settings()
     schema = await schema_json_from_client(client)
+    tools = await tools_from_mcp_client(client)
+    if judge is not None:
+        tools.append(make_judge_tool(judge))
     return Agent(
         _chat_model(current),
         name="BaiCao Graph Specialist",
-        instructions=[
-            build_graph_specialist_system_prompt(),
-            "当前图谱 schema（JSON）：\n" + schema,
-        ],
-        tools=await tools_from_mcp_client(client),
+        instructions=agent_instructions(schema, with_judge=judge is not None),
+        tools=tools,
     )
 
 
@@ -76,9 +93,12 @@ async def stream_turn(question: str, session_id: str | None = None) -> AsyncIter
             }
             return
 
+        judge = None
         try:
+            if typesafe_ready(settings):
+                judge = SystemOneJudge.from_settings(settings)
             async with Client(knowledge_mcp) as client:
-                agent = await build_graph_agent(client, settings)
+                agent = await build_graph_agent(client, settings, judge=judge)
                 history = _history_for(sid)
 
                 async with agent.run_stream_events(
@@ -101,3 +121,6 @@ async def stream_turn(question: str, session_id: str | None = None) -> AsyncIter
                         yield event
         except Exception as exc:
             yield {"type": "error", "data": {"message": str(exc)}}
+        finally:
+            if judge is not None:
+                await judge.aclose()

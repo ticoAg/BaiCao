@@ -151,7 +151,8 @@ def _ready_settings():
 def _patch_runtime(monkeypatch, runtime, captured: dict):
     monkeypatch.setattr(runtime, "get_settings", _ready_settings)
 
-    async def fake_build(client, settings=None):
+    async def fake_build(client, settings=None, *, judge=None):
+        captured["judge"] = judge
         return _FakeAgent(captured)
 
     monkeypatch.setattr(runtime, "build_graph_agent", fake_build)
@@ -170,6 +171,7 @@ async def test_stream_turn_uses_pydantic_agent(monkeypatch):
     assert events[0]["type"] == "session"
     assert events[-1]["type"] == "final"
     assert captured["prompt"] == "第一问"
+    assert captured["judge"] is None
     assert runtime._MESSAGE_HISTORIES["sid-runtime"] == ["hist"]
 
 
@@ -260,8 +262,9 @@ async def test_stream_turn_passes_mcp_client_to_agent_builder(monkeypatch):
 
     seen: list = []
 
-    async def fake_build(client, settings=None):
+    async def fake_build(client, settings=None, *, judge=None):
         seen.append(client)
+        captured["judge"] = judge
         return _FakeAgent(captured)
 
     monkeypatch.setattr(runtime, "build_graph_agent", fake_build)
@@ -270,6 +273,86 @@ async def test_stream_turn_passes_mcp_client_to_agent_builder(monkeypatch):
 
     assert seen
     assert isinstance(seen[0], Client)
+    assert captured["judge"] is None
+
+
+@pytest.mark.asyncio
+async def test_stream_turn_closes_judge_client(monkeypatch):
+    from app.services.chat_agent_runtime import runtime
+
+    captured: dict = {}
+    closed: dict = {}
+    _patch_runtime(monkeypatch, runtime, captured)
+    runtime._MESSAGE_HISTORIES.clear()
+
+    class _Judge:
+        async def aclose(self):
+            closed["yes"] = True
+
+    monkeypatch.setattr(runtime, "typesafe_ready", lambda settings: True)
+    monkeypatch.setattr(runtime.SystemOneJudge, "from_settings", lambda settings: _Judge())
+
+    events = [event async for event in runtime.stream_turn("问", session_id="sid-judge")]
+
+    assert events[-1]["type"] == "final"
+    assert isinstance(captured["judge"], _Judge)
+    assert closed["yes"] is True
+
+
+@pytest.mark.asyncio
+async def test_stream_turn_reports_judge_setup_failure(monkeypatch):
+    from app.services.chat_agent_runtime import runtime
+
+    captured: dict = {}
+    _patch_runtime(monkeypatch, runtime, captured)
+    runtime._MESSAGE_HISTORIES.clear()
+    monkeypatch.setattr(runtime, "typesafe_ready", lambda settings: True)
+
+    def _boom(settings):
+        raise RuntimeError("判定客户端无法创建")
+
+    monkeypatch.setattr(runtime.SystemOneJudge, "from_settings", _boom)
+
+    events = [event async for event in runtime.stream_turn("问", session_id="sid-judge-fail")]
+
+    assert events[0]["type"] == "session"
+    assert events[-1]["type"] == "error"
+    assert "判定客户端无法创建" in events[-1]["data"]["message"]
+    assert "judge" not in captured
+
+
+@pytest.mark.asyncio
+async def test_build_graph_agent_adds_judge_tool():
+    from mcp.client import Client
+
+    from app.services.chat_agent_runtime import runtime
+    from app.services.chat_agent_runtime.turn_judgment import make_judge_tool
+    from app.services.knowledge_mcp.handlers import KnowledgeMcpHandlers
+    from app.services.knowledge_mcp.server import create_knowledge_mcp
+    from app.services.system_one import SystemOneJudge
+
+    class _Idle:
+        async def system_one(self, state, questions):
+            raise AssertionError("构建 agent 时不应调用 system_one")
+
+        async def aclose(self):
+            return None
+
+    backend = AsyncMock()
+    mcp = create_knowledge_mcp(KnowledgeMcpHandlers(backend_factory=lambda: backend))
+    async with Client(mcp) as client:
+        plain = await runtime.build_graph_agent(client, _ready_settings())
+        judged = await runtime.build_graph_agent(
+            client,
+            _ready_settings(),
+            judge=SystemOneJudge(_Idle()),
+        )
+    assert "judge" not in plain._function_toolset.tools
+    assert "judge" in judged._function_toolset.tools
+    assert judged._function_toolset.tools["judge"].sequential is True
+    assert make_judge_tool(SystemOneJudge(_Idle())).name == "judge"
+    assert any("profile=claim" in item for item in runtime.agent_instructions("{ }", with_judge=True))
+    assert all("judge" not in item for item in runtime.agent_instructions("{ }", with_judge=False))
 
 
 @pytest.mark.asyncio

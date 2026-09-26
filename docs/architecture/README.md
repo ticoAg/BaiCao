@@ -23,7 +23,7 @@
 | 2 | [data-model.md](data-model.md) | 深入数据设计 | 看 Neo4j 节点/关系模型与 PostgreSQL 侧职责 |
 | 3 | [graph-workbench.md](graph-workbench.md) | 理解 `/graph` 的当前稳定实现 | 看 Graph Workbench、metadata、D3 结果视图和 Neo4j 运行时边界 |
 | 4 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | 理解共享图模型与数据采集边界 | 看仓库级图模型唯一真源、中文语义与数据采集二级子项目架构 |
-| 5 | [chat-agent-mcp.md](chat-agent-mcp.md) | 理解问答 agent 检索面 | 看轻量 agent 边界、四个图工具、prompt 与 MCP 规范对齐 |
+| 5 | [chat-agent-mcp.md](chat-agent-mcp.md) | 理解问答 agent 检索面和执行中判定 | 看轻量 agent 边界、四个图工具、system_one 判定与 MCP 规范对齐 |
 | 6 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | 理解固定步骤的数据处理工作台 | 看持久化处理任务、步骤预览、人工放行与导出 / 入库流程 |
 | 7 | [data-sources.md](data-sources.md) | 校验数据源质量 | 审核队列、各源仓库路径、许可边界与人工审阅记录 |
 | 8 | [knowledge-dataset.md](knowledge-dataset.md) | 维护 HF 数据集 | 任务定义、信封、Parquet、neo4j-admin 入图 |
@@ -37,7 +37,7 @@
 | [data-model.md](data-model.md) | stable | 数据模型设计，覆盖关系模型、图模型和验证状态 |
 | [graph-workbench.md](graph-workbench.md) | stable | `/graph` 的 Graph Workbench、metadata、D3 结果视图与 Neo4j 连接边界 |
 | [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md) | stable | 仓库级图模型唯一真源、中文知识结构定义与数据采集架构 |
-| [chat-agent-mcp.md](chat-agent-mcp.md) | stable | 问答与 Cursor 共用官方 mcp v2 知识 server；pydantic-ai 只做 loop |
+| [chat-agent-mcp.md](chat-agent-mcp.md) | stable | 问答与 Cursor 共用官方 mcp v2 知识 server；检索走 pydantic-ai，执行中判定走 system_one |
 | [data-pipeline-workbench.md](data-pipeline-workbench.md) | stable | 固定步骤、可预览、可人工放行的数据处理工作台架构 |
 | [data-sources.md](data-sources.md) | review | 审核队列、各源仓库路径、许可边界与人工质量校验清单 |
 | [knowledge-dataset.md](knowledge-dataset.md) | stable | 自有 HF dataset 任务定义、Parquet 发布、neo4j-admin 入图 |

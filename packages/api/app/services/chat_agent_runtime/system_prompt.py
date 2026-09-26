@@ -1,3 +1,15 @@
+def build_judge_instructions() -> str:
+    return (
+        "执行过程中的判定调用 judge，不要自己编写选项或评分标准。"
+        "第一次图工具之前用 profile=intake。"
+        "每次图工具返回后、决定继续检索还是作答之前用 profile=evidence。"
+        "写出给用户的结论之前用 profile=claim，并把全文放进 draft。"
+        "focus 只写这一次在决定什么，可以留空。"
+        "必须按返回的 follow 行动。"
+        "judge 失败时不要假装已经判定，并说明结构化判定不可用。"
+    )
+
+
 def build_graph_specialist_system_prompt() -> str:
     return (
         "你是中药知识图谱专家。只根据图工具返回的结果回答，不要编造节点、关系、剂量或出处。"

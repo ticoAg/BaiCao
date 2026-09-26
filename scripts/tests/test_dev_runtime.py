@@ -193,7 +193,11 @@ class DepsCommandTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn(
             [
-                self.runtime.sys.executable,
+                "uv",
+                "run",
+                "--directory",
+                str(self.runtime.API_DIR),
+                "python",
                 str(self.runtime.INFISICAL_ENV_SCRIPT),
                 "run",
                 "--",
@@ -240,7 +244,11 @@ class DepsCommandTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn(
             [
-                self.runtime.sys.executable,
+                "uv",
+                "run",
+                "--directory",
+                str(self.runtime.API_DIR),
+                "python",
                 str(self.runtime.INFISICAL_ENV_SCRIPT),
                 "run",
                 "--",
