@@ -9,7 +9,11 @@ from pydantic_ai import (
     FunctionToolCallEvent,
     FunctionToolResultEvent,
     PartDeltaEvent,
+    PartEndEvent,
+    PartStartEvent,
+    TextPart,
     TextPartDelta,
+    ThinkingPart,
     ThinkingPartDelta,
 )
 
@@ -36,6 +40,41 @@ def _tool_args(value: Any) -> dict[str, Any]:
     return {}
 
 
+class _StreamTextCollector:
+    """把 part 边界事件与 delta 事件合成一份完整文本。
+
+    pydantic-ai 的 `PartStartEvent` 携带该 part 的首个分片，后续分片才走
+    `PartDeltaEvent`；`PartEndEvent.part.content` 是完整内容。只读 delta 会
+    丢掉首片，表现为答案开头少字（例如「黄芪」变成「芪」）。这里按 part
+    归属缓冲，`PartEndEvent` 时以完整内容为准，算出尚未推送的增量。
+    """
+
+    def __init__(self) -> None:
+        self._buffer: str = ""
+        self._emitted: str = ""
+
+    def append(self, text: str) -> None:
+        if text:
+            self._buffer += text
+
+    def sync(self, full_text: str) -> None:
+        """以 part 的完整内容校准缓冲。"""
+        self._buffer = full_text
+
+    def discard(self) -> None:
+        self.sync("")
+
+    def flush(self) -> str | None:
+        """产出尚未推送的文本；无新增内容时返回 None。"""
+        if self._buffer.startswith(self._emitted):
+            fresh = self._buffer[len(self._emitted) :]
+        else:
+            # 上游改写了已推送内容，无法只发增量，只能整体重发。
+            fresh = self._buffer
+        self._emitted = self._buffer
+        return fresh or None
+
+
 async def adapt_pydantic_stream(
     stream_events: AsyncIterator[Any],
     *,
@@ -52,6 +91,8 @@ async def adapt_pydantic_stream(
     }
     answer_chunks: list[str] = []
     provider_reasoning: list[dict[str, str]] = []
+    text_collector = _StreamTextCollector()
+    reasoning_collector = _StreamTextCollector()
 
     async for event in stream_events:
         if isinstance(event, FunctionToolCallEvent):
@@ -119,15 +160,35 @@ async def adapt_pydantic_stream(
             )
             if patch:
                 yield {"type": "subgraph_patch", "data": patch}
+        elif isinstance(event, PartStartEvent):
+            if isinstance(event.part, TextPart):
+                text_collector.append(event.part.content or "")
+            elif isinstance(event.part, ThinkingPart):
+                reasoning_collector.append(event.part.content or "")
+        elif isinstance(event, PartEndEvent):
+            if isinstance(event.part, TextPart):
+                # PartStart 可能紧接工具调用（如「我来查询一下」），这类前言不是
+                # 最终答案；PartEndEvent 带 next_part_kind，据此决定是否发出。
+                if event.next_part_kind != "tool-call":
+                    text_collector.sync(event.part.content or "")
+                    fresh = text_collector.flush()
+                    if fresh:
+                        answer_chunks.append(fresh)
+                        yield {"type": "answer_chunk", "data": {"text": fresh}}
+                else:
+                    text_collector.discard()
+            elif isinstance(event.part, ThinkingPart):
+                reasoning_collector.sync(event.part.content or "")
+                fresh = reasoning_collector.flush()
+                if fresh:
+                    provider_reasoning.append({"text": fresh})
+                    yield {"type": "provider_reasoning", "data": {"text": fresh}}
         elif isinstance(event, PartDeltaEvent):
             delta = event.delta
             if isinstance(delta, TextPartDelta) and delta.content_delta:
-                answer_chunks.append(delta.content_delta)
-                yield {"type": "answer_chunk", "data": {"text": delta.content_delta}}
+                text_collector.append(delta.content_delta)
             elif isinstance(delta, ThinkingPartDelta) and delta.content_delta:
-                chunk = {"text": delta.content_delta}
-                provider_reasoning.append(chunk)
-                yield {"type": "provider_reasoning", "data": chunk}
+                reasoning_collector.append(delta.content_delta)
         elif isinstance(event, AgentRunResultEvent):
             result = event.result
             output = getattr(result, "output", None)

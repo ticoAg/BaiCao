@@ -8,9 +8,12 @@ from pydantic_ai import (
     FunctionToolCallEvent,
     FunctionToolResultEvent,
     PartDeltaEvent,
+    PartEndEvent,
+    PartStartEvent,
     TextPartDelta,
+    ThinkingPartDelta,
 )
-from pydantic_ai.messages import ToolCallPart, ToolReturnPart
+from pydantic_ai.messages import TextPart, ThinkingPart, ToolCallPart, ToolReturnPart
 
 from app.services.chat_agent_runtime.pydantic_event_adapter import adapt_pydantic_stream
 
@@ -33,7 +36,9 @@ async def test_adapt_pydantic_stream_maps_tool_and_answer():
                 tool_call_id="call-1",
             )
         ),
-        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta="乌梅丸是一张方剂。")),
+        PartStartEvent(index=0, part=TextPart(content="乌梅丸是一张方剂。")),
+        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta="")),
+        PartEndEvent(index=0, part=TextPart(content="乌梅丸是一张方剂。"), next_part_kind=None),
     ]
 
     adapted = [
@@ -93,7 +98,8 @@ async def test_adapt_pydantic_stream_builds_evidence_from_graph_state_only():
         FunctionToolResultEvent(
             part=ToolReturnPart(tool_name="expand_neighbors", content=payload, tool_call_id="call-exp")
         ),
-        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta="乌梅味酸。出处：本草纲目伪引用不应进入 evidence。")),
+        PartStartEvent(index=0, part=TextPart(content="乌梅味酸。")),
+        PartEndEvent(index=0, part=TextPart(content="乌梅味酸。出处：本草纲目伪引用不应进入 evidence。"), next_part_kind=None),
     ]
     adapted = [
         event
@@ -103,6 +109,80 @@ async def test_adapt_pydantic_stream_builds_evidence_from_graph_state_only():
     assert final["data"]["evidence"][0]["source_id"] == "来源:道医苏子阳"
     assert "伪造" not in str(final["data"]["evidence"])
     assert "本草纲目" not in str(final["data"]["evidence"])
+
+
+@pytest.mark.asyncio
+async def test_adapt_pydantic_stream_keeps_first_text_fragment_from_part_start():
+    """pydantic-ai 把首个分片放在 PartStartEvent，只读 delta 会丢字。"""
+    events = [
+        PartStartEvent(index=0, part=ThinkingPart(content="The user")),
+        PartDeltaEvent(index=0, delta=ThinkingPartDelta(content_delta=" asks about 黄芪.")),
+        PartEndEvent(index=0, part=ThinkingPart(content="The user asks about 黄芪."), next_part_kind="text"),
+        PartStartEvent(index=1, part=TextPart(content="我来查询一下「黄芪」。")),
+        PartEndEvent(index=1, part=TextPart(content="我来查询一下「黄芪」。"), next_part_kind="tool-call"),
+        PartStartEvent(index=2, part=ToolCallPart(tool_name="search_nodes", args="", tool_call_id="call-1")),
+        FunctionToolCallEvent(part=ToolCallPart(tool_name="search_nodes", args={"query": "黄芪"}, tool_call_id="call-1")),
+        FunctionToolResultEvent(
+            part=ToolReturnPart(
+                tool_name="search_nodes",
+                content={"count": 1, "items": [{"id": "药材:黄芪", "name": "黄芪", "labels": ["药材"]}]},
+                tool_call_id="call-1",
+            )
+        ),
+        PartStartEvent(index=0, part=TextPart(content="黄芪味甘，")),
+        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta="性温。")),
+        PartEndEvent(index=0, part=TextPart(content="黄芪味甘，性温。"), next_part_kind=None),
+    ]
+
+    adapted = [
+        event
+        async for event in adapt_pydantic_stream(_iter_events(events), session_id="sid-3", turn_id="turn-3")
+    ]
+    final = next(event for event in adapted if event["type"] == "final")
+
+    # 工具调用前的「我来查询一下」是前言，不进答案。
+    assert final["data"]["answer"] == "黄芪味甘，性温。"
+    assert final["data"]["provider_reasoning"] == [{"text": "The user asks about 黄芪."}]
+    chunks = [event["data"]["text"] for event in adapted if event["type"] == "answer_chunk"]
+    assert "".join(chunks) == "黄芪味甘，性温。"
+
+
+@pytest.mark.asyncio
+async def test_adapt_pydantic_stream_never_duplicates_emitted_text():
+    """PartEnd 重复推送同一 part 时不应把已发内容再发一遍。"""
+    events = [
+        PartStartEvent(index=0, part=TextPart(content="黄芪")),
+        PartDeltaEvent(index=0, delta=TextPartDelta(content_delta="味甘")),
+        PartEndEvent(index=0, part=TextPart(content="黄芪味甘"), next_part_kind=None),
+        PartEndEvent(index=0, part=TextPart(content="黄芪味甘"), next_part_kind=None),
+    ]
+
+    adapted = [
+        event
+        async for event in adapt_pydantic_stream(_iter_events(events), session_id="sid-4", turn_id="turn-4")
+    ]
+    final = next(event for event in adapted if event["type"] == "final")
+    assert final["data"]["answer"] == "黄芪味甘"
+    assert len([event for event in adapted if event["type"] == "answer_chunk"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_adapt_pydantic_stream_falls_back_to_output_without_text_parts():
+    events = [
+        PartStartEvent(index=0, part=ToolCallPart(tool_name="judge", args="", tool_call_id="call-1")),
+        FunctionToolCallEvent(part=ToolCallPart(tool_name="judge", args={"focus": "x"}, tool_call_id="call-1")),
+        FunctionToolResultEvent(
+            part=ToolReturnPart(tool_name="judge", content={"profile": "intake"}, tool_call_id="call-1")
+        ),
+        AgentRunResultEvent(result=SimpleNamespace(output="直接给出的结论。")),
+    ]
+
+    adapted = [
+        event
+        async for event in adapt_pydantic_stream(_iter_events(events), session_id="sid-5", turn_id="turn-5")
+    ]
+    final = next(event for event in adapted if event["type"] == "final")
+    assert final["data"]["answer"] == "直接给出的结论。"
 
 
 class _FakeRunEvents:
