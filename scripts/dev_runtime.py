@@ -323,7 +323,7 @@ def _default_port_checker(host: str, port: int) -> bool:
 
 
 def _compose_cmd(*parts: str) -> list[str]:
-    return ["docker", "compose", "-f", "infra/docker-compose.yml", *parts]
+    return ["docker", "compose", "-f", str(ROOT_DIR / "infra/docker-compose.yml"), *parts]
 
 
 def _tmux_cmd(*parts: str) -> list[str]:
@@ -498,7 +498,7 @@ def _resource_port(ctx: RuntimeContext, resource: str) -> int:
 def _resource_url(ctx: RuntimeContext, resource: str) -> str:
     port = _resource_port(ctx, resource)
     if resource == "api":
-        return f"http://localhost:{port}/health"
+        return f"http://127.0.0.1:{port}/health"
     return f"http://localhost:{port}"
 
 
