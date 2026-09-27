@@ -39,6 +39,7 @@ class TestGetHerbGraph:
         assert_status(resp, 200)
         assert_graph_response(resp.json())
         assert resp.json()["center"]["name"] == "ginseng"
+        mock_svc.get_herb_graph.assert_awaited_once_with("ginseng", depth=1, limit=20)
         assert_json_keys(
             resp.json()["scene"],
             {"truncated", "node_limit_hit", "relationship_limit_hit", "info_message"},

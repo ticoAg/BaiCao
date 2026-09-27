@@ -74,10 +74,11 @@ async def query_graph(payload: GraphQueryRequest):
 @router.get("/herb/{name}")
 async def get_herb_graph(
     name: str,
-    depth: int = Query(1, ge=1, le=3)
+    depth: int = Query(1, ge=1, le=3),
+    limit: int = Query(20, ge=1, le=50),
 ):
     """获取以药材为中心的图谱"""
-    result = await graph_service.get_herb_graph(name, depth=depth)
+    result = await graph_service.get_herb_graph(name, depth=depth, limit=limit)
     if not result["center"]:
         raise HTTPException(status_code=404, detail=f"Herb '{name}' not found")
     return result

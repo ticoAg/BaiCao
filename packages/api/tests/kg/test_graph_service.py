@@ -446,6 +446,24 @@ async def test_get_herb_graph(graph_service):
     }
 
 
+@pytest.mark.unit
+async def test_get_herb_graph_limits_paths_before_aggregation(graph_service):
+    graph_service._query_single = AsyncMock(return_value={
+        "center": {"id": "herb-1", "name": "人参", "labels": ["药材"]},
+        "nodes": [],
+        "edges": [],
+        "truncated": True,
+    })
+
+    result = await graph_service.get_herb_graph("人参", limit=12)
+
+    query, params = graph_service._query_single.await_args.args
+    assert "WITH h, path LIMIT $fetch_limit" in query
+    assert params == {"name": "人参", "limit": 12, "fetch_limit": 13}
+    assert result["scene"]["truncated"] is True
+    assert result["scene"]["relationship_limit_hit"] is True
+
+
 # ---------------------------------------------------------------------------
 # Test 9: test_verify_node
 # ---------------------------------------------------------------------------

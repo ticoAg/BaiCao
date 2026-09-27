@@ -1023,14 +1023,17 @@ class GraphService:
 
     # ============ 图谱查询 ============
 
-    async def get_herb_graph(self, herb_name: str, depth: int = 1) -> Dict[str, Any]:
-        """获取以药材为中心的完整图谱"""
+    async def get_herb_graph(self, herb_name: str, depth: int = 1, limit: int = 20) -> Dict[str, Any]:
+        """获取以药材为中心的简要图谱"""
         query = f"""
         MATCH (h:药材 {{名称: $name}})
         OPTIONAL MATCH path = (h)-[*1..{depth}]-(connected)
-        WITH h, [p IN collect(path) WHERE p IS NOT NULL] AS paths
+        WITH h, path LIMIT $fetch_limit
+        WITH h, [p IN collect(path) WHERE p IS NOT NULL] AS sampled_paths
+        WITH h, sampled_paths[0..$limit] AS paths, size(sampled_paths) > $limit AS truncated
         RETURN
             h {{.*, labels: labels(h)}} AS center,
+            truncated,
             reduce(node_maps = [], p IN paths |
                 node_maps + [n IN nodes(p) | n {{.*, labels: labels(n)}}]
             ) AS nodes,
@@ -1062,7 +1065,7 @@ class GraphService:
             ) AS edges
         """
 
-        record = await self._query_single(query, {"name": herb_name})
+        record = await self._query_single(query, {"name": herb_name, "limit": limit, "fetch_limit": limit + 1})
         center = self._record_value(record, "center") if record else None
         if center:
             nodes = self._dedupe_nodes([center, *(self._record_value(record, "nodes") or [])])
@@ -1074,7 +1077,10 @@ class GraphService:
                 "center": self._map_node_to_dict(center),
                 "nodes": nodes,
                 "edges": edges,
-                "scene": self._build_scene_info(),
+                "scene": self._build_scene_info(
+                    truncated=bool(self._record_value(record, "truncated")),
+                    relationship_limit_hit=bool(self._record_value(record, "truncated")),
+                ),
             }
 
         legacy_center = self._record_value(record, "h") if record else None
