@@ -1,6 +1,8 @@
-"""用官方 infisicalsdk 把 /baicao 的 secret 填进进程环境。
+"""把 .env 和 Infisical 合成一份进程环境。
 
-不依赖 Infisical CLI。进程里已经有值的变量保持不变。
+优先级从高到低：进程里已有的变量、仓库根 `.env.local`、根 `.env`、
+`packages/api/.env.local`、`packages/api/.env`、Infisical。空值不算已配置，
+Infisical 可以补上。不依赖 Infisical CLI。
 """
 
 from __future__ import annotations
@@ -41,7 +43,14 @@ def load_repo_env_files(root: Path | None = None) -> dict[str, str]:
     if root is None:
         return {}
     loaded: dict[str, str] = {}
-    for name in ("infisical.defaults.env", ".env", ".env.local"):
+    # 后面的文件覆盖前面的。根目录 .env 比 packages/api/.env 更靠近这台机器。
+    for name in (
+        "infisical.defaults.env",
+        "packages/api/.env",
+        "packages/api/.env.local",
+        ".env",
+        ".env.local",
+    ):
         path = root / name
         if not path.is_file():
             continue
@@ -158,7 +167,7 @@ def build_injected_env(
 
 
 def apply_to_process_env() -> None:
-    """把仓库 env 文件和 Infisical secret 写进当前进程。已有环境变量优先。"""
+    """把 .env 和 Infisical 写进当前进程。进程里已经有值的变量保持不变。"""
     if os.environ.get("INFISICAL_SECRETS_LOADED"):
         return
     base = load_repo_env_files()

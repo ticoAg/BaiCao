@@ -70,9 +70,17 @@ make stack up API_PORT=8010 WEB_PORT=3010
 
 ## Infisical
 
-API 进程启动时用官方 Python SDK `infisicalsdk` 读取 `/baicao`。`make`、集成测试和 E2E 用 `uv run` 执行 `scripts/infisical_env.py`，给 Compose 和前端注入同一批 secret。不需要安装 Infisical CLI。已经出现在进程环境里的变量不会被覆盖。
+API 进程启动时同时读 `.env` 和 Infisical。`make`、集成测试和 E2E 用 `uv run` 执行 `scripts/infisical_env.py`，给 Compose 和前端注入同一份结果。不需要安装 Infisical CLI。
 
-本地只放鉴权信息；`DATABASE_URL`、`OPENAI_API_KEY`、`NEO4J_PASSWORD` 等业务变量放 Infisical Cloud 项目的 `/baicao`。`dev` 用本机映射端口，`staging` 和 `prod` 用 Compose 网络里的服务名。运行时会读仓库根目录的 `infisical.defaults.env`、`.env`、`.env.local`：
+同一变量按这个顺序取值，先命中的生效：
+
+1. 进程里已经导出的环境变量
+2. 仓库根 `.env.local`，然后是根 `.env`
+3. `packages/api/.env.local`，然后是 `packages/api/.env`
+4. Infisical Cloud 项目 `/baicao` 里还没有值的变量
+5. 代码里的默认值
+
+`.env` 里把某个键留空，会继续用 Infisical 的值。没有 Universal Auth 时，只使用 `.env` 和代码默认值。`dev` 用本机映射端口，`staging` 和 `prod` 用 Compose 网络里的服务名。运行时还会读仓库根目录的 `infisical.defaults.env`：
 
 - 固定默认项：仓库跟踪的 `infisical.defaults.env`
 - `INFISICAL_TOKEN` 或 `INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET`：本地 `.env`

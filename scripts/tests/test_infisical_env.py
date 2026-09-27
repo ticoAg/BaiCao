@@ -164,6 +164,45 @@ class InfisicalEnvTests(unittest.TestCase):
         self.assertEqual(loaded["INFISICAL_TOKEN"], "from-env")
         self.assertEqual(loaded["INFISICAL_PROJECT_ID"], "from-defaults")
 
+    def test_dotenv_files_layer_and_override_infisical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            api_env = root / "packages" / "api"
+            api_env.mkdir(parents=True)
+            (root / "infisical.defaults.env").write_text(
+                "INFISICAL_API_URL=https://app.infisical.com\nINFISICAL_PROJECT_ID=proj-1\n",
+                encoding="utf-8",
+            )
+            (api_env / ".env").write_text(
+                "OPENAI_MODEL=from-api-dotenv\nOPENAI_API_KEY=\n",
+                encoding="utf-8",
+            )
+            (root / ".env").write_text(
+                "INFISICAL_TOKEN=st.example\nOPENAI_MODEL=from-root-dotenv\n",
+                encoding="utf-8",
+            )
+            loaded = self.mod.load_repo_env_files(root)
+
+        self.assertEqual(loaded["OPENAI_MODEL"], "from-root-dotenv")
+        self.assertEqual(loaded["OPENAI_API_KEY"], "")
+
+        def factory(**kwargs):
+            del kwargs
+            client = FakeClient(host="https://app.infisical.com")
+            client.secrets = _SecretsApi(
+                [
+                    _Secret("OPENAI_MODEL", "from-sdk"),
+                    _Secret("OPENAI_API_KEY", "from-sdk"),
+                    _Secret("REDIS_URL", "redis://from-sdk"),
+                ]
+            )
+            return client
+
+        merged = self.mod.build_injected_env(loaded, client_factory=factory)
+        self.assertEqual(merged["OPENAI_MODEL"], "from-root-dotenv")
+        self.assertEqual(merged["OPENAI_API_KEY"], "from-sdk")
+        self.assertEqual(merged["REDIS_URL"], "redis://from-sdk")
+
 
 if __name__ == "__main__":
     unittest.main()
