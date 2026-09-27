@@ -14,62 +14,40 @@ audience: developer
 
 `/graph` 现在的统一定位不是“药材图谱详情页”，而是 BaiCao 的 Graph Workbench。
 
-它面向两类稳定场景：
+它面向两类场景：
 
-- 以数据库视角浏览当前图谱与元数据
+- 简要浏览当前图谱结果
 - 以业务视角执行 herb graph、advanced query 与局部展开
 
-这意味着 `/graph` 同时承担两层职责：
-
-- `Database information`：展示数据库级 labels、relationship types、property keys、indexes、constraints 和计数
-- `Graph result view`：展示当前 herb graph、advanced query 或 expand graph 的子图结果
+`/graph` 首屏只请求当前子图；全库元数据接口保留供其他场景按需调用。
 
 ## 2. 当前稳定结构
 
-Graph Workbench 采用三栏稳定结构：
+Graph Workbench 采用两栏结构：
 
-1. 左侧 `Database information`
-2. 中央 D3 图谱结果视图
-3. 右侧 `Overview / Details` 检查器
+1. 左侧 Cytoscape.js 图谱结果视图与简要计数
+2. 右侧 `Overview / Details` 检查器
 
 页面主路径由 [packages/web/src/pages/GraphPage.tsx](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/pages/GraphPage.tsx) 承接。
 
-### 2.1 左侧：Database information
+### 2.1 Graph result view
 
-左侧展示数据库级元数据，而不是当前子图统计。
-
-当前稳定来源：
-
-- `GET /api/v1/graph/meta/summary`
-- `GET /api/v1/graph/meta/labels`
-- `GET /api/v1/graph/meta/relationship-types`
-- `GET /api/v1/graph/meta/property-keys`
-- `GET /api/v1/graph/meta/schema`
-
-对应实现位于：
-
-- [packages/api/app/kg/graph_metadata_service.py](/Users/ticoag/Documents/myws/BaiCao/packages/api/app/kg/graph_metadata_service.py)
-- [packages/web/src/components/graph/GraphMetadataSidebar.tsx](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/components/graph/GraphMetadataSidebar.tsx)
-
-### 2.2 中央：Graph result view
-
-中央区域使用仓库内自维护的 D3 可视化实现，而不是继续依赖旧图库结果壳层。
+有关联线的结果使用 Cytoscape.js 渲染；无关系结果展示为可选择、可展开的节点列表，避免孤立节点铺满画布。仓库内的 D3 可视化模块仍供聊天等其他页面使用。
 
 当前稳定职责：
 
 - 渲染 herb graph / query graph / expand graph 的统一视图
 - 维护缩放、平移、适配视图和空白点击清空选中
 - 保持节点 / 关系选中、高亮和弱化行为一致
-- 支持局部展开与 scene 提示
+- 支持有限局部展开与 scene 截断提示
 
 对应实现位于：
 
 - [packages/web/src/components/graph/GraphCanvasWorkspace.tsx](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/components/graph/GraphCanvasWorkspace.tsx)
-- [packages/web/src/lib/graph-viz/Visualization.ts](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/lib/graph-viz/Visualization.ts)
 - [packages/web/src/components/graph/GraphToolbar.tsx](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/components/graph/GraphToolbar.tsx)
 - [packages/web/src/components/graph/MiniGraphCanvas.tsx](/Users/ticoag/Documents/myws/BaiCao/packages/web/src/components/graph/MiniGraphCanvas.tsx)
 
-### 2.3 右侧：Inspector
+### 2.2 右侧：Inspector
 
 右侧检查器有两个稳定模式：
 
@@ -90,13 +68,7 @@ Graph Workbench 依赖两类后端事实。
 
 ### 3.1 DatabaseMeta
 
-数据库级元数据只服务左侧栏，不和当前子图结果混在同一个响应里。
-
-这样做的目的：
-
-- 元数据刷新不会拖动中央画布抖动
-- `/graph/meta/*` 可以独立失败或重试
-- 页面状态能清晰拆成“数据库级事实”和“当前图谱事实”
+`/graph/meta/*` 仍提供数据库级元数据，但轻量图谱页不自动请求整库统计、标签、属性键或结构信息。
 
 ### 3.2 GraphScene
 
@@ -107,6 +79,8 @@ Graph Workbench 依赖两类后端事实。
 - `GET /api/v1/graph/herb/{name}`
 - `POST /api/v1/graph/query`
 - `GET /api/v1/graph/node/{node_id}/expand`
+
+药材图默认最多读取 20 条路径，可通过 `limit` 调整至 50；多出的结果通过 `scene.truncated` 提示。
 
 对应实现位于：
 
@@ -140,16 +114,16 @@ Graph Workbench 当前 Neo4j 访问口径已经统一到 `neomodel` 连接层：
 稳定原则：
 
 - 远端协议与本地 view model 在边界处适配一次
-- 中央画布不重复定义数据库级元数据
+- 中央画布只显示当前子图计数
 - `scene` 与 `graphData` 分开暴露，不混成一个“万能 graph 对象”
 
 ## 6. 已完成与未完成边界
 
 ### 已完成
 
-- `/graph` 已升级为三栏 Graph Workbench
+- `/graph` 使用两栏简要结果视图
 - 数据库级 metadata 接口已落地
-- D3 图谱结果视图已替代旧结果壳层
+- Cytoscape.js 已承接 `/graph` 的布局和交互
 - `scene` 已成为图谱结果稳定契约的一部分
 - Neo4j 连接管理已统一到 `neomodel.adb`
 - 浏览器页面事实检查与本地 API spot-check 已补齐

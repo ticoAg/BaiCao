@@ -1,149 +1,189 @@
-import { memo, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react"
-import { Empty, Button, Space, Typography } from "../ui/index"
-import type { GraphData } from "../../types/graph"
-import { Visualization, VizGraph, GraphEventHandler } from "../../lib/graph-viz"
-import type { GraphEventCallbacks } from "../../lib/graph-viz"
+import { memo, useEffect, useRef } from "react"
+import cytoscape, { type Core, type ElementDefinition } from "cytoscape"
+import { Button, Typography } from "../ui/index"
+import { PlusOutlined } from "../ui/icons"
+import type { GraphData, GraphEdge, GraphNode } from "../../types/graph"
+import { relTypeLabels } from "../../types/graph"
 import GraphToolbar from "./GraphToolbar"
 
 const { Text } = Typography
 
-export interface GraphCanvasWorkspaceHandle {
-  zoomIn: () => void
-  zoomOut: () => void
-  zoomToFit: () => void
-  getVisualization: () => Visualization | null
-  getGraph: () => VizGraph | null
-  getEventHandler: () => GraphEventHandler | null
-}
-
 interface GraphCanvasWorkspaceProps {
   graphData: GraphData | null
-  eventCallbacks: GraphEventCallbacks
+  highlightedLabel: string | null
+  highlightedRelationshipType: string | null
+  onNodeSelect: (node: GraphNode) => void
+  onEdgeSelect: (edge: GraphEdge) => void
+  onCanvasClick: () => void
+  onNodeDoubleClick: (node: GraphNode) => void
   onOpenQuery: () => void
 }
 
-const GraphCanvasWorkspace = forwardRef<
-  GraphCanvasWorkspaceHandle,
-  GraphCanvasWorkspaceProps
->(({ graphData, eventCallbacks, onOpenQuery }, ref) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
-  const vizRef = useRef<Visualization | null>(null)
-  const graphModelRef = useRef<VizGraph | null>(null)
-  const eventHandlerRef = useRef<GraphEventHandler | null>(null)
-  const callbacksRef = useRef(eventCallbacks)
-  callbacksRef.current = eventCallbacks
+const nodeId = (node: GraphNode) => node.id || node.name
+const edgeId = (edge: GraphEdge, index: number) =>
+  `edge:${edge.id || `${edge.source?.id || edge.source?.name}:${edge.rel_type}:${edge.target?.id || edge.target?.name}:${index}`}`
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      zoomIn: () => vizRef.current?.zoomIn(),
-      zoomOut: () => vizRef.current?.zoomOut(),
-      zoomToFit: () => vizRef.current?.zoomToFit(),
-      getVisualization: () => vizRef.current,
-      getGraph: () => graphModelRef.current,
-      getEventHandler: () => eventHandlerRef.current,
-    }),
-    []
-  )
+const nodeColor = (label?: string) => {
+  if (label === "药材" || label === "Herb") return "#2f7654"
+  if (label === "功效" || label === "Efficacy") return "#1c8b91"
+  if (label === "来源" || label === "Source") return "#b76b48"
+  return "#4b6fa8"
+}
+
+function graphElements(graph: GraphData) {
+  const nodes = new Map(graph.nodes.map((node) => [nodeId(node), node]))
+  const edges = new Map<string, GraphEdge>()
+  const elements: ElementDefinition[] = graph.nodes.map((node) => ({
+    data: {
+      id: nodeId(node),
+      label: node.name,
+      color: nodeColor(node.labels?.[0]),
+      nodeType: node.labels?.[0] || "",
+    },
+  }))
+
+  graph.edges.forEach((edge, index) => {
+    const source = edge.source?.id || edge.source?.name
+    const target = edge.target?.id || edge.target?.name
+    if (!source || !target || !nodes.has(source) || !nodes.has(target)) return
+    const id = edgeId(edge, index)
+    edges.set(id, edge)
+    elements.push({
+      data: {
+        id,
+        source,
+        target,
+        label: relTypeLabels[edge.rel_type || ""] || edge.rel_type || "",
+        relType: edge.rel_type || "",
+      },
+    })
+  })
+
+  return { elements, nodes, edges }
+}
+
+const GraphCanvasWorkspace = ({
+  graphData,
+  highlightedLabel,
+  highlightedRelationshipType,
+  onNodeSelect,
+  onEdgeSelect,
+  onCanvasClick,
+  onNodeDoubleClick,
+  onOpenQuery,
+}: GraphCanvasWorkspaceProps) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const cyRef = useRef<Core | null>(null)
+  const callbacksRef = useRef({ onNodeSelect, onEdgeSelect, onCanvasClick, onNodeDoubleClick })
+  callbacksRef.current = { onNodeSelect, onEdgeSelect, onCanvasClick, onNodeDoubleClick }
 
   useEffect(() => {
-    if (!svgRef.current || !graphData) return
-
-    // 清理旧实例
-    if (vizRef.current) {
-      vizRef.current.destroy()
-      vizRef.current = null
-      graphModelRef.current = null
-      eventHandlerRef.current = null
-    }
-
-    const svg = svgRef.current
-    const graph = VizGraph.fromGraphData(graphData)
-    graphModelRef.current = graph
-
-    const measureSize = () => ({
-      width: svg.clientWidth || 800,
-      height: svg.clientHeight || 600,
+    if (!containerRef.current || !graphData?.edges.length) return
+    const { elements, nodes, edges } = graphElements(graphData)
+    const cy = cytoscape({
+      container: containerRef.current,
+      elements,
+      layout: graphData.nodes.length <= 8
+        ? { name: "circle", animate: false, fit: true, padding: 40, nodeDimensionsIncludeLabels: true, avoidOverlap: true, radius: graphData.nodes.length <= 4 ? 90 : 150 }
+        : { name: "cose", animate: false, fit: true, padding: 48, nodeDimensionsIncludeLabels: true, componentSpacing: 80, idealEdgeLength: 100 },
+      minZoom: 0.25,
+      maxZoom: 1.25,
+      style: [
+        { selector: "node", style: { "background-color": "data(color)", label: "data(label)", color: "#203127", "font-size": 14, "font-weight": "bold", "text-valign": "bottom", "text-halign": "center", "text-margin-y": 8, "text-wrap": "ellipsis", "text-max-width": "92px", "text-background-color": "#fbfdfb", "text-background-opacity": 0.95, "text-background-padding": "2px", width: 36, height: 36, "border-width": 2, "border-color": "#fff" } },
+        { selector: "edge", style: { width: 2, "line-color": "#91a69a", "target-arrow-color": "#91a69a", "target-arrow-shape": "triangle", "curve-style": "bezier", label: "data(label)", color: "#52645b", "font-size": 11, "text-background-color": "#fbfdfb", "text-background-opacity": 1, "text-background-padding": "3px" } },
+        { selector: ":selected", style: { "border-color": "#d18a3c", "border-width": 4 } },
+        { selector: ".muted", style: { opacity: 0.18 } },
+      ],
     })
+    cyRef.current = cy
+    cy.on("tap", "node", (event) => {
+      const node = nodes.get(event.target.id())
+      if (node) callbacksRef.current.onNodeSelect(node)
+    })
+    cy.on("tap", "edge", (event) => {
+      const edge = edges.get(event.target.id())
+      if (edge) callbacksRef.current.onEdgeSelect(edge)
+    })
+    cy.on("tap", (event) => {
+      if (event.target === cy) callbacksRef.current.onCanvasClick()
+    })
+    cy.on("dbltap", "node", (event) => {
+      const node = nodes.get(event.target.id())
+      if (node) callbacksRef.current.onNodeDoubleClick(node)
+    })
+    cy.on("mouseover", "node", (event) => {
+      containerRef.current?.setAttribute("title", nodes.get(event.target.id())?.name || "")
+    })
+    cy.on("mouseout", "node", () => containerRef.current?.removeAttribute("title"))
 
-    const viz = new Visualization(svg, measureSize, graph)
-    vizRef.current = viz
-
-    const handler = new GraphEventHandler(graph, viz, callbacksRef.current)
-    eventHandlerRef.current = handler
-    handler.bindEventHandlers()
-
-    viz.init()
-    viz.precomputeAndStart()
-
+    const observer = new ResizeObserver(() => {
+      cy.resize()
+      cy.fit(undefined, 48)
+    })
+    observer.observe(containerRef.current)
     return () => {
-      viz.destroy()
+      observer.disconnect()
+      cy.destroy()
+      cyRef.current = null
     }
   }, [graphData])
 
-  // 响应尺寸变化
   useEffect(() => {
-    if (!containerRef.current) return
-    const observer = new ResizeObserver(() => {
-      vizRef.current?.resize()
-    })
-    observer.observe(containerRef.current)
-    return () => observer.disconnect()
-  }, [])
-
-  const handleZoomIn = useCallback(() => vizRef.current?.zoomIn(), [])
-  const handleZoomOut = useCallback(() => vizRef.current?.zoomOut(), [])
-  const handleZoomToFit = useCallback(() => vizRef.current?.zoomToFit(), [])
+    const cy = cyRef.current
+    if (!cy) return
+    cy.elements().removeClass("muted")
+    if (highlightedLabel) {
+      cy.nodes().forEach((node) => {
+        if (node.data("nodeType") !== highlightedLabel) node.addClass("muted")
+      })
+    }
+    if (highlightedRelationshipType) {
+      cy.edges().forEach((edge) => {
+        if (edge.data("relType") !== highlightedRelationshipType) edge.addClass("muted")
+      })
+    }
+  }, [graphData, highlightedLabel, highlightedRelationshipType])
 
   return (
-    <div
-      ref={containerRef}
-      data-testid="graph-canvas-workspace"
-      style={{
-        position: "relative",
-        height: "100%",
-        minHeight: "100%",
-        borderRadius: 22,
-        overflow: "hidden",
-        background:
-          "radial-gradient(circle at 24% 18%, rgba(228, 240, 233, 0.96) 0%, rgba(247, 250, 248, 0.94) 34%, rgba(239, 245, 241, 0.92) 100%)",
-        boxShadow: "inset 0 0 0 1px rgba(183, 201, 188, 0.38)",
-      }}
-    >
-      {graphData ? (
+    <div data-testid="graph-canvas-workspace" style={{ position: "relative", height: "100%", overflow: "hidden", background: "#fbfdfb" }}>
+      {graphData?.edges.length ? (
         <>
-          <svg
-            ref={svgRef}
-            style={{ width: "100%", height: "100%", cursor: "grab" }}
-          />
+          <div ref={containerRef} aria-label="图谱可视化" style={{ width: "100%", height: "100%" }} />
           <GraphToolbar
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            onZoomToFit={handleZoomToFit}
+            onZoomIn={() => cyRef.current?.zoom(cyRef.current.zoom() * 1.25)}
+            onZoomOut={() => cyRef.current?.zoom(cyRef.current.zoom() / 1.25)}
+            onZoomToFit={() => cyRef.current?.fit(undefined, 48)}
           />
         </>
+      ) : graphData?.nodes.length ? (
+        <div className="graph-node-list" aria-label="匹配节点">
+          {graphData.nodes.map((node) => (
+            <div
+              key={nodeId(node)}
+              className="graph-node-list-item"
+              style={{ opacity: highlightedLabel && node.labels?.[0] !== highlightedLabel ? 0.3 : 1 }}
+            >
+              <button type="button" className="graph-node-list-select" onClick={() => onNodeSelect(node)}>
+                <span className="graph-node-list-dot" style={{ background: nodeColor(node.labels?.[0]) }} />
+                <span className="graph-node-list-text">
+                  <strong>{node.name}</strong>
+                  <small>{node.labels?.[0] || "节点"}</small>
+                </span>
+              </button>
+              <Button size="small" title="展开节点" aria-label={`展开 ${node.name}`} icon={<PlusOutlined />} onClick={() => onNodeDoubleClick(node)} />
+            </div>
+          ))}
+        </div>
       ) : (
-        <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size={8}>
-                <Text strong style={{ color: "#203127", fontSize: 16 }}>
-                  等待一张新图谱进入工作区
-                </Text>
-                <Button type="primary" onClick={onOpenQuery}>
-                  立即开始查询
-                </Button>
-              </Space>
-            }
-          />
+        <div style={{ height: "100%", display: "grid", placeItems: "center", textAlign: "center" }}>
+          <div>
+            <Text strong style={{ display: "block", color: "#203127", fontSize: 16 }}>暂无图谱结果</Text>
+            <Button type="primary" onClick={onOpenQuery} style={{ marginTop: 16 }}>打开查询器</Button>
+          </div>
         </div>
       )}
     </div>
   )
-})
-
-GraphCanvasWorkspace.displayName = "GraphCanvasWorkspace"
+}
 
 export default memo(GraphCanvasWorkspace)

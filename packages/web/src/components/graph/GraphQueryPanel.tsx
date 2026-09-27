@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Divider,
   Form,
@@ -193,19 +192,6 @@ const GraphQueryPanel = ({
       onFinish={handleFinish}
       onValuesChange={handleValuesChange}
     >
-      <Alert
-        type="info"
-        showIcon
-        message="围绕节点、关系和属性建立组合查询，结果会在中间工作区实时切换为命中子图。"
-        style={{
-          marginBottom: 20,
-          borderRadius: 14,
-          border: "none",
-          background: "rgba(255, 255, 255, 0.4)",
-          backdropFilter: "blur(12px)",
-        }}
-      />
-
       <Space direction="vertical" size={18} style={{ width: "100%" }}>
         <div>
           <Text style={sectionTitleStyle}>节点条件</Text>
@@ -280,14 +266,14 @@ const GraphQueryPanel = ({
           <Text style={sectionTitleStyle}>范围控制</Text>
           <Divider style={{ margin: "10px 0 16px" }} />
           <Form.Item label="查询深度" name="depth">
-            <InputNumber min={1} max={3} precision={0} style={{ width: "100%" }} />
+            <InputNumber min={1} max={2} precision={0} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item label="limit" name="limit">
+          <Form.Item label="最多显示" name="limit">
             <InputNumber
               min={1}
-              max={200}
+              max={20}
               precision={0}
-              placeholder="后端默认"
+              placeholder="默认 20"
               style={{ width: "100%" }}
             />
           </Form.Item>

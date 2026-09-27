@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Button, Drawer, Space, Tag, Typography } from "../components/ui/index"
 import { ReloadOutlined } from "../components/ui/icons"
 import { useParams } from "react-router-dom"
@@ -7,12 +7,8 @@ import { useGraphWorkbenchPage } from "../hooks/useGraphWorkbenchPage"
 import type { GraphData, GraphNode, GraphEdge } from "../types/graph"
 import { relTypeLabels } from "../types/graph"
 import GraphCanvasWorkspace from "../components/graph/GraphCanvasWorkspace"
-import type { GraphCanvasWorkspaceHandle } from "../components/graph/GraphCanvasWorkspace"
 import GraphInspectorPanel from "../components/graph/GraphInspectorPanel"
-import GraphMetadataSidebar from "../components/graph/GraphMetadataSidebar"
 import GraphQueryPanel from "../components/graph/GraphQueryPanel"
-import type { GraphEventCallbacks } from "../lib/graph-viz"
-import { VizNode, VizRelationship, VizGraph } from "../lib/graph-viz"
 
 const { Text } = Typography
 
@@ -59,13 +55,7 @@ const GraphPage = () => {
     mode,
     loading,
     scene,
-    metaSummary,
-    metaLabels,
-    metaRelationshipTypes,
-    metaPropertyKeys,
-    metaSchema,
-    metaLoading,
-    metaError,
+    sceneError,
     selectedItem,
     highlightedLabel,
     highlightedRelationshipType,
@@ -82,10 +72,10 @@ const GraphPage = () => {
   } = useGraphWorkbenchPage(name)
 
   const [isQueryDrawerOpen, setIsQueryDrawerOpen] = useState(false)
+  const [expansionError, setExpansionError] = useState(false)
   const [expandedSubgraphs, setExpandedSubgraphs] = useState<
     Record<string, GraphData>
   >({})
-  const canvasRef = useRef<GraphCanvasWorkspaceHandle>(null)
 
   // 数据变更时清除展开子图
   const baseGraphSceneKey = useMemo(() => {
@@ -96,9 +86,9 @@ const GraphPage = () => {
   }, [graphData])
 
   // 基础图数据变化时，清除展开子图
-  useMemo(() => {
+  useEffect(() => {
     if (baseGraphSceneKey) {
-      setExpandedSubgraphs((c) => (Object.keys(c).length ? {} : c))
+      setExpandedSubgraphs({})
     }
   }, [baseGraphSceneKey])
 
@@ -140,97 +130,30 @@ const GraphPage = () => {
     }
   }, [displayGraphData])
 
-  const eventCallbacks = useMemo<GraphEventCallbacks>(
-    () => ({
-      onNodeSelected: (vizNode: VizNode) => {
-        selectNode(vizNode.data)
-      },
-      onRelationshipSelected: (vizRel: VizRelationship) => {
-        selectEdge(vizRel.data)
-      },
-      onCanvasClicked: () => {
-        clearSelection()
-      },
-      onNodeHover: () => {},
-      onRelationshipHover: () => {},
-      onNodeDblClicked: async (vizNode: VizNode) => {
-        const nodeId = vizNode.id
-        // 切换展开/收起
-        if (expandedSubgraphs[nodeId]) {
-          setExpandedSubgraphs((current) => {
-            const next = { ...current }
-            delete next[nodeId]
-            return next
-          })
-          // 收起后需要更新图
-          const viz = canvasRef.current?.getVisualization()
-          const graph = canvasRef.current?.getGraph()
-          if (viz && graph) {
-            graph.collapseNode(vizNode)
-            viz.update({
-              updateNodes: true,
-              updateRelationships: true,
-              restartSimulation: true,
-            })
-          }
-          return
-        }
+  const onNodeDoubleClick = useCallback(async (node: GraphNode) => {
+    const id = getGraphNodeId(node)
+    if (expandedSubgraphs[id]) {
+      setExpandedSubgraphs((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+      return
+    }
 
-        const expansionGraph = await graphApi.expandNodeGraph(nodeId, 1, 20)
-        if (!expansionGraph.center) return
-
-        setExpandedSubgraphs((current) => ({
-          ...current,
-          [nodeId]: expansionGraph,
-        }))
-
-        // 直接在 VizGraph 上添加新节点和关系
-        const viz = canvasRef.current?.getVisualization()
-        const graph = canvasRef.current?.getGraph()
-        if (viz && graph) {
-          const newNodes = expansionGraph.nodes
-            .filter((n) => !graph.findNode(n.id || n.name))
-            .map((n) => {
-              const vn = new VizNode(n)
-              // 初始位置在展开源节点附近
-              const angle =
-                Math.random() * Math.PI * 2
-              vn.x = vizNode.x + Math.cos(angle) * 170
-              vn.y = vizNode.y + Math.sin(angle) * 170
-              return vn
-            })
-
-          graph.addNodes(newNodes)
-
-          const newRels = expansionGraph.edges
-            .map((edge, idx) => {
-              const srcId = edge.source?.id || edge.source?.name || ""
-              const tgtId = edge.target?.id || edge.target?.name || ""
-              const src = graph.findNode(srcId)
-              const tgt = graph.findNode(tgtId)
-              if (!src || !tgt) return null
-              return new VizRelationship(
-                src,
-                tgt,
-                edge,
-                edge.id || `exp-${nodeId}-${idx}`
-              )
-            })
-            .filter(Boolean) as VizRelationship[]
-
-          graph.addRelationships(newRels)
-          vizNode.expanded = true
-
-          viz.update({
-            updateNodes: true,
-            updateRelationships: true,
-            restartSimulation: true,
-          })
-        }
-      },
-    }),
-    [clearSelection, expandedSubgraphs, selectEdge, selectNode]
-  )
+    // ponytail: 局部展开最多展示 40 个节点；需要更大图时改为分页探索。
+    const remaining = 40 - (displayGraphData?.nodes.length ?? 0)
+    if (remaining <= 0) return
+    try {
+      const expansion = await graphApi.expandNodeGraph(id, 1, Math.min(10, remaining))
+      if (expansion.center) {
+        setExpansionError(false)
+        setExpandedSubgraphs((current) => ({ ...current, [id]: expansion }))
+      }
+    } catch {
+      setExpansionError(true)
+    }
+  }, [displayGraphData, expandedSubgraphs])
 
   const openQueryDrawer = useCallback(() => setIsQueryDrawerOpen(true), [])
   const closeQueryDrawer = useCallback(() => setIsQueryDrawerOpen(false), [])
@@ -252,70 +175,30 @@ const GraphPage = () => {
   return (
     <div
       data-testid="graph-workbench-page"
-      style={{
-        height: "calc(100vh - 64px)",
-        display: "grid",
-        gridTemplateColumns: "288px minmax(0, 1fr) 312px",
-        gap: 16,
-        padding: 16,
-        background:
-          "linear-gradient(180deg, rgba(244, 248, 245, 0.96) 0%, rgba(239, 245, 241, 0.98) 100%)",
-        boxSizing: "border-box",
-      }}
+      className={`graph-page${displayGraphData ? "" : " graph-page--empty"}`}
     >
-      <GraphMetadataSidebar
-        summary={metaSummary}
-        labels={metaLabels}
-        relationshipTypes={metaRelationshipTypes}
-        propertyKeys={metaPropertyKeys}
-        schema={metaSchema}
-        loading={metaLoading}
-        error={metaError}
-        onHighlightLabel={highlightLabel}
-        onHighlightRelationshipType={highlightRelationshipType}
-      />
-
       <div
-        style={{
-          position: "relative",
-          minWidth: 0,
-          minHeight: 0,
-          padding: 14,
-          border: "1px solid rgba(163, 185, 169, 0.45)",
-          borderRadius: 28,
-          background:
-            "linear-gradient(180deg, rgba(252, 253, 252, 0.98) 0%, rgba(247, 250, 248, 0.96) 100%)",
-          boxShadow:
-            "0 1px 0 rgba(255, 255, 255, 0.75) inset, 0 18px 44px rgba(27, 56, 36, 0.08), 0 2px 10px rgba(27, 56, 36, 0.06)",
-          overflow: "hidden",
-        }}
+        className="graph-main"
       >
         <div
-          style={{
-            position: "absolute",
-            top: 26,
-            left: 26,
-            right: 26,
-            zIndex: 2,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pointerEvents: "none",
-          }}
+          className="graph-header"
         >
-          <div style={{ pointerEvents: "auto" }}>
-            <Text strong style={{ fontSize: 20, color: "#203127" }}>
-              {mode === "advanced-query" ? "当前查询" : "当前图谱"}
+          <div>
+            <Text strong style={{ fontSize: 18, color: "#203127" }}>
+              {mode === "advanced-query" ? "查询结果" : name ? `${name} · 关联图谱` : "知识图谱"}
             </Text>
-            <Space size={[8, 8]} wrap style={{ display: "flex", marginTop: 10 }}>
+            <Space size={[8, 8]} wrap style={{ display: "flex", marginTop: 6 }}>
               <Tag>{displayGraphData?.nodes.length ?? 0} 个节点</Tag>
               <Tag>{displayGraphData?.edges.length ?? 0} 条关系</Tag>
               {scene.truncated || querySummary?.truncated ? (
-                <Tag color="warning">结果已截断</Tag>
+                <Tag color="warning">仅展示部分结果</Tag>
               ) : null}
+              {(displayGraphData?.nodes.length ?? 0) >= 40 ? <Tag color="warning">已达 40 节点上限</Tag> : null}
+              {sceneError ? <Tag color="warning">图谱加载失败</Tag> : null}
+              {expansionError ? <Tag color="warning">展开节点失败</Tag> : null}
             </Space>
           </div>
-          <Space style={{ pointerEvents: "auto" }}>
+          <Space>
             <Button onClick={openQueryDrawer}>打开查询器</Button>
             <Button icon={<ReloadOutlined />} onClick={refetch}>
               刷新
@@ -323,23 +206,31 @@ const GraphPage = () => {
           </Space>
         </div>
 
-        <GraphCanvasWorkspace
-          ref={canvasRef}
-          graphData={displayGraphData}
-          eventCallbacks={eventCallbacks}
-          onOpenQuery={openQueryDrawer}
-        />
+        <div className="graph-canvas-area">
+          <GraphCanvasWorkspace
+            graphData={displayGraphData}
+            highlightedLabel={highlightedLabel}
+            highlightedRelationshipType={highlightedRelationshipType}
+            onNodeSelect={selectNode}
+            onEdgeSelect={selectEdge}
+            onCanvasClick={clearSelection}
+            onNodeDoubleClick={onNodeDoubleClick}
+            onOpenQuery={openQueryDrawer}
+          />
+        </div>
       </div>
 
-      <GraphInspectorPanel
-        selectedItem={selectedItem}
-        nodeCount={displayGraphData?.nodes.length ?? 0}
-        relationshipCount={displayGraphData?.edges.length ?? 0}
-        labelStats={graphOverview.labelStats}
-        relTypeStats={graphOverview.relTypeStats}
-        onHighlightLabel={highlightLabel}
-        onHighlightRelationshipType={highlightRelationshipType}
-      />
+      {displayGraphData ? (
+        <GraphInspectorPanel
+          selectedItem={selectedItem}
+          nodeCount={displayGraphData.nodes.length}
+          relationshipCount={displayGraphData.edges.length}
+          labelStats={graphOverview.labelStats}
+          relTypeStats={graphOverview.relTypeStats}
+          onHighlightLabel={highlightLabel}
+          onHighlightRelationshipType={highlightRelationshipType}
+        />
+      ) : null}
 
       <Drawer
         title="图谱查询器"

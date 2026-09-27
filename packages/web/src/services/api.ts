@@ -39,9 +39,9 @@ const api = axios.create({
 
 export const graphApi = {
   // 获取药材图谱
-  getHerbGraph: async (name: string, depth = 1): Promise<HerbGraphResponse> => {
+  getHerbGraph: async (name: string, depth = 1, limit = 20): Promise<HerbGraphResponse> => {
     const { data } = await api.get(`/graph/herb/${encodeURIComponent(name)}`, {
-      params: { depth },
+      params: { depth, limit },
     });
     return data;
   },

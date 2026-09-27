@@ -13,7 +13,7 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：Graph Workbench `/graph`
-- 验收目标：验证 `/graph` 已升级为三栏 Graph Workbench，能够同时展示数据库级 `Database information`、中央 D3 图谱结果视图与右侧检查器，并覆盖原图谱查询工作区主链路
+- 验收目标：验证 `/graph` 两栏简要展示、有限结果查询和右侧检查器
 - 对应 spec：[../superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../superpowers/specs/archive/2026-03-23-graph-workbench-design.md)
 - 对应 plan：[../superpowers/plans/archive/2026-03-23-graph-workbench.md](../superpowers/plans/archive/2026-03-23-graph-workbench.md)
 - 当前版本 / 日期：graph workbench / 2026-03-24
@@ -22,11 +22,10 @@ audience: developer
 
 ### 包含
 
-- `/graph` 页面三栏工作台布局
-- 左侧 `Database information`
-- 中央 D3 图谱结果视图
+- `/graph` 页面两栏布局
+- 有关系时显示 Cytoscape.js 图谱，无关系时显示节点列表；两者均显示当前子图计数
 - 右侧 `Overview / Details` 检查器
-- `/api/v1/graph/meta/*` 元数据接口
+- 首屏不自动请求 `/api/v1/graph/meta/*`
 - `/api/v1/graph/herb/{name}` 与 `POST /api/v1/graph/query` 返回 `scene`
 - 查询入口、query summary 与属性 / 关系过滤高级查询
 - 图中节点双击展开与再次双击收起增量子图
@@ -51,7 +50,7 @@ audience: developer
 
 ### Step 2
 
-- 操作：确认左侧出现 `Database information`，中央出现结果区，右侧出现 `Overview`
+- 操作：确认结果区、当前子图计数和右侧 `Overview` 出现
 
 ### Step 3
 
@@ -69,7 +68,7 @@ audience: developer
 
 ### Step 5
 
-- 操作：点击左侧某个 label，例如 `Herb`
+- 操作：点击右侧当前子图中的某个节点类型，例如 `Herb`
 
 ### Step 6
 
@@ -116,8 +115,7 @@ pnpm --dir packages/web typecheck
 ### Step 1-4 预期
 
 - `/graph` 可直接进入 Graph Workbench
-- 左侧为 `Database information`
-- 中央为 D3 图谱结果视图
+- 左侧为 Cytoscape.js 图谱结果视图
 - 右侧为检查器，默认显示 `Overview`
 - 提交高级查询后，工作区切换到 query result 语义
 - query summary 会体现名称 / 属性 / 关系过滤摘要
@@ -137,7 +135,7 @@ pnpm --dir packages/web typecheck
 
 ### Step 8 预期
 
-- `/graph/meta/summary` 返回数据库级计数
+- `/graph/meta/summary` 返回数据库级计数，但页面首屏不请求它
 - `/graph/meta/labels` 返回 `items + total`
 - `/graph/meta/schema` 返回 `indexes + constraints`
 
@@ -168,18 +166,14 @@ pnpm --dir packages/web typecheck
 - `packages/api/app/kg/models.py`
 - `packages/web/src/hooks/useGraphWorkbenchPage.ts`
 - `packages/web/src/pages/GraphPage.tsx`
-- `packages/web/src/components/graph/GraphMetadataSidebar.tsx`
 - `packages/web/src/components/graph/GraphCanvasWorkspace.tsx`
 - `packages/web/src/components/graph/GraphToolbar.tsx`
-- `packages/web/src/components/graph/MiniGraphCanvas.tsx`
 - `packages/web/src/components/graph/GraphInspectorPanel.tsx`
-- `packages/web/src/components/workbench/frames/GraphResultFrame.tsx`
-- `packages/web/src/lib/graph-viz/Visualization.ts`
 - `packages/web/src/components/graph/GraphQueryPanel.tsx`
 - `packages/web/src/hooks/useGraphWorkspace.test.tsx`
 - `packages/web/src/pages/GraphPage.test.tsx`
 
-### 运行证据
+### 2026-03-25 旧版运行证据
 
 ```bash
 ./scripts/test_api.sh
@@ -190,7 +184,7 @@ GitHub Actions: ci-fast run 23497811413
 
 执行日期：`2026-03-25`
 
-### 结果证据
+### 2026-03-25 旧版结果证据
 
 - `uv run pytest tests/unit/kg/test_db.py tests/api/test_graph_routes.py -q` 结果为 `15 passed`
 - `pnpm --dir packages/web test --run src/pages/GraphPage.test.tsx` 结果为 `3 passed`
@@ -204,12 +198,21 @@ GitHub Actions: ci-fast run 23497811413
   - `Component7 | Efficacy10 | Flavor5 | Herb3 ...`
 - 本轮 spot-check 额外暴露并修复了 `packages/api/app/kg/db.py` 中 `neomodel.adb` 连接可能回落到默认 `7687` 的问题，现已由 `ensure_kg_db()` 在查询前兜底
 
+### 2026-09-27 轻量图谱页验证
+
+- `pnpm run test:web`：19 个测试文件、61 项通过
+- `pnpm --dir packages/web typecheck`、`pnpm --dir packages/web exec vp build`：通过
+- `uv run pytest tests/kg/test_graph_service.py tests/api/test_graph_routes.py -q`：73 项通过
+- Playwright 在 1280px 和 390px 视口下使用两节点模拟响应：Cytoscape Canvas 有非空像素；节点点击打开详情、双击发起一次局部展开并显示第三个节点；缩放按钮与手机查询抽屉可操作；页面没有发起 `/graph/meta/*` 请求
+- 20 个无关系节点在桌面和手机端以完整名称列表呈现；列表展开按钮可切换到关系图。3 个长名称节点的关系图在两种视口下均完整落在画布内，标签省略显示且不越过节点
+- `pnpm --dir packages/web lint`：仓库缺少 ESLint 9 的 `eslint.config.*`，命令在检查代码前退出
+
 ## 7. 风险与未覆盖项
 
-- 当前图谱视图已切到 D3 自绘实现，但仍未追求与 Neo4j Browser 的全部交互细节完全对齐
-- 本轮补的是最小页面事实检查，不是完整视觉回归截图集
+- 当前使用 Cytoscape.js，未追求与 Neo4j Browser 的全部交互细节完全对齐
+- 2026-09-27 的浏览器检查使用模拟图谱响应；真实 Neo4j 数据联调仍需后端服务与样例数据
 
 ## 8. 结论
 
 - 结果：`pass`
-- 结论一句话：Graph Workbench 的协议、后端接口、D3 结果视图、本地接口 spot-check 与页面事实检查已形成可复现闭环
+- 结论一句话：Graph Workbench 使用有限结果查询与 Cytoscape.js 简要展示。2026-03-25 的旧版证据保留在上方，当前前端验证需以本轮检查为准。

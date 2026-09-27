@@ -26,6 +26,7 @@ const GraphToolbar = ({ onZoomIn, onZoomOut, onZoomToFit }: GraphToolbarProps) =
         <Tooltip title="放大" placement="left">
           <Button
             size="small"
+            aria-label="放大"
             icon={<ZoomInOutlined />}
             onClick={onZoomIn}
             style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #d9d9d9" }}
@@ -34,6 +35,7 @@ const GraphToolbar = ({ onZoomIn, onZoomOut, onZoomToFit }: GraphToolbarProps) =
         <Tooltip title="缩小" placement="left">
           <Button
             size="small"
+            aria-label="缩小"
             icon={<ZoomOutOutlined />}
             onClick={onZoomOut}
             style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #d9d9d9" }}
@@ -42,6 +44,7 @@ const GraphToolbar = ({ onZoomIn, onZoomOut, onZoomToFit }: GraphToolbarProps) =
         <Tooltip title="适应画布" placement="left">
           <Button
             size="small"
+            aria-label="适应画布"
             icon={<CompressOutlined />}
             onClick={onZoomToFit}
             style={{ background: "rgba(255,255,255,0.92)", border: "1px solid #d9d9d9" }}

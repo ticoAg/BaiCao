@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { graphWorkbenchApi } from "../services/graphWorkbenchApi";
 import { useGraphWorkbenchStore } from "../stores/graphWorkbenchStore";
 import { useGraphWorkspace } from "./useGraphWorkspace";
 import { useGraphWorkbenchPage } from "./useGraphWorkbenchPage";
@@ -55,19 +54,6 @@ function createWrapper() {
 describe("useGraphWorkbenchPage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(graphWorkbenchApi, "getMetaLabels").mockResolvedValue({ items: [], total: 0 });
-    vi.spyOn(graphWorkbenchApi, "getMetaRelationshipTypes").mockResolvedValue({
-      items: [],
-      total: 0,
-    });
-    vi.spyOn(graphWorkbenchApi, "getMetaPropertyKeys").mockResolvedValue({
-      items: [],
-      total: 0,
-    });
-    vi.spyOn(graphWorkbenchApi, "getMetaSchema").mockResolvedValue({
-      indexes: [],
-      constraints: [],
-    });
     useGraphWorkbenchStore.setState({
       selectedItem: null,
       hoveredItem: null,
@@ -95,7 +81,7 @@ describe("useGraphWorkbenchPage", () => {
     });
   });
 
-  it("keeps metadata available even when graph scene loading failed", async () => {
+  it("keeps the scene error visible when graph loading failed", () => {
     mockedUseGraphWorkspace.mockReturnValue({
       graphData: null,
       scene: defaultScene,
@@ -112,45 +98,18 @@ describe("useGraphWorkbenchPage", () => {
       resetAdvancedQuery: vi.fn(),
     });
 
-    vi.spyOn(graphWorkbenchApi, "getMetaSummary").mockResolvedValue({
-      nodeCount: 12,
-      relationshipCount: 18,
-      labelCount: 4,
-      relationshipTypeCount: 6,
-      propertyKeyCount: 11,
-      indexCount: 2,
-      constraintCount: 1,
-      truncated: false,
-      generatedAt: "2026-03-23T10:00:00Z",
-    });
-
     const { result } = renderHook(() => useGraphWorkbenchPage("人参"), {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => expect(result.current.metaSummary?.nodeCount).toBe(12));
     expect(result.current.sceneError).toBeInstanceOf(Error);
     expect(result.current.graphData).toBeNull();
   });
 
   it("switches inspector mode to details when selecting a node", async () => {
-    vi.spyOn(graphWorkbenchApi, "getMetaSummary").mockResolvedValue({
-      nodeCount: 12,
-      relationshipCount: 18,
-      labelCount: 4,
-      relationshipTypeCount: 6,
-      propertyKeyCount: 11,
-      indexCount: 2,
-      constraintCount: 1,
-      truncated: false,
-      generatedAt: "2026-03-23T10:00:00Z",
-    });
-
     const { result } = renderHook(() => useGraphWorkbenchPage("人参"), {
       wrapper: createWrapper(),
     });
-
-    await waitFor(() => expect(result.current.metaSummary).not.toBeNull());
 
     act(() => {
       result.current.selectNode({
@@ -166,23 +125,9 @@ describe("useGraphWorkbenchPage", () => {
   });
 
   it("updates highlighted label without clearing the current graph scene", async () => {
-    vi.spyOn(graphWorkbenchApi, "getMetaSummary").mockResolvedValue({
-      nodeCount: 12,
-      relationshipCount: 18,
-      labelCount: 4,
-      relationshipTypeCount: 6,
-      propertyKeyCount: 11,
-      indexCount: 2,
-      constraintCount: 1,
-      truncated: false,
-      generatedAt: "2026-03-23T10:00:00Z",
-    });
-
     const { result } = renderHook(() => useGraphWorkbenchPage("人参"), {
       wrapper: createWrapper(),
     });
-
-    await waitFor(() => expect(result.current.metaSummary).not.toBeNull());
 
     act(() => {
       result.current.highlightLabel("Herb");

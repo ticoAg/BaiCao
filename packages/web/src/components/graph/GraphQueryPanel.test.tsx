@@ -11,13 +11,13 @@ describe("GraphQueryPanel", () => {
     renderWithProviders(<GraphQueryPanel depth={2} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("节点名称包含"), "  补气  ");
-    await user.type(screen.getByRole("spinbutton", { name: "limit" }), "25");
+    await user.type(screen.getByRole("spinbutton", { name: "最多显示" }), "15");
     await user.click(screen.getByRole("button", { name: /执行图谱查询/ }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       node: { name_contains: "补气" },
       depth: 2,
-      limit: 25,
+      limit: 15,
     });
   });
 
@@ -39,12 +39,12 @@ describe("GraphQueryPanel", () => {
     renderWithProviders(<GraphQueryPanel depth={2} onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("节点名称包含"), "人参");
-    await user.type(screen.getByRole("spinbutton", { name: "limit" }), "25");
+    await user.type(screen.getByRole("spinbutton", { name: "最多显示" }), "15");
     await user.click(screen.getByRole("button", { name: "重置条件" }));
 
     expect(screen.getByLabelText("节点名称包含")).toHaveValue("");
     expect(screen.getByRole("spinbutton", { name: "查询深度" })).toHaveValue(2);
-    expect(screen.getByRole("spinbutton", { name: "limit" })).toHaveValue(null);
+    expect(screen.getByRole("spinbutton", { name: "最多显示" })).toHaveValue(null);
   });
 
   it("offers formula and medical-case query options", () => {
