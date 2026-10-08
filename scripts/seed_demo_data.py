@@ -25,8 +25,8 @@ from app.models import (
     VerificationModel,
     VerificationStatus,
 )
-from knowledge_model.constants import EdgeType, to_neo4j_label, to_neo4j_rel
-from knowledge_model.graph_i18n import to_graph_properties
+from graph_schema.constants import EdgeType, to_neo4j_label, to_neo4j_rel
+from graph_schema.graph_i18n import to_graph_properties
 
 settings = get_settings()
 
