@@ -75,6 +75,17 @@ def test_profiles_match_required_answers_and_cover_primitives():
     assert set(criteria) == {"true", "false"}
 
 
+def test_personal_question_goes_to_graph_and_only_diagnosis_or_prescription_is_outside():
+    task = JUDGMENT_QUESTIONS["intake"]["任务"].model_dump()["criteria"]
+    assert "我气虚，该吃黄芪吗" in task["图谱检索"]["示例"]
+    assert "个人" not in task["图谱检索"]["不包括"]
+    assert "个人" not in task["超出图谱问答"]["含义"]
+    assert set(task["超出图谱问答"]["示例"]) == {"我这是什么病", "帮我开一张方"}
+
+    publish = JUDGMENT_QUESTIONS["claim"]["可以发布"].model_dump()["criteria"]
+    assert "替用户决定" in publish["false"]
+
+
 def test_graph_records_keep_graph_tools_only_and_truncate():
     long_text = "草" * 9000
     messages = [

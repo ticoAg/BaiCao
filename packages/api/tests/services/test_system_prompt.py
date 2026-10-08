@@ -21,6 +21,8 @@ def test_system_prompt_requires_structured_tools_and_omits_raw_cypher():
     assert "组成药材" not in prompt
     assert "使用方剂" not in prompt
     assert "judge" not in prompt
+    assert "不替用户决定" in prompt
+    assert "医生" in prompt
 
 
 def test_judge_instructions_require_profiles_and_follow():
