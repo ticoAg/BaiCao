@@ -69,6 +69,32 @@ flowchart LR
     API <--> Redis[(Redis)]
 ```
 
+## 图谱 Agent
+
+问答使用已经入库的图谱。循环、读图和判定分开：`packages/api/app/services/chat_agent_runtime/` 用 pydantic-ai 决定查什么、怎么写结论；`packages/api/app/services/knowledge_mcp/` 是唯一的只读图服务；配了 TypeSafe 时，`judge` 在固定时点做是非、选项和分档。出处从已经查回的子图生成。工具契约和边界见 [chat-agent-mcp.md](chat-agent-mcp.md)。
+
+```mermaid
+flowchart LR
+    User[用户问题] --> Runtime[chat_agent_runtime]
+    Runtime --> MCP[knowledge_mcp]
+    MCP --> Neo4j[(Neo4j)]
+    Runtime --> Judge[judge / system_one]
+    Cursor["外部客户端 /mcp"] --> MCP
+```
+
+知识服务只实现一次。产品问答用同进程 `Client(server)`，外部客户端走 HTTP `/mcp`，stdio 留给本机调试。
+
+| 操作 | 作用 |
+|------|------|
+| `search_nodes` | 按名称或标识定位实体 |
+| `search_edges` | 按关系类型查找边 |
+| `expand_neighbors` | 从已有标识展开 1 到 2 跳邻居 |
+| `lookup_nodes` | 按标识回看属性 |
+
+展开和回看认节点「标识」，按名称查找认「名称」。子图里的「由证据支持」提供证据摘录；来源有「来源于」时用它，否则用节点上的「导入源」。
+
+判定的问题和标准写在 `chat_agent_runtime/turn_judgment.py`，分三处调用：第一次查图之前，每次图操作返回之后，写出给用户的结论之前。未配置 `TYPESAFE_API_KEY` 时不注册 `judge`，问答仍使用上面四个操作。工作流程见仓库根目录 [README](../../README.md#一轮问答怎么走)。
+
 ## 如何理解“现状”和“目标”
 
 阅读本目录文档时，统一按下面的区分理解：
