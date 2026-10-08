@@ -2,7 +2,6 @@
 
 面向中医药场景的 Agent 驱动可信知识搜集与利用平台。
 
-![Status](https://img.shields.io/badge/status-MVP%20early-f59e0b)
 ![Architecture](https://img.shields.io/badge/architecture-Modular%20Monolith-2563eb)
 ![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20Neo4j%20%7C%20PostgreSQL-0f766e)
 ![LLM](https://img.shields.io/badge/LLM-Agent%20Workflow%20%2B%20OpenAI-7c3aed)
@@ -51,14 +50,6 @@ flowchart TD
 
 判定题、查图工具和出处规则的完整说明见 [架构文档](docs/architecture/README.md#图谱-agent)。
 
-## 当前阶段
-
-`MVP early`。已经能跑：monorepo 本地开发栈、图谱问答主链路、数据验证与处理工作台。2022 年药典（605 条目）和道医苏子阳 v3 已导入图谱。
-
-问答基于 pydantic-ai-slim，用只读工具查 Neo4j，出处从查到的子图生成。知识数据集放在 Hugging Face 私有仓库，其中脱敏后的公开层已通过 Dataset Viewer 验收。第三个数据源 DragonTCM 已在本地完成清洗；上游没有许可证，不进公开层。
-
-多 worker 会话共享、专家治理、鉴权、事件驱动与监控还没做。这是研发仓库，不是生产系统。
-
 ## 快速开始
 
 需要 Python 3.12+、Node.js 22+、pnpm、Docker。推荐 `uv`。
@@ -70,10 +61,7 @@ make deps up
 make stack up
 ```
 
-`.env` 里补 Universal Auth（`INFISICAL_CLIENT_ID` / `INFISICAL_CLIENT_SECRET`）。API 用官方 Python SDK 拉 secret，不需要安装 Infisical CLI。不用 Infisical、改端口、手动起进程、样例数据和验证命令见 [docs/local-development.md](docs/local-development.md)。
-
-- Web: <http://localhost:3000>
-- API: <http://localhost:8000>
+环境变量（含 Infisical）、访问地址、手动启动、样例数据和验证命令见 [docs/local-development.md](docs/local-development.md)。
 
 ## 仓库结构
 

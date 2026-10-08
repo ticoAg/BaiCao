@@ -12,8 +12,8 @@ This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packag
 
 | Need to know...                             | Read...                       |
 | ------------------------------------------- | ----------------------------- |
-| 项目定位与现状                              | `README.md`                   |
-| 需求与阶段目标                              | `README.md`                   |
+| 项目定位与受众                              | `README.md`                   |
+| 当前阶段与目标                              | `docs/architecture/README.md` |
 | 本地开发栈 / 环境变量 / 验证命令            | `docs/local-development.md`   |
 | 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md`                 |
 | Skill 选择与多代理路由                      | `docs/agent-skill-routing.md` |
@@ -36,7 +36,8 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 ## Repo SSOT
 
-- **需求与阶段目标**：`README.md`
+- **产品定位与受众**：`README.md`
+- **当前阶段与目标**：`docs/architecture/README.md`
 - **任务计划与实施颗粒度**：`docs/plans/`
 - **跨端共享协议入口**：`packages/shared/types/`
 - **后端领域模型 / API Schema / 服务真源**：`packages/api/app/models/`、`packages/api/app/schemas/`、`packages/api/app/services/`

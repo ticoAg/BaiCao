@@ -42,7 +42,8 @@ flowchart TD
 
 判定主作用域时，优先看“谁是真源”，不要看“哪里更容易打补丁”：
 
-- 需求与阶段目标真源：`README.md`
+- 产品定位真源：`README.md`
+- 当前阶段与目标：`docs/architecture/README.md`
 - 任务状态与实施分解真源：`docs/plans/`
 - 跨端共享协议入口：`packages/shared/types/index.ts`
 - 后端 API Schema / DTO 真源：`packages/api/app/schemas/**`

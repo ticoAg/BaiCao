@@ -162,7 +162,8 @@ flowchart LR
 
 ## 与项目其他真源的关系
 
-- 需求与阶段目标：`../../README.md`、`../plans/`
+- 产品定位：`../../README.md`
+- 当前阶段与目标：`../architecture/README.md`、`../plans/`
 - 当前实现事实：仓库代码、脚本、配置
 - 长期系统解释：`../architecture/`
 - 任务状态来源：`../plans/`

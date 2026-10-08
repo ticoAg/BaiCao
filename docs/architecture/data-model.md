@@ -479,4 +479,4 @@ CREATE (h)-[:HAS_TRAIT {value: '浮白', observation: '内囊白色海绵状', s
 ## 9. 相关文档
 
 - [system-overview.md](system-overview.md) — 系统架构概览
-- [../../README.md](../../README.md) — 项目总入口与当前阶段说明
+- [../../README.md](../../README.md) — 项目总入口
