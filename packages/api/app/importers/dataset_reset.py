@@ -5,8 +5,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.kg.db import cypher_rows
-from knowledge_model.constants import EdgeType, to_neo4j_label
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.constants import EdgeType, to_neo4j_label
+from graph_schema.import_records import GraphImportRecord
 
 
 class GraphResetResult(BaseModel):

@@ -1,4 +1,4 @@
-from knowledge_model.text_normalize import (
+from graph_schema.text_normalize import (
     canonicalize_name,
     canonicalize_property_value,
     group_variants,

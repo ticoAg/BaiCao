@@ -7,9 +7,9 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
-from knowledge_model.node_models import (
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.node_models import (
     EvidenceNodeModel,
     HerbNodeModel,
     PreparedHerbNodeModel,

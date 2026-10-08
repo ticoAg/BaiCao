@@ -6,7 +6,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.import_records import GraphImportRecord
 
 
 @dataclass

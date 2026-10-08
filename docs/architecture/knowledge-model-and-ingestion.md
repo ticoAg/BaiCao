@@ -64,7 +64,7 @@ audience: developer
 推荐目标位置：
 
 ```text
-packages/knowledge_model/
+packages/graph_schema/
 ```
 
 该包负责承载：
@@ -114,7 +114,7 @@ flowchart LR
     end
 
     subgraph SSOT[仓库级唯一真源]
-        KM[packages/knowledge_model<br/>知识结构定义]
+        KM[packages/graph_schema<br/>知识结构定义]
     end
 
     subgraph Consumers[下游消费者]
@@ -145,7 +145,7 @@ flowchart LR
     Graph --> QA
 ```
 
-自有数据集 `datasets/baicao-knowledge/` 只存源、结构化快照、VIEW 和产量台账，**不是第二套图模型**。节点/关系类型仍只以 `packages/knowledge_model/` 为准。
+自有数据集 `datasets/baicao-knowledge/` 只存源、结构化快照、VIEW 和产量台账，**不是第二套图模型**。节点/关系类型仍只以 `packages/graph_schema/` 为准。
 
 ### 5.1 Graph Runtime / Agent 运行边界
 
@@ -188,7 +188,7 @@ flowchart LR
 本项目支持“规则 + agent”的混合处理模式，四层必须走同一条合同，而不是各写旁路：
 
 1. 业务规则  
-   图模型在 `packages/knowledge_model/`；身份与合并在 `data_ingestion/entity_identity.py`；隐私过滤去掉电话、证件、住院号、国药准字和品牌。
+   图模型在 `packages/graph_schema/`；身份与合并在 `data_ingestion/entity_identity.py`；隐私过滤去掉电话、证件、住院号、国药准字和品牌。
 2. 工作流程  
    `organize prepare` 由规则切分并生成 `agent_queue.jsonl`；agent 只处理队列中的不确定抽取；`organize accept` 把 `ExtractionCandidate` 再送回同一套门禁。
 3. 脚本  
@@ -280,9 +280,9 @@ Neo4j 里的标签、关系类型、属性键和状态值用中文（`药材`、
 落地文件名保持英文，中文语义在模块内容里：
 
 ```text
-packages/knowledge_model/
+packages/graph_schema/
 ├── pyproject.toml
-└── knowledge_model/
+└── graph_schema/
     ├── __init__.py
     ├── constants.py
     ├── node_models.py
@@ -346,7 +346,7 @@ flowchart LR
 
 当前仓库内已经完成这条主线收敛：
 
-- `packages/knowledge_model/` 已成为共享图模型与导入记录的代码真源
+- `packages/graph_schema/` 已成为共享图模型与导入记录的代码真源
 - `packages/api/app/services/chat_agent_runtime/` 已成为 chat 主链 agent runtime 的代码真源
 - API graph schema 直接复用共享 `NodeType` / `NodeStatus`
 - chat 主链已经收敛到 `/api/v1/chat/stream`，上下文通过进程内 `message_history` 续接，30 分钟未访问即回收

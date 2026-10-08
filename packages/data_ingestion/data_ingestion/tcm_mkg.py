@@ -13,8 +13,8 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.text_normalize import nfkc_strip
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.text_normalize import nfkc_strip
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.entity_identity import has_han

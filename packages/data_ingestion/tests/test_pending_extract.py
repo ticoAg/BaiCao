@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.pending_extract import (
     extract_ancient_sources,

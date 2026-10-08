@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 ALLOWED_NODE_TYPES = {item.value for item in NodeType}
 ALLOWED_EDGE_TYPES = {item.value for item in EdgeType}

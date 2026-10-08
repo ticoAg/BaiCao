@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -283,7 +283,7 @@ dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "bai-cao-data-ingestion" },
-    { name = "bai-cao-knowledge-model" },
+    { name = "bai-cao-graph-schema" },
     { name = "datasets" },
     { name = "email-validator" },
     { name = "fastapi" },
@@ -324,7 +324,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.15.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "bai-cao-data-ingestion", editable = "../data_ingestion" },
-    { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
+    { name = "bai-cao-graph-schema", editable = "../graph_schema" },
     { name = "datasets", specifier = ">=2.14.0" },
     { name = "email-validator", specifier = ">=2.0.0" },
     { name = "fastapi", specifier = ">=0.115.0" },
@@ -360,20 +360,20 @@ name = "bai-cao-data-ingestion"
 version = "0.1.0"
 source = { editable = "../data_ingestion" }
 dependencies = [
-    { name = "bai-cao-knowledge-model" },
+    { name = "bai-cao-graph-schema" },
     { name = "openai" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "bai-cao-knowledge-model", editable = "../knowledge_model" },
+    { name = "bai-cao-graph-schema", editable = "../graph_schema" },
     { name = "openai", specifier = ">=2.29.0" },
 ]
 
 [[package]]
-name = "bai-cao-knowledge-model"
+name = "bai-cao-graph-schema"
 version = "0.1.0"
-source = { editable = "../knowledge_model" }
+source = { editable = "../graph_schema" }
 dependencies = [
     { name = "pydantic" },
 ]

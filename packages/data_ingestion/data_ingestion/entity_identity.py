@@ -12,8 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from knowledge_model.constants import NodeType
-from knowledge_model.text_normalize import canonicalize_name
+from graph_schema.constants import NodeType
+from graph_schema.text_normalize import canonicalize_name
 
 from data_ingestion.dataset_records import DatasetRecord
 

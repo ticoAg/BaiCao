@@ -5,8 +5,8 @@ import pytest
 from app.exporters.jsonl_exporter import JSONLExporter
 from app.importers import EdgeRecord, GraphRecord
 from app.importers.jsonl_importer import JSONLImporter
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 pytestmark = pytest.mark.contract
 

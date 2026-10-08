@@ -2,7 +2,7 @@
 
 from data_ingestion.models import ExtractionCandidate
 from data_ingestion.source_models import RawEntryBlock, SourceFileContext
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 
 def test_extraction_candidate_targets_shared_node_type():

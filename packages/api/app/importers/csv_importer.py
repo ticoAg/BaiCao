@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .base import AbstractDataImporter, EdgeRecord, GraphRecord, ImportStats
-from knowledge_model.constants import EdgeType, NodeStatus, parse_node_type
+from graph_schema.constants import EdgeType, NodeStatus, parse_node_type
 
 
 class CSVImporter(AbstractDataImporter):

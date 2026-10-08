@@ -11,8 +11,8 @@ from ..models.enums import (
     HerbType,
     TraitCategory,
 )
-from knowledge_model.constants import parse_node_type, to_neo4j_label
-from knowledge_model.graph_i18n import (
+from graph_schema.constants import parse_node_type, to_neo4j_label
+from graph_schema.graph_i18n import (
     PROPERTY_ZH_TO_EN,
     delocalize_status,
     localize_status,

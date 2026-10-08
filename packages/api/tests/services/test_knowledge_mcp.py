@@ -90,12 +90,13 @@ def test_wrap_expand_subgraph_missing_center_includes_hint():
 
 
 @pytest.mark.asyncio
-async def test_build_graph_schema_falls_back_to_knowledge_model():
+async def test_build_graph_schema_falls_back_to_graph_schema_package():
     with patch(
         "app.services.knowledge_mcp.schema.graph_metadata_service.list_labels",
         AsyncMock(side_effect=RuntimeError("no db")),
     ):
         schema = await build_graph_schema()
+    assert schema["source"] == "graph_schema"
     assert schema["id_field"] == "标识"
     names = {item["name"] for item in schema["labels"]}
     assert "药材" in names

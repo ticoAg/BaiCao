@@ -9,8 +9,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.text_normalize import canonicalize_name
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.text_normalize import canonicalize_name
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.provenance import prompt_hash_for

@@ -23,8 +23,8 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Run knowledge_model package tests
-        working-directory: packages/knowledge_model
+      - name: Run graph_schema package tests
+        working-directory: packages/graph_schema
         run: uv run --with pytest pytest tests -q
 
       - name: Run data_ingestion package tests

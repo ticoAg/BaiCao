@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.import_records import GraphImportRecord
 
 from .bundles import UnifiedGraphBundle
 

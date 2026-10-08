@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import pyarrow.parquet as pq  # ty: ignore[unresolved-import]
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.text_normalize import name_surface_key, nfkc_strip
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.text_normalize import name_surface_key, nfkc_strip
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.provenance import prompt_hash_for

@@ -6,8 +6,8 @@ import argparse
 import json
 import os
 
-from knowledge_model.constants import LEGACY_ENGLISH_NEO4J_LABELS, NodeType
-from knowledge_model.graph_i18n import (
+from graph_schema.constants import LEGACY_ENGLISH_NEO4J_LABELS, NodeType
+from graph_schema.graph_i18n import (
     PROPERTY_EN_TO_ZH,
     PROVIDER_VALUE_EN_TO_ZH,
     SCOPE_VALUE_EN_TO_ZH,

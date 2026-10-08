@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.wangekxy_topic_sample import clean_file, write_clean_outputs
 

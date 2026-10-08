@@ -13,7 +13,7 @@ def _write_catalog(root: Path, visibility: str = "private") -> None:
     catalog = {
         "dataset_id": "ticoAg/baicao-knowledge",
         "visibility": visibility,
-        "knowledge_model": "packages/knowledge_model",
+        "knowledge_model": "packages/graph_schema",
         "updated_at": "2026-08-17",
         "sources": [
             {

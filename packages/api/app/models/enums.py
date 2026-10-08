@@ -6,7 +6,7 @@ BaiCao SSOT 枚举层
 
 from enum import StrEnum
 
-from knowledge_model.constants import (
+from graph_schema.constants import (
     HerbType,
     NodeStatus,
     NodeType,

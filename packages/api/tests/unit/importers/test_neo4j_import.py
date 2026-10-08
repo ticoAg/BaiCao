@@ -2,8 +2,8 @@
 
 from app.export.models import GraphWriteResult
 from app.importers.neo4j_import import write_records_to_neo4j
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 
 class DummyGraphWriter:

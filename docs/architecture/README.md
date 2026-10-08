@@ -109,7 +109,7 @@ flowchart LR
 - 项目入口与阶段任务：`../../README.md`、`../plans/`
 - 本地开发：`../local-development.md`
 - 共享类型真源：`../../packages/shared/types/`
-- 图模型唯一真源（目标形态）：`../../packages/knowledge_model/`
+- 图模型唯一真源（目标形态）：`../../packages/graph_schema/`
 - 运行与编排事实：`../../infra/docker-compose.yml`
 - 后端入口事实：`../../packages/api/app/main.py`
 

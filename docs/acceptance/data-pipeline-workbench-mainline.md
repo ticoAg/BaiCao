@@ -41,7 +41,7 @@ audience: developer
 - 工作目录：仓库 worktree 根目录
 - 后端依赖：`packages/api`
 - 样例数据：`packages/db/import/herbs.csv`、`packages/db/import/herbs.jsonl`
-- 共享模型：`packages/knowledge_model/knowledge_model/`
+- 共享模型：`packages/graph_schema/graph_schema/`
 - 来源存储目录：`tmp/data`
 
 ### 最小验证命令
@@ -232,7 +232,7 @@ curl -sS -X POST http://127.0.0.1:8000/api/v1/pipeline/runs \
 - `source_ingest` 预览现在还能包含 `run_workdir`、`source_dir`、`extracted_dir`、`repo_url`、`readme_url`
 - `source_preview` 现在可输出 `readme_content`、`primary_candidate` 与 README / 仓库链接
 - `extract` 预览现在包含 `candidates`
-- `map_to_knowledge_model` 继续输出 `knowledge_model.HerbNodeModel` 边界与 `validation`
+- `map_to_knowledge_model` 继续输出 `graph_schema.HerbNodeModel` 边界与 `validation`
 - `human_review` / `export` 现在返回结构化决策与导出计划，不再是通用 summary
 
 ## 7. 风险与未覆盖项

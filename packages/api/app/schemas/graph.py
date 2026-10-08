@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from knowledge_model.constants import NodeStatus, NodeType
+from graph_schema.constants import NodeStatus, NodeType
 
 from ..models.enums import EdgeType
 from .graph_workbench import GraphSceneInfo

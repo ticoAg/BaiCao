@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.export.models import GraphWriteResult
 from app.export.service import GraphWriter, Neo4jGraphWriter
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.import_records import GraphImportRecord
 
 
 async def write_records_to_neo4j(

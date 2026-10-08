@@ -3,7 +3,7 @@
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
-from knowledge_model.constants import EdgeType
+from graph_schema.constants import EdgeType
 
 
 class BundleEdge(BaseModel):

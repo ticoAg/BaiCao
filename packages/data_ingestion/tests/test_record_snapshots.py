@@ -4,8 +4,8 @@ import json
 
 from data_ingestion.record_snapshots import flatten_graph_import_records, write_graph_import_records_jsonl
 from data_ingestion.bundles import UnifiedGraphBundle
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 
 def test_flatten_graph_import_records_collects_records_from_multiple_bundles():

@@ -7,7 +7,7 @@ import json
 import re
 from pathlib import Path
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.entity_identity import EntityDraft
 from data_ingestion.organize_workflow import finalize_drafts

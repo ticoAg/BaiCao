@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import hashlib
 
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
-from knowledge_model.labels import EDGE_TYPE_LABELS
-from knowledge_model.node_models import (
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.labels import EDGE_TYPE_LABELS
+from graph_schema.node_models import (
     DiseaseNodeModel,
     EfficacyNodeModel,
     EvidenceNodeModel,

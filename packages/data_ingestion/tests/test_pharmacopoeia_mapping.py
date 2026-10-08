@@ -10,7 +10,7 @@ from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.nation
 from data_ingestion.processors.huggingface.zjufanlab_tcmchat_dataset_600k.national_standard_2022_pharmacopoeia.mapping import (
     build_pharmacopoeia_bundle,
 )
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 
 def test_mapping_builds_herb_piece_evidence_bundle():

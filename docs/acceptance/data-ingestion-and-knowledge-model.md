@@ -13,7 +13,7 @@ audience: developer
 ## 1. 概述
 
 - 功能名称：共享图模型 / 导入记录 / 数据采集边界闭环
-- 验收目标：验证 `packages/knowledge_model/` 已成为 API 图谱 schema、导入导出记录以及 `packages/data_ingestion/` 的共享真源
+- 验收目标：验证 `packages/graph_schema/` 已成为 API 图谱 schema、导入导出记录以及 `packages/data_ingestion/` 的共享真源
 - 对应需求：让共享知识模型消费者迁移形成最小可验证闭环
 - 对应架构：[../architecture/knowledge-model-and-ingestion.md](../architecture/knowledge-model-and-ingestion.md)
 - 当前版本 / 日期：shared-model-ingestion-closure / 2026-03-25
@@ -41,7 +41,7 @@ audience: developer
 
 - 仓库 worktree：`/Users/ticoag/Documents/myws/BaiCao/.worktrees/shared-model-ingestion-closure`
 - Python：`>=3.12`
-- 依赖：`packages/api/` 与 `packages/data_ingestion/` 可通过 `uv` 解析本地 `packages/knowledge_model/`
+- 依赖：`packages/api/` 与 `packages/data_ingestion/` 可通过 `uv` 解析本地 `packages/graph_schema/`
 
 ### 启动命令
 
@@ -109,8 +109,8 @@ uv run --with pytest pytest tests/test_models.py -q
 
 ### 实现证据
 
-- `packages/knowledge_model/knowledge_model/constants.py`
-- `packages/knowledge_model/knowledge_model/import_records.py`
+- `packages/graph_schema/graph_schema/constants.py`
+- `packages/graph_schema/graph_schema/import_records.py`
 - `packages/api/app/models/enums.py`
 - `packages/api/app/schemas/graph.py`
 - `packages/api/app/importers/base.py`
@@ -142,7 +142,7 @@ uv run pytest tests/contract/test_graph_shared_model_contract.py \
   tests/api/test_graph_routes.py \
   tests/unit/kg/test_models.py -q
 
-cd ../knowledge_model
+cd ../graph_schema
 uv run --with pytest pytest tests -q
 ```
 
@@ -156,7 +156,7 @@ from tempfile import TemporaryDirectory
 
 from app.importers.jsonl_importer import JSONLImporter
 from app.exporters.jsonl_exporter import JSONLExporter
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.import_records import GraphImportRecord
 
 source = Path("../db/import/herbs.jsonl")
 records = list(JSONLImporter().load(str(source)))
@@ -175,7 +175,7 @@ PY
 cd packages/data_ingestion
 uv run python - <<'PY'
 from data_ingestion.models import ExtractionCandidate
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 candidate = ExtractionCandidate(node_type=NodeType.HERB, node_name="陈皮", source_name="demo")
 print(candidate.node_type is NodeType.HERB, candidate.node_type)
@@ -297,9 +297,9 @@ uv run --extra dev pytest \
 
 ### 对应实现
 
-- `packages/knowledge_model/knowledge_model/constants.py`
-- `packages/knowledge_model/knowledge_model/node_models.py`
-- `packages/knowledge_model/knowledge_model/import_records.py`
+- `packages/graph_schema/graph_schema/constants.py`
+- `packages/graph_schema/graph_schema/node_models.py`
+- `packages/graph_schema/graph_schema/import_records.py`
 - `packages/data_ingestion/data_ingestion/source_models.py`
 - `packages/data_ingestion/data_ingestion/routing.py`
 - `packages/data_ingestion/data_ingestion/bundles.py`
@@ -313,7 +313,7 @@ uv run --extra dev pytest \
 ### 补充验证命令
 
 ```bash
-cd packages/knowledge_model
+cd packages/graph_schema
 uv run --with pytest pytest tests/test_constants.py tests/test_schema.py -q
 
 cd ../data_ingestion

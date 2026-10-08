@@ -1,7 +1,7 @@
 import pytest
 
-from knowledge_model.constants import EdgeType as SharedEdgeType
-from knowledge_model.constants import NodeStatus, NodeType
+from graph_schema.constants import EdgeType as SharedEdgeType
+from graph_schema.constants import NodeStatus, NodeType
 
 from app.models.enums import EdgeType as ApiEdgeType
 from app.schemas.graph import BaseNode, HerbNode

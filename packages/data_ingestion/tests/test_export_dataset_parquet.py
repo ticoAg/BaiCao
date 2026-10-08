@@ -73,7 +73,7 @@ def test_source_record_paths_splits_public_and_restricted(tmp_path):
         {
             "dataset_id": "ticoAg/baicao-knowledge",
             "visibility": "private",
-            "knowledge_model": "packages/knowledge_model",
+            "knowledge_model": "packages/graph_schema",
             "updated_at": "2026-09-06",
             "sources": [
                 {

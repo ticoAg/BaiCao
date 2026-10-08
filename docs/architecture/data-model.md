@@ -53,7 +53,7 @@ audience: developer
 (:TimePoint)    # 时间点（如：3年、5年、10年）
 ```
 
-医案/方剂扩展的可执行真源是 `packages/knowledge_model/`。HF 数据集任务见 [knowledge-dataset.md](knowledge-dataset.md)。
+医案/方剂扩展的可执行真源是 `packages/graph_schema/`。HF 数据集任务见 [knowledge-dataset.md](knowledge-dataset.md)。
 
 ### 2.2 节点属性
 

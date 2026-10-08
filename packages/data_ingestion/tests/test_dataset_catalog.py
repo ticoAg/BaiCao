@@ -12,7 +12,7 @@ def write_catalog(path: Path, **overrides) -> Path:
     body = {
         "dataset_id": "ticoAg/baicao-knowledge",
         "visibility": "private",
-        "knowledge_model": "packages/knowledge_model",
+        "knowledge_model": "packages/graph_schema",
         "updated_at": "2026-08-17",
         "sources": [
             {

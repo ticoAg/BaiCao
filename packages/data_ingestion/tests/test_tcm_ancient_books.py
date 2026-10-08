@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.tcm_ancient_books import (
     TcmAncientBooksError,

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from .base import AbstractDataExporter, ExportStats
-from knowledge_model.import_records import GraphImportRecord
+from graph_schema.import_records import GraphImportRecord
 
 
 class JSONLExporter(AbstractDataExporter):

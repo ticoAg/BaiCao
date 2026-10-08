@@ -1,6 +1,6 @@
 """溯源 API 的请求 / 响应模型。字段为前端友好英文键，不泄漏中文存储键。"""
 
-from knowledge_model.constants import EdgeType, NodeStatus
+from graph_schema.constants import EdgeType, NodeStatus
 from pydantic import BaseModel, ConfigDict, Field
 
 

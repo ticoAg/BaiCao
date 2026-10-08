@@ -9,8 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.text_normalize import canonicalize_name, nfkc_strip
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.text_normalize import canonicalize_name, nfkc_strip
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.provenance import prompt_hash_for

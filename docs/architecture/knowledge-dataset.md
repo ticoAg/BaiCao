@@ -10,7 +10,7 @@ audience: developer
 
 # 白草知识数据集
 
-这份文档是「用 Hugging Face Dataset 维护本项目产出数据」的稳定定义。图模型真源仍是 `packages/knowledge_model/`，数据集只存实例。
+这份文档是「用 Hugging Face Dataset 维护本项目产出数据」的稳定定义。图模型真源仍是 `packages/graph_schema/`，数据集只存实例。
 
 ## 1. 任务背景
 
@@ -37,7 +37,7 @@ audience: developer
 | 主存储格式 | **Apache Parquet**（HF Dataset Viewer 主路径） |
 | 分层 | `data/public/`（`release_tier=public`）与 `data/restricted/`（许可受限，仍进同一 private 仓） |
 | 辅助格式 | JSONL 仅作抽取中间态，不作为发布真源 |
-| 图模型版本 | catalog 钉死 `packages/knowledge_model` |
+| 图模型版本 | catalog 钉死 `packages/graph_schema` |
 
 发布目录：
 
@@ -299,7 +299,7 @@ catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，
 
 ## 8. 相关文档
 
-- 图模型真源：`packages/knowledge_model/knowledge_model/constants.py`
+- 图模型真源：`packages/graph_schema/graph_schema/constants.py`
 - 抽取契约：`packages/data_ingestion/data_ingestion/EXTRACT_SUYANG.md`
 - 候选外源：`data-sources.md`
 - 本机缓存指针：`.cache/README.md`

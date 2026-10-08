@@ -1,4 +1,4 @@
-from knowledge_model.graph_i18n import (
+from graph_schema.graph_i18n import (
     PROPERTY_ZH_TO_EN,
     delocalize_status,
     localize_status,

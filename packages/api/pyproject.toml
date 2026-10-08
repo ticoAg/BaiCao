@@ -5,7 +5,7 @@ description = "BaiCao ShiTan API Server"
 requires-python = ">=3.12"
 dependencies = [
     "bai-cao-data-ingestion",
-    "bai-cao-knowledge-model",
+    "bai-cao-graph-schema",
     "fastapi>=0.115.0",
     "huggingface-hub>=0.34.0",
     "loguru>=0.7.3",
@@ -76,4 +76,4 @@ include = ["app", "tests"]
 
 [tool.uv.sources]
 bai-cao-data-ingestion = { path = "../data_ingestion", editable = true }
-bai-cao-knowledge-model = { path = "../knowledge_model", editable = true }
+bai-cao-graph-schema = { path = "../graph_schema", editable = true }

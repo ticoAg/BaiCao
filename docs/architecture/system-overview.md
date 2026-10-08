@@ -110,11 +110,11 @@ flowchart TB
 |------|------|
 | `types/` | 跨语言共享类型的放置位置 |
 
-### 5.4 `packages/knowledge_model` / `packages/data_ingestion`
+### 5.4 `packages/graph_schema` / `packages/data_ingestion`
 
 | 路径 | 角色 |
 |------|------|
-| `packages/knowledge_model/` | 共享图模型、导入记录与图谱常量真源 |
+| `packages/graph_schema/` | 共享图模型、导入记录与图谱常量真源 |
 | `packages/data_ingestion/` | 数据采集边界，承载来源适配与候选抽取辅助模型 |
 
 ### 5.5 `packages/db` - 数据脚本

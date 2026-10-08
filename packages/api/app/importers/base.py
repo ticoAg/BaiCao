@@ -7,8 +7,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterable
 
-from knowledge_model.constants import EdgeType, parse_node_type
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, parse_node_type
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 
 EdgeRecord = GraphImportEdge

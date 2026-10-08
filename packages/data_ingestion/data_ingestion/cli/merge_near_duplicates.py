@@ -8,7 +8,7 @@ import os
 from collections import defaultdict
 from typing import Any
 
-from knowledge_model.text_normalize import (
+from graph_schema.text_normalize import (
     SHARED_MERGE_LABELS,
     canonicalize_name,
     name_surface_key,

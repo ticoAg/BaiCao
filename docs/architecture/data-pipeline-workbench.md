@@ -329,7 +329,7 @@ flowchart TB
 
 - `pipeline` 负责过程化处理
 - `importers` / `exporters` 负责正式图谱记录的输入输出
-- `knowledge_model` 负责唯一结构真源
+- `graph_schema` 负责唯一结构真源
 
 ## 11. 当前事实与目标形态
 

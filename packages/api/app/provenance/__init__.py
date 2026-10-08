@@ -6,8 +6,8 @@
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from knowledge_model.constants import EdgeType, NodeStatus, NodeType, to_neo4j_label, to_neo4j_rel
-from knowledge_model.graph_i18n import delocalize_status, to_graph_properties
+from graph_schema.constants import EdgeType, NodeStatus, NodeType, to_neo4j_label, to_neo4j_rel
+from graph_schema.graph_i18n import delocalize_status, to_graph_properties
 
 from ..kg.db import cypher_rows, cypher_single
 

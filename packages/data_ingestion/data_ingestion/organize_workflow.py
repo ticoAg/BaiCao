@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.entity_identity import (

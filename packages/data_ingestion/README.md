@@ -7,7 +7,7 @@
 ## 边界规则
 
 - 这里只放来源适配、抽取候选、统一中间格式相关模型
-- 图谱节点 / 边 / 导入记录真源来自 `packages/knowledge_model/`
+- 图谱节点 / 边 / 导入记录真源来自 `packages/graph_schema/`
 - 需要进入 API / importer / exporter 的统一记录时，直接复用共享 `GraphImportRecord`
 - 不在这里重复声明 `NodeType`、`EdgeType`、节点模型或图谱状态枚举
 

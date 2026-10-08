@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 from data_ingestion.entity_identity import (
     EntityDraft,

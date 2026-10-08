@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from ...kg.graph_metadata_service import graph_metadata_service
 
@@ -28,7 +28,7 @@ async def build_graph_schema() -> dict[str, Any]:
         **_ID_RULES,
         "labels": [{"name": name} for name in _enum_names(NodeType)],
         "relationship_types": [{"name": name} for name in _enum_names(EdgeType)],
-        "source": "knowledge_model",
+        "source": "graph_schema",
     }
     try:
         labels = await graph_metadata_service.list_labels(limit=50)

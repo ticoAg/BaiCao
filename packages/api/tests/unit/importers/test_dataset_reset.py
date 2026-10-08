@@ -1,8 +1,8 @@
 """覆盖数据集级图谱重置能力。"""
 
 from app.importers.dataset_reset import reset_dataset_graph, reset_graph_from_records
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 
 async def test_reset_graph_from_records_deletes_snapshot_edges_then_orphan_nodes(monkeypatch):

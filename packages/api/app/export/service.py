@@ -8,8 +8,8 @@ from typing import Protocol
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knowledge_model.constants import EdgeType, NodeStatus, parse_node_type, to_neo4j_label
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeStatus, parse_node_type, to_neo4j_label
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 from app.export.models import ExportRecord, ExportRecordStatus, GraphWriteResult, GraphWriteStatus, export_now
 from app.export.schemas import ExportPlanResponse

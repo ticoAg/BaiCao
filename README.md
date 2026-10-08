@@ -71,7 +71,7 @@ BaiCao/
 │   ├── api/              # FastAPI 后端
 │   ├── web/              # React 前端
 │   ├── shared/           # 跨端共享类型
-│   ├── knowledge_model/  # 共享知识模型
+│   ├── graph_schema/     # 图谱 schema：节点类型、关系类型、属性
 │   ├── data_ingestion/   # 数据采集
 │   └── db/               # Cypher、导入样例
 ├── infra/                # Docker Compose

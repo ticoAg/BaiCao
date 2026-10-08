@@ -17,8 +17,8 @@ from itertools import batched
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import NodeType, to_neo4j_label, to_neo4j_rel
-from knowledge_model.graph_i18n import to_graph_properties
+from graph_schema.constants import NodeType, to_neo4j_label, to_neo4j_rel
+from graph_schema.graph_i18n import to_graph_properties
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.entity_identity import GRAPH_FIND_KEYS, chinese_lookup_values

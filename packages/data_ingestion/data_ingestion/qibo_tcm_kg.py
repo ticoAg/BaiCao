@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord, compute_stats
 from data_ingestion.provenance import prompt_hash_for

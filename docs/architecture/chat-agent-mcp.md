@@ -83,7 +83,7 @@ flowchart TB
     subgraph Data[数据]
         Neo4j[(Neo4j)]
         Meta[graph_metadata_service]
-        KM[knowledge_model 枚举]
+        KM[graph_schema 枚举]
     end
 
     Runtime --> McpClient

@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from knowledge_model import HerbNodeModel, NODE_TYPE_LABELS
+from graph_schema import HerbNodeModel, NODE_TYPE_LABELS
 from pydantic import ValidationError
 
 from app.pipeline.models import PipelineRun, PipelineStepKey
@@ -102,7 +102,7 @@ def build_map_to_knowledge_model_preview(context: PipelineStepContext):
                 "passed": 1,
                 "failed": 0,
             },
-            "boundary": "knowledge_model.HerbNodeModel",
+            "boundary": "graph_schema.HerbNodeModel",
         },
         next_step_ready=True,
     )

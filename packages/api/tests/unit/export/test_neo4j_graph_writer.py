@@ -1,8 +1,8 @@
 """覆盖 Neo4jGraphWriter 对数据集 scope 关系的写入行为。"""
 
 from app.export.service import Neo4jGraphWriter
-from knowledge_model.constants import EdgeType, NodeType
-from knowledge_model.import_records import GraphImportEdge, GraphImportRecord
+from graph_schema.constants import EdgeType, NodeType
+from graph_schema.import_records import GraphImportEdge, GraphImportRecord
 
 
 async def test_neo4j_graph_writer_merges_relationships_by_import_scope(monkeypatch):

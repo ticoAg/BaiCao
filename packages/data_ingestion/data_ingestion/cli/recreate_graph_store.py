@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.graph_i18n import is_ascii_property_key, to_graph_properties
+from graph_schema.graph_i18n import is_ascii_property_key, to_graph_properties
 
 
 def _jsonable(value: object) -> object:

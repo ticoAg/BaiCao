@@ -8,8 +8,8 @@ from neo4j.exceptions import AuthError, ServiceUnavailable
 
 from app.core.config import get_settings
 from app.provenance import ProvenanceService
-from knowledge_model.constants import NodeStatus, NodeType, to_neo4j_label
-from knowledge_model.graph_i18n import to_graph_properties
+from graph_schema.constants import NodeStatus, NodeType, to_neo4j_label
+from graph_schema.graph_i18n import to_graph_properties
 
 
 pytestmark = pytest.mark.integration

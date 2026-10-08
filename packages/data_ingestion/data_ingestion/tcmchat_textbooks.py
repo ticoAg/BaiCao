@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from knowledge_model.constants import EdgeType, NodeType
+from graph_schema.constants import EdgeType, NodeType
 
 from data_ingestion.dataset_records import DatasetEdge, DatasetRecord
 from data_ingestion.organize_workflow import AgentTask, OrganizeBatch, WorkUnit

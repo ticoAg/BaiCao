@@ -1,6 +1,6 @@
 from typing import Any
 
-from knowledge_model.constants import parse_node_type
+from graph_schema.constants import parse_node_type
 
 from .db import cypher_rows, cypher_single
 

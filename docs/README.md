@@ -259,6 +259,6 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 - 项目入口与阶段信息：[../README.md](../README.md)、[plans/README.md](plans/README.md)
 - 任务真源：`docs/plans/`
 - 共享类型真源：`../packages/shared/types/`
-- 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
+- 图模型唯一真源（目标形态）：`../packages/graph_schema/`
 - Chat 主链 runtime 真源：`../packages/api/app/services/chat_agent_runtime/`
 - 运行编排事实：`../infra/docker-compose.yml`

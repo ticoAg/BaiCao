@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 
 class SourceDocument(BaseModel):

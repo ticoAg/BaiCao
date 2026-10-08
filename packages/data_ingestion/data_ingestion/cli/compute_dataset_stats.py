@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from knowledge_model.graph_i18n import SCOPE_VALUE_EN_TO_ZH, SOURCE_VALUE_EN_TO_ZH
+from graph_schema.graph_i18n import SCOPE_VALUE_EN_TO_ZH, SOURCE_VALUE_EN_TO_ZH
 
 from data_ingestion.dataset_records import DatasetRecord, compute_stats
 

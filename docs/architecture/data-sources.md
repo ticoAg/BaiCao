@@ -20,7 +20,7 @@ audience: developer, data-team
 | 登记状态、产量、`publish` | [`datasets/baicao-knowledge/catalog.json`](../../datasets/baicao-knowledge/catalog.json) |
 | 每源身份与边界 | [`datasets/baicao-knowledge/sources/<source_id>/SOURCE.md`](../../datasets/baicao-knowledge/sources/) |
 | 每源展示数字 | 同目录 [`VIEW.md`](../../datasets/baicao-knowledge/sources/)（由脚本生成，勿手改） |
-| 图模型 | [`packages/knowledge_model/`](../../packages/knowledge_model/) |
+| 图模型 | [`packages/graph_schema/`](../../packages/graph_schema/) |
 | 身份门禁 | [`packages/data_ingestion/data_ingestion/entity_identity.py`](../../packages/data_ingestion/data_ingestion/entity_identity.py) |
 | 数据集发布口径 | [`knowledge-dataset.md`](knowledge-dataset.md) |
 

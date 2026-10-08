@@ -41,7 +41,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 - **任务计划与实施颗粒度**：`docs/plans/`
 - **跨端共享协议入口**：`packages/shared/types/`
 - **后端领域模型 / API Schema / 服务真源**：`packages/api/app/models/`、`packages/api/app/schemas/`、`packages/api/app/services/`
-- **图模型（节点类型 / 关系类型 / 属性）真源**：`packages/knowledge_model/`（`constants.py`、节点/关系属性模型、`graph_i18n.py`）
+- **图模型（节点类型 / 关系类型 / 属性）真源**：`packages/graph_schema/`（`constants.py`、节点/关系属性模型、`graph_i18n.py`）
 - **图谱与导入结构真源**：`packages/db/neo4j/`、`packages/db/import/`
 - **数据源 agent 工作目录**：`datasets/baicao-knowledge/sources/<source_id>/`（`SOURCE.md`、`VIEW.md`、`work/`、`processed/latest/`）
 - **前端消费与展示态适配真源**：`packages/web/src/services/`、`packages/web/src/pages/`
@@ -89,7 +89,7 @@ BaiCao 的知识图谱跟随具体数据结构逐渐进化。清洗新源时增�
 
 每次迭代的真源：
 
-- **实体类型、关系类型、属性** 的单一真源是 `packages/knowledge_model/`（`constants.py` 中的 `NodeType` / `EdgeType`、节点/关系属性模型、`graph_i18n.py`）。
+- **实体类型、关系类型、属性** 的单一真源是 `packages/graph_schema/`（`constants.py` 中的 `NodeType` / `EdgeType`、节点/关系属性模型、`graph_i18n.py`）。
 - 先改该共享图模型包，再让来源适配器产出记录。
 - 来源适配器（`packages/data_ingestion/`）不得私自发明节点类型、关系类型或对外属性名。
 - 产出记录里的 `node_type` / `edge.type` 只能是真源枚举里已声明的值。

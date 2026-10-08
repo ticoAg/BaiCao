@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from knowledge_model.constants import NodeType
+from graph_schema.constants import NodeType
 
 from data_ingestion.models import ExtractionCandidate
 from data_ingestion.organize_workflow import accept_agent_candidates

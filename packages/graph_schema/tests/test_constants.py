@@ -7,7 +7,7 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 
-from knowledge_model.constants import (
+from graph_schema.constants import (
     EDGE_TYPE_TO_NEO4J_REL,
     NEO4J_REL_TO_EDGE_TYPE,
     EdgeType,
@@ -17,7 +17,7 @@ from knowledge_model.constants import (
     parse_node_type,
     to_neo4j_label,
 )
-from knowledge_model.labels import EDGE_TYPE_LABELS, NODE_TYPE_LABELS
+from graph_schema.labels import EDGE_TYPE_LABELS, NODE_TYPE_LABELS
 
 
 def test_node_type_has_herb_literal():
