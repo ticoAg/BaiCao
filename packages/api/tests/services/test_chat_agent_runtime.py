@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from pydantic_ai import (
+    AgentRunResult,
     AgentRunResultEvent,
     FunctionToolCallEvent,
     FunctionToolResultEvent,
@@ -174,7 +175,7 @@ async def test_adapt_pydantic_stream_falls_back_to_output_without_text_parts():
         FunctionToolResultEvent(
             part=ToolReturnPart(tool_name="judge", content={"profile": "intake"}, tool_call_id="call-1")
         ),
-        AgentRunResultEvent(result=SimpleNamespace(output="直接给出的结论。")),
+        AgentRunResultEvent(result=cast(AgentRunResult[str], SimpleNamespace(output="直接给出的结论。"))),
     ]
 
     adapted = [
