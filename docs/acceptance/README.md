@@ -20,7 +20,7 @@
 - 新增一个用户可感知功能
 - 完成一个跨模块功能闭环
 - 引入需要回归验证的核心改动
-- 准备把草案能力从 `_dev/` 推进到“可交付”
+- 准备把一轮执行计划推进到“可交付”
 
 ### 什么时候只需要最小验证记录
 
@@ -33,7 +33,7 @@
 1. [../../README.md](../../README.md)
 2. [../README.md](../README.md)
 3. [../architecture/README.md](../architecture/README.md)
-4. 对应功能的实施计划文件（`../superpowers/plans/`）或项目总入口 `../../README.md`
+4. 对应功能的实施计划文件（`../plans/`）或项目总入口 `../../README.md`
 5. 当前目录下对应功能的验收文档
 
 ## 验收的最小闭环
@@ -162,11 +162,10 @@ flowchart LR
 
 ## 与项目其他真源的关系
 
-- 需求与阶段目标：`../../README.md`、`../superpowers/plans/`
+- 需求与阶段目标：`../../README.md`、`../plans/`
 - 当前实现事实：仓库代码、脚本、配置
 - 长期系统解释：`../architecture/`
-- 方案讨论来源：`../_dev/`
-- 任务状态来源：`../superpowers/plans/`
+- 任务状态来源：`../plans/`
 
 ## 验收写作原则
 
@@ -196,4 +195,4 @@ rg -n "前置条件|验收步骤|期望结果|证据|结论" docs/acceptance --t
 
 六条主链路均为 `pass`。public HF Dataset Viewer 已通过匿名 `/is-valid`、`/splits` 与行读取验收；公开 Parquet 只含脱敏结构化结果。
 
-最近完成的数据工作计划：`docs/superpowers/plans/archive/2026-08-19-fengxi177-tcm-kg-cleaning.md`
+数据工作的稳定口径：`docs/architecture/knowledge-dataset.md`

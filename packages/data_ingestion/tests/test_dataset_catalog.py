@@ -92,7 +92,7 @@ def test_ledger_tasks_must_reference_known_sources(tmp_path: Path):
         json.dumps(
             {
                 "updated_at": "2026-08-17",
-                "repo_plan": "docs/superpowers/plans/2026-08-16-baicao-knowledge-dataset.md",
+                "repo_plan": "docs/architecture/knowledge-dataset.md",
                 "tasks": [
                     {
                         "task_id": "ghost",

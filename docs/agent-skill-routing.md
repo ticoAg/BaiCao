@@ -183,7 +183,7 @@ If two or more of these questions point to staged execution, the task should not
 ## 6. Relationship To BaiCao Workflow
 
 - Primary scope selection, source-of-truth rules, and cross-module sequencing come from root `workflow.md`.
-- Project positioning and current-stage context come from `README.md` and the relevant `docs/superpowers/plans/*.md`.
+- Project positioning and current-stage context come from `README.md` and the relevant `docs/plans/` files.
 - This file solves one narrower problem: within those repo rules, which skill-driven route should the agent choose first?
 
 One-line version:

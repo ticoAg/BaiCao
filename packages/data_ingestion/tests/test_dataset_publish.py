@@ -47,6 +47,10 @@ def test_plan_upload_accepts_public(tmp_path: Path):
 def test_plan_upload_excludes_payloads(tmp_path: Path):
     _write_catalog(tmp_path)
     (tmp_path / "README.md").write_text("# baicao-knowledge\n", encoding="utf-8")
+    (tmp_path / "entities-pie.png").write_bytes(b"PNG")
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "sources.md").write_text("# sources\n", encoding="utf-8")
     (tmp_path / "tasks").mkdir()
     (tmp_path / "tasks" / "ledger.json").write_text("{}", encoding="utf-8")
     source_dir = tmp_path / "sources" / "daoyi-suyang"
@@ -72,6 +76,8 @@ def test_plan_upload_excludes_payloads(tmp_path: Path):
     relative = {str(path.relative_to(tmp_path)) for path in files}
     assert "catalog.json" in relative
     assert "README.md" in relative
+    assert "entities-pie.png" in relative
+    assert "docs/sources.md" in relative
     assert "sources/daoyi-suyang/SOURCE.md" in relative
     assert "sources/daoyi-suyang/VIEW.md" in relative
     assert "tasks/ledger.json" in relative

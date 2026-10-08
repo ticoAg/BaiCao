@@ -15,7 +15,7 @@ audience: developer
 - 功能名称：共享图模型 / 导入记录 / 数据采集边界闭环
 - 验收目标：验证 `packages/knowledge_model/` 已成为 API 图谱 schema、导入导出记录以及 `packages/data_ingestion/` 的共享真源
 - 对应需求：让共享知识模型消费者迁移形成最小可验证闭环
-- 对应计划：[../superpowers/plans/archive/2026-03-25-pipeline-ingestion-closure-wave-1.md](../superpowers/plans/archive/2026-03-25-pipeline-ingestion-closure-wave-1.md)
+- 对应架构：[../architecture/knowledge-model-and-ingestion.md](../architecture/knowledge-model-and-ingestion.md)
 - 当前版本 / 日期：shared-model-ingestion-closure / 2026-03-25
 
 ## 2. 验收范围

@@ -365,5 +365,3 @@ flowchart LR
 - 图谱与数据模型基础：见 [data-model.md](data-model.md)
 - 数据处理工作台架构：见 [data-pipeline-workbench.md](data-pipeline-workbench.md)
 - 身份、消歧与中文属性：见 [entity-resolution.md](entity-resolution.md)
-- 本轮设计 spec：见 `docs/superpowers/specs/`
-- 本轮实施计划：见 `docs/superpowers/plans/`

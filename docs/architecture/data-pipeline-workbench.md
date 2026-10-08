@@ -351,5 +351,3 @@ flowchart TB
 
 - [knowledge-model-and-ingestion.md](knowledge-model-and-ingestion.md)
 - [data-model.md](data-model.md)
-- `docs/superpowers/specs/`
-- `docs/superpowers/plans/`

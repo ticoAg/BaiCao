@@ -50,6 +50,12 @@ def plan_upload(dataset_root: Path) -> list[Path]:
             if len(parts) == 3 and parts[1] in {RELEASE_PUBLIC, RELEASE_RESTRICTED}:
                 selected.append(path)
             continue
+        if parts[0] == "docs" and path.suffix == ".md":
+            selected.append(path)
+            continue
+        if len(parts) == 1 and path.suffix == ".png":
+            selected.append(path)
+            continue
         if path.name in METADATA_NAMES or (parts[0] == "tasks" and relative.suffix in {".md", ".json"}):
             selected.append(path)
     return sorted(selected)

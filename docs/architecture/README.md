@@ -74,13 +74,13 @@ flowchart LR
 阅读本目录文档时，统一按下面的区分理解：
 
 - 当前现状：以仓库代码、配置、脚本和现有接口为准
-- 目标形态：以 `../../README.md`、`../superpowers/plans/` 和 `../_dev/brainstorm/` 中已确认方向为准
+- 目标形态：以 `../../README.md` 与 `../plans/` 中已确认方向为准
 - 若两者不一致，README 与架构文档必须显式说明“已实现 / 规划中”，避免把目标写成事实
 
 ## 单一事实来源
 
 - 长期架构口径：`docs/architecture/*.md`
-- 项目入口与阶段任务：`../../README.md`、`../superpowers/plans/`
+- 项目入口与阶段任务：`../../README.md`、`../plans/`
 - 本地开发：`../local-development.md`
 - 共享类型真源：`../../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../../packages/knowledge_model/`

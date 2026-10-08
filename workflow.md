@@ -1,6 +1,6 @@
 # BaiCao Workflow
 
-本文档定义 BaiCao 仓库内 `packages/api/`、`packages/web/`、`packages/shared/`、`packages/db/`、`infra/`、`docs/` 与 `docs/superpowers/` 的协作工作流。目标不是把规则重复写进每层文档，而是让仓库内的研发推进方式保持一致、可恢复、可追溯，并围绕知识图谱、溯源与问答链路坚持 contract-first。
+本文档定义 BaiCao 仓库内 `packages/api/`、`packages/web/`、`packages/shared/`、`packages/db/`、`infra/` 与 `docs/` 的协作工作流。目标不是把规则重复写进每层文档，而是让仓库内的研发推进方式保持一致、可恢复、可追溯，并围绕知识图谱、溯源与问答链路坚持 contract-first。
 
 ## 仓库模型
 
@@ -37,13 +37,13 @@ flowchart TD
 1. 读当前作用域内的 `AGENTS.md`
 2. 读根目录 `workflow.md`
 3. 判断任务主作用域：`packages/api/`、`packages/web/`、`packages/shared/`、`packages/db/`、`infra/`、`docs/`，还是跨模块任务
-4. 读目标作用域的 README、配置文件和最相关文档，同时确认 `README.md` 与相关 `docs/superpowers/plans/*.md` 中的目标/阶段定位
+4. 读目标作用域的 README、配置文件和最相关文档，同时确认 `README.md` 与相关 `docs/plans/` 中的目标/阶段定位
 5. 只补读与当前任务直接相关的代码、测试和调用点
 
 判定主作用域时，优先看“谁是真源”，不要看“哪里更容易打补丁”：
 
-- 需求与阶段目标真源：`README.md`、`docs/superpowers/plans/*.md`
-- 任务状态与实施分解真源：`docs/superpowers/plans/*.md`
+- 需求与阶段目标真源：`README.md`
+- 任务状态与实施分解真源：`docs/plans/`
 - 跨端共享协议入口：`packages/shared/types/index.ts`
 - 后端 API Schema / DTO 真源：`packages/api/app/schemas/**`
 - 后端领域模型与业务逻辑真源：`packages/api/app/models/**`、`packages/api/app/services/**`
@@ -130,9 +130,8 @@ flowchart TD
 适用于：
 
 - 根目录 `AGENTS.md`、`workflow.md`
-- `docs/README.md`、`docs/architecture/**`、`docs/acceptance/**`、`docs/_dev/**`
+- `docs/README.md`、`docs/architecture/**`、`docs/acceptance/**`、`docs/plans/**`
 - `docs/agent-skill-routing.md`、`docs/verification-matrix.md`
-- 与 `docs/superpowers/` 相关的研发协作文档
 
 执行时：
 
@@ -157,7 +156,7 @@ flowchart TD
 2. 先在共享协议、后端 Schema、图谱结构等真源完成改动
 3. 在后端或数据层完成最小验证
 4. 再到前端更新 `src/services/**`、状态和页面渲染
-5. 补齐 `docs/` 下相关文档与 `docs/superpowers/plans/` 证据
+5. 补齐 `docs/` 下相关文档与 `docs/plans/` 证据
 6. 追加一条跨模块闭环验证
 
 跨模块时不要做的事：
@@ -193,7 +192,7 @@ flowchart TD
 5. 接入 `packages/api/app/api/**`
 6. 更新 `packages/web/src/services/**` 的请求、适配与前端友好模型
 7. 更新页面 / 组件渲染与状态逻辑
-8. 同步 `docs/`、验收与 `docs/superpowers/plans/` 证据
+8. 同步 `docs/`、验收与 `docs/plans/` 证据
 
 补充约束：
 
@@ -243,14 +242,14 @@ flowchart TD
 
 推荐顺序：
 
-1. 先确认该信息属于 `architecture`、`acceptance`、`_dev`、`superpowers` 还是根级协作文档
-2. 只把稳定信息放进稳定目录，草案保留在 `_dev/`
+1. 先确认该信息属于 `architecture`、`acceptance`、`plans` 还是根级协作文档
+2. 只把稳定信息放进 `architecture/` 或根级协作文档；执行步骤放进 `docs/plans/`
 3. 任务完成后同步相关入口页，避免“文档存在但无法被发现”
-4. 若 `docs/superpowers/plans/` 的计划状态发生变化，确保其证据可追到代码或验收结果
+4. 若 `docs/plans/` 的计划状态发生变化，确保其证据可追到代码或验收结果
 
 补充口径：
 
-5. 若 `docs/superpowers/specs/` 或 `docs/superpowers/plans/` 对应任务已经完成，稳定事实必须毕业到 `docs/architecture/`，验收与结果必须毕业到 `docs/acceptance/`
+5. 若 `docs/plans/` 对应任务已经完成，稳定事实必须毕业到 `docs/architecture/`，验收与结果必须毕业到 `docs/acceptance/`
 6. 若新需求已完整覆盖旧 spec / plan，删除旧文档，不并行维护多条互相冲突的 requirement lineage
 7. 毕业或删除后，同步更新目录 `README`、入口索引和状态字段
 
@@ -266,4 +265,4 @@ flowchart TD
 
 - 验证矩阵（各类改动的最低验证标准）见 `docs/verification-matrix.md`
 - 若任务在本轮未完成，交接信息至少应覆盖：当前进度、下一步、已验证项、阻塞或风险
-- 若本轮同时更新了 `docs/superpowers/plans/`、`docs/acceptance/` 或其他 `docs/superpowers/` 文档，确保这些文档与实际代码状态一致，下一位协作者能直接接手
+- 若本轮同时更新了 `docs/plans/` 或 `docs/acceptance/`，确保这些文档与实际代码状态一致，下一位协作者能直接接手

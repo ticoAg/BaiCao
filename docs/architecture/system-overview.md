@@ -211,4 +211,3 @@ flowchart LR
 - [../local-development.md](../local-development.md) - 本地开发栈
 - [data-model.md](data-model.md) - 数据模型详细设计
 - [chat-agent-mcp.md](chat-agent-mcp.md) - 问答 agent 检索工具、prompt 与 MCP 边界
-- [../_dev/brainstorm/README.md](../_dev/brainstorm/README.md) - 早期 brainstorm 索引

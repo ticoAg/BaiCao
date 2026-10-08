@@ -6,14 +6,14 @@ note: agent-facing repo entry guide. English or mixed wording is allowed when it
 
 # BaiCao Agent Entry (Monorepo)
 
-This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packages/db/`, `infra/`, `docs/`, and `docs/superpowers/`. This file is the repo-level agent entry guide for repository-wide behavior and routing. More specific engineering constraints should live in deeper docs or future module-local `AGENTS.md` files.
+This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packages/db/`, `infra/`, and `docs/`. This file is the repo-level agent entry guide for repository-wide behavior and routing. More specific engineering constraints should live in deeper docs or future module-local `AGENTS.md` files.
 
 ## Navigation
 
 | Need to know...                             | Read...                       |
 | ------------------------------------------- | ----------------------------- |
 | 项目定位与现状                              | `README.md`                   |
-| 需求与阶段目标                              | `README.md` + `docs/superpowers/plans/` |
+| 需求与阶段目标                              | `README.md`                   |
 | 本地开发栈 / 环境变量 / 验证命令            | `docs/local-development.md`   |
 | 仓库级工作流、任务分流、contract-first 顺序 | `workflow.md`                 |
 | Skill 选择与多代理路由                      | `docs/agent-skill-routing.md` |
@@ -21,9 +21,7 @@ This repo contains `packages/api/`, `packages/web/`, `packages/shared/`, `packag
 | 文档系统入口与放置规则                      | `docs/README.md`              |
 | 稳定架构口径                                | `docs/architecture/README.md` |
 | 验收入口与证据格式                          | `docs/acceptance/README.md`   |
-| 草案规则与毕业路径                          | `docs/_dev/README.md`         |
-| Agent 产出的 spec / plan                    | `docs/superpowers/`           |
-| 仓库级任务系统与实施计划                    | `docs/superpowers/plans/`     |
+| 仓库级任务系统与实施计划                    | `docs/plans/`                 |
 
 ## Core Principles
 
@@ -38,8 +36,8 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 ## Repo SSOT
 
-- **需求与阶段目标**：`README.md`、`docs/superpowers/plans/`
-- **任务计划与实施颗粒度**：`docs/superpowers/plans/*.md`
+- **需求与阶段目标**：`README.md`
+- **任务计划与实施颗粒度**：`docs/plans/`
 - **跨端共享协议入口**：`packages/shared/types/`
 - **后端领域模型 / API Schema / 服务真源**：`packages/api/app/models/`、`packages/api/app/schemas/`、`packages/api/app/services/`
 - **图模型（节点类型 / 关系类型 / 属性）真源**：`packages/knowledge_model/`（`constants.py`、节点/关系属性模型、`graph_i18n.py`）
@@ -48,7 +46,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 - **前端消费与展示态适配真源**：`packages/web/src/services/`、`packages/web/src/pages/`
 - **运行编排与环境事实**：`infra/docker-compose.yml`、`infra/.env.schema`
 - **长期维护文档**：`docs/architecture/`、`docs/acceptance/`
-- **草案与中间产物**：`docs/_dev/`、`docs/superpowers/`
+- **当轮执行计划**：`docs/plans/`
 
 ## Agent Behavior
 
@@ -82,7 +80,7 @@ Evidence first · SSOT first · Contract first · Progressive disclosure · Smal
 
 系统安全策略 > 用户当轮指令 > 最近的 `AGENTS.md` > 根目录 `AGENTS.md` > `workflow.md` > `docs/` / `README.md`
 
-补充口径：判断“项目目标 / 阶段任务”时，以 `README.md` 与 `docs/superpowers/plans/` 为准；判断“当前已实现事实”时，以仓库代码、配置、脚本为准。
+补充口径：判断“项目目标 / 阶段任务”时，以 `README.md` 与 `docs/plans/` 为准；判断“当前已实现事实”时，以仓库代码、配置、脚本为准。
 
 ## 图谱随数据进化
 
@@ -102,7 +100,7 @@ BaiCao 的知识图谱跟随具体数据结构逐渐进化。清洗新源时增�
 - 错误必须可见，不允许静默吞错或伪造结果
 - 不执行破坏性回滚（`git reset --hard`、`git checkout --`）；未经明确要求不 push
 - 不把规划中的能力写成“当前事实”
-- 不在未更新 `docs/superpowers/plans/` 实施证据和验收结果的情况下把计划或验收文档标记为完成
+- 不在未更新 `docs/plans/` 实施证据和验收结果的情况下把计划或验收文档标记为完成
 - 无法验证时必须写出未验证项、原因及可复现命令
 
 ## Delivery

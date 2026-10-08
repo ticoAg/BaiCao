@@ -15,7 +15,7 @@ audience: developer
 - 功能名称：智能问答主链路
 - 验收目标：验证问答页面、`/api/v1/chat/stream` 单入口、自然语言回答、agent 工具过程流和可展开依据子图形成完整闭环
 - 对应需求：图谱增强智能问答
-- 对应计划：`docs/superpowers/plans/archive/2026-04-20-chat-deepagents-graph-agent.md`
+- 对应计划：`docs/plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md`
 - 当前版本 / 日期：pydantic-ai-slim Graph Agent / 2026-09-06
 
 ## 2. 验收范围

@@ -14,8 +14,7 @@ audience: developer
 
 - 功能名称：Graph Workbench `/graph`
 - 验收目标：验证 `/graph` 两栏简要展示、有限结果查询和右侧检查器
-- 对应 spec：[../superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../superpowers/specs/archive/2026-03-23-graph-workbench-design.md)
-- 对应 plan：[../superpowers/plans/archive/2026-03-23-graph-workbench.md](../superpowers/plans/archive/2026-03-23-graph-workbench.md)
+- 对应架构：[../architecture/graph-workbench.md](../architecture/graph-workbench.md)
 - 当前版本 / 日期：graph workbench / 2026-03-24
 
 ## 2. 验收范围

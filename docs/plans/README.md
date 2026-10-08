@@ -4,7 +4,7 @@ Dated execution plans. Product, architecture, interaction, and data-model facts 
 
 Layout: `YYYY/MM-DD/<plan-name>-<hex>.md`. Mint files with the `plan-docs` skill script; do not invent paths. Todos use `- [ ]` / `- [x]` / `- [-]`; scan and print sections with `scripts/todos.py`.
 
-仓库里更早的任务拆解仍在 [`docs/superpowers/plans/`](../superpowers/plans/README.md)。新的按日落盘执行计划从这里建。
+按日落盘的执行计划从这里建。
 
 # This layer
 

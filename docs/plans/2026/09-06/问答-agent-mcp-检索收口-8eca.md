@@ -85,7 +85,7 @@ P2 与 P3 不改同一传输文件，可并行。P4 等前两块都进主链后�
 - [x] 架构口径写在 [`docs/architecture/chat-agent-mcp.md`](../../../architecture/chat-agent-mcp.md)
 - [x] [`docs/plans/README.md`](../../README.md) 与 [`docs/plans/2026/README.md`](../README.md) 能点到本计划
 - [x] [`docs/README.md`](../../../README.md) 能发现 `docs/plans/`
-- [x] [`docs/superpowers/plans/README.md`](../../../superpowers/plans/README.md) 有一条指向本计划，避免只看旧任务索引的 agent 漏掉
+- [x] 旧任务索引 `docs/superpowers/plans/README.md` 已删除；本计划只从 `docs/plans/` 进入
 
 验收：frontmatter 可解析；引用的章节在架构文里存在。无业务代码。
 

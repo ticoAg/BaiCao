@@ -302,5 +302,4 @@ catalog 里源为 `imported`、且 `processed/latest/records.jsonl` 非空时，
 - 图模型真源：`packages/knowledge_model/knowledge_model/constants.py`
 - 抽取契约：`packages/data_ingestion/data_ingestion/EXTRACT_SUYANG.md`
 - 候选外源：`data-sources.md`
-- 历史计划：`docs/superpowers/plans/archive/`
 - 本机缓存指针：`.cache/README.md`

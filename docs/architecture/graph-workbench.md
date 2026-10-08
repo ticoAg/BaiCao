@@ -138,5 +138,3 @@ Graph Workbench 当前 Neo4j 访问口径已经统一到 `neomodel` 连接层：
 - [system-overview.md](system-overview.md)
 - [data-model.md](data-model.md)
 - [../acceptance/graph-workbench-mainline.md](../acceptance/graph-workbench-mainline.md)
-- [../superpowers/specs/archive/2026-03-23-graph-workbench-design.md](../superpowers/specs/archive/2026-03-23-graph-workbench-design.md)
-- [../superpowers/plans/archive/2026-03-23-graph-workbench.md](../superpowers/plans/archive/2026-03-23-graph-workbench.md)

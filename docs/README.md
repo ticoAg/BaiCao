@@ -3,7 +3,7 @@
 这里是 BaiCao ShiTan 的总文档门户，用来统一回答四个问题：
 
 1. 先看哪份文档才能最快建立全局认知
-2. 哪些文档代表当前稳定口径，哪些只是研发草案
+2. 哪些文档代表当前稳定口径，哪些只是当轮执行计划
 3. agent / 开发者开始实现前，应该走哪条工作流
 4. 新增或修改文档时，应该把信息放到哪里
 
@@ -12,8 +12,7 @@
 - `architecture/`：长期维护文档，描述系统边界、架构和数据模型
 - `acceptance/`：验收标准与验证方式，回答“如何证明它真的完成了”
 - `local-development.md`：本地起栈、Infisical、手动启动、样例数据与验证命令
-- `_dev/`：研发草案与 brainstorm，回答“我们曾经如何分析、讨论、收敛方案”
-- `superpowers/`：agent 生成的 spec / plan 等过程产物，回答“本轮是如何设计与拆解实施的”
+- `plans/`：按日落盘的执行计划，回答“这一轮按什么顺序落地、如何验收”
 - `packages/api/app/services/chat_agent_runtime/`：当前 chat 主链的 agent runtime 真源，负责 pydantic-ai-slim loop、官方 mcp v2 同进程客户端、会话 `message_history` 与 SSE 事件适配
 - 根级协作文档：`AGENTS.md`、`workflow.md`、`docs/agent-skill-routing.md`、`docs/verification-matrix.md`，回答“agent / 开发者现在应该如何推进”
 
@@ -28,25 +27,23 @@
 5. [architecture/data-model.md](architecture/data-model.md)
 6. [architecture/knowledge-model-and-ingestion.md](architecture/knowledge-model-and-ingestion.md)
 7. [architecture/data-pipeline-workbench.md](architecture/data-pipeline-workbench.md)
-8. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
 
 ### 路径 B：要开始实现功能
 
 1. [../AGENTS.md](../AGENTS.md)
 2. [../workflow.md](../workflow.md)
 3. [agent-skill-routing.md](agent-skill-routing.md)
-4. [superpowers/README.md](superpowers/README.md)
+4. [plans/README.md](plans/README.md)
 5. [architecture/system-overview.md](architecture/system-overview.md)
 6. [acceptance/README.md](acceptance/README.md)
-7. 对应 `superpowers/plans/` 计划文件
+7. 对应 `plans/` 计划文件
 
 ### 路径 C：要判断“当前代码”与“目标方案”的差异
 
 1. [../README.md](../README.md)
-2. [superpowers/README.md](superpowers/README.md)
+2. [plans/README.md](plans/README.md)
 3. [architecture/README.md](architecture/README.md)
-4. [_dev/README.md](_dev/README.md)
-5. [_dev/brainstorm/README.md](_dev/brainstorm/README.md)
+4. [acceptance/README.md](acceptance/README.md)
 
 ### 路径 D：要维护 agent / 研发规范
 
@@ -54,26 +51,24 @@
 2. [../workflow.md](../workflow.md)
 3. [agent-skill-routing.md](agent-skill-routing.md)
 4. [verification-matrix.md](verification-matrix.md)
-5. [superpowers/](superpowers/)
+5. [plans/README.md](plans/README.md)
 
 ## 文档分层
 
 ```mermaid
 flowchart TB
-    Root[README / docs/superpowers/plans]
+    Root[README / docs/plans]
     Root --> Guide[AGENTS / workflow / routing / verification]
     Root --> Local[docs/local-development]
     Root --> Arch[docs/architecture]
     Root --> Acc[docs/acceptance]
-    Root --> Dev[docs/_dev]
-    Root --> Sup[docs/superpowers]
+    Root --> Plans[docs/plans]
 
     Guide --> Ops[协作与执行规则]
     Local --> DevEnv[本地起栈 / 环境变量]
     Arch --> Stable[稳定口径<br/>架构 / 数据模型]
     Acc --> Verify[验收标准<br/>验证步骤 / 证据]
-    Dev --> Draft[草案与脑暴<br/>分析 / 方案收敛]
-    Sup --> Process[spec / plan 等过程产物]
+    Plans --> Exec[按日执行计划<br/>顺序 / 验收]
 ```
 
 ## 文档目录
@@ -87,8 +82,6 @@ flowchart TB
 | [verification-matrix.md](verification-matrix.md) | 验证标准入口 | 各类改动的最低验证要求 | 准备宣称完成、补验收证据时 |
 | [architecture/](architecture/README.md) | 长期维护 | 稳定、可引用、面向长期演进 | 建立全局视图、统一术语、核对边界 |
 | [acceptance/](acceptance/README.md) | 验收与完成定义 | 可执行、可复现、可对照实现 | 验证功能是否完成、补齐验收脚本 |
-| [_dev/](_dev/README.md) | 草案与中间产物 | WIP、探索性、可能过期 | 回看分析过程、理解方案来源 |
-| [superpowers/README.md](superpowers/README.md) | agent 过程产物与任务系统 | spec / plan / 执行中间文档 | 追溯某轮实现的设计与拆解，并查看仓库级任务系统 |
 | [plans/](plans/README.md) | 按日落盘的执行计划 | 怎么落到现码、顺序、验收 | 设计已写进 `architecture/` 之后要动手时 |
 
 ## 当前文档现状
@@ -101,8 +94,6 @@ flowchart TB
 | `docs/local-development.md` | 已从根 README 拆出 | 本地起栈、Infisical、手动启动、样例数据与验证命令 |
 | `docs/architecture/` | 已形成主入口 | 已有系统总览与数据模型两份稳定文档 |
 | `docs/acceptance/` | 已有六条主链路实例 | 图谱、问答、验证、知识模型/采集、数据处理工作台、review/export，结论均为 `pass` |
-| `docs/_dev/brainstorm/` | 早期分析归档 | 2026-03 产品/架构 brainstorm，不再当任务真源 |
-| `docs/superpowers/` | 历史任务拆解仍可回溯 | 索引见 `superpowers/plans/README.md`；已完成计划勿再执行 |
 | `docs/plans/` | 按日落盘的执行计划 | 新实施步骤写这里；当前：[问答 chat 走最新 MCP 并清适配](plans/2026/09-06/问答-chat-走最新-mcp-并清适配-b042.md)、[中文属性与实体消歧合并](plans/2026/09-06/中文属性与实体消歧合并-94ae.md)、[清洗完成后删除原文与中间态](plans/2026/09-06/清洗完成后删除原文与中间态-4fa3.md) |
 | `datasets/baicao-knowledge/` | 数据台账 staging | 源注册、VIEW、计划/完成量；载荷不进 git |
 
@@ -144,21 +135,11 @@ flowchart TB
 - 与实现证据相关的检查项
 - 与根级统一命令一致的主链路验证入口
 
-### 放进 `_dev/`
-
-- 还在讨论中的方案
-- 分析过程、权衡记录、brainstorm 产物
-- 尚未确认是否毕业到稳定文档的内容
-
-### 放进 `superpowers/`
-
-- 已完成任务的设计理由、拆解和过程回溯
-- 不要再往这里写新的按日执行计划
-
 ### 放进 `docs/plans/`
 
-- 新的按日落盘实施步骤、顺序、验收命令
+- 按日落盘的实施步骤、顺序、验收命令
 - 用 `plan-docs` 脚本建档，不要手拼路径
+- 未稳定的分析不要另建过程目录；确认后的口径写进 `architecture/`
 
 ### 放进 `datasets/baicao-knowledge/`
 
@@ -166,19 +147,18 @@ flowchart TB
 - 计划处理量与已完成量（`catalog.json`、`tasks/ledger.json`）
 - 不把原文和大 JSONL 提交进 git；HF private dataset 才是载荷发布面
 
-### `superpowers` 完成后的毕业 / 归档
+### `plans` 完成后的毕业
 
-当 `docs/superpowers/specs/` 或 `docs/superpowers/plans/` 对应的任务已经完成时，默认按下面的顺序处理：
+当 `docs/plans/` 对应的任务已经完成时，默认按下面的顺序处理：
 
 1. 稳定实现事实毕业到 `docs/architecture/`
 2. 验收步骤、验证命令、结果判定与实现证据毕业到 `docs/acceptance/`
 3. 会影响默认研发动作的规则毕业到根级协作文档或 `workflow.md` / `verification-matrix.md`
-4. `superpowers` 仅保留设计理由、任务拆解和过程回溯价值，不再继续承担稳定真源
+4. 执行计划留在 `docs/plans/`，不再承担稳定真源
 
 补充约束：
 
-- 若新需求已完整覆盖旧 spec / plan，旧文档应直接删除，而不是并行保留两条 requirement lineage
-- 若旧 spec / plan 仍有回溯价值但未被新需求覆盖，可以继续保留在 `superpowers/`
+- 若新需求已完整覆盖旧 plan，旧文档应直接删除，而不是并行保留两条 requirement lineage
 - 完成毕业或删除后，必须同步更新相关 `README.md`、目录索引和状态字段，避免出现“文档存在但无法发现”或“入口仍指向旧真源”
 
 ## 现状与目标的区分规则
@@ -186,7 +166,7 @@ flowchart TB
 本项目文档统一使用以下口径：
 
 - 当前现状：以仓库代码、配置、脚本、现有接口为准
-- 目标形态：以 [../README.md](../README.md)、[superpowers/README.md](superpowers/README.md) 和 `_dev/brainstorm/` 中已收敛方向为准
+- 目标形态：以 [../README.md](../README.md) 与 [plans/README.md](plans/README.md) 中已收敛方向为准
 - 若两者不一致，必须显式写明 `已实现`、`进行中` 或 `规划中`
 
 不要把草案里的目标能力直接写成当前事实。
@@ -220,16 +200,7 @@ flowchart TB
 | [architecture/knowledge-dataset.md](architecture/knowledge-dataset.md) | 自有 HF dataset 任务定义与 Parquet 发布 |
 | [architecture/entity-resolution.md](architecture/entity-resolution.md) | 中文属性、身份键、消歧与合并策略 |
 | [plans/README.md](plans/README.md) | 按日归档的执行计划 |
-| [superpowers/plans/README.md](superpowers/plans/README.md) | 历史实施计划状态索引 |
 | [../datasets/baicao-knowledge/README.md](../datasets/baicao-knowledge/README.md) | 自有知识数据集 staging 与产量台账 |
-
-### 草案与分析
-
-| 文档 | 摘要 |
-|------|------|
-| [_dev/README.md](_dev/README.md) | 草案文档规则与毕业路径 |
-| [_dev/brainstorm/README.md](_dev/brainstorm/README.md) | 早期 brainstorm 归档，不再当任务真源 |
-| [superpowers/README.md](superpowers/README.md) | spec / plan 入口；当前 active 见 plans/README |
 
 ## 文档维护规则
 
@@ -238,9 +209,9 @@ flowchart TB
 - 新增或移动任何 `docs/**.md` 时，同步更新对应目录的 `README.md`
 - 新增或修改根级协作文档时，同步检查 `docs/README.md` 中的入口是否仍然正确
 - 文档解释优先，协议和字段真源优先回到代码、规划文档或共享类型
-- 需要长期维护的内容，不要只留在 `_dev/` 或 `superpowers/`
+- 需要长期维护的内容，不要只留在 `docs/plans/`
 - 验收相关内容不要混进架构说明，保持“说明”和“验证”分层
-- `superpowers` 任务完成后，稳定内容必须毕业到稳定目录；被新需求完整覆盖的旧 spec / plan 必须删除
+- `docs/plans/` 任务完成后，稳定内容必须毕业到稳定目录；被新需求完整覆盖的旧 plan 必须删除
 
 ### 引用建议
 
@@ -284,8 +255,8 @@ rg -n "workflow.md|agent-skill-routing|verification-matrix" docs/ --type md
 
 - 项目总入口：[../README.md](../README.md)
 - 本地开发：[local-development.md](local-development.md)
-- 项目入口与阶段信息：[../README.md](../README.md)、[superpowers/README.md](superpowers/README.md)
-- 任务真源：新执行计划 `docs/plans/`；历史拆解 `superpowers/plans/*.md`
+- 项目入口与阶段信息：[../README.md](../README.md)、[plans/README.md](plans/README.md)
+- 任务真源：`docs/plans/`
 - 共享类型真源：`../packages/shared/types/`
 - 图模型唯一真源（目标形态）：`../packages/knowledge_model/`
 - Chat 主链 runtime 真源：`../packages/api/app/services/chat_agent_runtime/`
